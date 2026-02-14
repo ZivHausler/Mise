@@ -4,19 +4,16 @@
     "tagline": "Bakery Management"
   },
   "common": {
-    "currency": "NIS"
-  },
-  "nav": {
-    "dashboard": "Dashboard",
-    "orders": "Orders",
-    "customers": "Customers",
-    "recipes": "Recipes",
-    "inventory": "Inventory",
-    "payments": "Payments",
-    "settings": "Settings",
-    "more": "More"
-  },
-  "common": {
+    "currency": "₪",
+    "units": {
+      "kg": "kg",
+      "g": "g",
+      "l": "l",
+      "ml": "ml",
+      "pcs": "pcs",
+      "units": "units",
+      "liters": "liters"
+    },
     "save": "Save",
     "cancel": "Cancel",
     "delete": "Delete",
@@ -27,7 +24,19 @@
     "loading": "Loading...",
     "noResults": "No results found",
     "confirm": "Confirm",
-    "back": "Back"
+    "back": "Back",
+    "select": "Select...",
+    "qty": "Qty"
+  },
+  "nav": {
+    "dashboard": "Dashboard",
+    "orders": "Orders",
+    "customers": "Customers",
+    "recipes": "Recipes",
+    "inventory": "Inventory",
+    "payments": "Payments",
+    "settings": "Settings",
+    "more": "More"
   },
   "auth": {
     "login": "Log In",
@@ -65,6 +74,8 @@
     "noItems": "No items",
     "orderNum": "Order",
     "advance": "Advance",
+    "revert": "Back",
+    "createdAt": "Created",
     "details": "Details",
     "recipe": "Recipe",
     "empty": "No orders yet",
@@ -122,10 +133,17 @@
     "adjustType": "Type",
     "amount": "Amount",
     "threshold": "Low-Stock Threshold",
-    "costPerUnit": "Cost per Unit (NIS)",
+    "costPerUnit": "Cost per Unit (₪)",
     "empty": "No inventory items",
     "emptyDesc": "Add ingredients and supplies to track stock levels.",
-    "searchPlaceholder": "Search inventory..."
+    "searchPlaceholder": "Search inventory...",
+    "statusGood": "Good",
+    "statusOk": "OK",
+    "statusLow": "Low",
+    "statusOut": "Out",
+    "adjustAdd": "Add",
+    "adjustUse": "Use",
+    "adjustSet": "Set"
   },
   "customers": {
     "name": "Name",
