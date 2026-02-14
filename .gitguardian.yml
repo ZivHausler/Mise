@@ -1,0 +1,11 @@
+version: 2
+
+secret:
+  ignored-paths:
+    - '**/tests/**'
+    - '**/*.test.ts'
+    - '**/*.test.js'
+    - '**/*.spec.ts'
+    - '**/*.spec.js'
+    - '**/mock-factories.*'
+    - '**/.env.example'

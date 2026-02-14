@@ -1,0 +1,170 @@
+import React, { useState, useCallback } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
+import { Plus, Trash2 } from 'lucide-react';
+import { Page, Card, Stack, Row } from '@/components/Layout';
+import { Breadcrumbs } from '@/components/Breadcrumbs';
+import { TextInput, TextArea, DatePicker, NumberInput, Select } from '@/components/FormFields';
+import { Button } from '@/components/Button';
+import { useCreateOrder, useUpdateOrder, useOrder, useCustomers, useRecipes } from '@/api/hooks';
+
+interface OrderItem {
+  recipeId: string;
+  recipeName: string;
+  quantity: number;
+  price: number;
+}
+
+export default function OrderFormPage() {
+  const { id } = useParams<{ id: string }>();
+  const isEdit = !!id;
+  const { t } = useTranslation();
+  const navigate = useNavigate();
+  const { data: existingOrder } = useOrder(id ?? '');
+  const { data: customers } = useCustomers();
+  const { data: recipes } = useRecipes();
+  const createOrder = useCreateOrder();
+  const updateOrder = useUpdateOrder();
+
+  const o = existingOrder as any;
+
+  const [customerId, setCustomerId] = useState(o?.customerId ?? '');
+  const [dueDate, setDueDate] = useState(o?.dueDate ?? '');
+  const [notes, setNotes] = useState(o?.notes ?? '');
+  const [items, setItems] = useState<OrderItem[]>(o?.items ?? []);
+
+  const customerOptions = ((customers as any[]) ?? []).map((c: any) => ({ value: c.id, label: c.name }));
+  const recipeOptions = ((recipes as any[]) ?? []).map((r: any) => ({ value: r.id, label: r.name }));
+
+  const addItem = useCallback(() => {
+    setItems((prev) => [...prev, { recipeId: '', recipeName: '', quantity: 1, price: 0 }]);
+  }, []);
+
+  const removeItem = useCallback((index: number) => {
+    setItems((prev) => prev.filter((_, i) => i !== index));
+  }, []);
+
+  const updateItem = useCallback((index: number, field: keyof OrderItem, value: unknown) => {
+    setItems((prev) =>
+      prev.map((item, i) => {
+        if (i !== index) return item;
+        const updated = { ...item, [field]: value };
+        if (field === 'recipeId') {
+          const recipe = ((recipes as any[]) ?? []).find((r: any) => r.id === value);
+          if (recipe) {
+            updated.recipeName = recipe.name;
+            updated.price = recipe.price ?? 0;
+          }
+        }
+        return updated;
+      })
+    );
+  }, [recipes]);
+
+  const total = items.reduce((sum, item) => sum + item.quantity * item.price, 0);
+
+  const handleSubmit = useCallback(
+    (e: React.FormEvent) => {
+      e.preventDefault();
+      const body = { customerId, dueDate, notes, items, total };
+      if (isEdit) {
+        updateOrder.mutate({ id: id!, ...body }, { onSuccess: () => navigate(`/orders/${id}`) });
+      } else {
+        createOrder.mutate(body, { onSuccess: () => navigate('/orders') });
+      }
+    },
+    [customerId, dueDate, notes, items, total, isEdit, id, createOrder, updateOrder, navigate]
+  );
+
+  const isPending = createOrder.isPending || updateOrder.isPending;
+
+  return (
+    <Page>
+      <Breadcrumbs
+        items={[
+          { label: t('nav.orders'), path: '/orders' },
+          { label: isEdit ? t('common.edit') : t('orders.create', 'New Order') },
+        ]}
+      />
+
+      <form onSubmit={handleSubmit}>
+        <Card>
+          <Stack gap={4}>
+            <Select
+              label={t('orders.customer', 'Customer')}
+              options={customerOptions}
+              placeholder={t('orders.selectCustomer', 'Select customer...')}
+              value={customerId}
+              onChange={(e) => setCustomerId(e.target.value)}
+              required
+            />
+            <DatePicker
+              label={t('orders.dueDate', 'Due Date')}
+              value={dueDate}
+              onChange={(e) => setDueDate(e.target.value)}
+              required
+            />
+
+            <div>
+              <div className="mb-2 flex items-center justify-between">
+                <label className="text-body-sm font-semibold text-neutral-700">{t('orders.items', 'Items')}</label>
+                <Button type="button" variant="ghost" size="sm" icon={<Plus className="h-4 w-4" />} onClick={addItem}>
+                  {t('orders.addItem', 'Add Item')}
+                </Button>
+              </div>
+              <Stack gap={3}>
+                {items.map((item, i) => (
+                  <Row key={i} gap={3} className="items-end">
+                    <Select
+                      options={recipeOptions}
+                      placeholder={t('orders.selectRecipe', 'Recipe...')}
+                      value={item.recipeId}
+                      onChange={(e) => updateItem(i, 'recipeId', e.target.value)}
+                      className="flex-1"
+                    />
+                    <NumberInput
+                      label={t('orders.qty', 'Qty')}
+                      value={item.quantity}
+                      onChange={(v) => updateItem(i, 'quantity', v || 1)}
+                      min={1}
+                      className="w-20"
+                    />
+                    <NumberInput
+                      label={t('orders.price', 'Price')}
+                      value={item.price}
+                      onChange={(v) => updateItem(i, 'price', v || 0)}
+                      min={0}
+                      className="w-28"
+                    />
+                    <Button type="button" variant="ghost" size="sm" onClick={() => removeItem(i)}>
+                      <Trash2 className="h-4 w-4 text-neutral-400" />
+                    </Button>
+                  </Row>
+                ))}
+              </Stack>
+              <div className="mt-3 text-end text-body-sm font-semibold text-neutral-800">
+                {t('orders.total', 'Total')}: <span className="font-mono">{total} NIS</span>
+              </div>
+            </div>
+
+            <TextArea
+              label={t('orders.notes', 'Notes')}
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              dir="auto"
+            />
+
+            <Row gap={2} className="justify-end">
+              <Button type="button" variant="secondary" onClick={() => navigate(-1)}>
+                {t('common.cancel')}
+              </Button>
+              <Button type="submit" variant="primary" loading={isPending}>
+                {t('common.save')}
+              </Button>
+            </Row>
+          </Stack>
+        </Card>
+      </form>
+    </Page>
+  );
+}
