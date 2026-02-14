@@ -106,12 +106,7 @@ export default function OrderFormPage() {
             />
 
             <div>
-              <div className="mb-2 flex items-center justify-between">
-                <label className="text-body-sm font-semibold text-neutral-700">{t('orders.items', 'Items')}</label>
-                <Button type="button" variant="ghost" size="sm" icon={<Plus className="h-4 w-4" />} onClick={addItem}>
-                  {t('orders.addItem', 'Add Item')}
-                </Button>
-              </div>
+              <label className="mb-2 block text-body-sm font-semibold text-neutral-700">{t('orders.items', 'Items')}</label>
               <Stack gap={3}>
                 {items.map((item, i) => (
                   <Row key={i} gap={3} className="items-end">
@@ -141,9 +136,12 @@ export default function OrderFormPage() {
                     </Button>
                   </Row>
                 ))}
+                <Button type="button" variant="ghost" size="sm" icon={<Plus className="h-4 w-4" />} onClick={addItem} className="self-center">
+                  {t('orders.addItem', 'Add Item')}
+                </Button>
               </Stack>
               <div className="mt-3 text-end text-body-sm font-semibold text-neutral-800">
-                {t('orders.total', 'Total')}: <span className="font-mono">{total} NIS</span>
+                {t('orders.total', 'Total')}: <span className="font-mono">{total} {t('common.currency')}</span>
               </div>
             </div>
 

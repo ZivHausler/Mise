@@ -4,19 +4,16 @@
     "tagline": "ניהול מאפייה"
   },
   "common": {
-    "currency": "₪"
-  },
-  "nav": {
-    "dashboard": "לוח בקרה",
-    "orders": "הזמנות",
-    "customers": "לקוחות",
-    "recipes": "מתכונים",
-    "inventory": "מלאי",
-    "payments": "תשלומים",
-    "settings": "הגדרות",
-    "more": "עוד"
-  },
-  "common": {
+    "currency": "₪",
+    "units": {
+      "kg": "ק\"ג",
+      "g": "גרם",
+      "l": "ליטר",
+      "ml": "מ\"ל",
+      "pcs": "יחידות",
+      "units": "יחידות",
+      "liters": "ליטר"
+    },
     "save": "שמור",
     "cancel": "ביטול",
     "delete": "מחק",
@@ -27,7 +24,19 @@
     "loading": "טוען...",
     "noResults": "לא נמצאו תוצאות",
     "confirm": "אישור",
-    "back": "חזרה"
+    "back": "חזרה",
+    "select": "בחר...",
+    "qty": "כמות"
+  },
+  "nav": {
+    "dashboard": "לוח בקרה",
+    "orders": "הזמנות",
+    "customers": "לקוחות",
+    "recipes": "מתכונים",
+    "inventory": "מלאי",
+    "payments": "תשלומים",
+    "settings": "הגדרות",
+    "more": "עוד"
   },
   "auth": {
     "login": "התחברות",
@@ -65,6 +74,8 @@
     "noItems": "אין פריטים",
     "orderNum": "הזמנה",
     "advance": "קדם",
+    "revert": "חזור",
+    "createdAt": "תאריך יצירה",
     "details": "פרטים",
     "recipe": "מתכון",
     "empty": "אין הזמנות עדיין",
@@ -97,6 +108,7 @@
     "costPerUnit": "עלות ליחידה",
     "steps": "שלבים",
     "addStep": "הוסף שלב",
+    "minutes": "דק׳",
     "subRecipes": "תת-מתכונים",
     "noSubRecipes": "אין תת-מתכונים.",
     "noSteps": "לא נוספו שלבים.",
@@ -125,7 +137,16 @@
     "costPerUnit": "עלות ליחידה (ש\"ח)",
     "empty": "אין פריטי מלאי",
     "emptyDesc": "הוסף מרכיבים וחומרים למעקב רמות מלאי.",
-    "searchPlaceholder": "חפש במלאי..."
+    "searchPlaceholder": "חפש במלאי...",
+    "statusGood": "תקין",
+    "statusOk": "סביר",
+    "statusLow": "נמוך",
+    "statusOut": "אזל",
+    "adjustAdd": "הוספה",
+    "adjustUse": "שימוש",
+    "adjustSet": "קביעה",
+    "deleteTitle": "למחוק פריט?",
+    "deleteMsg": "הפריט יימחק לצמיתות."
   },
   "customers": {
     "name": "שם",

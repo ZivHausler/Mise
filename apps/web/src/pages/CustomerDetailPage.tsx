@@ -101,9 +101,9 @@ export default function CustomerDetailPage() {
                     <td className="px-3 py-2">#{o.orderNumber ?? o.id}</td>
                     <td className="px-3 py-2">{o.dueDate ?? o.createdAt}</td>
                     <td className="px-3 py-2 text-center">
-                      <StatusBadge variant={o.status} label={o.status} />
+                      <StatusBadge variant={['received','in_progress','ready','delivered'][o.status]} label={['received','in_progress','ready','delivered'][o.status]} />
                     </td>
-                    <td className="px-3 py-2 text-end font-mono">{o.total} NIS</td>
+                    <td className="px-3 py-2 text-end font-mono">{o.total} {t('common.currency')}</td>
                   </tr>
                 ))}
                 {(c.orders ?? []).length === 0 && (

@@ -6,27 +6,30 @@ const createOrderSchema = z.object({
   customerId: z.string().uuid(),
   items: z.array(z.object({
     recipeId: z.string().max(100),
+    recipeName: z.string().max(200).optional(),
     quantity: z.number().int().positive().max(10000),
+    price: z.number().min(0).optional(),
     notes: z.string().max(1000).optional(),
   })).min(1).max(100),
   notes: z.string().max(2000).optional(),
-  dueDate: z.string().datetime().optional().transform((v) => v ? new Date(v) : undefined),
+  dueDate: z.string().optional().transform((v) => v ? new Date(v) : undefined),
 });
 
 const updateOrderStatusSchema = z.object({
-  status: z.enum(['received', 'in_progress', 'ready', 'delivered']),
+  status: z.number().int().min(0).max(3),
 });
 
 const updateOrderSchema = z.object({
   notes: z.string().max(2000).optional(),
-  dueDate: z.string().datetime().optional().transform((v) => v ? new Date(v) : undefined),
+  dueDate: z.string().optional().transform((v) => v ? new Date(v) : undefined),
 });
 
 export class OrderController {
   constructor(private orderService: OrderService) {}
 
   async getAll(request: FastifyRequest<{ Querystring: { status?: string } }>, reply: FastifyReply) {
-    const filters = request.query.status ? { status: request.query.status as any } : undefined;
+    const statusParam = request.query.status;
+    const filters = statusParam !== undefined ? { status: Number(statusParam) as any } : undefined;
     const orders = await this.orderService.getAll(filters);
     return reply.send({ success: true, data: orders });
   }

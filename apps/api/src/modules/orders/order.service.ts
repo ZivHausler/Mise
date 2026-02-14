@@ -42,18 +42,24 @@ export class OrderService {
   async create(data: CreateOrderDTO): Promise<Order> {
     let totalAmount = 0;
 
-    // Calculate total from recipe prices
-    if (this.recipeService) {
-      for (const item of data.items) {
+    for (const item of data.items) {
+      let unitPrice = (item as any).price ?? 0;
+      let recipeName = (item as any).recipeName ?? '';
+
+      // Enrich from recipe service if available
+      if (this.recipeService) {
         try {
           const recipe = await this.recipeService.getById(item.recipeId);
-          const unitPrice = recipe.sellingPrice ?? recipe.totalCost ?? 0;
-          (item as any).unitPrice = unitPrice;
-          totalAmount += unitPrice * item.quantity;
+          if (!unitPrice) unitPrice = recipe.sellingPrice ?? recipe.totalCost ?? 0;
+          if (!recipeName) recipeName = recipe.name ?? '';
         } catch {
-          (item as any).unitPrice = 0;
+          // recipe not found, use frontend-provided values
         }
       }
+
+      (item as any).unitPrice = unitPrice;
+      (item as any).recipeName = recipeName;
+      totalAmount += unitPrice * item.quantity;
     }
 
     const order = await this.createOrderUseCase.execute({ ...data, totalAmount });

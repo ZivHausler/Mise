@@ -1,38 +1,36 @@
 import React, { useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { ChevronRight, Trash2, Edit } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Trash2, Edit } from 'lucide-react';
 import { Page, Card, Section, Stack, Row } from '@/components/Layout';
 import { Breadcrumbs } from '@/components/Breadcrumbs';
 import { StatusBadge } from '@/components/DataDisplay';
 import { Button } from '@/components/Button';
 import { PageLoading } from '@/components/Feedback';
 import { ConfirmModal } from '@/components/Modal';
-import { useOrder, useUpdateOrder, useDeleteOrder } from '@/api/hooks';
-
-const nextStatusMap: Record<string, string | null> = {
-  received: 'in_progress',
-  in_progress: 'ready',
-  ready: 'delivered',
-  delivered: null,
-};
+import { useOrder, useUpdateOrderStatus, useDeleteOrder } from '@/api/hooks';
+import { ORDER_STATUS, getStatusLabel } from '@/utils/orderStatus';
 
 export default function OrderDetailPage() {
   const { id } = useParams<{ id: string }>();
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { data: order, isLoading } = useOrder(id!);
-  const updateOrder = useUpdateOrder();
+  const updateOrderStatus = useUpdateOrderStatus();
   const deleteOrder = useDeleteOrder();
   const [showDelete, setShowDelete] = React.useState(false);
 
   const o = order as any;
 
   const handleAdvance = useCallback(() => {
-    if (!o) return;
-    const next = nextStatusMap[o.status];
-    if (next) updateOrder.mutate({ id: o.id, status: next });
-  }, [o, updateOrder]);
+    if (!o || o.status >= ORDER_STATUS.DELIVERED) return;
+    updateOrderStatus.mutate({ id: o.id, status: o.status + 1 });
+  }, [o, updateOrderStatus]);
+
+  const handleRevert = useCallback(() => {
+    if (!o || o.status <= ORDER_STATUS.RECEIVED) return;
+    updateOrderStatus.mutate({ id: o.id, status: o.status - 1 });
+  }, [o, updateOrderStatus]);
 
   const handleDelete = useCallback(() => {
     if (!o) return;
@@ -47,25 +45,35 @@ export default function OrderDetailPage() {
       <Breadcrumbs
         items={[
           { label: t('nav.orders'), path: '/orders' },
-          { label: `#${o.orderNumber ?? o.id}` },
+          { label: `#${o.orderNumber ?? o.id.slice(0, 8)}` },
         ]}
       />
 
       <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-3">
           <h1 className="font-heading text-h1 text-neutral-800">
-            {t('orders.orderNum', 'Order')} #{o.orderNumber ?? o.id}
+            {t('orders.orderNum', 'Order')} #{o.orderNumber ?? o.id.slice(0, 8)}
           </h1>
-          <StatusBadge variant={o.status} label={t(`orders.status.${o.status}`, o.status)} />
+          <StatusBadge variant={getStatusLabel(o.status)} label={t(`orders.status.${getStatusLabel(o.status)}`, getStatusLabel(o.status))} />
         </div>
         <Row gap={2}>
-          {nextStatusMap[o.status] && (
+          {o.status > ORDER_STATUS.RECEIVED && (
+            <Button
+              variant="secondary"
+              icon={<ChevronLeft className="h-4 w-4 rtl:scale-x-[-1]" />}
+              onClick={handleRevert}
+              loading={updateOrderStatus.isPending}
+            >
+              {t('orders.revert', 'Back')}
+            </Button>
+          )}
+          {o.status < ORDER_STATUS.DELIVERED && (
             <Button
               variant="primary"
               icon={<ChevronRight className="h-4 w-4 rtl:scale-x-[-1]" />}
               iconPosition="end"
               onClick={handleAdvance}
-              loading={updateOrder.isPending}
+              loading={updateOrderStatus.isPending}
             >
               {t('orders.advance', 'Advance')}
             </Button>
@@ -84,8 +92,9 @@ export default function OrderDetailPage() {
           <Section title={t('orders.details', 'Details')}>
             <Stack gap={3}>
               <DetailRow label={t('orders.customer', 'Customer')} value={o.customerName ?? '-'} />
-              <DetailRow label={t('orders.dueDate', 'Due Date')} value={o.dueDate ?? '-'} />
-              <DetailRow label={t('orders.total', 'Total')} value={`${o.total ?? 0} NIS`} />
+              <DetailRow label={t('orders.createdAt', 'Created')} value={o.createdAt ? new Date(o.createdAt).toLocaleDateString() : '-'} />
+              <DetailRow label={t('orders.dueDate', 'Due Date')} value={o.dueDate ? new Date(o.dueDate).toLocaleDateString() : '-'} />
+              <DetailRow label={t('orders.total', 'Total')} value={`${o.totalAmount ?? 0} ${t('common.currency')}`} />
             </Stack>
           </Section>
         </Card>
@@ -105,9 +114,9 @@ export default function OrderDetailPage() {
                   <tbody>
                     {o.items.map((item: any, i: number) => (
                       <tr key={i} className="border-b border-neutral-100">
-                        <td className="px-3 py-2">{item.recipeName ?? item.name}</td>
+                        <td className="px-3 py-2">{item.recipeName ?? item.name ?? '-'}</td>
                         <td className="px-3 py-2 text-end font-mono">{item.quantity}</td>
-                        <td className="px-3 py-2 text-end font-mono">{item.price} NIS</td>
+                        <td className="px-3 py-2 text-end font-mono">{item.unitPrice ?? item.price ?? 0} {t('common.currency')}</td>
                       </tr>
                     ))}
                   </tbody>

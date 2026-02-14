@@ -1,4 +1,5 @@
 import type { Order, CreateOrderDTO, OrderStatus, OrderItem } from './order.types.js';
+import { ORDER_STATUS } from './order.types.js';
 
 export interface IOrderRepository {
   findById(id: string): Promise<Order | null>;
@@ -15,7 +16,10 @@ import { getPool } from '../../core/database/postgres.js';
 export class PgOrderRepository implements IOrderRepository {
   async findById(id: string): Promise<Order | null> {
     const pool = getPool();
-    const result = await pool.query('SELECT * FROM orders WHERE id = $1', [id]);
+    const result = await pool.query(
+      `SELECT o.*, c.name as customer_name FROM orders o LEFT JOIN customers c ON o.customer_id = c.id WHERE o.id = $1`,
+      [id],
+    );
     return result.rows[0] ? this.mapRow(result.rows[0]) : null;
   }
 
@@ -30,13 +34,13 @@ export class PgOrderRepository implements IOrderRepository {
 
   async findAll(filters?: { status?: OrderStatus }): Promise<Order[]> {
     const pool = getPool();
-    let query = 'SELECT * FROM orders';
+    let query = 'SELECT o.*, c.name as customer_name FROM orders o LEFT JOIN customers c ON o.customer_id = c.id';
     const params: unknown[] = [];
-    if (filters?.status) {
-      query += ' WHERE status = $1';
+    if (filters?.status !== undefined) {
+      query += ' WHERE o.status = $1';
       params.push(filters.status);
     }
-    query += ' ORDER BY created_at DESC';
+    query += ' ORDER BY o.created_at DESC';
     const result = await pool.query(query, params);
     return result.rows.map((r: Record<string, unknown>) => this.mapRow(r));
   }
@@ -45,10 +49,13 @@ export class PgOrderRepository implements IOrderRepository {
     const pool = getPool();
     const items = JSON.stringify(data.items);
     const result = await pool.query(
-      `INSERT INTO orders (id, customer_id, items, status, total_amount, notes, due_date, created_at, updated_at)
-       VALUES (gen_random_uuid(), $1, $2, 'received', $3, $4, $5, NOW(), NOW())
-       RETURNING *`,
-      [data.customerId, items, data.totalAmount, data.notes ?? null, data.dueDate ?? null],
+      `WITH new_order AS (
+        INSERT INTO orders (id, customer_id, items, status, total_amount, notes, due_date, created_at, updated_at)
+        VALUES (gen_random_uuid(), $1, $2, $3, $4, $5, $6, NOW(), NOW())
+        RETURNING *
+      )
+      SELECT o.*, c.name as customer_name FROM new_order o LEFT JOIN customers c ON o.customer_id = c.id`,
+      [data.customerId, items, ORDER_STATUS.RECEIVED, data.totalAmount, data.notes ?? null, data.dueDate ?? null],
     );
     return this.mapRow(result.rows[0]);
   }
@@ -100,8 +107,9 @@ export class PgOrderRepository implements IOrderRepository {
     return {
       id: row['id'] as string,
       customerId: row['customer_id'] as string,
+      customerName: (row['customer_name'] as string) || undefined,
       items,
-      status: row['status'] as OrderStatus,
+      status: Number(row['status']) as OrderStatus,
       totalAmount: Number(row['total_amount']),
       notes: row['notes'] as string | undefined,
       dueDate: row['due_date'] ? new Date(row['due_date'] as string) : undefined,
