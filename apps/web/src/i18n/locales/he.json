@@ -3,6 +3,9 @@
     "name": "Mise",
     "tagline": "ניהול מאפייה"
   },
+  "common": {
+    "currency": "₪"
+  },
   "nav": {
     "dashboard": "לוח בקרה",
     "orders": "הזמנות",

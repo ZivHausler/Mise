@@ -3,6 +3,9 @@
     "name": "Mise",
     "tagline": "Bakery Management"
   },
+  "common": {
+    "currency": "NIS"
+  },
   "nav": {
     "dashboard": "Dashboard",
     "orders": "Orders",
