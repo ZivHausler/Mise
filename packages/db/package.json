@@ -1,0 +1,34 @@
+{
+  "name": "@mise/db",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsup src/index.ts --format esm --dts",
+    "dev": "tsup src/index.ts --format esm --dts --watch",
+    "migrate": "echo 'Migration runner not yet configured'",
+    "seed": "echo 'Seed runner not yet configured'",
+    "lint": "eslint src/ --ext .ts",
+    "type-check": "tsc --noEmit",
+    "clean": "rm -rf dist .turbo"
+  },
+  "dependencies": {
+    "drizzle-orm": "^0.30.0",
+    "pg": "^8.11.0",
+    "mongodb": "^6.6.0"
+  },
+  "devDependencies": {
+    "@types/pg": "^8.11.0",
+    "drizzle-kit": "^0.21.0",
+    "tsup": "^8.0.0",
+    "typescript": "^5.4.0"
+  }
+}
