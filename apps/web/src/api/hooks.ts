@@ -18,6 +18,11 @@ async function putApi<T>(url: string, body: unknown): Promise<T> {
   return data.data ?? data;
 }
 
+async function patchApi<T>(url: string, body: unknown): Promise<T> {
+  const { data } = await apiClient.patch(url, body);
+  return data.data ?? data;
+}
+
 async function deleteApi(url: string): Promise<void> {
   await apiClient.delete(url);
 }
@@ -64,6 +69,16 @@ export function useUpdateOrder() {
   const addToast = useToastStore((s) => s.addToast);
   return useMutation({
     mutationFn: ({ id, ...body }: { id: string } & Record<string, unknown>) => putApi(`/orders/${id}`, body),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['orders'] }); addToast('success', 'Order updated'); },
+    onError: () => addToast('error', 'Failed to update order'),
+  });
+}
+
+export function useUpdateOrderStatus() {
+  const qc = useQueryClient();
+  const addToast = useToastStore((s) => s.addToast);
+  return useMutation({
+    mutationFn: ({ id, status }: { id: string; status: number }) => patchApi(`/orders/${id}/status`, { status }),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['orders'] }); addToast('success', 'Order updated'); },
     onError: () => addToast('error', 'Failed to update order'),
   });
@@ -144,6 +159,16 @@ export function useUpdateInventoryItem() {
     mutationFn: ({ id, ...body }: { id: string } & Record<string, unknown>) => putApi(`/inventory/${id}`, body),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['inventory'] }); addToast('success', 'Item updated'); },
     onError: () => addToast('error', 'Failed to update item'),
+  });
+}
+
+export function useDeleteInventoryItem() {
+  const qc = useQueryClient();
+  const addToast = useToastStore((s) => s.addToast);
+  return useMutation({
+    mutationFn: (id: string) => deleteApi(`/inventory/${id}`),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['inventory'] }); addToast('success', 'Item deleted'); },
+    onError: () => addToast('error', 'Failed to delete item'),
   });
 }
 

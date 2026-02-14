@@ -7,7 +7,7 @@ import { StatCard, StatusBadge } from '@/components/DataDisplay';
 import { Button } from '@/components/Button';
 import { PageLoading } from '@/components/Feedback';
 import { useDashboardStats, useOrders } from '@/api/hooks';
-import type { OrderStatus } from '@mise/shared';
+import { ORDER_STATUS, getStatusLabel } from '@/utils/orderStatus';
 
 export default function DashboardPage() {
   const { t, i18n } = useTranslation();
@@ -18,8 +18,8 @@ export default function DashboardPage() {
   const dashStats = stats as any;
 
   const ordersByStatus = useMemo(() => {
-    if (!orders) return {} as Record<string, unknown[]>;
-    const grouped: Record<string, unknown[]> = { received: [], in_progress: [], ready: [], delivered: [] };
+    if (!orders) return {} as Record<number, unknown[]>;
+    const grouped: Record<number, unknown[]> = { 0: [], 1: [], 2: [], 3: [] };
     (orders as any[]).forEach((o) => {
       if (grouped[o.status]) grouped[o.status].push(o);
     });
@@ -57,10 +57,12 @@ export default function DashboardPage() {
 
       <Section title={t('dashboard.orderPipeline', 'Order Pipeline')}>
         <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-          {(['received', 'in_progress', 'ready', 'delivered'] as OrderStatus[]).map((status) => (
+          {([ORDER_STATUS.RECEIVED, ORDER_STATUS.IN_PROGRESS, ORDER_STATUS.READY, ORDER_STATUS.DELIVERED] as const).map((status) => {
+            const label = getStatusLabel(status);
+            return (
             <div key={status} className="rounded-lg border border-neutral-200 bg-white p-3">
               <div className="mb-2 flex items-center justify-between">
-                <StatusBadge variant={status} label={statusLabels[status]} />
+                <StatusBadge variant={label} label={statusLabels[label]} />
                 <span className="text-caption font-medium text-neutral-500">
                   {ordersByStatus[status]?.length ?? 0}
                 </span>
@@ -72,13 +74,14 @@ export default function DashboardPage() {
                     onClick={() => navigate(`/orders/${order.id}`)}
                     className="cursor-pointer rounded-md border border-neutral-100 p-2 text-body-sm hover:bg-primary-50"
                   >
-                    <p className="font-medium text-neutral-800">#{order.orderNumber ?? order.id}</p>
+                    <p className="font-medium text-neutral-800">#{order.orderNumber ?? order.id?.slice(0, 8)}</p>
                     <p className="text-caption text-neutral-500">{order.customerName ?? 'Customer'}</p>
                   </div>
                 ))}
               </div>
             </div>
-          ))}
+            );
+          })}
         </div>
       </Section>
 

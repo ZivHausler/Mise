@@ -6,74 +6,62 @@ import { Page, PageHeader } from '@/components/Layout';
 import { Button } from '@/components/Button';
 import { DataTable, StatusBadge, EmptyState, type Column } from '@/components/DataDisplay';
 import { PageLoading } from '@/components/Feedback';
-import { useOrders, useUpdateOrder } from '@/api/hooks';
-import type { OrderStatus } from '@mise/shared';
+import { useOrders, useUpdateOrderStatus } from '@/api/hooks';
+import { ORDER_STATUS, getStatusLabel } from '@/utils/orderStatus';
 
 type ViewMode = 'pipeline' | 'list';
-
-const statusLabels: Record<OrderStatus, string> = {
-  received: 'Received',
-  in_progress: 'In Progress',
-  ready: 'Ready',
-  delivered: 'Delivered',
-};
-
-const nextStatus: Record<string, OrderStatus | null> = {
-  received: 'in_progress',
-  in_progress: 'ready',
-  ready: 'delivered',
-  delivered: null,
-};
 
 export default function OrdersPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { data: orders, isLoading } = useOrders();
-  const updateOrder = useUpdateOrder();
+  const updateOrderStatus = useUpdateOrderStatus();
   const [viewMode, setViewMode] = useState<ViewMode>('pipeline');
 
   const handleAdvance = useCallback(
     (order: any) => {
-      const next = nextStatus[order.status];
-      if (next) updateOrder.mutate({ id: order.id, status: next });
+      const next = order.status + 1;
+      if (next <= ORDER_STATUS.DELIVERED) updateOrderStatus.mutate({ id: order.id, status: next });
     },
-    [updateOrder]
+    [updateOrderStatus]
   );
 
   const ordersByStatus = useMemo(() => {
-    if (!orders) return {} as Record<string, any[]>;
-    const grouped: Record<string, any[]> = { received: [], in_progress: [], ready: [], delivered: [] };
+    if (!orders) return {} as Record<number, any[]>;
+    const grouped: Record<number, any[]> = { 0: [], 1: [], 2: [], 3: [] };
     (orders as any[]).forEach((o) => {
-      if (grouped[o.status]) grouped[o.status].push(o);
+      const num = o.status;
+      if (grouped[num]) grouped[num].push(o);
     });
     return grouped;
   }, [orders]);
 
   const columns: Column<any>[] = useMemo(
     () => [
-      { key: 'orderNumber', header: '#', sortable: true },
+      { key: 'orderNumber', header: '#', sortable: true, render: (row: any) => `#${row.orderNumber ?? row.id?.slice(0, 8)}` },
       { key: 'customerName', header: t('orders.customer', 'Customer'), sortable: true },
       {
         key: 'status',
         header: t('orders.statusLabel', 'Status'),
         align: 'center',
-        render: (row: any) => (
-          <StatusBadge variant={row.status} label={t(`orders.status.${row.status}`, statusLabels[row.status as OrderStatus])} />
-        ),
+        render: (row: any) => {
+          const label = getStatusLabel(row.status);
+          return <StatusBadge variant={label} label={t(`orders.status.${label}`, label)} />;
+        },
       },
-      { key: 'dueDate', header: t('orders.dueDate', 'Due Date'), sortable: true },
+      { key: 'dueDate', header: t('orders.dueDate', 'Due Date'), sortable: true, render: (row: any) => row.dueDate ? new Date(row.dueDate).toLocaleDateString() : '-' },
       {
-        key: 'total',
+        key: 'totalAmount',
         header: t('orders.total', 'Total'),
         align: 'end',
-        render: (row: any) => <span className="font-mono">{row.total} NIS</span>,
+        render: (row: any) => <span className="font-mono">{row.totalAmount ?? 0} {t('common.currency')}</span>,
       },
       {
         key: 'actions',
         header: '',
         align: 'end',
         render: (row: any) =>
-          nextStatus[row.status] ? (
+          row.status < ORDER_STATUS.DELIVERED ? (
             <Button size="sm" variant="ghost" onClick={(e: React.MouseEvent) => { e.stopPropagation(); handleAdvance(row); }}>
               <ChevronRight className="h-4 w-4 rtl:scale-x-[-1]" />
             </Button>
@@ -114,41 +102,44 @@ export default function OrdersPage() {
 
       {viewMode === 'pipeline' ? (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {(['received', 'in_progress', 'ready', 'delivered'] as OrderStatus[]).map((status) => (
-            <div key={status} className="rounded-lg border border-neutral-200 bg-white">
-              <div className="flex items-center justify-between border-b border-neutral-100 p-3">
-                <StatusBadge variant={status} label={t(`orders.status.${status}`, statusLabels[status])} />
-                <span className="text-caption font-medium text-neutral-500">{ordersByStatus[status]?.length ?? 0}</span>
-              </div>
-              <div className="flex flex-col gap-2 p-3">
-                {(ordersByStatus[status] ?? []).length === 0 ? (
-                  <p className="py-4 text-center text-caption text-neutral-400">{t('common.noResults')}</p>
-                ) : (
-                  (ordersByStatus[status] ?? []).map((order: any) => (
-                    <div
-                      key={order.id}
-                      onClick={() => navigate(`/orders/${order.id}`)}
-                      className="cursor-pointer rounded-md border border-neutral-100 p-3 transition-shadow hover:shadow-sm"
-                    >
-                      <div className="flex items-center justify-between">
-                        <span className="text-body-sm font-medium text-neutral-800">#{order.orderNumber ?? order.id}</span>
-                        {nextStatus[status] && (
-                          <button
-                            onClick={(e) => { e.stopPropagation(); handleAdvance(order); }}
-                            className="rounded p-1 text-neutral-400 hover:bg-primary-50 hover:text-primary-500"
-                          >
-                            <ChevronRight className="h-4 w-4 rtl:scale-x-[-1]" />
-                          </button>
-                        )}
+          {([ORDER_STATUS.RECEIVED, ORDER_STATUS.IN_PROGRESS, ORDER_STATUS.READY, ORDER_STATUS.DELIVERED] as const).map((status) => {
+            const label = STATUS_LABELS[status];
+            return (
+              <div key={status} className="rounded-lg border border-neutral-200 bg-white">
+                <div className="flex items-center justify-between border-b border-neutral-100 p-3">
+                  <StatusBadge variant={label} label={t(`orders.status.${label}`, STATUS_DISPLAY[label])} />
+                  <span className="text-caption font-medium text-neutral-500">{ordersByStatus[status]?.length ?? 0}</span>
+                </div>
+                <div className="flex flex-col gap-2 p-3">
+                  {(ordersByStatus[status] ?? []).length === 0 ? (
+                    <p className="py-4 text-center text-caption text-neutral-400">{t('common.noResults')}</p>
+                  ) : (
+                    (ordersByStatus[status] ?? []).map((order: any) => (
+                      <div
+                        key={order.id}
+                        onClick={() => navigate(`/orders/${order.id}`)}
+                        className="cursor-pointer rounded-md border border-neutral-100 p-3 transition-shadow hover:shadow-sm"
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="text-body-sm font-medium text-neutral-800">#{order.orderNumber ?? order.id?.slice(0, 8)}</span>
+                          {status < ORDER_STATUS.DELIVERED && (
+                            <button
+                              onClick={(e) => { e.stopPropagation(); handleAdvance(order); }}
+                              className="rounded p-1 text-neutral-400 hover:bg-primary-50 hover:text-primary-500"
+                            >
+                              <ChevronRight className="h-4 w-4 rtl:scale-x-[-1]" />
+                            </button>
+                          )}
+                        </div>
+                        <p className="text-caption text-neutral-500">{order.customerName ?? 'Customer'}</p>
+                        {order.dueDate && <p className="mt-1 text-caption text-neutral-400">{new Date(order.dueDate).toLocaleDateString()}</p>}
                       </div>
-                      <p className="text-caption text-neutral-500">{order.customerName ?? 'Customer'}</p>
-                      {order.dueDate && <p className="mt-1 text-caption text-neutral-400">{order.dueDate}</p>}
-                    </div>
-                  ))
-                )}
+                    ))
+                  )}
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       ) : (
         <DataTable

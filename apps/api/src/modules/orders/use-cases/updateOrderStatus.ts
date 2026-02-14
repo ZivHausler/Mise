@@ -12,10 +12,10 @@ export class UpdateOrderStatusUseCase {
       throw new NotFoundError('Order not found');
     }
 
-    const allowedTransitions = ORDER_STATUS_FLOW[existing.status] ?? [];
-    if (!allowedTransitions.includes(newStatus)) {
+    const allowedTransitions = ORDER_STATUS_FLOW[existing.status as number] ?? [];
+    if (!allowedTransitions.includes(newStatus as number)) {
       throw new ValidationError(
-        `Cannot transition from "${existing.status}" to "${newStatus}". Allowed: ${allowedTransitions.join(', ') || 'none'}`,
+        `Cannot transition from status ${existing.status} to ${newStatus}. Allowed: ${allowedTransitions.join(', ') || 'none'}`,
       );
     }
 
