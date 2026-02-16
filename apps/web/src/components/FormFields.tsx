@@ -2,10 +2,15 @@ import React, { useId } from 'react';
 import { cn } from '@/utils/cn';
 import { ErrorText, InfoText } from './Typography';
 
+export const FieldInfo = React.memo(function FieldInfo({ children, className }: { children: React.ReactNode; className?: string }) {
+  return <p className={cn('mt-0.5 text-xs leading-snug text-neutral-500', className)}>{children}</p>;
+});
+
 interface FieldWrapperProps {
-  label?: string;
+  label?: React.ReactNode;
   error?: string;
   hint?: string;
+  info?: string;
   required?: boolean;
   children: React.ReactNode;
   htmlFor?: string;
@@ -16,6 +21,7 @@ export const FieldWrapper = React.memo(function FieldWrapper({
   label,
   error,
   hint,
+  info,
   required,
   children,
   htmlFor,
@@ -32,6 +38,7 @@ export const FieldWrapper = React.memo(function FieldWrapper({
       {children}
       {hint && !error && <InfoText>{hint}</InfoText>}
       {error && <ErrorText>{error}</ErrorText>}
+      {info && !error && <FieldInfo>{info}</FieldInfo>}
     </div>
   );
 });
@@ -100,7 +107,7 @@ export const TextArea = React.memo(function TextArea({
     <FieldWrapper label={label} error={error} hint={hint} required={required} htmlFor={id} className={className}>
       <textarea
         id={id}
-        className={cn(inputBase, 'min-h-[80px] py-2', error ? inputError : inputDefault)}
+        className={cn(inputBase, 'min-h-[80px] resize-none py-2', error ? inputError : inputDefault)}
         {...props}
       />
     </FieldWrapper>
@@ -209,40 +216,70 @@ export const Toggle = React.memo(function Toggle({ label, checked, onChange, dis
 });
 
 interface NumberInputProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'type' | 'onChange' | 'size'> {
-  label?: string;
+  label?: React.ReactNode;
   error?: string;
   hint?: string;
+  info?: string;
   value: number | '';
   onChange: (value: number | '') => void;
   size?: 'sm' | 'md' | 'lg';
+  suffix?: string;
 }
 
 export const NumberInput = React.memo(function NumberInput({
   label,
   error,
   hint,
+  info,
   required,
   value,
   onChange,
   size = 'md',
   className,
+  step,
+  min,
+  max,
+  suffix,
   ...props
 }: NumberInputProps) {
   const id = useId();
+  const [rawValue, setRawValue] = React.useState<string>('');
+  const isFocused = React.useRef(false);
+
+  // Display raw value while focused (preserves trailing dot), otherwise show the numeric value
+  const displayValue = isFocused.current ? rawValue : (value === '' ? '' : String(value));
+
   return (
-    <FieldWrapper label={label} error={error} hint={hint} required={required} htmlFor={id} className={className}>
-      <input
-        id={id}
-        type="number"
-        dir="ltr"
-        value={value}
-        onChange={(e) => {
-          const v = e.target.value;
-          onChange(v === '' ? '' : Number(v));
-        }}
-        className={cn(inputBase, sizeClasses[size], error ? inputError : inputDefault, 'font-mono')}
-        {...props}
-      />
+    <FieldWrapper label={label} error={error} hint={hint} info={info} required={required} htmlFor={id} className={className}>
+      <div className="relative">
+        <input
+          id={id}
+          type="text"
+          inputMode="decimal"
+          pattern="[0-9]*\.?[0-9]*"
+          dir="ltr"
+          value={displayValue}
+          onFocus={() => { isFocused.current = true; setRawValue(value === '' ? '' : String(value)); }}
+          onBlur={() => { isFocused.current = false; setRawValue(''); }}
+          onChange={(e) => {
+            const raw = e.target.value;
+            if (raw === '') { setRawValue(''); onChange(''); return; }
+            // Allow digits and at most one decimal point
+            const cleaned = raw.replace(/[^\d.]/g, '').replace(/(\..*)\./g, '$1');
+            setRawValue(cleaned);
+            if (cleaned === '' || cleaned === '.') return;
+            const num = Number(cleaned);
+            if (!isNaN(num)) onChange(num);
+          }}
+          className={cn(inputBase, sizeClasses[size], error ? inputError : inputDefault, 'font-mono', suffix && 'pr-12')}
+          {...props}
+        />
+        {suffix && (
+          <span className="pointer-events-none absolute inset-y-0 end-0 flex items-center pe-3 text-body-sm text-neutral-400">
+            {suffix}
+          </span>
+        )}
+      </div>
     </FieldWrapper>
   );
 });
