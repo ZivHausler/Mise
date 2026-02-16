@@ -10,6 +10,7 @@ import { PageLoading } from '@/components/Feedback';
 import { ConfirmModal } from '@/components/Modal';
 import { useOrder, useUpdateOrderStatus, useDeleteOrder } from '@/api/hooks';
 import { ORDER_STATUS, getStatusLabel } from '@/utils/orderStatus';
+import { useFormatDate } from '@/utils/dateFormat';
 
 export default function OrderDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -20,6 +21,7 @@ export default function OrderDetailPage() {
   const deleteOrder = useDeleteOrder();
   const [showDelete, setShowDelete] = React.useState(false);
 
+  const formatDate = useFormatDate();
   const o = order as any;
 
   const handleAdvance = useCallback(() => {
@@ -45,14 +47,14 @@ export default function OrderDetailPage() {
       <Breadcrumbs
         items={[
           { label: t('nav.orders'), path: '/orders' },
-          { label: `#${o.orderNumber ?? o.id.slice(0, 8)}` },
+          { label: `#${o.orderNumber}` },
         ]}
       />
 
       <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-3">
           <h1 className="font-heading text-h1 text-neutral-800">
-            {t('orders.orderNum', 'Order')} #{o.orderNumber ?? o.id.slice(0, 8)}
+            {t('orders.orderNum', 'Order')} #{o.orderNumber}
           </h1>
           <StatusBadge variant={getStatusLabel(o.status)} label={t(`orders.status.${getStatusLabel(o.status)}`, getStatusLabel(o.status))} />
         </div>
@@ -94,8 +96,8 @@ export default function OrderDetailPage() {
           <Section title={t('orders.details', 'Details')}>
             <Stack gap={3}>
               <DetailRow label={t('orders.customer', 'Customer')} value={o.customerName ?? '-'} />
-              <DetailRow label={t('orders.createdAt', 'Created')} value={o.createdAt ? new Date(o.createdAt).toLocaleDateString() : '-'} />
-              <DetailRow label={t('orders.dueDate', 'Due Date')} value={o.dueDate ? new Date(o.dueDate).toLocaleDateString() : '-'} />
+              <DetailRow label={t('orders.createdAt', 'Created')} value={o.createdAt ? formatDate(o.createdAt) : '-'} />
+              <DetailRow label={t('orders.dueDate', 'Due Date')} value={o.dueDate ? formatDate(o.dueDate) : '-'} />
               <DetailRow label={t('orders.total', 'Total')} value={`${o.totalAmount ?? 0} ${t('common.currency')}`} />
             </Stack>
           </Section>

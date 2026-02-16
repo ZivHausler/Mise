@@ -1,5 +1,6 @@
 import type { IPaymentRepository } from './payment.repository.js';
 import type { EventBus } from '../../core/events/event-bus.js';
+import type { PaginationOptions, PaginatedResult } from './payment.repository.js';
 import type { CreatePaymentDTO, Payment, OrderPaymentSummary } from './payment.types.js';
 import { CreatePaymentUseCase } from './use-cases/createPayment.js';
 import { GetPaymentSummaryUseCase } from './use-cases/getPaymentSummary.js';
@@ -20,6 +21,14 @@ export class PaymentService {
     this.createPaymentUseCase = new CreatePaymentUseCase(paymentRepository);
     this.getPaymentSummaryUseCase = new GetPaymentSummaryUseCase(paymentRepository);
     this.deletePaymentUseCase = new DeletePaymentUseCase(paymentRepository);
+  }
+
+  async getAll(options?: PaginationOptions): Promise<PaginatedResult<Payment>> {
+    return this.paymentRepository.findAll(options);
+  }
+
+  async getByCustomerId(customerId: string, options?: PaginationOptions): Promise<PaginatedResult<Payment>> {
+    return this.paymentRepository.findByCustomerId(customerId, options);
   }
 
   async getByOrderId(orderId: string): Promise<Payment[]> {

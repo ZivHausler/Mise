@@ -1,25 +1,39 @@
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Edit, Trash2 } from 'lucide-react';
+import { Edit, Trash2, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Page, Card, Section, Stack, Row } from '@/components/Layout';
 import { Breadcrumbs } from '@/components/Breadcrumbs';
 import { Button } from '@/components/Button';
 import { StatusBadge } from '@/components/DataDisplay';
 import { PageLoading } from '@/components/Feedback';
 import { ConfirmModal } from '@/components/Modal';
-import { useCustomer, useDeleteCustomer } from '@/api/hooks';
+import { useCustomer, useCustomerOrders, useCustomerPayments, useDeleteCustomer } from '@/api/hooks';
+import { getStatusLabel } from '@/utils/orderStatus';
+import { useFormatDate } from '@/utils/dateFormat';
 
 export default function CustomerDetailPage() {
   const { id } = useParams<{ id: string }>();
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { data: customer, isLoading } = useCustomer(id!);
+  const [ordersPage, setOrdersPage] = useState(1);
+  const [paymentsPage, setPaymentsPage] = useState(1);
+  const { data: customerOrders } = useCustomerOrders(id!, ordersPage);
+  const { data: customerPayments } = useCustomerPayments(id!, paymentsPage);
   const deleteCustomer = useDeleteCustomer();
+  const formatDate = useFormatDate();
   const [showDelete, setShowDelete] = useState(false);
   const [activeTab, setActiveTab] = useState<'orders' | 'payments'>('orders');
 
   const c = customer as any;
+  const ordersData = customerOrders as any;
+  const orders = (ordersData?.orders as any[]) ?? [];
+  const ordersPagination = ordersData?.pagination;
+
+  const paymentsData = customerPayments as any;
+  const payments = (paymentsData?.payments as any[]) ?? [];
+  const paymentsPagination = paymentsData?.pagination;
 
   if (isLoading) return <PageLoading />;
   if (!c) return null;
@@ -92,21 +106,24 @@ export default function CustomerDetailPage() {
                 </tr>
               </thead>
               <tbody>
-                {(c.orders ?? []).map((o: any) => (
-                  <tr
-                    key={o.id}
-                    className="cursor-pointer border-b border-neutral-100 hover:bg-primary-50"
-                    onClick={() => navigate(`/orders/${o.id}`)}
-                  >
-                    <td className="px-3 py-2">#{o.orderNumber ?? o.id}</td>
-                    <td className="px-3 py-2">{o.dueDate ?? o.createdAt}</td>
-                    <td className="px-3 py-2 text-center">
-                      <StatusBadge variant={['received','in_progress','ready','delivered'][o.status]} label={['received','in_progress','ready','delivered'][o.status]} />
-                    </td>
-                    <td className="px-3 py-2 text-end font-mono">{o.total} {t('common.currency')}</td>
-                  </tr>
-                ))}
-                {(c.orders ?? []).length === 0 && (
+                {orders.map((o: any) => {
+                  const label = getStatusLabel(o.status);
+                  return (
+                    <tr
+                      key={o.id}
+                      className="cursor-pointer border-b border-neutral-100 hover:bg-primary-50"
+                      onClick={() => navigate(`/orders/${o.id}`)}
+                    >
+                      <td className="px-3 py-2">#{o.orderNumber}</td>
+                      <td className="px-3 py-2">{formatDate(o.dueDate ?? o.createdAt)}</td>
+                      <td className="px-3 py-2 text-center">
+                        <StatusBadge variant={label} label={t(`orders.status.${label}`, label)} />
+                      </td>
+                      <td className="px-3 py-2 text-end font-mono">{o.totalAmount} {t('common.currency')}</td>
+                    </tr>
+                  );
+                })}
+                {orders.length === 0 && (
                   <tr>
                     <td colSpan={4} className="px-3 py-8 text-center text-neutral-400">
                       {t('customers.noOrders', 'No orders yet.')}
@@ -115,13 +132,105 @@ export default function CustomerDetailPage() {
                 )}
               </tbody>
             </table>
+            {ordersPagination && ordersPagination.totalPages > 1 && (
+              <div className="flex items-center justify-between border-t border-neutral-200 px-4 py-3">
+                <span className="text-body-sm text-neutral-500">
+                  {t('common.showingOf', '{{from}}-{{to}} of {{total}}', {
+                    from: (ordersPagination.page - 1) * ordersPagination.limit + 1,
+                    to: Math.min(ordersPagination.page * ordersPagination.limit, ordersPagination.total),
+                    total: ordersPagination.total,
+                  })}
+                </span>
+                <div className="flex items-center gap-2">
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    onClick={() => setOrdersPage((p) => p - 1)}
+                    disabled={ordersPagination.page <= 1}
+                  >
+                    <ChevronLeft className="h-4 w-4 rtl:scale-x-[-1]" />
+                  </Button>
+                  <span className="text-body-sm text-neutral-700">
+                    {ordersPagination.page} / {ordersPagination.totalPages}
+                  </span>
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    onClick={() => setOrdersPage((p) => p + 1)}
+                    disabled={ordersPagination.page >= ordersPagination.totalPages}
+                  >
+                    <ChevronRight className="h-4 w-4 rtl:scale-x-[-1]" />
+                  </Button>
+                </div>
+              </div>
+            )}
           </div>
         )}
 
         {activeTab === 'payments' && (
-          <p className="py-8 text-center text-body-sm text-neutral-400">
-            {t('customers.noPayments', 'Payment history will appear here.')}
-          </p>
+          <div className="overflow-x-auto">
+            <table className="w-full text-body-sm">
+              <thead>
+                <tr className="border-b bg-neutral-50">
+                  <th className="px-3 py-2 text-start font-semibold">{t('payments.date', 'Date')}</th>
+                  <th className="px-3 py-2 text-start font-semibold">{t('payments.order', 'Order')}</th>
+                  <th className="px-3 py-2 text-end font-semibold">{t('payments.amount', 'Amount')}</th>
+                  <th className="px-3 py-2 text-start font-semibold">{t('payments.method', 'Method')}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {payments.map((p: any) => (
+                  <tr key={p.id} className="border-b border-neutral-100">
+                    <td className="px-3 py-2">{formatDate(p.createdAt)}</td>
+                    <td className="px-3 py-2">#{p.orderNumber}</td>
+                    <td className="px-3 py-2 text-end font-mono">{p.amount} {t('common.currency')}</td>
+                    <td className="px-3 py-2">
+                      <StatusBadge variant="info" label={p.method === 'cash' ? t('payments.cash', 'Cash') : t('payments.card', 'Card')} />
+                    </td>
+                  </tr>
+                ))}
+                {payments.length === 0 && (
+                  <tr>
+                    <td colSpan={4} className="px-3 py-8 text-center text-neutral-400">
+                      {t('customers.noPayments', 'No payments yet.')}
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+            {paymentsPagination && paymentsPagination.totalPages > 1 && (
+              <div className="flex items-center justify-between border-t border-neutral-200 px-4 py-3">
+                <span className="text-body-sm text-neutral-500">
+                  {t('common.showingOf', '{{from}}-{{to}} of {{total}}', {
+                    from: (paymentsPagination.page - 1) * paymentsPagination.limit + 1,
+                    to: Math.min(paymentsPagination.page * paymentsPagination.limit, paymentsPagination.total),
+                    total: paymentsPagination.total,
+                  })}
+                </span>
+                <div className="flex items-center gap-2">
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    onClick={() => setPaymentsPage((p) => p - 1)}
+                    disabled={paymentsPagination.page <= 1}
+                  >
+                    <ChevronLeft className="h-4 w-4 rtl:scale-x-[-1]" />
+                  </Button>
+                  <span className="text-body-sm text-neutral-700">
+                    {paymentsPagination.page} / {paymentsPagination.totalPages}
+                  </span>
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    onClick={() => setPaymentsPage((p) => p + 1)}
+                    disabled={paymentsPagination.page >= paymentsPagination.totalPages}
+                  >
+                    <ChevronRight className="h-4 w-4 rtl:scale-x-[-1]" />
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>
         )}
       </Card>
 

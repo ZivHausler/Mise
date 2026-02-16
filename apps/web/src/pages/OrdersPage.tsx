@@ -8,6 +8,7 @@ import { DataTable, StatusBadge, EmptyState, type Column } from '@/components/Da
 import { PageLoading } from '@/components/Feedback';
 import { useOrders, useUpdateOrderStatus } from '@/api/hooks';
 import { ORDER_STATUS, STATUS_LABELS, getStatusLabel } from '@/utils/orderStatus';
+import { useFormatDate } from '@/utils/dateFormat';
 
 const STATUS_DISPLAY: Record<string, string> = {
   received: 'Received',
@@ -23,6 +24,7 @@ export default function OrdersPage() {
   const navigate = useNavigate();
   const { data: orders, isLoading } = useOrders();
   const updateOrderStatus = useUpdateOrderStatus();
+  const formatDate = useFormatDate();
   const [viewMode, setViewMode] = useState<ViewMode>('pipeline');
 
   const handleAdvance = useCallback(
@@ -45,7 +47,7 @@ export default function OrdersPage() {
 
   const columns: Column<any>[] = useMemo(
     () => [
-      { key: 'orderNumber', header: '#', sortable: true, render: (row: any) => `#${row.orderNumber ?? row.id?.slice(0, 8)}` },
+      { key: 'orderNumber', header: '#', sortable: true, render: (row: any) => `#${row.orderNumber}` },
       { key: 'customerName', header: t('orders.customer', 'Customer'), sortable: true },
       {
         key: 'status',
@@ -56,7 +58,7 @@ export default function OrdersPage() {
           return <StatusBadge variant={label} label={t(`orders.status.${label}`, label)} />;
         },
       },
-      { key: 'dueDate', header: t('orders.dueDate', 'Due Date'), sortable: true, render: (row: any) => row.dueDate ? new Date(row.dueDate).toLocaleDateString() : '-' },
+      { key: 'dueDate', header: t('orders.dueDate', 'Due Date'), sortable: true, render: (row: any) => row.dueDate ? formatDate(row.dueDate) : '-' },
       {
         key: 'totalAmount',
         header: t('orders.total', 'Total'),
@@ -75,7 +77,7 @@ export default function OrdersPage() {
           ) : null,
       },
     ],
-    [t, handleAdvance]
+    [t, handleAdvance, formatDate]
   );
 
   if (isLoading) return <PageLoading />;
@@ -128,7 +130,7 @@ export default function OrdersPage() {
                         className="cursor-pointer rounded-md border border-neutral-100 p-3 transition-shadow hover:shadow-sm"
                       >
                         <div className="flex items-center justify-between">
-                          <span className="text-body-sm font-medium text-neutral-800">#{order.orderNumber ?? order.id?.slice(0, 8)}</span>
+                          <span className="text-body-sm font-medium text-neutral-800">#{order.orderNumber}</span>
                           {status < ORDER_STATUS.DELIVERED && (
                             <button
                               onClick={(e) => { e.stopPropagation(); handleAdvance(order); }}
@@ -139,7 +141,7 @@ export default function OrdersPage() {
                           )}
                         </div>
                         <p className="text-caption text-neutral-500">{order.customerName ?? 'Customer'}</p>
-                        {order.dueDate && <p className="mt-1 text-caption text-neutral-400">{new Date(order.dueDate).toLocaleDateString()}</p>}
+                        {order.dueDate && <p className="mt-1 text-caption text-neutral-400">{formatDate(order.dueDate)}</p>}
                       </div>
                     ))
                   )}

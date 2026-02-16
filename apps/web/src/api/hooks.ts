@@ -48,6 +48,26 @@ export function useRegister() {
   });
 }
 
+export function useGoogleLogin() {
+  return useMutation({
+    mutationFn: (body: { idToken: string }) => postApi<{ user: unknown; token: string }>('/auth/google', body),
+  });
+}
+
+export function useMergeGoogleToEmail() {
+  return useMutation({
+    mutationFn: (body: { idToken: string; password: string }) =>
+      postApi<{ user: unknown; token: string }>('/auth/google/merge', body),
+  });
+}
+
+export function useMergeEmailToGoogle() {
+  return useMutation({
+    mutationFn: (body: { idToken: string; newPassword: string }) =>
+      postApi<{ user: unknown; token: string }>('/auth/google/merge-password', body),
+  });
+}
+
 // Orders
 export function useOrders() {
   return useQuery({ queryKey: ['orders'], queryFn: () => fetchApi<unknown[]>('/orders') });
@@ -63,7 +83,7 @@ export function useCreateOrder() {
   const { t } = useTranslation();
   return useMutation({
     mutationFn: (body: unknown) => postApi('/orders', body),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['orders'] }); addToast('success', t('toasts.orderCreated')); },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['orders'] }); qc.invalidateQueries({ queryKey: ['dashboard'] }); addToast('success', t('toasts.orderCreated')); },
     onError: () => addToast('error', t('toasts.orderCreateFailed')),
   });
 }
@@ -74,7 +94,7 @@ export function useUpdateOrder() {
   const { t } = useTranslation();
   return useMutation({
     mutationFn: ({ id, ...body }: { id: string } & Record<string, unknown>) => putApi(`/orders/${id}`, body),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['orders'] }); addToast('success', t('toasts.orderUpdated')); },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['orders'] }); qc.invalidateQueries({ queryKey: ['dashboard'] }); addToast('success', t('toasts.orderUpdated')); },
     onError: () => addToast('error', t('toasts.orderUpdateFailed')),
   });
 }
@@ -85,7 +105,7 @@ export function useUpdateOrderStatus() {
   const { t } = useTranslation();
   return useMutation({
     mutationFn: ({ id, status }: { id: string; status: number }) => patchApi(`/orders/${id}/status`, { status }),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['orders'] }); qc.invalidateQueries({ queryKey: ['inventory'] }); addToast('success', t('toasts.orderUpdated')); },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['orders'] }); qc.invalidateQueries({ queryKey: ['inventory'] }); qc.invalidateQueries({ queryKey: ['dashboard'] }); addToast('success', t('toasts.orderUpdated')); },
     onError: () => addToast('error', t('toasts.orderUpdateFailed')),
   });
 }
@@ -96,7 +116,7 @@ export function useDeleteOrder() {
   const { t } = useTranslation();
   return useMutation({
     mutationFn: (id: string) => deleteApi(`/orders/${id}`),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['orders'] }); addToast('success', t('toasts.orderDeleted')); },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['orders'] }); qc.invalidateQueries({ queryKey: ['dashboard'] }); addToast('success', t('toasts.orderDeleted')); },
     onError: () => addToast('error', t('toasts.orderDeleteFailed')),
   });
 }
@@ -226,6 +246,17 @@ export function useCustomer(id: string) {
   return useQuery({ queryKey: ['customers', id], queryFn: () => fetchApi<unknown>(`/customers/${id}`), enabled: !!id });
 }
 
+export function useCustomerOrders(customerId: string, page = 1, limit = 10) {
+  return useQuery({
+    queryKey: ['orders', 'customer', customerId, page, limit],
+    queryFn: async () => {
+      const { data } = await apiClient.get(`/orders/customer/${customerId}?page=${page}&limit=${limit}`);
+      return { orders: data.data, pagination: data.pagination };
+    },
+    enabled: !!customerId,
+  });
+}
+
 export function useCreateCustomer() {
   const qc = useQueryClient();
   const addToast = useToastStore((s) => s.addToast);
@@ -260,8 +291,25 @@ export function useDeleteCustomer() {
 }
 
 // Payments
-export function usePayments() {
-  return useQuery({ queryKey: ['payments'], queryFn: () => fetchApi<unknown[]>('/payments') });
+export function usePayments(page = 1, limit = 10) {
+  return useQuery({
+    queryKey: ['payments', page, limit],
+    queryFn: async () => {
+      const { data } = await apiClient.get(`/payments?page=${page}&limit=${limit}`);
+      return { payments: data.data, pagination: data.pagination };
+    },
+  });
+}
+
+export function useCustomerPayments(customerId: string, page = 1, limit = 10) {
+  return useQuery({
+    queryKey: ['payments', 'customer', customerId, page, limit],
+    queryFn: async () => {
+      const { data } = await apiClient.get(`/payments/customer/${customerId}?page=${page}&limit=${limit}`);
+      return { payments: data.data, pagination: data.pagination };
+    },
+    enabled: !!customerId,
+  });
 }
 
 export function useCreatePayment() {
@@ -273,6 +321,7 @@ export function useCreatePayment() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['payments'] });
       qc.invalidateQueries({ queryKey: ['orders'] });
+      qc.invalidateQueries({ queryKey: ['dashboard'] });
       addToast('success', t('toasts.paymentLogged'));
     },
     onError: () => addToast('error', t('toasts.paymentLogFailed')),

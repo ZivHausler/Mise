@@ -13,6 +13,8 @@ export default async function paymentRoutes(app: FastifyInstance) {
 
   app.addHook('preHandler', authMiddleware);
 
+  app.get('/', (req, reply) => controller.getAll(req as any, reply));
+  app.get('/customer/:customerId', (req, reply) => controller.getByCustomerId(req as any, reply));
   app.get('/order/:orderId', (req, reply) => controller.getByOrderId(req as any, reply));
   app.get('/order/:orderId/summary', (req, reply) => controller.getPaymentSummary(req as any, reply));
   app.post('/', (req, reply) => controller.create(req, reply));

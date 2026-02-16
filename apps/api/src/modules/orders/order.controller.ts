@@ -39,9 +39,12 @@ export class OrderController {
     return reply.send({ success: true, data: order });
   }
 
-  async getByCustomerId(request: FastifyRequest<{ Params: { customerId: string } }>, reply: FastifyReply) {
-    const orders = await this.orderService.getByCustomerId(request.params.customerId);
-    return reply.send({ success: true, data: orders });
+  async getByCustomerId(request: FastifyRequest<{ Params: { customerId: string }; Querystring: { page?: string; limit?: string } }>, reply: FastifyReply) {
+    const page = Math.max(1, Number(request.query.page) || 1);
+    const limit = Math.min(100, Math.max(1, Number(request.query.limit) || 10));
+    const offset = (page - 1) * limit;
+    const { orders, total } = await this.orderService.getByCustomerId(request.params.customerId, { limit, offset });
+    return reply.send({ success: true, data: orders, pagination: { page, limit, total, totalPages: Math.ceil(total / limit) } });
   }
 
   async create(request: FastifyRequest, reply: FastifyReply) {

@@ -10,6 +10,7 @@ export type OrderStatus = (typeof ORDER_STATUS)[keyof typeof ORDER_STATUS];
 
 export interface Order {
   id: string;
+  orderNumber: number;
   customerId: string;
   customerName?: string;
   items: OrderItem[];

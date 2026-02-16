@@ -4,7 +4,7 @@ import type { Order } from '../order.types.js';
 export class GetOrdersByCustomerUseCase {
   constructor(private orderRepository: IOrderRepository) {}
 
-  async execute(customerId: string): Promise<Order[]> {
-    return this.orderRepository.findByCustomerId(customerId);
+  async execute(customerId: string, options?: { limit: number; offset: number }): Promise<{ orders: Order[]; total: number }> {
+    return this.orderRepository.findByCustomerId(customerId, options);
   }
 }

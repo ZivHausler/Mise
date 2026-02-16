@@ -1,13 +1,14 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Package, Clock, AlertTriangle, Coins, Plus, BookOpen, CreditCard } from 'lucide-react';
+import { Package, Clock, AlertTriangle, Coins, Plus, BookOpen, CreditCard, ChevronDown, ChevronUp } from 'lucide-react';
 import { Page, PageHeader, Section, Card, Row } from '@/components/Layout';
 import { StatCard, StatusBadge } from '@/components/DataDisplay';
 import { Button } from '@/components/Button';
 import { PageLoading } from '@/components/Feedback';
 import { useDashboardStats, useOrders } from '@/api/hooks';
 import { ORDER_STATUS, getStatusLabel } from '@/utils/orderStatus';
+import { useFormatDate } from '@/utils/dateFormat';
 
 export default function DashboardPage() {
   const { t, i18n } = useTranslation();
@@ -15,22 +16,35 @@ export default function DashboardPage() {
   const { data: stats, isLoading: statsLoading } = useDashboardStats();
   const { data: orders, isLoading: ordersLoading } = useOrders();
 
+  const formatDate = useFormatDate();
   const dashStats = stats as any;
 
+  const ordersList = (orders as any[]) ?? [];
+
   const ordersByStatus = useMemo(() => {
-    if (!orders) return {} as Record<number, unknown[]>;
     const grouped: Record<number, unknown[]> = { 0: [], 1: [], 2: [], 3: [] };
-    (orders as any[]).forEach((o) => {
+    ordersList.forEach((o) => {
       if (grouped[o.status]) grouped[o.status].push(o);
     });
     return grouped;
-  }, [orders]);
+  }, [ordersList]);
+
+  const todayStr = new Date().toDateString();
+  const todayOrders = useMemo(() => ordersList.filter((o) => new Date(o.createdAt).toDateString() === todayStr).length, [ordersList, todayStr]);
+  const pendingOrders = useMemo(() => ordersList.filter((o) => o.status !== ORDER_STATUS.DELIVERED).length, [ordersList]);
+
+  const [expandedColumns, setExpandedColumns] = useState<Record<number, boolean>>({});
+  const INITIAL_VISIBLE = 3;
+
+  const toggleColumn = (status: number) => {
+    setExpandedColumns((prev) => ({ ...prev, [status]: !prev[status] }));
+  };
 
   if (statsLoading || ordersLoading) return <PageLoading />;
 
   const statCards = [
-    { label: t('dashboard.todaysOrders', "Today's Orders"), value: dashStats?.todayOrders ?? 0, icon: <Package className="h-6 w-6" /> },
-    { label: t('dashboard.pendingOrders', 'Pending Orders'), value: dashStats?.pendingOrders ?? 0, icon: <Clock className="h-6 w-6" /> },
+    { label: t('dashboard.todaysOrders', "Today's Orders"), value: todayOrders, icon: <Package className="h-6 w-6" /> },
+    { label: t('dashboard.pendingOrders', 'Pending Orders'), value: pendingOrders, icon: <Clock className="h-6 w-6" /> },
     { label: t('dashboard.lowStock', 'Low Stock'), value: dashStats?.lowStockItems ?? 0, icon: <AlertTriangle className="h-6 w-6" /> },
     { label: t('dashboard.todaysRevenue', "Today's Revenue"), value: `${dashStats?.todayRevenue ?? 0} ${t('common.currency', '₪')}`, icon: <Coins className="h-6 w-6" /> },
   ];
@@ -59,25 +73,50 @@ export default function DashboardPage() {
         <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
           {([ORDER_STATUS.RECEIVED, ORDER_STATUS.IN_PROGRESS, ORDER_STATUS.READY, ORDER_STATUS.DELIVERED] as const).map((status) => {
             const label = getStatusLabel(status);
+            const columnOrders = (ordersByStatus[status] ?? []) as any[];
+            const isExpanded = expandedColumns[status];
+            const visibleOrders = isExpanded ? columnOrders : columnOrders.slice(0, INITIAL_VISIBLE);
+            const hiddenCount = columnOrders.length - INITIAL_VISIBLE;
             return (
             <div key={status} className="rounded-lg border border-neutral-200 bg-white p-3">
               <div className="mb-2 flex items-center justify-between">
                 <StatusBadge variant={label} label={statusLabels[label]} />
                 <span className="text-caption font-medium text-neutral-500">
-                  {ordersByStatus[status]?.length ?? 0}
+                  {columnOrders.length}
                 </span>
               </div>
               <div className="flex flex-col gap-2">
-                {(ordersByStatus[status] ?? []).slice(0, 3).map((order: any) => (
+                {visibleOrders.map((order: any) => (
                   <div
                     key={order.id}
                     onClick={() => navigate(`/orders/${order.id}`)}
                     className="cursor-pointer rounded-md border border-neutral-100 p-2 text-body-sm hover:bg-primary-50"
                   >
-                    <p className="font-medium text-neutral-800">#{order.orderNumber ?? order.id?.slice(0, 8)}</p>
+                    <div className="flex items-center justify-between">
+                      <p className="font-medium text-neutral-800">#{order.orderNumber}</p>
+                      <p className="text-caption font-medium text-neutral-700">{order.totalAmount ?? 0} {t('common.currency', '₪')}</p>
+                    </div>
                     <p className="text-caption text-neutral-500">{order.customerName ?? 'Customer'}</p>
+                    <div className="mt-1 flex items-center justify-between text-caption text-neutral-400">
+                      <span>{formatDate(order.createdAt)}</span>
+                      {order.dueDate && (
+                        <span>{t('orders.dueDate', 'Due')}: {formatDate(order.dueDate)}</span>
+                      )}
+                    </div>
                   </div>
                 ))}
+                {hiddenCount > 0 && (
+                  <button
+                    onClick={() => toggleColumn(status)}
+                    className="flex items-center justify-center gap-1 rounded-md border border-neutral-100 p-1.5 text-caption text-neutral-500 hover:bg-neutral-50"
+                  >
+                    {isExpanded ? (
+                      <>{t('common.showLess', 'Show less')} <ChevronUp className="h-3 w-3" /></>
+                    ) : (
+                      <>{t('common.showMore', 'Show {{count}} more', { count: hiddenCount })} <ChevronDown className="h-3 w-3" /></>
+                    )}
+                  </button>
+                )}
               </div>
             </div>
             );

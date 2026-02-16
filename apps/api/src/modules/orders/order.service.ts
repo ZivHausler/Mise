@@ -35,8 +35,8 @@ export class OrderService {
     return order;
   }
 
-  async getByCustomerId(customerId: string): Promise<Order[]> {
-    return this.getOrdersByCustomerUseCase.execute(customerId);
+  async getByCustomerId(customerId: string, options?: { limit: number; offset: number }): Promise<{ orders: Order[]; total: number }> {
+    return this.getOrdersByCustomerUseCase.execute(customerId, options);
   }
 
   async getAll(filters?: { status?: OrderStatus }): Promise<Order[]> {

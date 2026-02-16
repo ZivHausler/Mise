@@ -3,7 +3,7 @@ import { ORDER_STATUS } from './order.types.js';
 
 export interface IOrderRepository {
   findById(id: string): Promise<Order | null>;
-  findByCustomerId(customerId: string): Promise<Order[]>;
+  findByCustomerId(customerId: string, options?: { limit: number; offset: number }): Promise<{ orders: Order[]; total: number }>;
   findAll(filters?: { status?: OrderStatus }): Promise<Order[]>;
   create(data: CreateOrderDTO & { totalAmount: number }): Promise<Order>;
   update(id: string, data: Partial<Order>): Promise<Order>;
@@ -23,13 +23,22 @@ export class PgOrderRepository implements IOrderRepository {
     return result.rows[0] ? this.mapRow(result.rows[0]) : null;
   }
 
-  async findByCustomerId(customerId: string): Promise<Order[]> {
+  async findByCustomerId(customerId: string, options?: { limit: number; offset: number }): Promise<{ orders: Order[]; total: number }> {
     const pool = getPool();
-    const result = await pool.query(
-      'SELECT * FROM orders WHERE customer_id = $1 ORDER BY created_at DESC',
+    const countResult = await pool.query(
+      'SELECT COUNT(*) FROM orders WHERE customer_id = $1',
       [customerId],
     );
-    return result.rows.map((r: Record<string, unknown>) => this.mapRow(r));
+    const total = Number(countResult.rows[0].count);
+
+    let query = 'SELECT * FROM orders WHERE customer_id = $1 ORDER BY created_at DESC';
+    const params: unknown[] = [customerId];
+    if (options) {
+      query += ' LIMIT $2 OFFSET $3';
+      params.push(options.limit, options.offset);
+    }
+    const result = await pool.query(query, params);
+    return { orders: result.rows.map((r: Record<string, unknown>) => this.mapRow(r)), total };
   }
 
   async findAll(filters?: { status?: OrderStatus }): Promise<Order[]> {
@@ -106,6 +115,7 @@ export class PgOrderRepository implements IOrderRepository {
 
     return {
       id: row['id'] as string,
+      orderNumber: Number(row['order_number']),
       customerId: row['customer_id'] as string,
       customerName: (row['customer_name'] as string) || undefined,
       items,

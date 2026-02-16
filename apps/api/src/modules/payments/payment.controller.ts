@@ -12,6 +12,22 @@ const createPaymentSchema = z.object({
 export class PaymentController {
   constructor(private paymentService: PaymentService) {}
 
+  async getAll(request: FastifyRequest<{ Querystring: { page?: string; limit?: string } }>, reply: FastifyReply) {
+    const page = Math.max(1, Number(request.query.page) || 1);
+    const limit = Math.min(100, Math.max(1, Number(request.query.limit) || 10));
+    const offset = (page - 1) * limit;
+    const { items, total } = await this.paymentService.getAll({ limit, offset });
+    return reply.send({ success: true, data: items, pagination: { page, limit, total, totalPages: Math.ceil(total / limit) } });
+  }
+
+  async getByCustomerId(request: FastifyRequest<{ Params: { customerId: string }; Querystring: { page?: string; limit?: string } }>, reply: FastifyReply) {
+    const page = Math.max(1, Number(request.query.page) || 1);
+    const limit = Math.min(100, Math.max(1, Number(request.query.limit) || 10));
+    const offset = (page - 1) * limit;
+    const { items, total } = await this.paymentService.getByCustomerId(request.params.customerId, { limit, offset });
+    return reply.send({ success: true, data: items, pagination: { page, limit, total, totalPages: Math.ceil(total / limit) } });
+  }
+
   async getByOrderId(request: FastifyRequest<{ Params: { orderId: string } }>, reply: FastifyReply) {
     const payments = await this.paymentService.getByOrderId(request.params.orderId);
     return reply.send({ success: true, data: payments });

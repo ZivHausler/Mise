@@ -244,7 +244,7 @@ export default function InventoryPage() {
                   onClick={() => setPage((p) => Math.max(1, p - 1))}
                   disabled={page <= 1}
                 >
-                  <ChevronLeft className="h-4 w-4" />
+                  <ChevronLeft className="h-4 w-4 rtl:scale-x-[-1]" />
                 </Button>
                 <span className="text-body-sm text-neutral-700">
                   {pagination.page} / {pagination.totalPages}
@@ -255,7 +255,7 @@ export default function InventoryPage() {
                   onClick={() => setPage((p) => p + 1)}
                   disabled={page >= pagination.totalPages}
                 >
-                  <ChevronRight className="h-4 w-4" />
+                  <ChevronRight className="h-4 w-4 rtl:scale-x-[-1]" />
                 </Button>
               </div>
             </div>

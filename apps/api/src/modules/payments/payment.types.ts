@@ -16,6 +16,8 @@ export type PaymentStatus = (typeof PAYMENT_STATUS)[keyof typeof PAYMENT_STATUS]
 export interface Payment {
   id: string;
   orderId: string;
+  orderNumber?: number;
+  customerName?: string;
   amount: number;
   method: PaymentMethod;
   notes?: string;
