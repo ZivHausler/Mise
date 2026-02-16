@@ -32,7 +32,7 @@ export default function PaymentsPage() {
         header: t('payments.amount', 'Amount'),
         align: 'end' as const,
         sortable: true,
-        render: (row: any) => <span className="font-mono">{row.amount} NIS</span>,
+        render: (row: any) => <span className="font-mono">{row.amount} {t('common.currency')}</span>,
       },
       {
         key: 'method',
@@ -106,7 +106,7 @@ export default function PaymentsPage() {
             onChange={(e) => setForm({ ...form, orderId: e.target.value })}
             required
           />
-          <NumberInput label={t('payments.amount', 'Amount (NIS)')} value={form.amount} onChange={(v) => setForm({ ...form, amount: v })} min={0} required />
+          <NumberInput label={t('payments.amount', 'Amount (₪)')} value={form.amount} onChange={(v) => setForm({ ...form, amount: v })} min={0} required />
           <Select
             label={t('payments.method', 'Method')}
             options={[

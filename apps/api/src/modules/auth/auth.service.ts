@@ -52,6 +52,6 @@ export class AuthService {
   }
 
   private toPublic(user: User): UserPublic {
-    return { id: user.id, email: user.email, name: user.name, role: user.role };
+    return { id: user.id, email: user.email, name: user.name, phone: user.phone, role: user.role };
   }
 }

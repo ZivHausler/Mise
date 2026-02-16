@@ -83,7 +83,6 @@ export class MongoRecipeRepository implements IRecipeRepository {
       category: doc['category'] as string | undefined,
       tags: doc['tags'] as string[] | undefined,
       ingredients: (doc['ingredients'] as Recipe['ingredients']) ?? [],
-      subRecipes: doc['subRecipes'] as Recipe['subRecipes'],
       steps: (doc['steps'] as Recipe['steps']) ?? [],
       yield: doc['yield'] as number | undefined,
       yieldUnit: doc['yieldUnit'] as string | undefined,

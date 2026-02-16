@@ -146,8 +146,8 @@ export function createRecipe(overrides?: Partial<Recipe>): Recipe {
       { ingredientId: 'ing-2', name: 'Sugar', quantity: 1, unit: 'kg', costPerUnit: 5 },
     ],
     steps: [
-      { order: 1, instruction: 'Mix dry ingredients' },
-      { order: 2, instruction: 'Bake at 180C for 30 minutes' },
+      { order: 1, type: 'step', instruction: 'Mix dry ingredients' },
+      { order: 2, type: 'step', instruction: 'Bake at 180C for 30 minutes' },
     ],
     createdAt: new Date('2025-01-01'),
     updatedAt: new Date('2025-01-01'),

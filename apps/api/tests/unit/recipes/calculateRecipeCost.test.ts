@@ -19,7 +19,9 @@ describe('CalculateRecipeCostUseCase', () => {
         { ingredientId: 'ing-1', name: 'Flour', quantity: 2, unit: 'kg', costPerUnit: 3.5 },
         { ingredientId: 'ing-2', name: 'Sugar', quantity: 1, unit: 'kg', costPerUnit: 5 },
       ],
-      subRecipes: undefined,
+      steps: [
+        { order: 1, type: 'step', instruction: 'Mix' },
+      ],
     });
     vi.mocked(repo.findById).mockResolvedValue(recipe);
 
@@ -35,14 +37,19 @@ describe('CalculateRecipeCostUseCase', () => {
       ingredients: [
         { ingredientId: 'ing-1', name: 'Flour', quantity: 1, unit: 'kg', costPerUnit: 3 },
       ],
-      subRecipes: [{ recipeId: 'child', name: 'Frosting', quantity: 2 }],
+      steps: [
+        { order: 1, type: 'step', instruction: 'Mix' },
+        { order: 2, type: 'sub_recipe', recipeId: 'child', name: 'Frosting', quantity: 2 },
+      ],
     });
     const childRecipe = createRecipe({
       id: 'child',
       ingredients: [
         { ingredientId: 'ing-2', name: 'Butter', quantity: 0.5, unit: 'kg', costPerUnit: 10 },
       ],
-      subRecipes: undefined,
+      steps: [
+        { order: 1, type: 'step', instruction: 'Whip butter' },
+      ],
     });
 
     vi.mocked(repo.findById).mockImplementation(async (id) => {
@@ -63,17 +70,23 @@ describe('CalculateRecipeCostUseCase', () => {
     const grandparent = createRecipe({
       id: 'gp',
       ingredients: [{ ingredientId: 'i1', name: 'A', quantity: 1, unit: 'u', costPerUnit: 10 }],
-      subRecipes: [{ recipeId: 'parent', name: 'Parent', quantity: 1 }],
+      steps: [
+        { order: 1, type: 'sub_recipe', recipeId: 'parent', name: 'Parent', quantity: 1 },
+      ],
     });
     const parent = createRecipe({
       id: 'parent',
       ingredients: [{ ingredientId: 'i2', name: 'B', quantity: 1, unit: 'u', costPerUnit: 5 }],
-      subRecipes: [{ recipeId: 'child', name: 'Child', quantity: 3 }],
+      steps: [
+        { order: 1, type: 'sub_recipe', recipeId: 'child', name: 'Child', quantity: 3 },
+      ],
     });
     const child = createRecipe({
       id: 'child',
       ingredients: [{ ingredientId: 'i3', name: 'C', quantity: 2, unit: 'u', costPerUnit: 2 }],
-      subRecipes: undefined,
+      steps: [
+        { order: 1, type: 'step', instruction: 'Do something' },
+      ],
     });
 
     vi.mocked(repo.findById).mockImplementation(async (id) => {
@@ -95,12 +108,16 @@ describe('CalculateRecipeCostUseCase', () => {
     const recipeA = createRecipe({
       id: 'a',
       ingredients: [{ ingredientId: 'i1', name: 'X', quantity: 1, unit: 'u', costPerUnit: 10 }],
-      subRecipes: [{ recipeId: 'b', name: 'B', quantity: 1 }],
+      steps: [
+        { order: 1, type: 'sub_recipe', recipeId: 'b', name: 'B', quantity: 1 },
+      ],
     });
     const recipeB = createRecipe({
       id: 'b',
       ingredients: [{ ingredientId: 'i2', name: 'Y', quantity: 1, unit: 'u', costPerUnit: 5 }],
-      subRecipes: [{ recipeId: 'a', name: 'A', quantity: 1 }], // circular!
+      steps: [
+        { order: 1, type: 'sub_recipe', recipeId: 'a', name: 'A', quantity: 1 }, // circular!
+      ],
     });
 
     vi.mocked(repo.findById).mockImplementation(async (id) => {
@@ -126,7 +143,9 @@ describe('CalculateRecipeCostUseCase', () => {
       ingredients: [
         { ingredientId: 'i1', name: 'Free item', quantity: 5, unit: 'kg', costPerUnit: undefined },
       ],
-      subRecipes: undefined,
+      steps: [
+        { order: 1, type: 'step', instruction: 'Use it' },
+      ],
     });
     vi.mocked(repo.findById).mockResolvedValue(recipe);
 
@@ -137,7 +156,7 @@ describe('CalculateRecipeCostUseCase', () => {
   it('should return 0 for recipe with no ingredients and no sub-recipes', async () => {
     const recipe = createRecipe({
       ingredients: [],
-      subRecipes: undefined,
+      steps: [],
     });
     vi.mocked(repo.findById).mockResolvedValue(recipe);
 

@@ -52,7 +52,7 @@ export function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <div dir={dir} className="min-h-screen bg-primary-50 text-neutral-900 font-body">
-        <BrowserRouter>
+        <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
           <Suspense fallback={<PageLoading />}>
             <Routes>
               {/* Public routes */}
@@ -63,7 +63,7 @@ export function App() {
               <Route
                 element={
                   <ProtectedRoute>
-                    <AppShell />
+                    <AppShell key={i18n.language} />
                   </ProtectedRoute>
                 }
               >

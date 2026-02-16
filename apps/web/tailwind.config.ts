@@ -56,7 +56,7 @@ const config: Config = {
         },
       },
       fontFamily: {
-        heading: ['Frank Ruhl Libre', 'Georgia', 'serif'],
+        heading: ['Assistant', 'system-ui', 'sans-serif'],
         body: ['Assistant', 'system-ui', 'sans-serif'],
         mono: ['JetBrains Mono', 'monospace'],
       },

@@ -27,7 +27,7 @@ export const AppShell = React.memo(function AppShell() {
         </div>
       )}
 
-      <div className="flex flex-1 flex-col">
+      <div className="flex min-w-0 flex-1 flex-col">
         <TopBar onMenuClick={handleMenuClick} />
         <div className="flex-1 pb-16 lg:pb-0">
           <Suspense fallback={<PageLoading />}>

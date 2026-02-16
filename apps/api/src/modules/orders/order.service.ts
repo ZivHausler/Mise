@@ -1,5 +1,6 @@
 import type { IOrderRepository } from './order.repository.js';
 import type { CreateOrderDTO, Order, OrderStatus } from './order.types.js';
+import { ORDER_STATUS } from './order.types.js';
 import type { EventBus } from '../../core/events/event-bus.js';
 import { CreateOrderUseCase } from './use-cases/createOrder.js';
 import { UpdateOrderStatusUseCase } from './use-cases/updateOrderStatus.js';
@@ -7,6 +8,8 @@ import { GetOrdersByCustomerUseCase } from './use-cases/getOrdersByCustomer.js';
 import { DeleteOrderUseCase } from './use-cases/deleteOrder.js';
 import { NotFoundError } from '../../core/errors/app-error.js';
 import type { RecipeService } from '../recipes/recipe.service.js';
+import type { InventoryService } from '../inventory/inventory.service.js';
+import { unitConversionFactor } from '../shared/unitConversion.js';
 
 export class OrderService {
   private createOrderUseCase: CreateOrderUseCase;
@@ -18,6 +21,7 @@ export class OrderService {
     private orderRepository: IOrderRepository,
     private eventBus: EventBus,
     private recipeService?: RecipeService,
+    private inventoryService?: InventoryService,
   ) {
     this.createOrderUseCase = new CreateOrderUseCase(orderRepository);
     this.updateOrderStatusUseCase = new UpdateOrderStatusUseCase(orderRepository);
@@ -76,6 +80,13 @@ export class OrderService {
   async updateStatus(id: string, status: OrderStatus): Promise<Order> {
     const { order, previousStatus } = await this.updateOrderStatusUseCase.execute(id, status);
 
+    // Auto-deduct inventory when transitioning to READY, restore when moving back to IN_PROGRESS
+    if (previousStatus === ORDER_STATUS.IN_PROGRESS && status === ORDER_STATUS.READY) {
+      await this.adjustInventoryForOrder(order, 'usage');
+    } else if (previousStatus === ORDER_STATUS.READY && status === ORDER_STATUS.IN_PROGRESS) {
+      await this.adjustInventoryForOrder(order, 'addition');
+    }
+
     await this.eventBus.publish({
       eventName: 'order.statusChanged',
       payload: { orderId: id, previousStatus, newStatus: status },
@@ -83,6 +94,36 @@ export class OrderService {
     });
 
     return order;
+  }
+
+  private async adjustInventoryForOrder(order: Order, type: 'usage' | 'addition'): Promise<void> {
+    if (!this.recipeService || !this.inventoryService) return;
+
+    for (const item of order.items) {
+      try {
+        const recipe = await this.recipeService.getById(item.recipeId);
+        if (!recipe.ingredients) continue;
+
+        for (const ingredient of recipe.ingredients) {
+          try {
+            const inventoryItem = await this.inventoryService.getById(ingredient.ingredientId);
+            const factor = unitConversionFactor(ingredient.unit, inventoryItem.unit);
+            const convertedQty = ingredient.quantity * factor * item.quantity;
+
+            await this.inventoryService.adjustStock({
+              ingredientId: ingredient.ingredientId,
+              type,
+              quantity: convertedQty,
+              reason: `Order ${order.id}`,
+            });
+          } catch {
+            // skip if inventory item not found
+          }
+        }
+      } catch {
+        // skip if recipe not found
+      }
+    }
   }
 
   async update(id: string, data: Partial<Order>): Promise<Order> {

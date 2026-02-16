@@ -29,7 +29,7 @@ export default function CustomersPage() {
         header: t('customers.totalSpent', 'Total Spent'),
         align: 'end' as const,
         sortable: true,
-        render: (row: any) => <span className="font-mono">{row.totalSpent ?? 0} NIS</span>,
+        render: (row: any) => <span className="font-mono">{row.totalSpent ?? 0} {t('common.currency')}</span>,
       },
     ],
     [t]

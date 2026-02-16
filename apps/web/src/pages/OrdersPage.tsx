@@ -7,7 +7,14 @@ import { Button } from '@/components/Button';
 import { DataTable, StatusBadge, EmptyState, type Column } from '@/components/DataDisplay';
 import { PageLoading } from '@/components/Feedback';
 import { useOrders, useUpdateOrderStatus } from '@/api/hooks';
-import { ORDER_STATUS, getStatusLabel } from '@/utils/orderStatus';
+import { ORDER_STATUS, STATUS_LABELS, getStatusLabel } from '@/utils/orderStatus';
+
+const STATUS_DISPLAY: Record<string, string> = {
+  received: 'Received',
+  in_progress: 'In Progress',
+  ready: 'Ready',
+  delivered: 'Delivered',
+};
 
 type ViewMode = 'pipeline' | 'list';
 

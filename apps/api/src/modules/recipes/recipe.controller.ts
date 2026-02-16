@@ -2,12 +2,25 @@ import type { FastifyRequest, FastifyReply } from 'fastify';
 import { z } from 'zod';
 import type { RecipeService } from './recipe.service.js';
 
-const recipeStepSchema = z.object({
+const instructionStepSchema = z.object({
   order: z.number().int().positive().max(1000),
+  type: z.literal('step'),
   instruction: z.string().min(1).max(5000),
   duration: z.number().max(100000).optional(),
   notes: z.string().max(2000).optional(),
 });
+
+const subRecipeStepSchema = z.object({
+  order: z.number().int().positive().max(1000),
+  type: z.literal('sub_recipe'),
+  recipeId: z.string().min(1).max(100),
+  quantity: z.number().positive().max(1000000),
+});
+
+const recipeStepSchema = z.discriminatedUnion('type', [
+  instructionStepSchema,
+  subRecipeStepSchema,
+]);
 
 const createRecipeSchema = z.object({
   name: z.string().min(1, 'Recipe name is required').max(200),
@@ -19,16 +32,13 @@ const createRecipeSchema = z.object({
     quantity: z.number().positive().max(1000000),
     unit: z.string().max(50),
   })).max(100),
-  subRecipes: z.array(z.object({
-    recipeId: z.string().max(100),
-    quantity: z.number().positive().max(1000000),
-  })).max(20).optional(),
   steps: z.array(recipeStepSchema).min(1).max(200),
   yield: z.number().positive().max(1000000).optional(),
   yieldUnit: z.string().max(50).optional(),
   sellingPrice: z.number().min(0).max(1000000).optional(),
   notes: z.string().max(5000).optional(),
   variations: z.array(z.string().max(1000)).max(20).optional(),
+  photos: z.array(z.string().url().max(2000)).max(10).optional(),
 });
 
 const updateRecipeSchema = createRecipeSchema.partial();

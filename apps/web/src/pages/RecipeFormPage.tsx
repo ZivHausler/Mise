@@ -9,6 +9,41 @@ import { Button } from '@/components/Button';
 import { useCreateRecipe, useUpdateRecipe, useRecipe, useRecipes, useInventory } from '@/api/hooks';
 import { cn } from '@/utils/cn';
 
+const unitGroups: Record<string, string[]> = {
+  kg: ['g', 'kg'],
+  g: ['g', 'kg'],
+  l: ['ml', 'l'],
+  liters: ['ml', 'l'],
+  ml: ['ml', 'l'],
+  pcs: ['pcs'],
+  units: ['pcs'],
+};
+
+const allUnits = ['g', 'kg', 'ml', 'l', 'pcs'];
+
+const unitToBase: Record<string, { base: string; factor: number }> = {
+  g:  { base: 'mass', factor: 1 },
+  kg: { base: 'mass', factor: 1000 },
+  ml: { base: 'volume', factor: 1 },
+  l:  { base: 'volume', factor: 1000 },
+  pcs: { base: 'count', factor: 1 },
+};
+
+function convertUnit(from: string, to: string): number {
+  const f = unitToBase[from];
+  const t = unitToBase[to];
+  if (!f || !t || f.base !== t.base) return 1;
+  return f.factor / t.factor;
+}
+
+function getCompatibleUnits(ing: any, inventoryItems: any[], t: (key: string, fallback?: string) => string) {
+  const inventoryItem = ing.ingredientId ? inventoryItems.find((item: any) => item.id === ing.ingredientId) : null;
+  const allowed = inventoryItem ? (unitGroups[inventoryItem.unit] ?? allUnits) : allUnits;
+  const options = allowed.map((u) => ({ value: u, label: t(`common.units.${u}`, u) }));
+  if (!ing.unit) options.unshift({ value: '', label: '—' });
+  return options;
+}
+
 const categoryOptions = [
   { value: 'cakes', label: 'Cakes' },
   { value: 'breads', label: 'Breads' },
@@ -45,7 +80,7 @@ export default function RecipeFormPage() {
   const [description, setDescription] = useState(r?.description ?? '');
   const [yieldAmount, setYieldAmount] = useState<number | ''>(r?.yield ?? '');
   const [price, setPrice] = useState<number | ''>(r?.sellingPrice ?? '');
-  const [ingredients, setIngredients] = useState<any[]>(r?.ingredients?.length ? r.ingredients : [{ ingredientId: '', name: '', quantity: '', unit: 'g' }]);
+  const [ingredients, setIngredients] = useState<any[]>(r?.ingredients?.length ? r.ingredients : [{ ingredientId: '', name: '', quantity: '', unit: '' }]);
   const [steps, setSteps] = useState<StepEntry[]>(() => {
     if (!r?.steps?.length) return [{ type: 'step' as const, instruction: '', duration: '' as const }];
     return r.steps.map((s: any) => {
@@ -67,7 +102,7 @@ export default function RecipeFormPage() {
     setDescription(r.description ?? '');
     setYieldAmount(r.yield ?? '');
     setPrice(r.sellingPrice ?? '');
-    setIngredients(r.ingredients?.length ? r.ingredients : [{ ingredientId: '', name: '', quantity: '', unit: 'g' }]);
+    setIngredients(r.ingredients?.length ? r.ingredients : [{ ingredientId: '', name: '', quantity: '', unit: '' }]);
     setSteps(
       r.steps?.length
         ? r.steps.map((s: any) => {
@@ -85,7 +120,7 @@ export default function RecipeFormPage() {
   }, [r]);
 
   const addIngredient = useCallback(() => {
-    setIngredients((prev) => [...prev, { ingredientId: '', name: '', quantity: '', unit: 'g' }]);
+    setIngredients((prev) => [...prev, { ingredientId: '', name: '', quantity: '', unit: '' }]);
   }, []);
 
   const removeIngredient = useCallback((i: number) => {
@@ -200,7 +235,7 @@ export default function RecipeFormPage() {
           }
           return { type: 'step' as const, instruction: (s as any).instruction, order: i + 1, ...((s as any).duration ? { duration: (s as any).duration } : {}) };
         });
-      const body = { name, category, description, yield: yieldAmount, sellingPrice: price, ingredients, steps: formattedSteps };
+      const body = { name, category, description, yield: yieldAmount, sellingPrice: price === '' ? undefined : Number(price), ingredients, steps: formattedSteps };
       if (isEdit) {
         updateRecipe.mutate({ id: id!, ...body }, { onSuccess: () => navigate(`/recipes/${id}`) });
       } else {
@@ -239,29 +274,42 @@ export default function RecipeFormPage() {
             <h3 className="mb-3 font-heading text-h4 text-neutral-800">{t('recipes.ingredients', 'Ingredients')}</h3>
             <Stack gap={2}>
               {ingredients.map((ing, i) => (
-                <div key={i} className="flex flex-col gap-2 rounded-md border border-neutral-100 p-2 sm:flex-row sm:items-end sm:border-0 sm:p-0">
+                <div key={i} className="flex flex-col gap-2 rounded-md border border-neutral-100 p-2 sm:flex-row sm:items-center sm:border-0 sm:p-0">
                   <Select
                     placeholder={t('recipes.ingredientName', 'Ingredient')}
                     options={inventoryItems.filter((item: any) => item.id === ing.ingredientId || !ingredients.some((other, idx) => idx !== i && other.ingredientId === item.id)).map((item: any) => ({ value: item.id, label: item.name }))}
                     value={ing.ingredientId ?? ''}
                     onChange={(e) => {
                       const selected = inventoryItems.find((item: any) => item.id === e.target.value);
-                      setIngredients((prev) => prev.map((item, idx) => (idx === i ? { ...item, ingredientId: e.target.value, name: selected?.name ?? '', unit: selected?.unit ?? item.unit } : item)));
+                      const baseUnit = selected?.unit ?? 'g';
+                      const compatible = unitGroups[baseUnit] ?? allUnits;
+                      setIngredients((prev) => prev.map((item, idx) => (idx === i ? { ...item, ingredientId: e.target.value, name: selected?.name ?? '', unit: compatible.includes(item.unit) ? item.unit : compatible[0] } : item)));
                     }}
-                    className="min-w-0 sm:flex-1"
+                    className="min-w-0 sm:flex-[2]"
                   />
-                  <div className="flex items-end gap-2">
+                  <div className="flex items-center gap-2 sm:flex-[1.5]">
                     <NumberInput
                       placeholder={t('common.qty', 'Qty')}
                       value={ing.quantity}
                       onChange={(v) => setIngredients((prev) => prev.map((item, idx) => (idx === i ? { ...item, quantity: v } : item)))}
-                      className="flex-1 sm:w-16 sm:flex-none"
+                      className="flex-1 sm:flex-1"
                     />
                     <Select
-                      options={[{ value: 'g', label: t('common.units.g', 'g') }, { value: 'kg', label: t('common.units.kg', 'kg') }, { value: 'ml', label: t('common.units.ml', 'ml') }, { value: 'l', label: t('common.units.l', 'l') }, { value: 'pcs', label: t('common.units.pcs', 'pcs') }]}
+                      options={getCompatibleUnits(ing, inventoryItems, t)}
                       value={ing.unit}
-                      onChange={(e) => setIngredients((prev) => prev.map((item, idx) => (idx === i ? { ...item, unit: e.target.value } : item)))}
-                      className="flex-1 sm:w-16 sm:flex-none"
+                      onChange={(e) => {
+                        const newUnit = e.target.value;
+                        setIngredients((prev) => prev.map((item, idx) => {
+                          if (idx !== i) return item;
+                          const oldUnit = item.unit;
+                          const qty = item.quantity;
+                          if (!oldUnit || !newUnit || qty === '' || qty === 0) return { ...item, unit: newUnit };
+                          const factor = convertUnit(oldUnit, newUnit);
+                          const converted = +(qty * factor).toPrecision(6);
+                          return { ...item, unit: newUnit, quantity: converted };
+                        }));
+                      }}
+                      className="flex-1 sm:flex-1"
                     />
                     <Button type="button" variant="ghost" size="sm" onClick={() => removeIngredient(i)}>
                       <Trash2 className="h-4 w-4 text-neutral-400" />

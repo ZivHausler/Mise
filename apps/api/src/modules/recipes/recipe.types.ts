@@ -5,7 +5,6 @@ export interface Recipe {
   category?: string;
   tags?: string[];
   ingredients: RecipeIngredient[];
-  subRecipes?: SubRecipeReference[];
   steps: RecipeStep[];
   yield?: number;
   yieldUnit?: string;
@@ -27,17 +26,15 @@ export interface RecipeIngredient {
   costPerUnit?: number;
 }
 
-export interface SubRecipeReference {
-  recipeId: string;
-  name: string;
-  quantity: number;
-}
-
 export interface RecipeStep {
   order: number;
-  instruction: string;
+  type: 'step' | 'sub_recipe';
+  instruction?: string;
   duration?: number; // minutes
   notes?: string;
+  recipeId?: string;
+  name?: string;
+  quantity?: number;
 }
 
 export interface CreateRecipeDTO {
@@ -46,7 +43,6 @@ export interface CreateRecipeDTO {
   category?: string;
   tags?: string[];
   ingredients: Omit<RecipeIngredient, 'name' | 'costPerUnit'>[];
-  subRecipes?: Omit<SubRecipeReference, 'name'>[];
   steps: RecipeStep[];
   yield?: number;
   yieldUnit?: string;

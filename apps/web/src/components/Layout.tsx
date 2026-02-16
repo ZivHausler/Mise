@@ -8,7 +8,7 @@ interface PageProps {
 
 export const Page = React.memo(function Page({ children, className }: PageProps) {
   return (
-    <main className={cn('mx-auto max-w-[1200px] px-4 py-6 md:px-6 md:py-8', className)}>
+    <main className={cn('mx-auto min-w-0 max-w-[1200px] px-4 py-6 md:px-6 md:py-8', className)}>
       {children}
     </main>
   );

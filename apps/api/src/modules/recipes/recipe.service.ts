@@ -7,6 +7,7 @@ import { DeleteRecipeUseCase } from './use-cases/deleteRecipe.js';
 import { CalculateRecipeCostUseCase } from './use-cases/calculateRecipeCost.js';
 import { NotFoundError } from '../../core/errors/app-error.js';
 import type { InventoryService } from '../inventory/inventory.service.js';
+import { unitConversionFactor } from '../shared/unitConversion.js';
 
 export class RecipeService {
   private createRecipeUseCase: CreateRecipeUseCase;
@@ -22,17 +23,75 @@ export class RecipeService {
     this.createRecipeUseCase = new CreateRecipeUseCase(recipeRepository);
     this.updateRecipeUseCase = new UpdateRecipeUseCase(recipeRepository);
     this.deleteRecipeUseCase = new DeleteRecipeUseCase(recipeRepository);
-    this.calculateCostUseCase = new CalculateRecipeCostUseCase(recipeRepository);
+    this.calculateCostUseCase = new CalculateRecipeCostUseCase(recipeRepository, inventoryService);
   }
 
   async getById(id: string): Promise<Recipe> {
     const recipe = await this.recipeRepository.findById(id);
     if (!recipe) throw new NotFoundError('Recipe not found');
+    await this.enrichIngredients(recipe);
+    await this.enrichSubRecipeSteps(recipe);
     return recipe;
   }
 
   async getAll(filters?: { category?: string; search?: string }): Promise<Recipe[]> {
-    return this.recipeRepository.findAll(filters);
+    const recipes = await this.recipeRepository.findAll(filters);
+    for (const recipe of recipes) {
+      await this.enrichIngredients(recipe);
+    }
+    return recipes;
+  }
+
+  private async enrichIngredients(recipe: Recipe): Promise<void> {
+    if (!this.inventoryService || !recipe.ingredients) return;
+    let totalCost = 0;
+    const groupsMap = new Map<string, { id: string; name: string; color: string | null; icon: string | null }>();
+    for (const ing of recipe.ingredients) {
+      try {
+        const item = await this.inventoryService.getById(ing.ingredientId);
+        ing.name = item.name;
+        const factor = unitConversionFactor(ing.unit, item.unit);
+        const convertedQty = ing.quantity * factor;
+        ing.costPerUnit = item.costPerUnit;
+        (ing as any).totalCost = +(convertedQty * item.costPerUnit).toFixed(2);
+        totalCost += (ing as any).totalCost;
+        for (const g of item.groups ?? []) {
+          if (!groupsMap.has(g.id)) groupsMap.set(g.id, { id: g.id, name: g.name, color: g.color, icon: g.icon });
+        }
+      } catch {
+        ing.name = ing.name ?? 'Unknown';
+        ing.costPerUnit = ing.costPerUnit ?? 0;
+        (ing as any).totalCost = 0;
+      }
+    }
+    recipe.totalCost = +totalCost.toFixed(2);
+    recipe.costPerUnit = recipe.yield ? +(totalCost / recipe.yield).toFixed(2) : totalCost;
+    (recipe as any).groups = Array.from(groupsMap.values());
+  }
+
+  private async enrichSubRecipeSteps(recipe: Recipe): Promise<void> {
+    if (!recipe.steps) return;
+    for (const step of recipe.steps) {
+      if (step.type !== 'sub_recipe' || !step.recipeId) continue;
+      try {
+        const subRecipe = await this.recipeRepository.findById(step.recipeId);
+        if (subRecipe) {
+          step.name = subRecipe.name;
+          await this.enrichIngredients(subRecipe);
+          const qty = step.quantity ?? 1;
+          // Multiply ingredient amounts and costs by sub-recipe quantity
+          (step as any).ingredients = subRecipe.ingredients.map((ing) => ({
+            ...ing,
+            quantity: +(ing.quantity * qty).toFixed(4),
+            totalCost: +((ing as any).totalCost * qty).toFixed(2),
+          }));
+          (step as any).subSteps = subRecipe.steps;
+          (step as any).totalCost = +((subRecipe.totalCost ?? 0) * qty).toFixed(2);
+        }
+      } catch {
+        // skip if sub-recipe not found
+      }
+    }
   }
 
   async create(data: CreateRecipeDTO): Promise<Recipe> {
@@ -50,14 +109,15 @@ export class RecipeService {
       }
     }
 
-    // Enrich sub-recipe references with names
-    if (data.subRecipes) {
-      for (const sub of data.subRecipes) {
+    // Enrich sub-recipe steps with names
+    if (data.steps) {
+      for (const step of data.steps) {
+        if (step.type !== 'sub_recipe' || !step.recipeId) continue;
         try {
-          const subRecipe = await this.recipeRepository.findById(sub.recipeId);
-          if (subRecipe) (sub as any).name = subRecipe.name;
+          const subRecipe = await this.recipeRepository.findById(step.recipeId);
+          if (subRecipe) step.name = subRecipe.name;
         } catch {
-          (sub as any).name = (sub as any).name ?? 'Unknown';
+          step.name = step.name ?? 'Unknown';
         }
       }
     }
@@ -87,6 +147,19 @@ export class RecipeService {
         } catch {
           (ing as any).name = (ing as any).name ?? 'Unknown';
           (ing as any).costPerUnit = (ing as any).costPerUnit ?? 0;
+        }
+      }
+    }
+
+    // Enrich sub-recipe steps with names
+    if (data.steps) {
+      for (const step of data.steps) {
+        if (step.type !== 'sub_recipe' || !step.recipeId) continue;
+        try {
+          const subRecipe = await this.recipeRepository.findById(step.recipeId);
+          if (subRecipe) step.name = subRecipe.name;
+        } catch {
+          step.name = step.name ?? 'Unknown';
         }
       }
     }

@@ -28,7 +28,7 @@ const bottomItems = [
   { path: '/settings', icon: Settings, labelKey: 'nav.settings' },
 ];
 
-export const Sidebar = React.memo(function Sidebar() {
+export function Sidebar() {
   const { t } = useTranslation();
   const collapsed = useAppStore((s) => s.sidebarCollapsed);
   const toggleSidebar = useAppStore((s) => s.toggleSidebar);
@@ -97,4 +97,4 @@ export const Sidebar = React.memo(function Sidebar() {
       </div>
     </aside>
   );
-});
+}

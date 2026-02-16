@@ -2,13 +2,17 @@ import type { FastifyInstance } from 'fastify';
 import { RecipeController } from './recipe.controller.js';
 import { RecipeService } from './recipe.service.js';
 import { MongoRecipeRepository } from './recipe.repository.js';
+import { PgInventoryRepository } from '../inventory/inventory.repository.js';
+import { InventoryService } from '../inventory/inventory.service.js';
 import { InMemoryEventBus } from '../../core/events/event-bus.js';
 import { authMiddleware } from '../../core/middleware/auth.js';
 
 export default async function recipeRoutes(app: FastifyInstance) {
   const repository = new MongoRecipeRepository();
   const eventBus = (app as any).container?.resolve?.('eventBus') ?? new InMemoryEventBus();
-  const service = new RecipeService(repository, eventBus);
+  const inventoryRepo = new PgInventoryRepository();
+  const inventoryService = new InventoryService(inventoryRepo, eventBus);
+  const service = new RecipeService(repository, eventBus, inventoryService);
   const controller = new RecipeController(service);
 
   app.addHook('preHandler', authMiddleware);

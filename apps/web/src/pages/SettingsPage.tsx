@@ -1,78 +1,37 @@
-import React, { useCallback } from 'react';
+import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { LogOut } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
-import { Page, PageHeader, Card, Section, Stack } from '@/components/Layout';
-import { Toggle } from '@/components/FormFields';
-import { Button } from '@/components/Button';
-import { useAuthStore } from '@/store/auth';
-import { useAppStore } from '@/store/app';
+import { Page, PageHeader } from '@/components/Layout';
+import Tabs from '@/components/Tabs';
+import UnitsTab from '@/components/settings/UnitsTab';
+import GroupsTab from '@/components/settings/GroupsTab';
+import AccountTab from '@/components/settings/AccountTab';
+import NotificationsTab from '@/components/settings/NotificationsTab';
+
+type SettingsTabKey = 'units' | 'groups' | 'account' | 'notifications';
 
 export default function SettingsPage() {
-  const { t, i18n } = useTranslation();
-  const navigate = useNavigate();
-  const logout = useAuthStore((s) => s.logout);
-  const setLanguage = useAppStore((s) => s.setLanguage);
-  const user = useAuthStore((s) => s.user);
+  const { t } = useTranslation();
+  const [activeTab, setActiveTab] = useState<SettingsTabKey>('account');
 
-  const isHebrew = i18n.language === 'he';
-
-  const handleLanguageToggle = useCallback(
-    (checked: boolean) => {
-      const newLang = checked ? 'he' : 'en';
-      i18n.changeLanguage(newLang);
-      setLanguage(newLang);
-      document.documentElement.dir = newLang === 'he' ? 'rtl' : 'ltr';
-      document.documentElement.lang = newLang;
-    },
-    [i18n, setLanguage]
-  );
-
-  const handleLogout = useCallback(() => {
-    logout();
-    navigate('/login');
-  }, [logout, navigate]);
+  const tabs = [
+    { key: 'account' as const, label: t('settings.tabs.account', 'Account') },
+    { key: 'units' as const, label: t('settings.tabs.units', 'Units') },
+    { key: 'groups' as const, label: t('settings.tabs.groups', 'Groups') },
+    { key: 'notifications' as const, label: t('settings.tabs.notifications', 'Notifications') },
+  ];
 
   return (
     <Page>
       <PageHeader title={t('nav.settings')} />
 
-      <Stack gap={6}>
-        {user && (
-          <Card>
-            <Section title={t('settings.profile', 'Profile')}>
-              <Stack gap={2}>
-                <div className="flex justify-between text-body-sm">
-                  <span className="text-neutral-500">{t('auth.name')}</span>
-                  <span className="font-medium text-neutral-800">{user.name}</span>
-                </div>
-                <div className="flex justify-between text-body-sm">
-                  <span className="text-neutral-500">{t('auth.email')}</span>
-                  <span className="font-medium text-neutral-800" dir="ltr">{user.email}</span>
-                </div>
-              </Stack>
-            </Section>
-          </Card>
-        )}
+      <Tabs tabs={tabs} activeTab={activeTab} onChange={setActiveTab} />
 
-        <Card>
-          <Section title={t('settings.preferences', 'Preferences')}>
-            <Toggle
-              label={`${t('settings.language', 'Language')}: ${isHebrew ? 'עברית' : 'English'}`}
-              checked={isHebrew}
-              onChange={handleLanguageToggle}
-            />
-          </Section>
-        </Card>
-
-        <Card>
-          <Section title={t('settings.account', 'Account')}>
-            <Button variant="danger" icon={<LogOut className="h-4 w-4" />} onClick={handleLogout}>
-              {t('auth.logout')}
-            </Button>
-          </Section>
-        </Card>
-      </Stack>
+      <div className="mt-6">
+        {activeTab === 'account' && <AccountTab />}
+        {activeTab === 'units' && <UnitsTab />}
+        {activeTab === 'groups' && <GroupsTab />}
+        {activeTab === 'notifications' && <NotificationsTab />}
+      </div>
     </Page>
   );
 }

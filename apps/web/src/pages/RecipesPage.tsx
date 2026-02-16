@@ -8,6 +8,7 @@ import { DataTable, EmptyState, type Column } from '@/components/DataDisplay';
 import { PageLoading } from '@/components/Feedback';
 import { Caption } from '@/components/Typography';
 import { useRecipes } from '@/api/hooks';
+import { GroupIcon } from '@/components/settings/GroupsTab';
 
 type ViewMode = 'grid' | 'list';
 
@@ -19,19 +20,31 @@ export default function RecipesPage() {
 
   const columns: Column<any>[] = useMemo(
     () => [
+      {
+        key: 'photo',
+        header: '',
+        render: (row: any) =>
+          row.photos && row.photos.length > 0 ? (
+            <img src={row.photos[0]} alt={row.name} className="h-12 w-12 rounded object-cover" />
+          ) : (
+            <div className="flex h-12 w-12 items-center justify-center rounded bg-primary-100">
+              <BookOpen className="h-5 w-5 text-primary-300" />
+            </div>
+          ),
+      },
       { key: 'name', header: t('recipes.name', 'Name'), sortable: true },
       { key: 'category', header: t('recipes.category', 'Category'), sortable: true },
       {
         key: 'cost',
         header: t('recipes.cost', 'Cost'),
         align: 'end' as const,
-        render: (row: any) => <span className="font-mono">{row.cost ?? 0} NIS</span>,
+        render: (row: any) => <span className="font-mono">{row.totalCost ?? 0} {t('common.currency')}</span>,
       },
       {
-        key: 'price',
+        key: 'sellingPrice',
         header: t('recipes.price', 'Price'),
         align: 'end' as const,
-        render: (row: any) => <span className="font-mono">{row.price ?? 0} NIS</span>,
+        render: (row: any) => <span className="font-mono">{row.sellingPrice ?? 0} {t('common.currency')}</span>,
       },
     ],
     [t]
@@ -87,14 +100,27 @@ export default function RecipesPage() {
               variant="interactive"
               onClick={() => navigate(`/recipes/${recipe.id}`)}
             >
-              <div className="mb-3 flex h-32 items-center justify-center rounded-md bg-primary-100">
-                <BookOpen className="h-10 w-10 text-primary-300" />
-              </div>
+              {recipe.photos && recipe.photos.length > 0 ? (
+                <img src={recipe.photos[0]} alt={recipe.name} className="mb-3 h-32 w-full rounded-md object-cover" />
+              ) : (
+                <div className="mb-3 flex h-32 items-center justify-center rounded-md bg-primary-100">
+                  <BookOpen className="h-10 w-10 text-primary-300" />
+                </div>
+              )}
               <h3 className="font-heading text-h4 text-neutral-800">{recipe.name}</h3>
               {recipe.category && <Caption>{recipe.category}</Caption>}
+              {recipe.groups?.length > 0 && (
+                <div className="mt-1.5 flex flex-wrap gap-1">
+                  {recipe.groups.map((g: any) => (
+                    <span key={g.id} title={g.name} className="inline-flex items-center rounded-full bg-neutral-100 p-1">
+                      <GroupIcon icon={g.icon ?? null} color={g.color ?? null} size={12} />
+                    </span>
+                  ))}
+                </div>
+              )}
               <div className="mt-2 flex items-center justify-between text-body-sm">
-                <span className="text-neutral-500">{t('recipes.cost', 'Cost')}: <span className="font-mono">{recipe.cost ?? 0}</span></span>
-                <span className="font-medium text-primary-700">{recipe.price ?? 0} NIS</span>
+                <span className="text-neutral-500">{t('recipes.cost', 'Cost')}: <span className="font-mono">{recipe.totalCost ?? 0}</span></span>
+                <span className="font-medium text-primary-700">{recipe.sellingPrice ?? 0} {t('common.currency')}</span>
               </div>
             </Card>
           ))}

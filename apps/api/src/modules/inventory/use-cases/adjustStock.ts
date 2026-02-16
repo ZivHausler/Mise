@@ -13,9 +13,6 @@ export class AdjustStockUseCase {
     if (data.quantity <= 0) {
       throw new ValidationError('Adjustment quantity must be positive');
     }
-    if (data.type === 'usage' && existing.quantity < data.quantity) {
-      throw new ValidationError('Insufficient stock for this usage');
-    }
     return this.inventoryRepository.adjustStock(data);
   }
 }

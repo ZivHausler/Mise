@@ -14,6 +14,7 @@ i18n
       he: { translation: he },
     },
     fallbackLng: 'en',
+    lng: localStorage.getItem('i18nextLng') || undefined,
     supportedLngs: ['en', 'he'],
     interpolation: {
       escapeValue: false,
@@ -21,6 +22,9 @@ i18n
     detection: {
       order: ['localStorage', 'navigator'],
       caches: ['localStorage'],
+    },
+    react: {
+      useSuspense: true,
     },
   });
 

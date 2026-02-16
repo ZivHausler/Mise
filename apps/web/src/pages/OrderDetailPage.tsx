@@ -78,9 +78,11 @@ export default function OrderDetailPage() {
               {t('orders.advance', 'Advance')}
             </Button>
           )}
-          <Button variant="secondary" icon={<Edit className="h-4 w-4" />} onClick={() => navigate(`/orders/${o.id}/edit`)}>
-            {t('common.edit')}
-          </Button>
+          {o.status <= ORDER_STATUS.IN_PROGRESS && (
+            <Button variant="secondary" icon={<Edit className="h-4 w-4" />} onClick={() => navigate(`/orders/${o.id}/edit`)}>
+              {t('common.edit')}
+            </Button>
+          )}
           <Button variant="danger" icon={<Trash2 className="h-4 w-4" />} onClick={() => setShowDelete(true)}>
             {t('common.delete')}
           </Button>

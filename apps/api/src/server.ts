@@ -9,10 +9,12 @@ import { logger } from './core/logger/logger.js';
 import { postgresClient } from './core/database/postgres.js';
 import { mongoClient } from './core/database/mongodb.js';
 import { sanitizeMiddleware } from './core/middleware/sanitize.js';
+import { RabbitMQEventBus } from './core/events/rabbitmq-event-bus.js';
 
 async function bootstrap() {
   const app = Fastify({
     logger: logger,
+    disableRequestLogging: true,
     requestIdHeader: 'x-request-id',
     genReqId: () => crypto.randomUUID(),
     bodyLimit: 1048576, // 1MB max body size
@@ -43,11 +45,18 @@ async function bootstrap() {
   }
 
   // Create DI container and decorate Fastify instance
-  const container = createContainer();
+  const container = await createContainer();
   app.decorate('container', container);
 
-  // Register all feature modules
+  // Register all feature modules (this sets up event subscribers)
   await registerModules(app);
+
+  // If using RabbitMQ, bind queues for all subscribers registered during module init
+  const eventBus = container.resolve('eventBus');
+  if (eventBus instanceof RabbitMQEventBus) {
+    await eventBus.setupSubscribers();
+    app.log.info('RabbitMQ subscribers bound');
+  }
 
   // Health check — minimal info, no internal details
   app.get('/health', async () => ({
@@ -61,6 +70,11 @@ async function bootstrap() {
     process.on(signal, async () => {
       app.log.info(`Received ${signal}, shutting down gracefully...`);
       await app.close();
+      const bus = container.resolve('eventBus');
+      if (bus instanceof RabbitMQEventBus) {
+        await bus.close();
+        app.log.info('RabbitMQ disconnected');
+      }
       await postgresClient.disconnect();
       await mongoClient.disconnect();
       process.exit(0);

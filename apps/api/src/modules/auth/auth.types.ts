@@ -11,6 +11,7 @@ export interface User {
   email: string;
   passwordHash: string;
   name: string;
+  phone?: string;
   role: UserRole;
   createdAt: Date;
   updatedAt: Date;
@@ -20,6 +21,7 @@ export interface UserPublic {
   id: string;
   email: string;
   name: string;
+  phone?: string;
   role: UserRole;
 }
 

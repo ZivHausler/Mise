@@ -1,4 +1,7 @@
+import { config } from 'dotenv';
 import { z } from 'zod';
+
+config();
 
 const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
@@ -13,6 +16,9 @@ const envSchema = z.object({
 
   // Redis
   REDIS_URL: z.string().default('redis://localhost:6379'),
+
+  // RabbitMQ
+  RABBITMQ_URL: z.string().default('amqp://localhost:5672'),
 
   // JWT
   JWT_SECRET: z.string().min(32, 'JWT_SECRET must be at least 32 characters').default('dev-secret-change-in-production'),
