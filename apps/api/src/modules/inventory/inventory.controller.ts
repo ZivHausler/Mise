@@ -7,9 +7,11 @@ const createIngredientSchema = z.object({
   unit: z.string().min(1).max(50),
   quantity: z.number().min(0).max(1000000),
   costPerUnit: z.number().min(0).max(1000000),
+  packageSize: z.number().min(0).max(1000000).optional(),
   lowStockThreshold: z.number().min(0).max(1000000),
   supplier: z.string().max(200).optional(),
   notes: z.string().max(2000).optional(),
+  groupIds: z.array(z.string().uuid()).optional(),
 });
 
 const updateIngredientSchema = createIngredientSchema.partial();
@@ -19,13 +21,22 @@ const adjustStockSchema = z.object({
   type: z.enum(['addition', 'usage', 'adjustment']),
   quantity: z.number().positive().max(1000000),
   reason: z.string().max(500).optional(),
+  pricePaid: z.number().min(0).max(1000000).optional(),
 });
 
 export class InventoryController {
   constructor(private inventoryService: InventoryService) {}
 
-  async getAll(request: FastifyRequest<{ Querystring: { search?: string } }>, reply: FastifyReply) {
-    const ingredients = await this.inventoryService.getAll(request.query.search);
+  async getAll(request: FastifyRequest<{ Querystring: { search?: string; page?: string; limit?: string; groupIds?: string } }>, reply: FastifyReply) {
+    const { search, page, limit, groupIds: groupIdsParam } = request.query;
+    if (page || limit) {
+      const pageNum = Math.max(1, parseInt(page || '1', 10) || 1);
+      const limitNum = Math.min(100, Math.max(1, parseInt(limit || '10', 10) || 10));
+      const groupIds = groupIdsParam ? groupIdsParam.split(',').filter(Boolean) : undefined;
+      const result = await this.inventoryService.getAllPaginated(pageNum, limitNum, search, groupIds);
+      return reply.send({ success: true, data: result.items, pagination: { total: result.total, page: result.page, limit: result.limit, totalPages: result.totalPages } });
+    }
+    const ingredients = await this.inventoryService.getAll(search);
     return reply.send({ success: true, data: ingredients });
   }
 

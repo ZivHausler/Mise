@@ -122,6 +122,8 @@ export interface Column<T> {
   render?: (row: T) => React.ReactNode;
   sortable?: boolean;
   align?: 'start' | 'center' | 'end';
+  shrink?: boolean;
+  sticky?: boolean;
 }
 
 interface DataTableProps<T> {
@@ -134,6 +136,7 @@ interface DataTableProps<T> {
   emptyTitle?: string;
   emptyDescription?: string;
   toolbar?: React.ReactNode;
+  bare?: boolean;
 }
 
 export function DataTable<T extends Record<string, unknown>>({
@@ -146,6 +149,7 @@ export function DataTable<T extends Record<string, unknown>>({
   emptyTitle,
   emptyDescription,
   toolbar,
+  bare,
 }: DataTableProps<T>) {
   const { t } = useTranslation();
   const [search, setSearch] = useState('');
@@ -186,7 +190,7 @@ export function DataTable<T extends Record<string, unknown>>({
   const alignClass = { start: 'text-start', center: 'text-center', end: 'text-end' };
 
   return (
-    <div className="rounded-lg border border-neutral-200 bg-white">
+    <div className={bare ? '' : 'overflow-hidden rounded-lg border border-neutral-200 bg-white'}>
       {(searchable || toolbar) && (
         <div className="flex flex-col gap-2 border-b border-neutral-200 p-4 sm:flex-row sm:items-center sm:justify-between">
           {searchable && (
@@ -206,16 +210,18 @@ export function DataTable<T extends Record<string, unknown>>({
       )}
 
       <div className="overflow-x-auto">
-        <table className="w-full">
+        <table className="w-full min-w-[600px]">
           <thead>
             <tr className="border-b border-neutral-200 bg-neutral-100">
               {columns.map((col) => (
                 <th
                   key={col.key}
                   className={cn(
-                    'px-4 py-3 text-body-sm font-semibold text-neutral-700',
+                    'px-3 py-2 text-body-sm font-semibold text-neutral-700',
                     alignClass[col.align || 'start'],
-                    col.sortable && 'cursor-pointer select-none hover:text-neutral-900'
+                    col.sortable && 'cursor-pointer select-none hover:text-neutral-900',
+                    col.shrink && 'w-px whitespace-nowrap',
+                    col.sticky && 'sticky start-0 z-10 bg-neutral-100'
                   )}
                   onClick={col.sortable ? () => handleSort(col.key) : undefined}
                 >
@@ -244,7 +250,7 @@ export function DataTable<T extends Record<string, unknown>>({
                 <tr
                   key={keyExtractor(row)}
                   className={cn(
-                    'border-b border-neutral-100 transition-colors',
+                    'group border-b border-neutral-100 transition-colors',
                     i % 2 === 1 && 'bg-neutral-50',
                     onRowClick && 'cursor-pointer hover:bg-primary-50'
                   )}
@@ -253,7 +259,7 @@ export function DataTable<T extends Record<string, unknown>>({
                   {columns.map((col) => (
                     <td
                       key={col.key}
-                      className={cn('px-4 py-3 text-body-sm', alignClass[col.align || 'start'])}
+                      className={cn('px-3 py-2 text-body-sm', alignClass[col.align || 'start'], col.shrink && 'w-px whitespace-nowrap', col.sticky && `sticky start-0 z-10 ${i % 2 === 1 ? 'bg-neutral-50' : 'bg-white'} group-hover:bg-primary-50 transition-colors`)}
                     >
                       {col.render ? col.render(row) : (row[col.key] as React.ReactNode)}
                     </td>

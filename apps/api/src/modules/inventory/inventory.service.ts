@@ -1,6 +1,6 @@
 import type { IInventoryRepository } from './inventory.repository.js';
 import type { EventBus } from '../../core/events/event-bus.js';
-import type { AdjustStockDTO, CreateIngredientDTO, Ingredient, InventoryLog, UpdateIngredientDTO } from './inventory.types.js';
+import type { AdjustStockDTO, CreateIngredientDTO, Ingredient, InventoryLog, PaginatedResult, UpdateIngredientDTO } from './inventory.types.js';
 import { CreateIngredientUseCase } from './use-cases/createIngredient.js';
 import { UpdateIngredientUseCase } from './use-cases/updateIngredient.js';
 import { AdjustStockUseCase } from './use-cases/adjustStock.js';
@@ -31,6 +31,10 @@ export class InventoryService {
 
   async getAll(search?: string): Promise<Ingredient[]> {
     return this.inventoryRepository.findAll(search);
+  }
+
+  async getAllPaginated(page: number, limit: number, search?: string, groupIds?: string[]): Promise<PaginatedResult<Ingredient>> {
+    return this.inventoryRepository.findAllPaginated(page, limit, search, groupIds);
   }
 
   async getLowStock(): Promise<Ingredient[]> {
