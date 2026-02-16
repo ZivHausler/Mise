@@ -53,6 +53,35 @@ export default async function analyticsRoutes(app: FastifyInstance) {
     return reply.send({ success: true, data: result.rows });
   });
 
+  app.get('/dashboard', async (_request, reply) => {
+    const pool = getPool();
+
+    const [ordersToday, pendingOrders, lowStock, revenueToday] = await Promise.all([
+      pool.query(
+        `SELECT COUNT(*) as count FROM orders WHERE DATE(created_at) = CURRENT_DATE`,
+      ),
+      pool.query(
+        `SELECT COUNT(*) as count FROM orders WHERE status IN (0, 1, 2)`,
+      ),
+      pool.query(
+        `SELECT COUNT(*) as count FROM ingredients WHERE quantity <= low_stock_threshold`,
+      ),
+      pool.query(
+        `SELECT COALESCE(SUM(amount), 0) as total FROM payments WHERE DATE(created_at) = CURRENT_DATE`,
+      ),
+    ]);
+
+    return reply.send({
+      success: true,
+      data: {
+        todayOrders: Number(ordersToday.rows[0]?.count ?? 0),
+        pendingOrders: Number(pendingOrders.rows[0]?.count ?? 0),
+        lowStockItems: Number(lowStock.rows[0]?.count ?? 0),
+        todayRevenue: Number(revenueToday.rows[0]?.total ?? 0),
+      },
+    });
+  });
+
   app.get('/customer-frequency', async (_request, reply) => {
     const pool = getPool();
     const result = await pool.query(

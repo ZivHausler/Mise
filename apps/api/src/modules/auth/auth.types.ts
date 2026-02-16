@@ -9,7 +9,8 @@ export type UserRole = (typeof USER_ROLE)[keyof typeof USER_ROLE];
 export interface User {
   id: string;
   email: string;
-  passwordHash: string;
+  passwordHash: string | null;
+  googleId?: string;
   name: string;
   phone?: string;
   role: UserRole;

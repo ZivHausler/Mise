@@ -3,17 +3,23 @@ import type { User, RegisterDTO } from './auth.types.js';
 export interface IAuthRepository {
   findById(id: string): Promise<User | null>;
   findByEmail(email: string): Promise<User | null>;
+  findByGoogleId(googleId: string): Promise<User | null>;
   create(data: RegisterDTO & { passwordHash: string }): Promise<User>;
   updateProfile(userId: string, data: { name?: string; phone?: string }): Promise<User>;
+  createWithGoogle(data: { email: string; name: string; googleId: string }): Promise<User>;
+  linkGoogle(userId: string, googleId: string): Promise<User>;
+  setPassword(userId: string, passwordHash: string): Promise<User>;
 }
 
 import { getPool } from '../../core/database/postgres.js';
+
+const SELECT_COLS = 'id, email, password_hash, google_id, name, phone, role, created_at, updated_at';
 
 export class PgAuthRepository implements IAuthRepository {
   async findById(id: string): Promise<User | null> {
     const pool = getPool();
     const result = await pool.query(
-      'SELECT id, email, password_hash, name, phone, role, created_at, updated_at FROM users WHERE id = $1',
+      `SELECT ${SELECT_COLS} FROM users WHERE id = $1`,
       [id],
     );
     return result.rows[0] ? this.mapRow(result.rows[0]) : null;
@@ -22,8 +28,17 @@ export class PgAuthRepository implements IAuthRepository {
   async findByEmail(email: string): Promise<User | null> {
     const pool = getPool();
     const result = await pool.query(
-      'SELECT id, email, password_hash, name, phone, role, created_at, updated_at FROM users WHERE email = $1',
+      `SELECT ${SELECT_COLS} FROM users WHERE email = $1`,
       [email],
+    );
+    return result.rows[0] ? this.mapRow(result.rows[0]) : null;
+  }
+
+  async findByGoogleId(googleId: string): Promise<User | null> {
+    const pool = getPool();
+    const result = await pool.query(
+      `SELECT ${SELECT_COLS} FROM users WHERE google_id = $1`,
+      [googleId],
     );
     return result.rows[0] ? this.mapRow(result.rows[0]) : null;
   }
@@ -33,7 +48,7 @@ export class PgAuthRepository implements IAuthRepository {
     const result = await pool.query(
       `INSERT INTO users (id, email, password_hash, name, role, created_at, updated_at)
        VALUES (gen_random_uuid(), $1, $2, $3, 'admin', NOW(), NOW())
-       RETURNING id, email, password_hash, name, phone, role, created_at, updated_at`,
+       RETURNING ${SELECT_COLS}`,
       [data.email, data.passwordHash, data.name],
     );
     return this.mapRow(result.rows[0]);
@@ -65,8 +80,39 @@ export class PgAuthRepository implements IAuthRepository {
 
     const result = await pool.query(
       `UPDATE users SET ${fields.join(', ')} WHERE id = $${idx}
-       RETURNING id, email, password_hash, name, phone, role, created_at, updated_at`,
+       RETURNING ${SELECT_COLS}`,
       values,
+    );
+    return this.mapRow(result.rows[0]);
+  }
+
+  async createWithGoogle(data: { email: string; name: string; googleId: string }): Promise<User> {
+    const pool = getPool();
+    const result = await pool.query(
+      `INSERT INTO users (id, email, google_id, name, role, created_at, updated_at)
+       VALUES (gen_random_uuid(), $1, $2, $3, 'admin', NOW(), NOW())
+       RETURNING ${SELECT_COLS}`,
+      [data.email, data.googleId, data.name],
+    );
+    return this.mapRow(result.rows[0]);
+  }
+
+  async linkGoogle(userId: string, googleId: string): Promise<User> {
+    const pool = getPool();
+    const result = await pool.query(
+      `UPDATE users SET google_id = $1, updated_at = NOW() WHERE id = $2
+       RETURNING ${SELECT_COLS}`,
+      [googleId, userId],
+    );
+    return this.mapRow(result.rows[0]);
+  }
+
+  async setPassword(userId: string, passwordHash: string): Promise<User> {
+    const pool = getPool();
+    const result = await pool.query(
+      `UPDATE users SET password_hash = $1, updated_at = NOW() WHERE id = $2
+       RETURNING ${SELECT_COLS}`,
+      [passwordHash, userId],
     );
     return this.mapRow(result.rows[0]);
   }
@@ -75,7 +121,8 @@ export class PgAuthRepository implements IAuthRepository {
     return {
       id: row['id'] as string,
       email: row['email'] as string,
-      passwordHash: row['password_hash'] as string,
+      passwordHash: (row['password_hash'] as string) || null,
+      googleId: (row['google_id'] as string) || undefined,
       name: row['name'] as string,
       phone: (row['phone'] as string) || undefined,
       role: row['role'] as User['role'],

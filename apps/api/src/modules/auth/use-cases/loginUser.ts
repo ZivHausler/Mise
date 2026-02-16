@@ -1,7 +1,7 @@
 import bcrypt from 'bcrypt';
 import type { IAuthRepository } from '../auth.repository.js';
 import type { LoginDTO, User } from '../auth.types.js';
-import { UnauthorizedError } from '../../../core/errors/app-error.js';
+import { ConflictError, UnauthorizedError } from '../../../core/errors/app-error.js';
 
 export class LoginUserUseCase {
   constructor(private authRepository: IAuthRepository) {}
@@ -9,6 +9,14 @@ export class LoginUserUseCase {
   async execute(data: LoginDTO): Promise<User> {
     const user = await this.authRepository.findByEmail(data.email);
     if (!user) {
+      throw new UnauthorizedError('Invalid email or password');
+    }
+
+    if (user.googleId && !user.passwordHash) {
+      throw new ConflictError('MERGE_REQUIRED_EMAIL');
+    }
+
+    if (!user.passwordHash) {
       throw new UnauthorizedError('Invalid email or password');
     }
 

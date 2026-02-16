@@ -27,7 +27,9 @@
     "confirm": "אישור",
     "back": "חזרה",
     "select": "בחר...",
-    "qty": "כמות"
+    "qty": "כמות",
+    "showMore": "הצג עוד {{count}}",
+    "showLess": "הצג פחות"
   },
   "nav": {
     "dashboard": "לוח בקרה",
@@ -47,7 +49,19 @@
     "name": "שם",
     "logout": "התנתקות",
     "noAccount": "אין לך חשבון?",
-    "hasAccount": "כבר יש לך חשבון?"
+    "hasAccount": "כבר יש לך חשבון?",
+    "orContinueWith": "או המשך עם",
+    "googleSignIn": "כניסה באמצעות Google",
+    "mergeTitle": "קישור החשבון שלך",
+    "mergeGoogleToEmail": "לאימייל זה כבר יש חשבון. הזן את הסיסמה שלך כדי לקשר התחברות עם Google.",
+    "mergeEmailToGoogle": "חשבון זה משתמש בהתחברות Google. התחבר עם Google והגדר סיסמה כדי להשתמש גם בהתחברות עם אימייל.",
+    "linkAccounts": "קשר חשבונות",
+    "noGoogleAccount": "לא נמצא חשבון עם אימייל זה. אנא הירשם תחילה.",
+    "setPassword": "הגדר סיסמה",
+    "newPassword": "סיסמה חדשה",
+    "accountExistsGoogle": "אימייל זה כבר רשום עם Google. אנא התחבר עם Google.",
+    "googleHintTitle": "זוהה חשבון Google",
+    "googleHintMessage": "נראה שהתחברת בעבר עם Google באמצעות אימייל זה. אנא השתמש בכפתור \"כניסה באמצעות Google\" למטה כדי להתחבר."
   },
   "dashboard": {
     "greeting": "בוקר טוב!",
@@ -65,6 +79,7 @@
     "customer": "לקוח",
     "selectCustomer": "בחר לקוח...",
     "dueDate": "תאריך יעד",
+    "dueDateHint": "תאריך מוקדם ביותר לפי זמן הכנה: {{date}}",
     "items": "פריטים",
     "addItem": "הוסף פריט",
     "selectRecipe": "מתכון...",
@@ -200,6 +215,7 @@
     "profile": "פרופיל",
     "preferences": "העדפות",
     "language": "שפה",
+    "dateFormat": "תבנית תאריך",
     "languages": {
       "en": "אנגלית",
       "he": "עברית"

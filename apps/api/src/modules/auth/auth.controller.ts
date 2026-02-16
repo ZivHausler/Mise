@@ -23,6 +23,33 @@ export class AuthController {
     return reply.send({ success: true, data: result });
   }
 
+  async googleLogin(
+    request: FastifyRequest<{ Body: { idToken: string } }>,
+    reply: FastifyReply,
+  ) {
+    const { idToken } = request.body;
+    const result = await this.authService.googleLogin(idToken);
+    return reply.send({ success: true, data: result });
+  }
+
+  async mergeGoogleToEmail(
+    request: FastifyRequest<{ Body: { idToken: string; password: string } }>,
+    reply: FastifyReply,
+  ) {
+    const { idToken, password } = request.body;
+    const result = await this.authService.mergeGoogleToEmail(idToken, password);
+    return reply.send({ success: true, data: result });
+  }
+
+  async mergeEmailToGoogle(
+    request: FastifyRequest<{ Body: { idToken: string; newPassword: string } }>,
+    reply: FastifyReply,
+  ) {
+    const { idToken, newPassword } = request.body;
+    const result = await this.authService.mergeEmailToGoogle(idToken, newPassword);
+    return reply.send({ success: true, data: result });
+  }
+
   async getProfile(request: FastifyRequest, reply: FastifyReply) {
     const userId = request.currentUser!.userId;
     const result = await this.authService.getProfile(userId);

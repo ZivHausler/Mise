@@ -1,9 +1,12 @@
 import type { NotificationPreference } from '../settings.types.js';
 import { getPool } from '../../../core/database/postgres.js';
 
+export type NotificationRecipientRow = NotificationPreference & { email: string; name: string; phone?: string };
+
 export interface INotifPrefsRepository {
   findAll(userId: string): Promise<NotificationPreference[]>;
   upsert(userId: string, prefs: { eventType: string; email: boolean; push: boolean; sms: boolean }[]): Promise<NotificationPreference[]>;
+  findByEventType(eventType: string): Promise<NotificationRecipientRow[]>;
 }
 
 export class PgNotifPrefsRepository implements INotifPrefsRepository {
@@ -30,6 +33,25 @@ export class PgNotifPrefsRepository implements INotifPrefsRepository {
     }
 
     return this.findAll(userId);
+  }
+
+  async findByEventType(eventType: string): Promise<NotificationRecipientRow[]> {
+    const pool = getPool();
+    const result = await pool.query(
+      `SELECT np.id, np.user_id, np.event_type, np.channel_email, np.channel_push, np.channel_sms,
+              np.created_at, np.updated_at, u.email, u.name, u.phone
+       FROM notification_preferences np
+       JOIN users u ON u.id = np.user_id
+       WHERE np.event_type = $1
+         AND (np.channel_email = true OR np.channel_sms = true)`,
+      [eventType],
+    );
+    return result.rows.map((row: Record<string, unknown>) => ({
+      ...this.mapRow(row),
+      email: row['email'] as string,
+      name: row['name'] as string,
+      phone: (row['phone'] as string) ?? undefined,
+    }));
   }
 
   private mapRow(row: Record<string, unknown>): NotificationPreference {

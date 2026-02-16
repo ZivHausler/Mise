@@ -1,26 +1,31 @@
 import type { FastifyInstance } from 'fastify';
 import type { EventBus } from '../../core/events/event-bus.js';
 import { InMemoryEventBus } from '../../core/events/event-bus.js';
+import { PgNotifPrefsRepository } from '../settings/notifications/notifications.repository.js';
+import { EmailNotifier } from './channels/email.js';
+import { SmsNotifier } from './channels/sms.js';
+import { NotificationDispatcher } from './notification.dispatcher.js';
+
+const NOTIFICATION_EVENTS = [
+  'order.created',
+  'order.statusChanged',
+  'inventory.lowStock',
+  'payment.received',
+];
 
 export default async function notificationRoutes(app: FastifyInstance) {
   const eventBus: EventBus = (app as any).container?.resolve?.('eventBus') ?? new InMemoryEventBus();
 
-  // Subscribe to domain events and log them (future: push notifications, email, etc.)
-  eventBus.subscribe('order.created', async (event) => {
-    app.log.info({ event }, 'Notification: New order created');
-  });
+  const dispatcher = new NotificationDispatcher(
+    new PgNotifPrefsRepository(),
+    new EmailNotifier(),
+    new SmsNotifier(),
+    app.log,
+  );
 
-  eventBus.subscribe('order.statusChanged', async (event) => {
-    app.log.info({ event }, 'Notification: Order status changed');
-  });
-
-  eventBus.subscribe('inventory.lowStock', async (event) => {
-    app.log.warn({ event }, 'Notification: Low stock alert');
-  });
-
-  eventBus.subscribe('payment.received', async (event) => {
-    app.log.info({ event }, 'Notification: Payment received');
-  });
+  for (const eventName of NOTIFICATION_EVENTS) {
+    eventBus.subscribe(eventName, (event) => dispatcher.dispatch(event));
+  }
 
   app.log.info('Notification event handlers registered');
 }

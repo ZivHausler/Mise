@@ -15,6 +15,8 @@ export default function AccountTab() {
   const navigate = useNavigate();
   const logout = useAuthStore((s) => s.logout);
   const setLanguage = useAppStore((s) => s.setLanguage);
+  const dateFormat = useAppStore((s) => s.dateFormat);
+  const setDateFormat = useAppStore((s) => s.setDateFormat);
 
   const authUser = useAuthStore((s) => s.user);
   const { data: profile, isLoading } = useProfile();
@@ -109,6 +111,15 @@ export default function AccountTab() {
             options={languageOptions}
             value={i18n.language}
             onChange={handleLanguageChange}
+          />
+          <Select
+            label={t('settings.dateFormat', 'Date Format')}
+            options={[
+              { value: 'dd/mm/yyyy', label: 'dd/mm/yyyy' },
+              { value: 'mm/dd/yyyy', label: 'mm/dd/yyyy' },
+            ]}
+            value={dateFormat}
+            onChange={(e) => setDateFormat(e.target.value as 'dd/mm/yyyy' | 'mm/dd/yyyy')}
           />
         </Section>
       </Card>

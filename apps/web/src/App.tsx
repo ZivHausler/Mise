@@ -3,7 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { AppShell } from '@/components/AppShell';
-import { PageLoading } from '@/components/Feedback';
+import { PageLoading, ToastContainer } from '@/components/Feedback';
 import { useAuthStore } from '@/store/auth';
 
 const queryClient = new QueryClient({
@@ -89,6 +89,7 @@ export function App() {
             </Routes>
           </Suspense>
         </BrowserRouter>
+        <ToastContainer />
       </div>
     </QueryClientProvider>
   );

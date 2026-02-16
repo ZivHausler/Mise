@@ -27,7 +27,9 @@
     "confirm": "Confirm",
     "back": "Back",
     "select": "Select...",
-    "qty": "Qty"
+    "qty": "Qty",
+    "showMore": "Show {{count}} more",
+    "showLess": "Show less"
   },
   "nav": {
     "dashboard": "Dashboard",
@@ -47,7 +49,19 @@
     "name": "Name",
     "logout": "Log Out",
     "noAccount": "Don't have an account?",
-    "hasAccount": "Already have an account?"
+    "hasAccount": "Already have an account?",
+    "orContinueWith": "or continue with",
+    "googleSignIn": "Sign in with Google",
+    "mergeTitle": "Link Your Account",
+    "mergeGoogleToEmail": "This email already has an account. Enter your password to link Google sign-in.",
+    "mergeEmailToGoogle": "This account uses Google Sign-In. Sign in with Google and set a password to also use email login.",
+    "linkAccounts": "Link Accounts",
+    "noGoogleAccount": "No account found with this email. Please register first.",
+    "setPassword": "Set Password",
+    "newPassword": "New Password",
+    "accountExistsGoogle": "This email is already registered with Google. Please sign in with Google.",
+    "googleHintTitle": "Google Account Detected",
+    "googleHintMessage": "It looks like you previously signed in with Google using this email. Please use the \"Sign in with Google\" button below to log in."
   },
   "dashboard": {
     "greeting": "Good morning!",
@@ -65,6 +79,7 @@
     "customer": "Customer",
     "selectCustomer": "Select customer...",
     "dueDate": "Due Date",
+    "dueDateHint": "Earliest possible date based on preparation time: {{date}}",
     "items": "Items",
     "addItem": "Add Item",
     "selectRecipe": "Recipe...",
@@ -199,6 +214,7 @@
     "profile": "Profile",
     "preferences": "Preferences",
     "language": "Language",
+    "dateFormat": "Date Format",
     "languages": {
       "en": "English",
       "he": "Hebrew"

@@ -25,6 +25,9 @@ const envSchema = z.object({
   JWT_EXPIRES_IN: z.string().default('1d'),
   JWT_REFRESH_EXPIRES_IN: z.string().default('7d'),
 
+  // Google OAuth
+  GOOGLE_CLIENT_ID: z.string().default(''),
+
   // CORS
   CORS_ORIGIN: z.string().default('http://localhost:5173'),
 

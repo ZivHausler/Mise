@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Plus, Trash2 } from 'lucide-react';
@@ -7,6 +7,7 @@ import { Breadcrumbs } from '@/components/Breadcrumbs';
 import { TextInput, TextArea, DatePicker, NumberInput, Select } from '@/components/FormFields';
 import { Button } from '@/components/Button';
 import { useCreateOrder, useUpdateOrder, useOrder, useCustomers, useRecipes } from '@/api/hooks';
+import { useFormatDate } from '@/utils/dateFormat';
 
 interface OrderItem {
   recipeId: string;
@@ -27,6 +28,7 @@ export default function OrderFormPage() {
   const createOrder = useCreateOrder();
   const updateOrder = useUpdateOrder();
 
+  const formatDate = useFormatDate();
   const o = existingOrder as any;
 
   const [customerId, setCustomerId] = useState(o?.customerId ?? '');
@@ -64,6 +66,29 @@ export default function OrderFormPage() {
   }, [recipes]);
 
   const total = items.reduce((sum, item) => sum + item.quantity * item.price, 0);
+
+  const minDueDate = useMemo(() => {
+    const recipeList = (recipes as any[]) ?? [];
+    let maxPrepMinutes = 0;
+    for (const item of items) {
+      if (!item.recipeId) continue;
+      const recipe = recipeList.find((r: any) => r.id === item.recipeId);
+      if (!recipe?.steps) continue;
+      const totalMinutes = (recipe.steps as any[]).reduce((sum: number, s: any) => sum + (s.duration ?? 0), 0);
+      if (totalMinutes > maxPrepMinutes) maxPrepMinutes = totalMinutes;
+    }
+    const prepDays = Math.ceil(maxPrepMinutes / (24 * 60));
+    const min = new Date();
+    min.setDate(min.getDate() + prepDays);
+    return min.toISOString().split('T')[0];
+  }, [items, recipes]);
+
+  // Clear due date if it's now before the minimum (recipe changed)
+  React.useEffect(() => {
+    if (dueDate && dueDate < minDueDate) {
+      setDueDate(minDueDate);
+    }
+  }, [minDueDate]);
 
   const handleSubmit = useCallback(
     (e: React.FormEvent) => {
@@ -104,6 +129,10 @@ export default function OrderFormPage() {
               label={t('orders.dueDate', 'Due Date')}
               value={dueDate}
               onChange={(e) => setDueDate(e.target.value)}
+              min={minDueDate}
+              hint={minDueDate > new Date().toISOString().split('T')[0]
+                ? t('orders.dueDateHint', 'Earliest possible date based on preparation time: {{date}}', { date: formatDate(minDueDate + 'T00:00:00') })
+                : undefined}
               required
             />
 

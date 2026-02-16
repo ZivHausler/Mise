@@ -4,7 +4,6 @@ import { Outlet } from 'react-router-dom';
 import { Sidebar } from './Sidebar';
 import { TopBar } from './TopBar';
 import { BottomTabs } from './BottomTabs';
-import { ToastContainer } from './Feedback';
 import { PageLoading } from './Feedback';
 
 export const AppShell = React.memo(function AppShell() {
@@ -37,7 +36,6 @@ export const AppShell = React.memo(function AppShell() {
         <BottomTabs />
       </div>
 
-      <ToastContainer />
     </div>
   );
 });

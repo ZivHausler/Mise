@@ -1,21 +1,53 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/Button';
 import { TextInput } from '@/components/FormFields';
 import { Stack } from '@/components/Layout';
-import { useRegister } from '@/api/hooks';
+import { useRegister, useGoogleLogin } from '@/api/hooks';
 import { useAuthStore } from '@/store/auth';
+import { useToastStore } from '@/store/toast';
+import { useGoogleAuth } from '@/hooks/useGoogleAuth';
 
 export default function RegisterPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const setAuth = useAuthStore((s) => s.setAuth);
+  const addToast = useToastStore((s) => s.addToast);
   const register = useRegister();
+  const googleLogin = useGoogleLogin();
 
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+
+  const handleGoogleCredential = useCallback(
+    (idToken: string) => {
+      googleLogin.mutate(
+        { idToken },
+        {
+          onSuccess: (data: any) => {
+            setAuth(data.user, data.token);
+            navigate('/');
+          },
+          onError: (error: any) => {
+            const msg = error?.response?.data?.error?.message;
+            addToast('error', msg || t('toasts.loginFailed'));
+          },
+        },
+      );
+    },
+    [googleLogin, setAuth, navigate, addToast, t],
+  );
+
+  const { renderButton, isAvailable } = useGoogleAuth(handleGoogleCredential);
+  const googleBtnRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (isAvailable && googleBtnRef.current) {
+      renderButton(googleBtnRef.current);
+    }
+  }, [isAvailable, renderButton]);
 
   const handleSubmit = useCallback(
     (e: React.FormEvent) => {
@@ -27,10 +59,18 @@ export default function RegisterPage() {
             setAuth(data.user, data.token);
             navigate('/');
           },
+          onError: (error: any) => {
+            const msg = error?.response?.data?.error?.message;
+            if (msg === 'ACCOUNT_EXISTS_GOOGLE') {
+              addToast('error', t('auth.accountExistsGoogle'));
+            } else {
+              addToast('error', t('toasts.registrationFailed'));
+            }
+          },
         }
       );
     },
-    [name, email, password, register, setAuth, navigate]
+    [name, email, password, register, setAuth, navigate, addToast, t]
   );
 
   return (
@@ -80,6 +120,17 @@ export default function RegisterPage() {
             {t('auth.login')}
           </Link>
         </p>
+
+        {isAvailable && (
+          <>
+            <div className="my-4 flex items-center gap-3">
+              <div className="h-px flex-1 bg-neutral-200" />
+              <span className="text-body-sm text-neutral-400">{t('auth.orContinueWith')}</span>
+              <div className="h-px flex-1 bg-neutral-200" />
+            </div>
+            <div ref={googleBtnRef} className="flex justify-center overflow-hidden" />
+          </>
+        )}
       </div>
     </div>
   );

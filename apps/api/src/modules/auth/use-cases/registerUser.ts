@@ -19,6 +19,9 @@ export class RegisterUserUseCase {
 
     const existing = await this.authRepository.findByEmail(data.email);
     if (existing) {
+      if (existing.googleId && !existing.passwordHash) {
+        throw new ConflictError('ACCOUNT_EXISTS_GOOGLE');
+      }
       throw new ConflictError('A user with this email already exists');
     }
 
