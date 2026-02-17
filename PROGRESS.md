@@ -144,6 +144,128 @@
 
 ---
 
+## Phase 3: Post-V1 Features & Improvements
+
+### Google OAuth & Account Merging
+- [x] Google OAuth login and registration flow
+- [x] Account merging: link existing email account to Google
+- [x] Account merging: link Google account to existing email
+- [x] Frontend Google sign-in button on login/register pages
+
+### Notification System
+- [x] Notification dispatcher with channel routing (email, SMS, in-app)
+- [x] Event-driven: order.created, order.statusChanged, inventory.lowStock, payment.received
+- [x] Notification preferences UI (per-channel toggles)
+- [ ] Actual email delivery (currently logs to console)
+- [ ] Actual SMS delivery (currently logs to console)
+- [ ] App push notifications (UI shows "Coming Soon")
+
+### Order Improvements
+- [x] 9-digit sequential order numbers (starting at 100000001)
+- [x] Numeric order status enum (0-3: received, in_progress, ready, delivered)
+- [x] Bidirectional status transitions (can move status backward)
+- [x] Price difference indicator on order form (+/- from recipe base price)
+- [x] Order detail page with formatted dates, short IDs, creation date
+
+### Server-Side Pagination & Search
+- [x] Inventory: paginated API with search and group filtering (10 items/page)
+- [x] Customer orders: server-side pagination
+- [x] Customer payments: server-side pagination
+- [x] Payments page: server-side pagination
+- [x] RTL-aware chevron icons in pagination controls
+
+### Settings Module
+- [x] Groups management (CRUD for ingredient/recipe groups)
+- [x] Units management (CRUD for measurement units)
+- [x] Profile settings (update name, email)
+- [x] Notification preferences (per-channel toggles)
+- [x] Language toggle (Hebrew/English)
+- [x] Team settings tab (UI)
+
+### Store Management (New Module)
+- [x] Store setup page for new users
+- [x] Store creation with name, type, address, phone
+- [x] Store invite system (generates invite links, console-only for now)
+- [x] Store name component in sidebar/topbar
+- [x] Database migration for stores table
+
+### Architecture Refactoring
+- [x] Generic CRUD base class with Zod schema validation
+- [x] Refactored all modules to use CRUD base (customers, inventory, orders, payments, recipes, settings)
+- [x] Removed individual create/update/delete use-case files in favor of generic CRUD
+- [x] Added Zod schemas per module (customer.schema, inventory.schema, order.schema, etc.)
+- [x] Redis caching layer (`redis-client.ts`)
+
+### UI/UX Improvements
+- [x] New customer modal (inline creation)
+- [x] Drag-and-drop recipe steps (desktop: grip handle, mobile: long-press)
+- [x] Improved dashboard layout (Quick Actions in separate row)
+- [x] RTL fixes: date locale, currency (NIS to shekel symbol), translation keys
+- [x] Mobile nav using translation keys instead of hardcoded English
+
+### Inventory Enhancements
+- [x] Recipe cost calculation with ingredient enrichment
+- [x] Stock adjustments with price tracking
+- [x] Package size support
+- [x] Debounced search input
+- [x] Clickable group chips for filtering
+
+---
+
+## Major Features Summary
+
+| Feature | Backend | Frontend | Status |
+|---------|---------|----------|--------|
+| Auth (email + password) | Done | Done | Complete |
+| Google OAuth | Done | Done | Complete |
+| Recipes (CRUD, sub-recipes, costing) | Done | Done | Complete |
+| Inventory (CRUD, stock, groups, search) | Done | Done | Complete |
+| Customers (CRUD, preferences, search) | Done | Done | Complete |
+| Orders (CRUD, status pipeline, numbering) | Done | Done | Complete |
+| Payments (CRUD, summary, history) | Done | Done | Complete |
+| Analytics (revenue, popular, stats) | Done | Done | Complete |
+| Notifications (dispatcher, preferences) | Partial | Done | Email/SMS stubbed |
+| Settings (groups, units, profile) | Done | Done | Complete |
+| Store Management | Done | Done | New |
+| Server-Side Pagination | Done | Done | Complete |
+| i18n (Hebrew RTL + English LTR) | — | Done | Complete |
+| Security Hardening | Done | — | Complete |
+
+---
+
+## Known Bugs & Issues
+
+### Stubbed / Incomplete
+1. **Email notifications** — `channels/email.ts` logs to console instead of sending actual emails (no SMTP/SendGrid configured)
+2. **SMS notifications** — `channels/sms.ts` logs to console instead of sending actual SMS (no Twilio configured)
+3. **Store invites** — invite links are printed to console, not emailed to recipients
+4. **App push notifications** — UI shows "Coming Soon" badge, no backend implementation
+
+### Configuration Gaps
+5. **Rate limiting values** are hardcoded (100 req/min global, 10 req/15min auth) — should be env vars for production tuning
+6. **RabbitMQ retry config** hardcoded (5s TTL, 3 retries) — should be configurable
+7. **No frontend `.env.example`** — only `VITE_GOOGLE_CLIENT_ID` is used but undocumented
+8. **`FRONTEND_URL`** has inline fallback to `localhost:5173` — should fail explicitly in production
+
+### Code Quality
+9. **Console.log in production code** — notification channels and RabbitMQ event bus use `console.log`/`console.error` instead of the Pino logger
+10. **MongoDB only used for recipes** — configured in docker-compose but could be documented as optional
+
+### Missing
+11. **No README.md** — no project README or setup instructions
+12. **E2E tests** — detailed plan exists (`E2E_PLAN.md`) but not yet implemented
+13. **No CONTRIBUTING.md or SETUP.md** for onboarding new developers
+
+---
+
+## Test Coverage
+
+- **136 unit tests** across 27 test files (Vitest) — all passing
+- Covers: Auth, Recipes, Inventory, Customers, Orders, Payments, Core infrastructure
+- E2E test plan drafted but not yet executed
+
+---
+
 ## Milestones
 
 | # | Milestone | Status | Branch | PR |
@@ -157,3 +279,5 @@
 | 7 | Orders module (backend) | Complete | — | — |
 | 8 | Payments module (backend) | Complete | — | — |
 | 9 | Integration, polish, security hardening | Complete | — | — |
+| 10 | Google OAuth, notifications, pagination | Complete | — | — |
+| 11 | Stores, CRUD refactoring, caching, UI polish | Complete | feat/major-improvements | — |
