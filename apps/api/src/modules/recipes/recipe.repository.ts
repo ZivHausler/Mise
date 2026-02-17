@@ -1,34 +1,26 @@
 import type { Recipe, CreateRecipeDTO, UpdateRecipeDTO } from './recipe.types.js';
 import { ObjectId } from 'mongodb';
-
-export interface IRecipeRepository {
-  findById(id: string): Promise<Recipe | null>;
-  findAll(filters?: { category?: string; search?: string }): Promise<Recipe[]>;
-  create(data: CreateRecipeDTO): Promise<Recipe>;
-  update(id: string, data: UpdateRecipeDTO): Promise<Recipe>;
-  delete(id: string): Promise<void>;
-}
-
 import { mongoClient } from '../../core/database/mongodb.js';
 
-export class MongoRecipeRepository implements IRecipeRepository {
-  private get collection() {
+export class MongoRecipeRepository {
+  private static get collection() {
     return mongoClient.getDb().collection('recipes');
   }
 
-  async findById(id: string): Promise<Recipe | null> {
+  static async findById(storeId: string, id: string): Promise<Recipe | null> {
     let objectId: ObjectId;
     try {
       objectId = new ObjectId(id);
     } catch {
       return null;
     }
-    const doc = await this.collection.findOne({ _id: objectId });
+    const doc = await this.collection.findOne({ _id: objectId, storeId });
     return doc ? this.mapDoc(doc) : null;
   }
 
-  async findAll(filters?: { category?: string; search?: string }): Promise<Recipe[]> {
+  static async findAll(storeId: string, filters?: { category?: string; search?: string }): Promise<Recipe[]> {
     const query: Record<string, unknown> = {};
+    query['storeId'] = storeId;
     if (filters?.category) {
       // Ensure category is a plain string, not an object (NoSQL injection prevention)
       if (typeof filters.category !== 'string') throw new Error('Invalid category filter');
@@ -44,10 +36,11 @@ export class MongoRecipeRepository implements IRecipeRepository {
     return docs.map((d) => this.mapDoc(d));
   }
 
-  async create(data: CreateRecipeDTO): Promise<Recipe> {
+  static async create(storeId: string, data: CreateRecipeDTO): Promise<Recipe> {
     const now = new Date();
     const doc = {
       ...data,
+      storeId,
       totalCost: 0,
       costPerUnit: 0,
       photos: [],
@@ -58,23 +51,23 @@ export class MongoRecipeRepository implements IRecipeRepository {
     return this.mapDoc({ _id: result.insertedId, ...doc });
   }
 
-  async update(id: string, data: UpdateRecipeDTO): Promise<Recipe> {
+  static async update(storeId: string, id: string, data: UpdateRecipeDTO): Promise<Recipe> {
     const objectId = new ObjectId(id);
     const updateFields: Record<string, unknown> = { ...data, updatedAt: new Date() };
     await this.collection.updateOne(
-      { _id: objectId },
+      { _id: objectId, storeId },
       { $set: updateFields },
     );
-    const doc = await this.collection.findOne({ _id: objectId });
+    const doc = await this.collection.findOne({ _id: objectId, storeId });
     return this.mapDoc(doc!);
   }
 
-  async delete(id: string): Promise<void> {
+  static async delete(storeId: string, id: string): Promise<void> {
     const objectId = new ObjectId(id);
-    await this.collection.deleteOne({ _id: objectId });
+    await this.collection.deleteOne({ _id: objectId, storeId });
   }
 
-  private mapDoc(doc: Record<string, unknown>): Recipe {
+  private static mapDoc(doc: Record<string, unknown>): Recipe {
     const id = doc['_id'];
     return {
       id: id instanceof ObjectId ? id.toHexString() : String(id),

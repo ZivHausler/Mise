@@ -1,11 +1,10 @@
 import bcrypt from 'bcrypt';
-import type { IAuthRepository } from '../auth.repository.js';
+import type { UseCase } from '../../../core/use-case.js';
+import { PgAuthRepository } from '../auth.repository.js';
 import type { RegisterDTO, User } from '../auth.types.js';
 import { ConflictError, ValidationError } from '../../../core/errors/app-error.js';
 
-export class RegisterUserUseCase {
-  constructor(private authRepository: IAuthRepository) {}
-
+export class RegisterUserUseCase implements UseCase<User, [RegisterDTO]> {
   async execute(data: RegisterDTO): Promise<User> {
     if (data.password.length < 8) {
       throw new ValidationError('Password must be at least 8 characters');
@@ -17,7 +16,7 @@ export class RegisterUserUseCase {
       throw new ValidationError('Password must contain at least one number');
     }
 
-    const existing = await this.authRepository.findByEmail(data.email);
+    const existing = await PgAuthRepository.findByEmail(data.email);
     if (existing) {
       if (existing.googleId && !existing.passwordHash) {
         throw new ConflictError('ACCOUNT_EXISTS_GOOGLE');
@@ -26,6 +25,6 @@ export class RegisterUserUseCase {
     }
 
     const passwordHash = await bcrypt.hash(data.password, 12);
-    return this.authRepository.create({ ...data, passwordHash });
+    return PgAuthRepository.create({ ...data, passwordHash });
   }
 }

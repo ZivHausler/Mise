@@ -1,35 +1,46 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { CreateOrderUseCase } from '../../../src/modules/orders/use-cases/createOrder.js';
-import { createMockOrderRepository, createOrder } from '../helpers/mock-factories.js';
+import { OrderCrud } from '../../../src/modules/orders/crud/orderCrud.js';
+import { createOrder } from '../helpers/mock-factories.js';
 import { ValidationError } from '../../../src/core/errors/app-error.js';
-import type { IOrderRepository } from '../../../src/modules/orders/order.repository.js';
 
-describe('CreateOrderUseCase', () => {
-  let useCase: CreateOrderUseCase;
-  let repo: IOrderRepository;
+vi.mock('../../../src/modules/orders/order.repository.js', () => ({
+  PgOrderRepository: {
+    create: vi.fn(),
+    findById: vi.fn(),
+    findAll: vi.fn(),
+    findByCustomerId: vi.fn(),
+    update: vi.fn(),
+    updateStatus: vi.fn(),
+    delete: vi.fn(),
+  },
+}));
 
+import { PgOrderRepository } from '../../../src/modules/orders/order.repository.js';
+
+const STORE_ID = 'store-1';
+
+describe('OrderCrud.create', () => {
   beforeEach(() => {
-    repo = createMockOrderRepository();
-    useCase = new CreateOrderUseCase(repo);
+    vi.clearAllMocks();
   });
 
   it('should create an order with valid data', async () => {
     const order = createOrder();
-    vi.mocked(repo.create).mockResolvedValue(order);
+    vi.mocked(PgOrderRepository.create).mockResolvedValue(order);
 
-    const result = await useCase.execute({
+    const result = await OrderCrud.create(STORE_ID, {
       customerId: 'cust-1',
       items: [{ recipeId: 'recipe-1', quantity: 2, unitPrice: 50 }],
       totalAmount: 100,
     });
 
     expect(result).toEqual(order);
-    expect(repo.create).toHaveBeenCalledOnce();
+    expect(PgOrderRepository.create).toHaveBeenCalledOnce();
   });
 
   it('should throw ValidationError when customerId is missing', async () => {
     await expect(
-      useCase.execute({
+      OrderCrud.create(STORE_ID, {
         customerId: '',
         items: [{ recipeId: 'r1', quantity: 1, unitPrice: 10 }],
         totalAmount: 10,
@@ -39,7 +50,7 @@ describe('CreateOrderUseCase', () => {
 
   it('should throw ValidationError when items array is empty', async () => {
     await expect(
-      useCase.execute({
+      OrderCrud.create(STORE_ID, {
         customerId: 'cust-1',
         items: [],
         totalAmount: 0,
@@ -49,7 +60,7 @@ describe('CreateOrderUseCase', () => {
 
   it('should throw ValidationError when an item has zero quantity', async () => {
     await expect(
-      useCase.execute({
+      OrderCrud.create(STORE_ID, {
         customerId: 'cust-1',
         items: [{ recipeId: 'r1', quantity: 0, unitPrice: 10 }],
         totalAmount: 0,
@@ -59,7 +70,7 @@ describe('CreateOrderUseCase', () => {
 
   it('should throw ValidationError when an item has negative quantity', async () => {
     await expect(
-      useCase.execute({
+      OrderCrud.create(STORE_ID, {
         customerId: 'cust-1',
         items: [{ recipeId: 'r1', quantity: -1, unitPrice: 10 }],
         totalAmount: 0,
@@ -75,9 +86,9 @@ describe('CreateOrderUseCase', () => {
       ],
       totalAmount: 130,
     });
-    vi.mocked(repo.create).mockResolvedValue(order);
+    vi.mocked(PgOrderRepository.create).mockResolvedValue(order);
 
-    const result = await useCase.execute({
+    const result = await OrderCrud.create(STORE_ID, {
       customerId: 'cust-1',
       items: [
         { recipeId: 'r1', quantity: 2, unitPrice: 50 },
@@ -93,9 +104,9 @@ describe('CreateOrderUseCase', () => {
   it('should create order with notes and due date', async () => {
     const dueDate = new Date('2025-03-01');
     const order = createOrder({ notes: 'Rush order', dueDate });
-    vi.mocked(repo.create).mockResolvedValue(order);
+    vi.mocked(PgOrderRepository.create).mockResolvedValue(order);
 
-    const result = await useCase.execute({
+    const result = await OrderCrud.create(STORE_ID, {
       customerId: 'cust-1',
       items: [{ recipeId: 'r1', quantity: 1, unitPrice: 50 }],
       notes: 'Rush order',

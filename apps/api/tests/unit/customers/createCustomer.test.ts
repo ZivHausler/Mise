@@ -1,37 +1,46 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { CreateCustomerUseCase } from '../../../src/modules/customers/use-cases/createCustomer.js';
-import { createMockCustomerRepository, createCustomer } from '../helpers/mock-factories.js';
+import { CustomerCrud } from '../../../src/modules/customers/crud/customerCrud.js';
+import { createCustomer } from '../helpers/mock-factories.js';
 import { ValidationError } from '../../../src/core/errors/app-error.js';
-import type { ICustomerRepository } from '../../../src/modules/customers/customer.repository.js';
 
-describe('CreateCustomerUseCase', () => {
-  let useCase: CreateCustomerUseCase;
-  let repo: ICustomerRepository;
+vi.mock('../../../src/modules/customers/customer.repository.js', () => ({
+  PgCustomerRepository: {
+    create: vi.fn(),
+    findById: vi.fn(),
+    findAll: vi.fn(),
+    update: vi.fn(),
+    delete: vi.fn(),
+  },
+}));
 
+import { PgCustomerRepository } from '../../../src/modules/customers/customer.repository.js';
+
+const STORE_ID = 'store-1';
+
+describe('CustomerCrud.create', () => {
   beforeEach(() => {
-    repo = createMockCustomerRepository();
-    useCase = new CreateCustomerUseCase(repo);
+    vi.clearAllMocks();
   });
 
   it('should create a customer with valid data', async () => {
     const customer = createCustomer();
-    vi.mocked(repo.create).mockResolvedValue(customer);
+    vi.mocked(PgCustomerRepository.create).mockResolvedValue(customer);
 
-    const result = await useCase.execute({
+    const result = await CustomerCrud.create(STORE_ID, {
       name: 'Jane Doe',
       phone: '054-1234567',
       email: 'jane@example.com',
     });
 
     expect(result).toEqual(customer);
-    expect(repo.create).toHaveBeenCalledOnce();
+    expect(PgCustomerRepository.create).toHaveBeenCalledOnce();
   });
 
   it('should create a customer with minimal data (name only)', async () => {
     const customer = createCustomer({ phone: undefined, email: undefined });
-    vi.mocked(repo.create).mockResolvedValue(customer);
+    vi.mocked(PgCustomerRepository.create).mockResolvedValue(customer);
 
-    const result = await useCase.execute({ name: 'Minimal Customer' });
+    const result = await CustomerCrud.create(STORE_ID, { name: 'Minimal Customer' });
 
     expect(result).toEqual(customer);
   });
@@ -40,9 +49,9 @@ describe('CreateCustomerUseCase', () => {
     const customer = createCustomer({
       preferences: { allergies: ['gluten', 'nuts'], favorites: ['croissant'] },
     });
-    vi.mocked(repo.create).mockResolvedValue(customer);
+    vi.mocked(PgCustomerRepository.create).mockResolvedValue(customer);
 
-    const result = await useCase.execute({
+    const result = await CustomerCrud.create(STORE_ID, {
       name: 'Allergic Customer',
       preferences: { allergies: ['gluten', 'nuts'], favorites: ['croissant'] },
     });
@@ -52,35 +61,35 @@ describe('CreateCustomerUseCase', () => {
   });
 
   it('should throw ValidationError when name is empty', async () => {
-    await expect(useCase.execute({ name: '' })).rejects.toThrow(ValidationError);
-    await expect(useCase.execute({ name: '   ' })).rejects.toThrow('Customer name is required');
+    await expect(CustomerCrud.create(STORE_ID, { name: '' })).rejects.toThrow(ValidationError);
+    await expect(CustomerCrud.create(STORE_ID, { name: '   ' })).rejects.toThrow('Customer name is required');
   });
 
   it('should throw ValidationError for invalid email', async () => {
     await expect(
-      useCase.execute({ name: 'Test', email: 'not-an-email' }),
+      CustomerCrud.create(STORE_ID, { name: 'Test', email: 'not-an-email' }),
     ).rejects.toThrow('Invalid email address');
   });
 
   it('should throw ValidationError for email without domain', async () => {
     await expect(
-      useCase.execute({ name: 'Test', email: 'user@' }),
+      CustomerCrud.create(STORE_ID, { name: 'Test', email: 'user@' }),
     ).rejects.toThrow(ValidationError);
   });
 
   it('should accept valid email formats', async () => {
-    vi.mocked(repo.create).mockResolvedValue(createCustomer());
+    vi.mocked(PgCustomerRepository.create).mockResolvedValue(createCustomer());
 
     await expect(
-      useCase.execute({ name: 'Test', email: 'user@domain.com' }),
+      CustomerCrud.create(STORE_ID, { name: 'Test', email: 'user@domain.com' }),
     ).resolves.toBeDefined();
   });
 
   it('should allow creating customer without email', async () => {
-    vi.mocked(repo.create).mockResolvedValue(createCustomer({ email: undefined }));
+    vi.mocked(PgCustomerRepository.create).mockResolvedValue(createCustomer({ email: undefined }));
 
-    const result = await useCase.execute({ name: 'No Email Customer' });
+    const result = await CustomerCrud.create(STORE_ID, { name: 'No Email Customer' });
     expect(result).toBeDefined();
-    expect(repo.create).toHaveBeenCalledOnce();
+    expect(PgCustomerRepository.create).toHaveBeenCalledOnce();
   });
 });

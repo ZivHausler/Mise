@@ -10,10 +10,14 @@ import {
   Settings,
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { useQueryClient } from '@tanstack/react-query';
 import { cn } from '@/utils/cn';
 import { useAppStore } from '@/store/app';
+import { useAuthStore } from '@/store/auth';
+import { useSelectStore } from '@/api/hooks';
 
 const navItems = [
   { path: '/', icon: LayoutDashboard, labelKey: 'nav.dashboard' },
@@ -32,8 +36,28 @@ export function Sidebar() {
   const { t } = useTranslation();
   const collapsed = useAppStore((s) => s.sidebarCollapsed);
   const toggleSidebar = useAppStore((s) => s.toggleSidebar);
+  const stores = useAuthStore((s) => s.stores);
+  const updateToken = useAuthStore((s) => s.updateToken);
+  const selectStore = useSelectStore();
+  const qc = useQueryClient();
 
   const handleToggle = useCallback(() => toggleSidebar(), [toggleSidebar]);
+
+  const handleStoreSwitch = useCallback(
+    (e: React.ChangeEvent<HTMLSelectElement>) => {
+      const storeId = e.target.value;
+      selectStore.mutate(
+        { storeId },
+        {
+          onSuccess: (data: any) => {
+            updateToken(data.token);
+            qc.invalidateQueries();
+          },
+        },
+      );
+    },
+    [selectStore, updateToken, qc],
+  );
 
   return (
     <aside
@@ -51,6 +75,23 @@ export function Sidebar() {
           {collapsed ? <ChevronRight className="h-4 w-4 rtl:scale-x-[-1]" /> : <ChevronLeft className="h-4 w-4 rtl:scale-x-[-1]" />}
         </button>
       </div>
+
+      {!collapsed && stores.length > 1 && (
+        <div className="border-b border-primary-800 px-3 py-3">
+          <div className="relative">
+            <select
+              onChange={handleStoreSwitch}
+              defaultValue={stores[0]?.storeId}
+              className="w-full appearance-none rounded-md bg-primary-800 px-3 py-2 pe-8 text-body-sm text-white outline-none focus:ring-2 focus:ring-primary-500"
+            >
+              {stores.map((s) => (
+                <option key={s.storeId} value={s.storeId}>{s.storeName}</option>
+              ))}
+            </select>
+            <ChevronDown className="pointer-events-none absolute end-2 top-1/2 h-4 w-4 -translate-y-1/2 text-primary-400" />
+          </div>
+        </div>
+      )}
 
       <nav className="flex-1 overflow-y-auto py-4">
         <ul className="flex flex-col gap-1 px-2">

@@ -1,10 +1,10 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/Button';
 import { TextInput } from '@/components/FormFields';
 import { Stack } from '@/components/Layout';
-import { useRegister, useGoogleLogin } from '@/api/hooks';
+import { useRegister, useGoogleLogin, useValidateInvite } from '@/api/hooks';
 import { useAuthStore } from '@/store/auth';
 import { useToastStore } from '@/store/toast';
 import { useGoogleAuth } from '@/hooks/useGoogleAuth';
@@ -12,14 +12,26 @@ import { useGoogleAuth } from '@/hooks/useGoogleAuth';
 export default function RegisterPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const inviteToken = searchParams.get('invite') || undefined;
+
   const setAuth = useAuthStore((s) => s.setAuth);
+  const setStores = useAuthStore((s) => s.setStores);
   const addToast = useToastStore((s) => s.addToast);
   const register = useRegister();
   const googleLogin = useGoogleLogin();
+  const inviteQuery = useValidateInvite(inviteToken);
 
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+
+  // Pre-fill email from invite
+  useEffect(() => {
+    if (inviteQuery.data?.email && !email) {
+      setEmail(inviteQuery.data.email);
+    }
+  }, [inviteQuery.data?.email, email]);
 
   const handleGoogleCredential = useCallback(
     (idToken: string) => {
@@ -27,8 +39,9 @@ export default function RegisterPage() {
         { idToken },
         {
           onSuccess: (data: any) => {
-            setAuth(data.user, data.token);
-            navigate('/');
+            setAuth(data.user, data.token, data.hasStore);
+            if (data.stores) setStores(data.stores);
+            navigate(data.hasStore ? '/' : '/store-setup');
           },
           onError: (error: any) => {
             const msg = error?.response?.data?.error?.message;
@@ -37,7 +50,7 @@ export default function RegisterPage() {
         },
       );
     },
-    [googleLogin, setAuth, navigate, addToast, t],
+    [googleLogin, setAuth, setStores, navigate, addToast, t],
   );
 
   const { renderButton, isAvailable } = useGoogleAuth(handleGoogleCredential);
@@ -53,11 +66,12 @@ export default function RegisterPage() {
     (e: React.FormEvent) => {
       e.preventDefault();
       register.mutate(
-        { name, email, password },
+        { name, email, password, inviteToken },
         {
           onSuccess: (data: any) => {
-            setAuth(data.user, data.token);
-            navigate('/');
+            setAuth(data.user, data.token, data.hasStore);
+            if (data.stores) setStores(data.stores);
+            navigate(data.hasStore ? '/' : '/store-setup');
           },
           onError: (error: any) => {
             const msg = error?.response?.data?.error?.message;
@@ -70,7 +84,7 @@ export default function RegisterPage() {
         }
       );
     },
-    [name, email, password, register, setAuth, navigate, addToast, t]
+    [name, email, password, inviteToken, register, setAuth, setStores, navigate, addToast, t]
   );
 
   return (
@@ -80,6 +94,15 @@ export default function RegisterPage() {
           <h1 className="font-heading text-display text-primary-700">Mise</h1>
           <p className="mt-2 text-body-sm text-neutral-500">{t('app.tagline')}</p>
         </div>
+
+        {inviteToken && inviteQuery.data && (
+          <div className="mb-6 rounded-md bg-primary-50 border border-primary-200 p-4 text-center">
+            <p className="text-body-sm text-primary-700">
+              {t('store.invitedTo', "You've been invited to join")}
+            </p>
+            <p className="font-semibold text-primary-800 mt-1">{inviteQuery.data.storeName}</p>
+          </div>
+        )}
 
         <form onSubmit={handleSubmit}>
           <Stack gap={4}>

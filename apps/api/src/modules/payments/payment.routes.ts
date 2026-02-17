@@ -1,17 +1,14 @@
 import type { FastifyInstance } from 'fastify';
 import { PaymentController } from './payment.controller.js';
 import { PaymentService } from './payment.service.js';
-import { PgPaymentRepository } from './payment.repository.js';
-import { InMemoryEventBus } from '../../core/events/event-bus.js';
-import { authMiddleware } from '../../core/middleware/auth.js';
+import { authMiddleware, requireStoreMiddleware } from '../../core/middleware/auth.js';
 
 export default async function paymentRoutes(app: FastifyInstance) {
-  const repository = new PgPaymentRepository();
-  const eventBus = (app as any).container?.resolve?.('eventBus') ?? new InMemoryEventBus();
-  const service = new PaymentService(repository, eventBus);
+  const service = new PaymentService();
   const controller = new PaymentController(service);
 
   app.addHook('preHandler', authMiddleware);
+  app.addHook('preHandler', requireStoreMiddleware);
 
   app.get('/', (req, reply) => controller.getAll(req as any, reply));
   app.get('/customer/:customerId', (req, reply) => controller.getByCustomerId(req as any, reply));

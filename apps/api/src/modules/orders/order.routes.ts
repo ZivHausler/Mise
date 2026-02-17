@@ -1,25 +1,18 @@
 import type { FastifyInstance } from 'fastify';
 import { OrderController } from './order.controller.js';
 import { OrderService } from './order.service.js';
-import { PgOrderRepository } from './order.repository.js';
-import { InMemoryEventBus } from '../../core/events/event-bus.js';
-import { authMiddleware } from '../../core/middleware/auth.js';
-import { MongoRecipeRepository } from '../recipes/recipe.repository.js';
+import { authMiddleware, requireStoreMiddleware } from '../../core/middleware/auth.js';
 import { RecipeService } from '../recipes/recipe.service.js';
-import { PgInventoryRepository } from '../inventory/inventory.repository.js';
 import { InventoryService } from '../inventory/inventory.service.js';
 
 export default async function orderRoutes(app: FastifyInstance) {
-  const repository = new PgOrderRepository();
-  const eventBus = (app as any).container?.resolve?.('eventBus') ?? new InMemoryEventBus();
-  const inventoryRepo = new PgInventoryRepository();
-  const inventoryService = new InventoryService(inventoryRepo, eventBus);
-  const recipeRepo = new MongoRecipeRepository();
-  const recipeService = new RecipeService(recipeRepo, eventBus, inventoryService);
-  const service = new OrderService(repository, eventBus, recipeService, inventoryService);
-  const controller = new OrderController(service);
+  const inventoryService = new InventoryService();
+  const recipeService = new RecipeService(inventoryService);
+  const orderService = new OrderService(recipeService, inventoryService);
+  const controller = new OrderController(orderService);
 
   app.addHook('preHandler', authMiddleware);
+  app.addHook('preHandler', requireStoreMiddleware);
 
   app.get('/', (req, reply) => controller.getAll(req as any, reply));
   app.get('/:id', (req, reply) => controller.getById(req as any, reply));

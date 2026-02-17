@@ -115,7 +115,7 @@
     "yield": "תפוקה",
     "cost": "עלות",
     "price": "מחיר",
-    "sellingPrice": "מחיר מכירה",
+    "sellingPrice": "מחיר מכירה (₪)",
     "ingredients": "מרכיבים",
     "ingredient": "מרכיב",
     "addIngredient": "הוסף",
@@ -128,6 +128,7 @@
     "subRecipes": "תת-מתכונים",
     "noSubRecipes": "אין תת-מתכונים.",
     "noSteps": "לא נוספו שלבים.",
+    "stepsRequired": "נדרש לפחות שלב אחד",
     "costTab": "עלות",
     "ingredientCost": "עלות מרכיבים",
     "subRecipeCost": "עלות תת-מתכונים",
@@ -150,7 +151,7 @@
     "adjustType": "סוג",
     "amount": "כמות",
     "threshold": "סף מלאי נמוך",
-    "thresholdTooltip": "תקבל התראה כשהמלאי יורד לרמה זו.",
+    "thresholdTooltip": "אם התראות מופעלות, תקבל/י הודעה כשהמלאי יורד לרמה זו.",
     "costPerUnit": "עלות ליחידה (₪)",
     "price": "מחיר (₪)",
     "perUnit": "ליחידה",
@@ -169,6 +170,7 @@
     "packagePrice": "מחיר אריזה (₪)",
     "pricePaid": "מחיר ששולם (₪)",
     "packages": "אריזות",
+    "units": "יחידות",
     "groups": "קבוצות",
     "editItem": "עריכת פריט",
     "deleteTitle": "למחוק פריט?",
@@ -194,7 +196,11 @@
     "emptyDesc": "הוסף את הלקוח הראשון שלך.",
     "searchPlaceholder": "חפש לקוחות...",
     "deleteTitle": "למחוק לקוח?",
-    "deleteMsg": "הלקוח יימחק לצמיתות."
+    "deleteMsg": "הלקוח יימחק לצמיתות.",
+    "existingFound": "לקוח כבר קיים",
+    "existingFoundDesc": "לקוח עם פרטי קשר אלה כבר קיים. האם תרצה להשתמש בו?",
+    "existingFoundInfoDesc": "לקוח עם פרטי קשר אלה כבר קיים.",
+    "useExisting": "השתמש בלקוח הזה"
   },
   "payments": {
     "logPayment": "רשום תשלום",
@@ -222,9 +228,21 @@
     },
     "tabs": {
       "account": "חשבון",
+      "team": "צוות",
       "units": "יחידות",
       "groups": "קבוצות",
       "notifications": "התראות"
+    },
+    "team": {
+      "title": "חברי צוות",
+      "invite": "הזמנה",
+      "inviteMember": "הזמן חבר צוות",
+      "sendInvite": "שלח הזמנה",
+      "roleLabel": "תפקיד",
+      "role1": "בעלים",
+      "role2": "מנהל",
+      "role3": "עובד",
+      "noMembers": "אין חברי צוות עדיין."
     },
     "units": {
       "weight": "משקל",
@@ -321,6 +339,21 @@
     "profileUpdated": "הפרופיל עודכן",
     "profileUpdateFailed": "עדכון הפרופיל נכשל",
     "notificationsUpdated": "העדפות ההתראות עודכנו",
-    "notificationsUpdateFailed": "עדכון העדפות ההתראות נכשל"
+    "notificationsUpdateFailed": "עדכון העדפות ההתראות נכשל",
+    "inviteSent": "ההזמנה נשלחה",
+    "inviteFailed": "שליחת ההזמנה נכשלה",
+    "storeCreated": "החנות נוצרה",
+    "storeCreateFailed": "יצירת החנות נכשלה"
+  },
+  "store": {
+    "setupTitle": "הקם את המאפייה שלך",
+    "name": "שם החנות",
+    "namePlaceholder": "למשל המאפייה של שרה",
+    "code": "קוד חנות",
+    "codePlaceholder": "למשל SARAH-BKR",
+    "address": "כתובת",
+    "create": "צור חנות",
+    "createFailed": "יצירת החנות נכשלה",
+    "invitedTo": "הוזמנת להצטרף אל"
   }
 }

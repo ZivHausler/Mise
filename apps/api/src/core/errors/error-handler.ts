@@ -21,6 +21,7 @@ export function globalErrorHandler(
       error: {
         code: error.errorCode,
         message: error.message,
+        ...('data' in error && error.data ? { data: error.data } : {}),
       },
       requestId,
     });

@@ -1,11 +1,10 @@
-import type { IPaymentRepository } from '../payment.repository.js';
+import type { UseCase } from '../../../core/use-case.js';
+import { PaymentCrud } from '../paymentCrud.js';
 import type { OrderPaymentSummary, PaymentStatus } from '../payment.types.js';
 
-export class GetPaymentSummaryUseCase {
-  constructor(private paymentRepository: IPaymentRepository) {}
-
-  async execute(orderId: string, orderTotalAmount: number): Promise<OrderPaymentSummary> {
-    const payments = await this.paymentRepository.findByOrderId(orderId);
+export class GetPaymentSummaryUseCase implements UseCase<OrderPaymentSummary, [string, string, number]> {
+  async execute(storeId: string, orderId: string, orderTotalAmount: number): Promise<OrderPaymentSummary> {
+    const payments = await PaymentCrud.getByOrderId(storeId, orderId);
     const paidAmount = payments.reduce((sum, p) => sum + p.amount, 0);
 
     let status: PaymentStatus;

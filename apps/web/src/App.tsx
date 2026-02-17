@@ -18,6 +18,7 @@ const queryClient = new QueryClient({
 // Lazy-loaded pages
 const LoginPage = lazy(() => import('@/pages/LoginPage'));
 const RegisterPage = lazy(() => import('@/pages/RegisterPage'));
+const StoreSetupPage = lazy(() => import('@/pages/StoreSetupPage'));
 const DashboardPage = lazy(() => import('@/pages/DashboardPage'));
 const OrdersPage = lazy(() => import('@/pages/OrdersPage'));
 const OrderDetailPage = lazy(() => import('@/pages/OrderDetailPage'));
@@ -35,7 +36,19 @@ const NotFoundPage = lazy(() => import('@/pages/NotFoundPage'));
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const hasStore = useAuthStore((s) => s.hasStore);
+
   if (!isAuthenticated) return <Navigate to="/login" replace />;
+  if (!hasStore) return <Navigate to="/store-setup" replace />;
+  return <>{children}</>;
+}
+
+function StoreSetupRoute({ children }: { children: React.ReactNode }) {
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const hasStore = useAuthStore((s) => s.hasStore);
+
+  if (!isAuthenticated) return <Navigate to="/login" replace />;
+  if (hasStore) return <Navigate to="/" replace />;
   return <>{children}</>;
 }
 
@@ -58,6 +71,16 @@ export function App() {
               {/* Public routes */}
               <Route path="/login" element={<LoginPage />} />
               <Route path="/register" element={<RegisterPage />} />
+
+              {/* Store setup route */}
+              <Route
+                path="/store-setup"
+                element={
+                  <StoreSetupRoute>
+                    <StoreSetupPage />
+                  </StoreSetupRoute>
+                }
+              />
 
               {/* Protected routes with app shell */}
               <Route

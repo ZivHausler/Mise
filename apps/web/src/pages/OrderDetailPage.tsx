@@ -1,5 +1,5 @@
 import React, { useCallback } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { ChevronLeft, ChevronRight, Trash2, Edit } from 'lucide-react';
 import { Page, Card, Section, Stack, Row } from '@/components/Layout';
@@ -95,7 +95,16 @@ export default function OrderDetailPage() {
         <Card>
           <Section title={t('orders.details', 'Details')}>
             <Stack gap={3}>
-              <DetailRow label={t('orders.customer', 'Customer')} value={o.customerName ?? '-'} />
+              <div className="flex justify-between text-body-sm">
+                <span className="text-neutral-500">{t('orders.customer', 'Customer')}</span>
+                {o.customerId ? (
+                  <Link to={`/customers/${o.customerId}`} className="font-medium text-primary-600 hover:underline">
+                    {o.customerName ?? '-'}
+                  </Link>
+                ) : (
+                  <span className="font-medium text-neutral-800">{o.customerName ?? '-'}</span>
+                )}
+              </div>
               <DetailRow label={t('orders.createdAt', 'Created')} value={o.createdAt ? formatDate(o.createdAt) : '-'} />
               <DetailRow label={t('orders.dueDate', 'Due Date')} value={o.dueDate ? formatDate(o.dueDate) : '-'} />
               <DetailRow label={t('orders.total', 'Total')} value={`${o.totalAmount ?? 0} ${t('common.currency')}`} />

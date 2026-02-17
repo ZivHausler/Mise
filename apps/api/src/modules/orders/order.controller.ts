@@ -1,72 +1,62 @@
 import type { FastifyRequest, FastifyReply } from 'fastify';
-import { z } from 'zod';
 import type { OrderService } from './order.service.js';
-
-const createOrderSchema = z.object({
-  customerId: z.string().uuid(),
-  items: z.array(z.object({
-    recipeId: z.string().max(100),
-    recipeName: z.string().max(200).optional(),
-    quantity: z.number().int().positive().max(10000),
-    price: z.number().min(0).optional(),
-    notes: z.string().max(1000).optional(),
-  })).min(1).max(100),
-  notes: z.string().max(2000).optional(),
-  dueDate: z.string().optional().transform((v) => v ? new Date(v) : undefined),
-});
-
-const updateOrderStatusSchema = z.object({
-  status: z.number().int().min(0).max(3),
-});
-
-const updateOrderSchema = z.object({
-  notes: z.string().max(2000).optional(),
-  dueDate: z.string().optional().transform((v) => v ? new Date(v) : undefined),
-});
+import type { OrderStatus } from './order.types.js';
+import { createOrderSchema, updateOrderStatusSchema, updateOrderSchema } from './order.schema.js';
 
 export class OrderController {
   constructor(private orderService: OrderService) {}
 
   async getAll(request: FastifyRequest<{ Querystring: { status?: string } }>, reply: FastifyReply) {
+    const storeId = request.currentUser!.storeId!;
     const statusParam = request.query.status;
     const filters = statusParam !== undefined ? { status: Number(statusParam) as any } : undefined;
-    const orders = await this.orderService.getAll(filters);
+    const orders = await this.orderService.getAll(storeId, filters);
     return reply.send({ success: true, data: orders });
   }
 
   async getById(request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) {
-    const order = await this.orderService.getById(request.params.id);
+    const storeId = request.currentUser!.storeId!;
+    const order = await this.orderService.getById(storeId, request.params.id);
     return reply.send({ success: true, data: order });
   }
 
-  async getByCustomerId(request: FastifyRequest<{ Params: { customerId: string }; Querystring: { page?: string; limit?: string } }>, reply: FastifyReply) {
+  async getByCustomerId(request: FastifyRequest<{ Params: { customerId: string }; Querystring: { page?: string; limit?: string; status?: string; dateFrom?: string; dateTo?: string } }>, reply: FastifyReply) {
+    const storeId = request.currentUser!.storeId!;
     const page = Math.max(1, Number(request.query.page) || 1);
     const limit = Math.min(100, Math.max(1, Number(request.query.limit) || 10));
     const offset = (page - 1) * limit;
-    const { orders, total } = await this.orderService.getByCustomerId(request.params.customerId, { limit, offset });
+    const filters: { status?: number; dateFrom?: string; dateTo?: string } = {};
+    if (request.query.status !== undefined && request.query.status !== '') filters.status = Number(request.query.status);
+    if (request.query.dateFrom) filters.dateFrom = request.query.dateFrom;
+    if (request.query.dateTo) filters.dateTo = request.query.dateTo;
+    const { orders, total } = await this.orderService.getByCustomerId(storeId, request.params.customerId, { limit, offset }, Object.keys(filters).length ? filters : undefined);
     return reply.send({ success: true, data: orders, pagination: { page, limit, total, totalPages: Math.ceil(total / limit) } });
   }
 
   async create(request: FastifyRequest, reply: FastifyReply) {
+    const storeId = request.currentUser!.storeId!;
     const data = createOrderSchema.parse(request.body);
-    const order = await this.orderService.create(data as any);
+    const order = await this.orderService.create(storeId, data as any);
     return reply.status(201).send({ success: true, data: order });
   }
 
   async updateStatus(request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) {
+    const storeId = request.currentUser!.storeId!;
     const { status } = updateOrderStatusSchema.parse(request.body);
-    const order = await this.orderService.updateStatus(request.params.id, status);
+    const order = await this.orderService.updateStatus(storeId, request.params.id, status as OrderStatus);
     return reply.send({ success: true, data: order });
   }
 
   async update(request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) {
+    const storeId = request.currentUser!.storeId!;
     const data = updateOrderSchema.parse(request.body);
-    const order = await this.orderService.update(request.params.id, data as any);
+    const order = await this.orderService.update(storeId, request.params.id, data as any);
     return reply.send({ success: true, data: order });
   }
 
   async delete(request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) {
-    await this.orderService.delete(request.params.id);
+    const storeId = request.currentUser!.storeId!;
+    await this.orderService.delete(storeId, request.params.id);
     return reply.status(204).send();
   }
 }

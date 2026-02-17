@@ -6,11 +6,12 @@ export class AuthController {
   constructor(private authService: AuthService) {}
 
   async register(
-    request: FastifyRequest<{ Body: { email: string; password: string; name: string } }>,
+    request: FastifyRequest<{ Body: { email: string; password: string; name: string; inviteToken?: string } }>,
     reply: FastifyReply,
   ) {
-    const parsed = registerSchema.parse(request.body);
-    const result = await this.authService.register(parsed);
+    const { inviteToken, ...rest } = request.body;
+    const parsed = registerSchema.parse(rest);
+    const result = await this.authService.register(parsed, inviteToken);
     return reply.status(201).send({ success: true, data: result });
   }
 

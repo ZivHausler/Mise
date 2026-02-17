@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "tsx watch src/server.ts",
+    "dev": "tsx watch --ignore node_modules src/server.ts",
     "build": "tsup src/server.ts --format esm --dts",
     "start": "node dist/server.js",
     "lint": "eslint src/ --ext .ts",

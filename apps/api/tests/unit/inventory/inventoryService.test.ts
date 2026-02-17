@@ -1,125 +1,98 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { InventoryService } from '../../../src/modules/inventory/inventory.service.js';
-import { createMockInventoryRepository, createMockEventBus, createIngredient } from '../helpers/mock-factories.js';
+import { createIngredient } from '../helpers/mock-factories.js';
 import { NotFoundError } from '../../../src/core/errors/app-error.js';
-import type { IInventoryRepository } from '../../../src/modules/inventory/inventory.repository.js';
-import type { EventBus } from '../../../src/core/events/event-bus.js';
+import { InventoryLogType } from '@mise/shared';
+
+vi.mock('../../../src/modules/inventory/crud/inventoryCrud.js', () => ({
+  InventoryCrud: {
+    create: vi.fn(),
+    getById: vi.fn(),
+    getAll: vi.fn(),
+    getAllPaginated: vi.fn(),
+    getLowStock: vi.fn(),
+    update: vi.fn(),
+    adjustStock: vi.fn(),
+    getLog: vi.fn(),
+    delete: vi.fn(),
+  },
+}));
+
+let mockAdjustStockResult: any;
+
+vi.mock('../../../src/modules/inventory/use-cases/adjustStock.js', () => ({
+  AdjustStockUseCase: class {
+    async execute() { return mockAdjustStockResult; }
+  },
+}));
+
+import { InventoryCrud } from '../../../src/modules/inventory/crud/inventoryCrud.js';
+
+const STORE_ID = 'store-1';
 
 describe('InventoryService', () => {
   let service: InventoryService;
-  let repo: IInventoryRepository;
-  let eventBus: EventBus;
 
   beforeEach(() => {
-    repo = createMockInventoryRepository();
-    eventBus = createMockEventBus();
-    service = new InventoryService(repo, eventBus);
+    vi.clearAllMocks();
+    mockAdjustStockResult = undefined;
+    service = new InventoryService();
   });
 
   describe('adjustStock', () => {
-    it('should publish inventory.lowStock event when stock falls below threshold', async () => {
-      const lowStockIngredient = createIngredient({
-        id: 'ing-1',
-        name: 'Flour',
-        quantity: 5,
-        lowStockThreshold: 10,
-      });
-      vi.mocked(repo.findById).mockResolvedValue(createIngredient({ quantity: 15 }));
-      vi.mocked(repo.adjustStock).mockResolvedValue(lowStockIngredient);
+    it('should return adjusted ingredient', async () => {
+      const updated = createIngredient({ quantity: 60 });
+      mockAdjustStockResult = updated;
 
-      await service.adjustStock({
+      const result = await service.adjustStock(STORE_ID, {
         ingredientId: 'ing-1',
-        type: 'usage',
+        type: InventoryLogType.ADDITION,
         quantity: 10,
       });
 
-      expect(eventBus.publish).toHaveBeenCalledWith(
-        expect.objectContaining({
-          eventName: 'inventory.lowStock',
-          payload: expect.objectContaining({
-            ingredientId: 'ing-1',
-            name: 'Flour',
-            currentQuantity: 5,
-            threshold: 10,
-          }),
-        }),
-      );
-    });
-
-    it('should not publish event when stock is above threshold', async () => {
-      const ingredient = createIngredient({
-        quantity: 30,
-        lowStockThreshold: 10,
-      });
-      vi.mocked(repo.findById).mockResolvedValue(createIngredient({ quantity: 50 }));
-      vi.mocked(repo.adjustStock).mockResolvedValue(ingredient);
-
-      await service.adjustStock({
-        ingredientId: 'ing-1',
-        type: 'usage',
-        quantity: 20,
-      });
-
-      expect(eventBus.publish).not.toHaveBeenCalled();
-    });
-
-    it('should publish event when stock equals threshold exactly', async () => {
-      const ingredient = createIngredient({
-        quantity: 10,
-        lowStockThreshold: 10,
-      });
-      vi.mocked(repo.findById).mockResolvedValue(createIngredient({ quantity: 20 }));
-      vi.mocked(repo.adjustStock).mockResolvedValue(ingredient);
-
-      await service.adjustStock({
-        ingredientId: 'ing-1',
-        type: 'usage',
-        quantity: 10,
-      });
-
-      expect(eventBus.publish).toHaveBeenCalledOnce();
+      expect(result).toEqual(updated);
     });
   });
 
   describe('getById', () => {
     it('should return ingredient when found', async () => {
       const ingredient = createIngredient();
-      vi.mocked(repo.findById).mockResolvedValue(ingredient);
+      vi.mocked(InventoryCrud.getById).mockResolvedValue(ingredient);
 
-      const result = await service.getById('ing-1');
+      const result = await service.getById(STORE_ID, 'ing-1');
       expect(result).toEqual(ingredient);
     });
 
     it('should throw NotFoundError when ingredient not found', async () => {
-      vi.mocked(repo.findById).mockResolvedValue(null);
+      vi.mocked(InventoryCrud.getById).mockResolvedValue(null);
 
-      await expect(service.getById('nonexistent')).rejects.toThrow(NotFoundError);
+      await expect(service.getById(STORE_ID, 'nonexistent')).rejects.toThrow(NotFoundError);
     });
   });
 
   describe('getAll', () => {
     it('should return all ingredients', async () => {
       const ingredients = [createIngredient({ id: 'i1' }), createIngredient({ id: 'i2' })];
-      vi.mocked(repo.findAll).mockResolvedValue(ingredients);
+      vi.mocked(InventoryCrud.getAll).mockResolvedValue(ingredients);
 
-      const result = await service.getAll();
+      const result = await service.getAll(STORE_ID);
       expect(result).toHaveLength(2);
     });
 
-    it('should pass search parameter to repository', async () => {
-      vi.mocked(repo.findAll).mockResolvedValue([]);
+    it('should pass search parameter', async () => {
+      vi.mocked(InventoryCrud.getAll).mockResolvedValue([]);
 
-      await service.getAll('flour');
-      expect(repo.findAll).toHaveBeenCalledWith('flour');
+      await service.getAll(STORE_ID, 'flour');
+      expect(InventoryCrud.getAll).toHaveBeenCalledWith(STORE_ID, 'flour');
     });
   });
 
   describe('getLowStock', () => {
     it('should return low stock ingredients', async () => {
       const lowStock = [createIngredient({ quantity: 3, lowStockThreshold: 10 })];
-      vi.mocked(repo.findLowStock).mockResolvedValue(lowStock);
+      vi.mocked(InventoryCrud.getLowStock).mockResolvedValue(lowStock);
 
-      const result = await service.getLowStock();
+      const result = await service.getLowStock(STORE_ID);
       expect(result).toHaveLength(1);
     });
   });

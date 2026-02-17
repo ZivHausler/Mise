@@ -1,40 +1,27 @@
-import type { ICustomerRepository } from './customer.repository.js';
 import type { CreateCustomerDTO, Customer, UpdateCustomerDTO } from './customer.types.js';
-import { CreateCustomerUseCase } from './use-cases/createCustomer.js';
-import { UpdateCustomerUseCase } from './use-cases/updateCustomer.js';
-import { DeleteCustomerUseCase } from './use-cases/deleteCustomer.js';
+import { CustomerCrud } from './customerCrud.js';
 import { NotFoundError } from '../../core/errors/app-error.js';
 
 export class CustomerService {
-  private createCustomerUseCase: CreateCustomerUseCase;
-  private updateCustomerUseCase: UpdateCustomerUseCase;
-  private deleteCustomerUseCase: DeleteCustomerUseCase;
-
-  constructor(private customerRepository: ICustomerRepository) {
-    this.createCustomerUseCase = new CreateCustomerUseCase(customerRepository);
-    this.updateCustomerUseCase = new UpdateCustomerUseCase(customerRepository);
-    this.deleteCustomerUseCase = new DeleteCustomerUseCase(customerRepository);
-  }
-
-  async getById(id: string): Promise<Customer> {
-    const customer = await this.customerRepository.findById(id);
+  async getById(id: string, storeId: string): Promise<Customer> {
+    const customer = await CustomerCrud.getById(id, storeId);
     if (!customer) throw new NotFoundError('Customer not found');
     return customer;
   }
 
-  async getAll(search?: string): Promise<Customer[]> {
-    return this.customerRepository.findAll(search);
+  async getAll(storeId: string, search?: string): Promise<Customer[]> {
+    return CustomerCrud.getAll(storeId, search);
   }
 
-  async create(data: CreateCustomerDTO): Promise<Customer> {
-    return this.createCustomerUseCase.execute(data);
+  async create(storeId: string, data: CreateCustomerDTO): Promise<Customer> {
+    return CustomerCrud.create(storeId, data);
   }
 
-  async update(id: string, data: UpdateCustomerDTO): Promise<Customer> {
-    return this.updateCustomerUseCase.execute(id, data);
+  async update(id: string, storeId: string, data: UpdateCustomerDTO): Promise<Customer> {
+    return CustomerCrud.update(id, storeId, data);
   }
 
-  async delete(id: string): Promise<void> {
-    return this.deleteCustomerUseCase.execute(id);
+  async delete(id: string, storeId: string): Promise<void> {
+    return CustomerCrud.delete(id, storeId);
   }
 }

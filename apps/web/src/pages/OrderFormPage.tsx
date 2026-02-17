@@ -1,11 +1,12 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Plus, Trash2 } from 'lucide-react';
+import { Plus, Trash2, UserPlus } from 'lucide-react';
 import { Page, Card, Stack, Row } from '@/components/Layout';
 import { Breadcrumbs } from '@/components/Breadcrumbs';
-import { TextInput, TextArea, DatePicker, NumberInput, Select } from '@/components/FormFields';
+import { TextArea, DatePicker, NumberInput, Select } from '@/components/FormFields';
 import { Button } from '@/components/Button';
+import { NewCustomerModal } from '@/components/NewCustomerModal';
 import { useCreateOrder, useUpdateOrder, useOrder, useCustomers, useRecipes } from '@/api/hooks';
 import { useFormatDate } from '@/utils/dateFormat';
 
@@ -35,6 +36,8 @@ export default function OrderFormPage() {
   const [dueDate, setDueDate] = useState(o?.dueDate ?? '');
   const [notes, setNotes] = useState(o?.notes ?? '');
   const [items, setItems] = useState<OrderItem[]>(o?.items?.length ? o.items.map((item: any) => ({ ...item, basePrice: item.basePrice ?? item.price ?? 0 })) : [{ recipeId: '', recipeName: '', quantity: 1, price: 0, basePrice: 0 }]);
+
+  const [showNewCustomer, setShowNewCustomer] = useState(false);
 
   const customerOptions = ((customers as any[]) ?? []).map((c: any) => ({ value: c.id, label: c.name }));
   const recipeOptions = ((recipes as any[]) ?? []).map((r: any) => ({ value: r.id, label: r.name }));
@@ -117,14 +120,20 @@ export default function OrderFormPage() {
       <form onSubmit={handleSubmit}>
         <Card>
           <Stack gap={4}>
-            <Select
-              label={t('orders.customer', 'Customer')}
-              options={customerOptions}
-              placeholder={t('orders.selectCustomer', 'Select customer...')}
-              value={customerId}
-              onChange={(e) => setCustomerId(e.target.value)}
-              required
-            />
+            <Row gap={2} className="items-end">
+              <Select
+                label={t('orders.customer', 'Customer')}
+                options={customerOptions}
+                placeholder={t('orders.selectCustomer', 'Select customer...')}
+                value={customerId}
+                onChange={(e) => setCustomerId(e.target.value)}
+                required
+                className="flex-1"
+              />
+              <Button type="button" variant="secondary" icon={<UserPlus className="h-4 w-4" />} onClick={() => setShowNewCustomer(true)}>
+                {t('customers.create', 'New Customer')}
+              </Button>
+            </Row>
             <DatePicker
               label={t('orders.dueDate', 'Due Date')}
               value={dueDate}
@@ -196,6 +205,7 @@ export default function OrderFormPage() {
           </Stack>
         </Card>
       </form>
+      <NewCustomerModal open={showNewCustomer} onClose={() => setShowNewCustomer(false)} onCreated={(customer) => { if (customer?.id) setCustomerId(customer.id); }} allowUseExisting />
     </Page>
   );
 }

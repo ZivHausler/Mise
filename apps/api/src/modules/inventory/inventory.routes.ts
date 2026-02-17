@@ -1,17 +1,14 @@
 import type { FastifyInstance } from 'fastify';
 import { InventoryController } from './inventory.controller.js';
 import { InventoryService } from './inventory.service.js';
-import { PgInventoryRepository } from './inventory.repository.js';
-import { InMemoryEventBus } from '../../core/events/event-bus.js';
-import { authMiddleware } from '../../core/middleware/auth.js';
+import { authMiddleware, requireStoreMiddleware } from '../../core/middleware/auth.js';
 
 export default async function inventoryRoutes(app: FastifyInstance) {
-  const repository = new PgInventoryRepository();
-  const eventBus = (app as any).container?.resolve?.('eventBus') ?? new InMemoryEventBus();
-  const service = new InventoryService(repository, eventBus);
+  const service = new InventoryService();
   const controller = new InventoryController(service);
 
   app.addHook('preHandler', authMiddleware);
+  app.addHook('preHandler', requireStoreMiddleware);
 
   app.get('/', (req, reply) => controller.getAll(req as any, reply));
   app.get('/low-stock', (req, reply) => controller.getLowStock(req, reply));

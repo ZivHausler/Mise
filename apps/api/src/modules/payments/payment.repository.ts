@@ -1,4 +1,5 @@
 import type { Payment, CreatePaymentDTO } from './payment.types.js';
+import { getPool } from '../../core/database/postgres.js';
 
 export interface PaginationOptions {
   limit: number;
@@ -10,44 +11,20 @@ export interface PaginatedResult<T> {
   total: number;
 }
 
-export interface IPaymentRepository {
-  findAll(options?: PaginationOptions): Promise<PaginatedResult<Payment>>;
-  findByCustomerId(customerId: string, options?: PaginationOptions): Promise<PaginatedResult<Payment>>;
-  findById(id: string): Promise<Payment | null>;
-  findByOrderId(orderId: string): Promise<Payment[]>;
-  create(data: CreatePaymentDTO): Promise<Payment>;
-  delete(id: string): Promise<void>;
+export interface CustomerPaymentFilters {
+  method?: string;
+  dateFrom?: string;
+  dateTo?: string;
 }
 
-import { getPool } from '../../core/database/postgres.js';
-
-export class PgPaymentRepository implements IPaymentRepository {
-  async findAll(options?: PaginationOptions): Promise<PaginatedResult<Payment>> {
-    const pool = getPool();
-    const countResult = await pool.query('SELECT COUNT(*) FROM payments');
-    const total = Number(countResult.rows[0].count);
-
-    let query = `SELECT p.*, o.order_number, c.name as customer_name
-       FROM payments p
-       LEFT JOIN orders o ON p.order_id = o.id
-       LEFT JOIN customers c ON o.customer_id = c.id
-       ORDER BY p.created_at DESC`;
-    const params: unknown[] = [];
-    if (options) {
-      query += ' LIMIT $1 OFFSET $2';
-      params.push(options.limit, options.offset);
-    }
-    const result = await pool.query(query, params);
-    return { items: result.rows.map((r: Record<string, unknown>) => this.mapRow(r)), total };
-  }
-
-  async findByCustomerId(customerId: string, options?: PaginationOptions): Promise<PaginatedResult<Payment>> {
+export class PgPaymentRepository {
+  static async findAll(storeId: string, options?: PaginationOptions): Promise<PaginatedResult<Payment>> {
     const pool = getPool();
     const countResult = await pool.query(
       `SELECT COUNT(*) FROM payments p
-       JOIN orders o ON p.order_id = o.id
-       WHERE o.customer_id = $1`,
-      [customerId],
+       JOIN orders o2 ON p.order_id = o2.id
+       WHERE o2.store_id = $1`,
+      [storeId],
     );
     const total = Number(countResult.rows[0].count);
 
@@ -55,34 +32,93 @@ export class PgPaymentRepository implements IPaymentRepository {
        FROM payments p
        LEFT JOIN orders o ON p.order_id = o.id
        LEFT JOIN customers c ON o.customer_id = c.id
-       WHERE o.customer_id = $1
+       JOIN orders o2 ON p.order_id = o2.id
+       WHERE o2.store_id = $1
        ORDER BY p.created_at DESC`;
-    const params: unknown[] = [customerId];
+    const params: unknown[] = [storeId];
     if (options) {
-      query += ` LIMIT $2 OFFSET $3`;
+      query += ' LIMIT $2 OFFSET $3';
       params.push(options.limit, options.offset);
     }
     const result = await pool.query(query, params);
     return { items: result.rows.map((r: Record<string, unknown>) => this.mapRow(r)), total };
   }
 
-  async findById(id: string): Promise<Payment | null> {
+  static async findByCustomerId(storeId: string, customerId: string, options?: PaginationOptions, filters?: CustomerPaymentFilters): Promise<PaginatedResult<Payment>> {
     const pool = getPool();
-    const result = await pool.query('SELECT * FROM payments WHERE id = $1', [id]);
+    let whereClause = 'WHERE o.customer_id = $1 AND o.store_id = $2';
+    const baseParams: unknown[] = [customerId, storeId];
+    let idx = 3;
+
+    if (filters?.method) {
+      whereClause += ` AND p.method = $${idx++}`;
+      baseParams.push(filters.method);
+    }
+    if (filters?.dateFrom) {
+      whereClause += ` AND p.created_at >= $${idx++}`;
+      baseParams.push(filters.dateFrom);
+    }
+    if (filters?.dateTo) {
+      whereClause += ` AND p.created_at < ($${idx++}::date + interval '1 day')`;
+      baseParams.push(filters.dateTo);
+    }
+
+    const countResult = await pool.query(
+      `SELECT COUNT(*) FROM payments p
+       JOIN orders o ON p.order_id = o.id
+       ${whereClause}`,
+      baseParams,
+    );
+    const total = Number(countResult.rows[0].count);
+
+    let query = `SELECT p.*, o.order_number, c.name as customer_name
+       FROM payments p
+       LEFT JOIN orders o ON p.order_id = o.id
+       LEFT JOIN customers c ON o.customer_id = c.id
+       ${whereClause}
+       ORDER BY p.created_at DESC`;
+    const params = [...baseParams];
+    if (options) {
+      query += ` LIMIT $${idx++} OFFSET $${idx++}`;
+      params.push(options.limit, options.offset);
+    }
+    const result = await pool.query(query, params);
+    return { items: result.rows.map((r: Record<string, unknown>) => this.mapRow(r)), total };
+  }
+
+  static async findById(storeId: string, id: string): Promise<Payment | null> {
+    const pool = getPool();
+    const result = await pool.query(
+      `SELECT p.* FROM payments p
+       JOIN orders o ON p.order_id = o.id
+       WHERE p.id = $1 AND o.store_id = $2`,
+      [id, storeId],
+    );
     return result.rows[0] ? this.mapRow(result.rows[0]) : null;
   }
 
-  async findByOrderId(orderId: string): Promise<Payment[]> {
+  static async findByOrderId(storeId: string, orderId: string): Promise<Payment[]> {
     const pool = getPool();
     const result = await pool.query(
-      'SELECT * FROM payments WHERE order_id = $1 ORDER BY created_at DESC',
-      [orderId],
+      `SELECT p.* FROM payments p
+       JOIN orders o ON p.order_id = o.id
+       WHERE p.order_id = $1 AND o.store_id = $2
+       ORDER BY p.created_at DESC`,
+      [orderId, storeId],
     );
     return result.rows.map((r: Record<string, unknown>) => this.mapRow(r));
   }
 
-  async create(data: CreatePaymentDTO): Promise<Payment> {
+  static async create(storeId: string, data: CreatePaymentDTO): Promise<Payment> {
     const pool = getPool();
+    // Verify the order belongs to the store
+    const orderCheck = await pool.query(
+      'SELECT id FROM orders WHERE id = $1 AND store_id = $2',
+      [data.orderId, storeId],
+    );
+    if (orderCheck.rows.length === 0) {
+      throw new Error('Order not found in this store');
+    }
     const result = await pool.query(
       `INSERT INTO payments (id, order_id, amount, method, notes, created_at)
        VALUES (gen_random_uuid(), $1, $2, $3, $4, NOW())
@@ -92,12 +128,17 @@ export class PgPaymentRepository implements IPaymentRepository {
     return this.mapRow(result.rows[0]);
   }
 
-  async delete(id: string): Promise<void> {
+  static async delete(storeId: string, id: string): Promise<void> {
     const pool = getPool();
-    await pool.query('DELETE FROM payments WHERE id = $1', [id]);
+    await pool.query(
+      `DELETE FROM payments p
+       USING orders o
+       WHERE p.order_id = o.id AND p.id = $1 AND o.store_id = $2`,
+      [id, storeId],
+    );
   }
 
-  private mapRow(row: Record<string, unknown>): Payment {
+  private static mapRow(row: Record<string, unknown>): Payment {
     return {
       id: row['id'] as string,
       orderId: row['order_id'] as string,

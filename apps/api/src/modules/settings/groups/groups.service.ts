@@ -1,36 +1,20 @@
-import type { IGroupsRepository } from './groups.repository.js';
 import type { Group, CreateGroupDTO, UpdateGroupDTO } from '../settings.types.js';
-import { ListGroupsUseCase } from './use-cases/listGroups.js';
-import { CreateGroupUseCase } from './use-cases/createGroup.js';
-import { UpdateGroupUseCase } from './use-cases/updateGroup.js';
-import { DeleteGroupUseCase } from './use-cases/deleteGroup.js';
+import { GroupsCrud } from './groupsCrud.js';
 
 export class GroupsService {
-  private listGroupsUseCase: ListGroupsUseCase;
-  private createGroupUseCase: CreateGroupUseCase;
-  private updateGroupUseCase: UpdateGroupUseCase;
-  private deleteGroupUseCase: DeleteGroupUseCase;
-
-  constructor(private groupsRepository: IGroupsRepository) {
-    this.listGroupsUseCase = new ListGroupsUseCase(groupsRepository);
-    this.createGroupUseCase = new CreateGroupUseCase(groupsRepository);
-    this.updateGroupUseCase = new UpdateGroupUseCase(groupsRepository);
-    this.deleteGroupUseCase = new DeleteGroupUseCase(groupsRepository);
+  async listGroups(storeId: string): Promise<Group[]> {
+    return GroupsCrud.getAll(storeId);
   }
 
-  async listGroups(userId: string): Promise<Group[]> {
-    return this.listGroupsUseCase.execute(userId);
+  async createGroup(storeId: string, data: CreateGroupDTO): Promise<Group> {
+    return GroupsCrud.create(storeId, data);
   }
 
-  async createGroup(userId: string, data: CreateGroupDTO): Promise<Group> {
-    return this.createGroupUseCase.execute(userId, data);
+  async updateGroup(groupId: string, storeId: string, data: UpdateGroupDTO): Promise<Group> {
+    return GroupsCrud.update(groupId, storeId, data);
   }
 
-  async updateGroup(groupId: string, userId: string, data: UpdateGroupDTO): Promise<Group> {
-    return this.updateGroupUseCase.execute(groupId, userId, data);
-  }
-
-  async deleteGroup(groupId: string, userId: string): Promise<void> {
-    return this.deleteGroupUseCase.execute(groupId, userId);
+  async deleteGroup(groupId: string, storeId: string): Promise<void> {
+    return GroupsCrud.delete(groupId, storeId);
   }
 }

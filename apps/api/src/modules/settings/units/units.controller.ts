@@ -11,30 +11,30 @@ export class UnitsController {
   }
 
   async list(request: FastifyRequest, reply: FastifyReply) {
-    const userId = request.currentUser!.userId;
-    const units = await this.unitsService.listUnits(userId);
+    const storeId = request.currentUser!.storeId!;
+    const units = await this.unitsService.listUnits(storeId);
     return reply.send({ success: true, data: units });
   }
 
   async create(request: FastifyRequest, reply: FastifyReply) {
-    const userId = request.currentUser!.userId;
+    const storeId = request.currentUser!.storeId!;
     const data = createUnitSchema.parse(request.body);
-    const unit = await this.unitsService.createUnit(userId, data);
+    const unit = await this.unitsService.createUnit(storeId, data);
     return reply.status(201).send({ success: true, data: unit });
   }
 
   async update(request: FastifyRequest, reply: FastifyReply) {
-    const userId = request.currentUser!.userId;
+    const storeId = request.currentUser!.storeId!;
     const { id } = request.params as { id: string };
     const data = updateUnitSchema.parse(request.body);
-    const unit = await this.unitsService.updateUnit(id, userId, data);
+    const unit = await this.unitsService.updateUnit(id, storeId, data);
     return reply.send({ success: true, data: unit });
   }
 
   async delete(request: FastifyRequest, reply: FastifyReply) {
-    const userId = request.currentUser!.userId;
+    const storeId = request.currentUser!.storeId!;
     const { id } = request.params as { id: string };
-    await this.unitsService.deleteUnit(id, userId);
+    await this.unitsService.deleteUnit(id, storeId);
     return reply.status(204).send();
   }
 }

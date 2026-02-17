@@ -1,22 +1,19 @@
-import React, { useMemo, useState, useCallback } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Plus, Users } from 'lucide-react';
-import { Page, PageHeader, Stack } from '@/components/Layout';
+import { Page, PageHeader } from '@/components/Layout';
 import { Button } from '@/components/Button';
 import { DataTable, EmptyState, type Column } from '@/components/DataDisplay';
 import { PageLoading } from '@/components/Feedback';
-import { Modal } from '@/components/Modal';
-import { TextInput, TextArea } from '@/components/FormFields';
-import { useCustomers, useCreateCustomer } from '@/api/hooks';
+import { NewCustomerModal } from '@/components/NewCustomerModal';
+import { useCustomers } from '@/api/hooks';
 
 export default function CustomersPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { data: customers, isLoading } = useCustomers();
-  const createCustomer = useCreateCustomer();
   const [showAdd, setShowAdd] = useState(false);
-  const [form, setForm] = useState({ name: '', phone: '', email: '', address: '', notes: '' });
 
   const columns: Column<any>[] = useMemo(
     () => [
@@ -34,15 +31,6 @@ export default function CustomersPage() {
     ],
     [t]
   );
-
-  const handleCreate = useCallback(() => {
-    createCustomer.mutate(form, {
-      onSuccess: () => {
-        setShowAdd(false);
-        setForm({ name: '', phone: '', email: '', address: '', notes: '' });
-      },
-    });
-  }, [form, createCustomer]);
 
   if (isLoading) return <PageLoading />;
 
@@ -81,22 +69,7 @@ export default function CustomersPage() {
         />
       )}
 
-      <Modal open={showAdd} onClose={() => setShowAdd(false)} title={t('customers.create', 'New Customer')} size="md"
-        footer={
-          <>
-            <Button variant="secondary" onClick={() => setShowAdd(false)}>{t('common.cancel')}</Button>
-            <Button variant="primary" onClick={handleCreate} loading={createCustomer.isPending}>{t('common.save')}</Button>
-          </>
-        }
-      >
-        <Stack gap={4}>
-          <TextInput label={t('customers.name', 'Name')} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required dir="auto" />
-          <TextInput label={t('customers.phone', 'Phone')} value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} required dir="ltr" type="tel" />
-          <TextInput label={t('customers.email', 'Email')} value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} dir="ltr" type="email" />
-          <TextArea label={t('customers.address', 'Address')} value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} dir="auto" />
-          <TextArea label={t('customers.notes', 'Notes')} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} dir="auto" />
-        </Stack>
-      </Modal>
+      <NewCustomerModal open={showAdd} onClose={() => setShowAdd(false)} />
     </Page>
   );
 }

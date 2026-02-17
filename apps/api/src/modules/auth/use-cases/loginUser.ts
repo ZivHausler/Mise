@@ -1,13 +1,12 @@
 import bcrypt from 'bcrypt';
-import type { IAuthRepository } from '../auth.repository.js';
+import type { UseCase } from '../../../core/use-case.js';
+import { PgAuthRepository } from '../auth.repository.js';
 import type { LoginDTO, User } from '../auth.types.js';
 import { ConflictError, UnauthorizedError } from '../../../core/errors/app-error.js';
 
-export class LoginUserUseCase {
-  constructor(private authRepository: IAuthRepository) {}
-
+export class LoginUserUseCase implements UseCase<User, [LoginDTO]> {
   async execute(data: LoginDTO): Promise<User> {
-    const user = await this.authRepository.findByEmail(data.email);
+    const user = await PgAuthRepository.findByEmail(data.email);
     if (!user) {
       throw new UnauthorizedError('Invalid email or password');
     }

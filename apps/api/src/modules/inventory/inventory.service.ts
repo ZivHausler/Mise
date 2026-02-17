@@ -1,78 +1,47 @@
-import type { IInventoryRepository } from './inventory.repository.js';
-import type { EventBus } from '../../core/events/event-bus.js';
 import type { AdjustStockDTO, CreateIngredientDTO, Ingredient, InventoryLog, PaginatedResult, UpdateIngredientDTO } from './inventory.types.js';
-import { CreateIngredientUseCase } from './use-cases/createIngredient.js';
-import { UpdateIngredientUseCase } from './use-cases/updateIngredient.js';
+import { InventoryCrud } from './inventoryCrud.js';
 import { AdjustStockUseCase } from './use-cases/adjustStock.js';
-import { DeleteIngredientUseCase } from './use-cases/deleteIngredient.js';
 import { NotFoundError } from '../../core/errors/app-error.js';
 
 export class InventoryService {
-  private createIngredientUseCase: CreateIngredientUseCase;
-  private updateIngredientUseCase: UpdateIngredientUseCase;
-  private adjustStockUseCase: AdjustStockUseCase;
-  private deleteIngredientUseCase: DeleteIngredientUseCase;
+  constructor() {}
 
-  constructor(
-    private inventoryRepository: IInventoryRepository,
-    private eventBus: EventBus,
-  ) {
-    this.createIngredientUseCase = new CreateIngredientUseCase(inventoryRepository);
-    this.updateIngredientUseCase = new UpdateIngredientUseCase(inventoryRepository);
-    this.adjustStockUseCase = new AdjustStockUseCase(inventoryRepository);
-    this.deleteIngredientUseCase = new DeleteIngredientUseCase(inventoryRepository);
-  }
-
-  async getById(id: string): Promise<Ingredient> {
-    const ingredient = await this.inventoryRepository.findById(id);
+  async getById(storeId: string, id: string): Promise<Ingredient> {
+    const ingredient = await InventoryCrud.getById(storeId, id);
     if (!ingredient) throw new NotFoundError('Ingredient not found');
     return ingredient;
   }
 
-  async getAll(search?: string): Promise<Ingredient[]> {
-    return this.inventoryRepository.findAll(search);
+  async getAll(storeId: string, search?: string): Promise<Ingredient[]> {
+    return InventoryCrud.getAll(storeId, search);
   }
 
-  async getAllPaginated(page: number, limit: number, search?: string, groupIds?: string[]): Promise<PaginatedResult<Ingredient>> {
-    return this.inventoryRepository.findAllPaginated(page, limit, search, groupIds);
+  async getAllPaginated(storeId: string, page: number, limit: number, search?: string, groupIds?: string[]): Promise<PaginatedResult<Ingredient>> {
+    return InventoryCrud.getAllPaginated(storeId, page, limit, search, groupIds);
   }
 
-  async getLowStock(): Promise<Ingredient[]> {
-    return this.inventoryRepository.findLowStock();
+  async getLowStock(storeId: string): Promise<Ingredient[]> {
+    return InventoryCrud.getLowStock(storeId);
   }
 
-  async create(data: CreateIngredientDTO): Promise<Ingredient> {
-    return this.createIngredientUseCase.execute(data);
+  async create(storeId: string, data: CreateIngredientDTO): Promise<Ingredient> {
+    return InventoryCrud.create(storeId, data);
   }
 
-  async update(id: string, data: UpdateIngredientDTO): Promise<Ingredient> {
-    return this.updateIngredientUseCase.execute(id, data);
+  async update(storeId: string, id: string, data: UpdateIngredientDTO): Promise<Ingredient> {
+    return InventoryCrud.update(storeId, id, data);
   }
 
-  async adjustStock(data: AdjustStockDTO): Promise<Ingredient> {
-    const ingredient = await this.adjustStockUseCase.execute(data);
-
-    if (ingredient.quantity <= ingredient.lowStockThreshold) {
-      await this.eventBus.publish({
-        eventName: 'inventory.lowStock',
-        payload: {
-          ingredientId: ingredient.id,
-          name: ingredient.name,
-          currentQuantity: ingredient.quantity,
-          threshold: ingredient.lowStockThreshold,
-        },
-        timestamp: new Date(),
-      });
-    }
-
-    return ingredient;
+  async adjustStock(storeId: string, data: AdjustStockDTO): Promise<Ingredient> {
+    const adjustStockUseCase = new AdjustStockUseCase();
+    return adjustStockUseCase.execute(storeId, data);
   }
 
-  async getLog(ingredientId: string): Promise<InventoryLog[]> {
-    return this.inventoryRepository.getLog(ingredientId);
+  async getLog(storeId: string, ingredientId: string): Promise<InventoryLog[]> {
+    return InventoryCrud.getLog(storeId, ingredientId);
   }
 
-  async delete(id: string): Promise<void> {
-    return this.deleteIngredientUseCase.execute(id);
+  async delete(storeId: string, id: string): Promise<void> {
+    return InventoryCrud.delete(storeId, id);
   }
 }

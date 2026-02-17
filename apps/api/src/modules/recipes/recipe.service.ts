@@ -1,54 +1,41 @@
-import type { IRecipeRepository } from './recipe.repository.js';
 import type { CreateRecipeDTO, Recipe, UpdateRecipeDTO } from './recipe.types.js';
-import type { EventBus } from '../../core/events/event-bus.js';
-import { CreateRecipeUseCase } from './use-cases/createRecipe.js';
-import { UpdateRecipeUseCase } from './use-cases/updateRecipe.js';
-import { DeleteRecipeUseCase } from './use-cases/deleteRecipe.js';
+import { getEventBus } from '../../core/events/event-bus.js';
+import { RecipeCrud } from './recipeCrud.js';
 import { CalculateRecipeCostUseCase } from './use-cases/calculateRecipeCost.js';
 import { NotFoundError } from '../../core/errors/app-error.js';
 import type { InventoryService } from '../inventory/inventory.service.js';
 import { unitConversionFactor } from '../shared/unitConversion.js';
 
 export class RecipeService {
-  private createRecipeUseCase: CreateRecipeUseCase;
-  private updateRecipeUseCase: UpdateRecipeUseCase;
-  private deleteRecipeUseCase: DeleteRecipeUseCase;
   private calculateCostUseCase: CalculateRecipeCostUseCase;
 
-  constructor(
-    private recipeRepository: IRecipeRepository,
-    private eventBus: EventBus,
-    private inventoryService?: InventoryService,
-  ) {
-    this.createRecipeUseCase = new CreateRecipeUseCase(recipeRepository);
-    this.updateRecipeUseCase = new UpdateRecipeUseCase(recipeRepository);
-    this.deleteRecipeUseCase = new DeleteRecipeUseCase(recipeRepository);
-    this.calculateCostUseCase = new CalculateRecipeCostUseCase(recipeRepository, inventoryService);
+  constructor(private inventoryService?: InventoryService) {
+    this.calculateCostUseCase = new CalculateRecipeCostUseCase(inventoryService);
   }
 
-  async getById(id: string): Promise<Recipe> {
-    const recipe = await this.recipeRepository.findById(id);
+  async getById(storeId: string, id: string): Promise<Recipe> {
+    const recipe = await RecipeCrud.getById(storeId, id);
     if (!recipe) throw new NotFoundError('Recipe not found');
-    await this.enrichIngredients(recipe);
-    await this.enrichSubRecipeSteps(recipe);
+    await this.enrichIngredients(storeId, recipe);
+    await this.enrichSubRecipeSteps(storeId, recipe);
     return recipe;
   }
 
-  async getAll(filters?: { category?: string; search?: string }): Promise<Recipe[]> {
-    const recipes = await this.recipeRepository.findAll(filters);
+  async getAll(storeId: string, filters?: { category?: string; search?: string }): Promise<Recipe[]> {
+    const recipes = await RecipeCrud.getAll(storeId, filters);
     for (const recipe of recipes) {
-      await this.enrichIngredients(recipe);
+      await this.enrichIngredients(storeId, recipe);
     }
     return recipes;
   }
 
-  private async enrichIngredients(recipe: Recipe): Promise<void> {
+  private async enrichIngredients(storeId: string, recipe: Recipe): Promise<void> {
     if (!this.inventoryService || !recipe.ingredients) return;
     let totalCost = 0;
     const groupsMap = new Map<string, { id: string; name: string; color: string | null; icon: string | null }>();
     for (const ing of recipe.ingredients) {
       try {
-        const item = await this.inventoryService.getById(ing.ingredientId);
+        const item = await this.inventoryService.getById(storeId, ing.ingredientId);
         ing.name = item.name;
         const factor = unitConversionFactor(ing.unit, item.unit);
         const convertedQty = ing.quantity * factor;
@@ -69,17 +56,16 @@ export class RecipeService {
     (recipe as any).groups = Array.from(groupsMap.values());
   }
 
-  private async enrichSubRecipeSteps(recipe: Recipe): Promise<void> {
+  private async enrichSubRecipeSteps(storeId: string, recipe: Recipe): Promise<void> {
     if (!recipe.steps) return;
     for (const step of recipe.steps) {
       if (step.type !== 'sub_recipe' || !step.recipeId) continue;
       try {
-        const subRecipe = await this.recipeRepository.findById(step.recipeId);
+        const subRecipe = await RecipeCrud.getById(storeId, step.recipeId);
         if (subRecipe) {
           step.name = subRecipe.name;
-          await this.enrichIngredients(subRecipe);
+          await this.enrichIngredients(storeId, subRecipe);
           const qty = step.quantity ?? 1;
-          // Multiply ingredient amounts and costs by sub-recipe quantity
           (step as any).ingredients = subRecipe.ingredients.map((ing) => ({
             ...ing,
             quantity: +(ing.quantity * qty).toFixed(4),
@@ -94,12 +80,11 @@ export class RecipeService {
     }
   }
 
-  async create(data: CreateRecipeDTO): Promise<Recipe> {
-    // Enrich ingredients with names and costs from inventory
+  async create(storeId: string, data: CreateRecipeDTO): Promise<Recipe> {
     if (this.inventoryService && data.ingredients) {
       for (const ing of data.ingredients) {
         try {
-          const inventoryItem = await this.inventoryService.getById(ing.ingredientId);
+          const inventoryItem = await this.inventoryService.getById(storeId, ing.ingredientId);
           (ing as any).name = inventoryItem.name;
           (ing as any).costPerUnit = inventoryItem.costPerUnit;
         } catch {
@@ -109,12 +94,11 @@ export class RecipeService {
       }
     }
 
-    // Enrich sub-recipe steps with names
     if (data.steps) {
       for (const step of data.steps) {
         if (step.type !== 'sub_recipe' || !step.recipeId) continue;
         try {
-          const subRecipe = await this.recipeRepository.findById(step.recipeId);
+          const subRecipe = await RecipeCrud.getById(storeId, step.recipeId);
           if (subRecipe) step.name = subRecipe.name;
         } catch {
           step.name = step.name ?? 'Unknown';
@@ -122,26 +106,22 @@ export class RecipeService {
       }
     }
 
-    const recipe = await this.createRecipeUseCase.execute(data);
+    const recipe = await RecipeCrud.create(storeId, data);
 
-    // Calculate and update cost
-    const totalCost = await this.calculateCostUseCase.execute(recipe.id);
+    const totalCost = await this.calculateCostUseCase.execute(storeId, recipe.id);
     const costPerUnit = recipe.yield ? totalCost / recipe.yield : totalCost;
-    await this.recipeRepository.update(recipe.id, { ...data, } as any);
-    // Update the cost fields directly
-    const updated = await this.recipeRepository.update(recipe.id, {} as any);
-    // We need to set totalCost and costPerUnit on the doc
-    const finalRecipe = await this.recipeRepository.findById(recipe.id);
+    await RecipeCrud.update(storeId, recipe.id, { ...data } as any);
+    await RecipeCrud.update(storeId, recipe.id, {} as any);
+    const finalRecipe = await RecipeCrud.getById(storeId, recipe.id);
 
     return finalRecipe ?? recipe;
   }
 
-  async update(id: string, data: UpdateRecipeDTO): Promise<Recipe> {
-    // Enrich ingredients with names and costs from inventory
+  async update(storeId: string, id: string, data: UpdateRecipeDTO): Promise<Recipe> {
     if (this.inventoryService && data.ingredients) {
       for (const ing of data.ingredients) {
         try {
-          const inventoryItem = await this.inventoryService.getById(ing.ingredientId);
+          const inventoryItem = await this.inventoryService.getById(storeId, ing.ingredientId);
           (ing as any).name = inventoryItem.name;
           (ing as any).costPerUnit = inventoryItem.costPerUnit;
         } catch {
@@ -151,12 +131,11 @@ export class RecipeService {
       }
     }
 
-    // Enrich sub-recipe steps with names
     if (data.steps) {
       for (const step of data.steps) {
         if (step.type !== 'sub_recipe' || !step.recipeId) continue;
         try {
-          const subRecipe = await this.recipeRepository.findById(step.recipeId);
+          const subRecipe = await RecipeCrud.getById(storeId, step.recipeId);
           if (subRecipe) step.name = subRecipe.name;
         } catch {
           step.name = step.name ?? 'Unknown';
@@ -164,34 +143,33 @@ export class RecipeService {
       }
     }
 
-    const recipe = await this.updateRecipeUseCase.execute(id, data);
+    const recipe = await RecipeCrud.update(storeId, id, data);
 
-    // Recalculate cost
-    const totalCost = await this.calculateCostUseCase.execute(recipe.id);
+    const totalCost = await this.calculateCostUseCase.execute(storeId, recipe.id);
     const costPerUnit = recipe.yield ? totalCost / recipe.yield : totalCost;
-    await this.recipeRepository.update(recipe.id, { totalCost, costPerUnit } as any);
+    await RecipeCrud.update(storeId, recipe.id, { totalCost, costPerUnit } as any);
 
-    await this.eventBus.publish({
+    await getEventBus().publish({
       eventName: 'recipe.updated',
       payload: { recipeId: recipe.id },
       timestamp: new Date(),
     });
 
-    const updated = await this.recipeRepository.findById(recipe.id);
+    const updated = await RecipeCrud.getById(storeId, recipe.id);
     return updated ?? recipe;
   }
 
-  async calculateCost(id: string): Promise<{ totalCost: number; costPerUnit: number }> {
-    const recipe = await this.getById(id);
-    const totalCost = await this.calculateCostUseCase.execute(id);
+  async calculateCost(storeId: string, id: string): Promise<{ totalCost: number; costPerUnit: number }> {
+    const recipe = await this.getById(storeId, id);
+    const totalCost = await this.calculateCostUseCase.execute(storeId, id);
     const costPerUnit = recipe.yield ? totalCost / recipe.yield : totalCost;
 
-    await this.recipeRepository.update(id, { totalCost, costPerUnit } as any);
+    await RecipeCrud.update(storeId, id, { totalCost, costPerUnit } as any);
 
     return { totalCost, costPerUnit };
   }
 
-  async delete(id: string): Promise<void> {
-    return this.deleteRecipeUseCase.execute(id);
+  async delete(storeId: string, id: string): Promise<void> {
+    return RecipeCrud.delete(storeId, id);
   }
 }

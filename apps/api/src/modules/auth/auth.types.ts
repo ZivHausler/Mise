@@ -1,11 +1,3 @@
-export const USER_ROLE = {
-  ADMIN: 'admin',
-  STAFF: 'staff',
-  VIEWER: 'viewer',
-} as const;
-
-export type UserRole = (typeof USER_ROLE)[keyof typeof USER_ROLE];
-
 export interface User {
   id: string;
   email: string;
@@ -13,7 +5,6 @@ export interface User {
   googleId?: string;
   name: string;
   phone?: string;
-  role: UserRole;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -23,7 +14,6 @@ export interface UserPublic {
   email: string;
   name: string;
   phone?: string;
-  role: UserRole;
 }
 
 export interface RegisterDTO {
@@ -40,10 +30,13 @@ export interface LoginDTO {
 export interface AuthTokenPayload {
   userId: string;
   email: string;
-  role: UserRole;
+  storeId?: string;
+  storeRole?: number;
 }
 
 export interface AuthResponse {
   user: UserPublic;
   token: string;
+  hasStore: boolean;
+  stores: { storeId: string; storeName: string; role: number }[];
 }

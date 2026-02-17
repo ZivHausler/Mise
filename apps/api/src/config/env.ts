@@ -28,6 +28,9 @@ const envSchema = z.object({
   // Google OAuth
   GOOGLE_CLIENT_ID: z.string().default(''),
 
+  // Frontend URL (for invite links)
+  FRONTEND_URL: z.string().default('http://localhost:5173'),
+
   // CORS
   CORS_ORIGIN: z.string().default('http://localhost:5173'),
 

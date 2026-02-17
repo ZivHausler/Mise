@@ -3,6 +3,7 @@ import { Menu, Globe } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useAppStore } from '@/store/app';
 import { useAuthStore } from '@/store/auth';
+import { StoreName } from './StoreName';
 
 interface TopBarProps {
   onMenuClick?: () => void;
@@ -12,7 +13,6 @@ export const TopBar = React.memo(function TopBar({ onMenuClick }: TopBarProps) {
   const { t, i18n } = useTranslation();
   const setLanguage = useAppStore((s) => s.setLanguage);
   const user = useAuthStore((s) => s.user);
-
   const toggleLanguage = useCallback(() => {
     const newLang = i18n.language === 'he' ? 'en' : 'he';
     i18n.changeLanguage(newLang);
@@ -31,7 +31,7 @@ export const TopBar = React.memo(function TopBar({ onMenuClick }: TopBarProps) {
         >
           <Menu className="h-5 w-5" />
         </button>
-        <span className="font-heading text-h3 text-primary-700 lg:hidden">Mise</span>
+        <StoreName />
       </div>
 
       <div className="flex items-center gap-3">

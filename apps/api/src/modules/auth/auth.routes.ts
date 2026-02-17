@@ -1,13 +1,11 @@
 import type { FastifyInstance } from 'fastify';
 import { AuthController } from './auth.controller.js';
 import { AuthService } from './auth.service.js';
-import { PgAuthRepository } from './auth.repository.js';
 import { authMiddleware } from '../../core/middleware/auth.js';
 import { authRateLimitPlugin } from '../../core/plugins.js';
 
 export default async function authRoutes(app: FastifyInstance) {
-  const repository = new PgAuthRepository();
-  const service = new AuthService(repository, app);
+  const service = new AuthService(app);
   const controller = new AuthController(service);
 
   // Apply stricter rate limiting to auth routes (10 requests per 15 min per IP)

@@ -10,6 +10,7 @@ import { postgresClient } from './core/database/postgres.js';
 import { mongoClient } from './core/database/mongodb.js';
 import { sanitizeMiddleware } from './core/middleware/sanitize.js';
 import { RabbitMQEventBus } from './core/events/rabbitmq-event-bus.js';
+import { RedisCacheClient } from './core/cache/redis-client.js';
 
 async function bootstrap() {
   const app = Fastify({
@@ -74,6 +75,11 @@ async function bootstrap() {
       if (bus instanceof RabbitMQEventBus) {
         await bus.close();
         app.log.info('RabbitMQ disconnected');
+      }
+      const cache = container.resolve('cacheClient');
+      if (cache instanceof RedisCacheClient) {
+        await cache.disconnect();
+        app.log.info('Redis disconnected');
       }
       await postgresClient.disconnect();
       await mongoClient.disconnect();

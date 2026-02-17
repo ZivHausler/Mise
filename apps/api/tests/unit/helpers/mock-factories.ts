@@ -1,91 +1,11 @@
 import { vi } from 'vitest';
-import type { IAuthRepository } from '../../../src/modules/auth/auth.repository.js';
-import type { IInventoryRepository } from '../../../src/modules/inventory/inventory.repository.js';
-import type { ICustomerRepository } from '../../../src/modules/customers/customer.repository.js';
-import type { IRecipeRepository } from '../../../src/modules/recipes/recipe.repository.js';
-import type { IOrderRepository } from '../../../src/modules/orders/order.repository.js';
-import type { IPaymentRepository } from '../../../src/modules/payments/payment.repository.js';
 import type { EventBus } from '../../../src/core/events/event-bus.js';
 import type { User } from '../../../src/modules/auth/auth.types.js';
-import type { Ingredient, InventoryLog } from '../../../src/modules/inventory/inventory.types.js';
+import type { Ingredient } from '../../../src/modules/inventory/inventory.types.js';
 import type { Customer } from '../../../src/modules/customers/customer.types.js';
 import type { Recipe } from '../../../src/modules/recipes/recipe.types.js';
 import type { Order } from '../../../src/modules/orders/order.types.js';
 import type { Payment } from '../../../src/modules/payments/payment.types.js';
-
-// ─── Auth Repository Mock ───────────────────────────────────────
-
-export function createMockAuthRepository(): IAuthRepository {
-  return {
-    findById: vi.fn(),
-    findByEmail: vi.fn(),
-    create: vi.fn(),
-  };
-}
-
-// ─── Inventory Repository Mock ──────────────────────────────────
-
-export function createMockInventoryRepository(): IInventoryRepository {
-  return {
-    findById: vi.fn(),
-    findAll: vi.fn(),
-    findLowStock: vi.fn(),
-    create: vi.fn(),
-    update: vi.fn(),
-    adjustStock: vi.fn(),
-    getLog: vi.fn(),
-    delete: vi.fn(),
-  };
-}
-
-// ─── Customer Repository Mock ───────────────────────────────────
-
-export function createMockCustomerRepository(): ICustomerRepository {
-  return {
-    findById: vi.fn(),
-    findAll: vi.fn(),
-    create: vi.fn(),
-    update: vi.fn(),
-    delete: vi.fn(),
-  };
-}
-
-// ─── Recipe Repository Mock ─────────────────────────────────────
-
-export function createMockRecipeRepository(): IRecipeRepository {
-  return {
-    findById: vi.fn(),
-    findAll: vi.fn(),
-    create: vi.fn(),
-    update: vi.fn(),
-    delete: vi.fn(),
-  };
-}
-
-// ─── Order Repository Mock ──────────────────────────────────────
-
-export function createMockOrderRepository(): IOrderRepository {
-  return {
-    findById: vi.fn(),
-    findByCustomerId: vi.fn(),
-    findAll: vi.fn(),
-    create: vi.fn(),
-    update: vi.fn(),
-    updateStatus: vi.fn(),
-    delete: vi.fn(),
-  };
-}
-
-// ─── Payment Repository Mock ────────────────────────────────────
-
-export function createMockPaymentRepository(): IPaymentRepository {
-  return {
-    findById: vi.fn(),
-    findByOrderId: vi.fn(),
-    create: vi.fn(),
-    delete: vi.fn(),
-  };
-}
 
 // ─── Event Bus Mock ─────────────────────────────────────────────
 
@@ -104,7 +24,6 @@ export function createUser(overrides?: Partial<User>): User {
     email: 'baker@mise.com',
     passwordHash: 'MOCK_BCRYPT_HASH_NOT_REAL',
     name: 'Test Baker',
-    role: 'admin',
     createdAt: new Date('2025-01-01'),
     updatedAt: new Date('2025-01-01'),
     ...overrides,
@@ -158,9 +77,10 @@ export function createRecipe(overrides?: Partial<Recipe>): Recipe {
 export function createOrder(overrides?: Partial<Order>): Order {
   return {
     id: 'order-1',
+    orderNumber: 100000001,
     customerId: 'cust-1',
     items: [{ recipeId: 'recipe-1', quantity: 2, unitPrice: 50 }],
-    status: 'received',
+    status: 0, // ORDER_STATUS.RECEIVED
     totalAmount: 100,
     createdAt: new Date('2025-01-01'),
     updatedAt: new Date('2025-01-01'),

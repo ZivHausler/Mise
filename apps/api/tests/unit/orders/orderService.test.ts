@@ -1,37 +1,75 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { OrderService } from '../../../src/modules/orders/order.service.js';
-import { createMockOrderRepository, createMockEventBus, createOrder } from '../helpers/mock-factories.js';
+import { createMockEventBus, createOrder } from '../helpers/mock-factories.js';
 import { NotFoundError } from '../../../src/core/errors/app-error.js';
-import type { IOrderRepository } from '../../../src/modules/orders/order.repository.js';
+import { ORDER_STATUS } from '../../../src/modules/orders/order.types.js';
 import type { EventBus } from '../../../src/core/events/event-bus.js';
 
-// Mock the shared constants
+vi.mock('../../../src/core/events/event-bus.js', async (importOriginal) => {
+  const original = await importOriginal<typeof import('../../../src/core/events/event-bus.js')>();
+  return { ...original, getEventBus: vi.fn() };
+});
+
 vi.mock('@mise/shared/src/constants/index.js', () => ({
   ORDER_STATUS_FLOW: {
-    received: ['in_progress'],
-    in_progress: ['ready'],
-    ready: ['delivered'],
-    delivered: [],
+    0: [1],    // received → in_progress
+    1: [0, 2], // in_progress → received, ready
+    2: [1, 3], // ready → in_progress, delivered
+    3: [2],    // delivered → ready
   },
 }));
 
+vi.mock('../../../src/modules/orders/crud/orderCrud.js', () => ({
+  OrderCrud: {
+    create: vi.fn(),
+    getById: vi.fn(),
+    getAll: vi.fn(),
+    update: vi.fn(),
+    updateStatus: vi.fn(),
+    delete: vi.fn(),
+    findByCustomerId: vi.fn(),
+  },
+}));
+
+vi.mock('../../../src/modules/orders/use-cases/updateOrderStatus.js', () => ({
+  UpdateOrderStatusUseCase: vi.fn().mockImplementation(() => ({
+    execute: vi.fn(),
+  })),
+}));
+
+vi.mock('../../../src/modules/orders/use-cases/getOrdersByCustomer.js', () => ({
+  GetOrdersByCustomerUseCase: vi.fn().mockImplementation(() => ({
+    execute: vi.fn(),
+  })),
+}));
+
+vi.mock('../../../src/modules/shared/unitConversion.js', () => ({
+  unitConversionFactor: vi.fn().mockReturnValue(1),
+}));
+
+import { OrderCrud } from '../../../src/modules/orders/crud/orderCrud.js';
+import { UpdateOrderStatusUseCase } from '../../../src/modules/orders/use-cases/updateOrderStatus.js';
+import { getEventBus } from '../../../src/core/events/event-bus.js';
+
+const STORE_ID = 'store-1';
+
 describe('OrderService', () => {
   let service: OrderService;
-  let repo: IOrderRepository;
   let eventBus: EventBus;
 
   beforeEach(() => {
-    repo = createMockOrderRepository();
+    vi.clearAllMocks();
     eventBus = createMockEventBus();
-    service = new OrderService(repo, eventBus);
+    vi.mocked(getEventBus).mockReturnValue(eventBus);
+    service = new OrderService();
   });
 
   describe('create', () => {
     it('should publish order.created event after creating order', async () => {
       const order = createOrder();
-      vi.mocked(repo.create).mockResolvedValue(order);
+      vi.mocked(OrderCrud.create).mockResolvedValue(order);
 
-      await service.create({
+      await service.create(STORE_ID, {
         customerId: 'cust-1',
         items: [{ recipeId: 'r1', quantity: 2 }],
       });
@@ -50,20 +88,24 @@ describe('OrderService', () => {
 
   describe('updateStatus', () => {
     it('should publish order.statusChanged event after status update', async () => {
-      const existing = createOrder({ status: 'received' });
-      const updated = createOrder({ status: 'in_progress' });
-      vi.mocked(repo.findById).mockResolvedValue(existing);
-      vi.mocked(repo.updateStatus).mockResolvedValue(updated);
+      const mockExecute = vi.fn().mockResolvedValue({
+        order: createOrder({ status: ORDER_STATUS.IN_PROGRESS }),
+        previousStatus: ORDER_STATUS.RECEIVED,
+      });
+      vi.mocked(UpdateOrderStatusUseCase).mockImplementation(() => ({ execute: mockExecute }) as any);
 
-      await service.updateStatus('order-1', 'in_progress');
+      // Recreate service to pick up the new mock
+      service = new OrderService();
+
+      await service.updateStatus(STORE_ID, 'order-1', ORDER_STATUS.IN_PROGRESS);
 
       expect(eventBus.publish).toHaveBeenCalledWith(
         expect.objectContaining({
           eventName: 'order.statusChanged',
           payload: expect.objectContaining({
             orderId: 'order-1',
-            previousStatus: 'received',
-            newStatus: 'in_progress',
+            previousStatus: ORDER_STATUS.RECEIVED,
+            newStatus: ORDER_STATUS.IN_PROGRESS,
           }),
         }),
       );
@@ -73,16 +115,16 @@ describe('OrderService', () => {
   describe('getById', () => {
     it('should return order when found', async () => {
       const order = createOrder();
-      vi.mocked(repo.findById).mockResolvedValue(order);
+      vi.mocked(OrderCrud.getById).mockResolvedValue(order);
 
-      const result = await service.getById('order-1');
+      const result = await service.getById(STORE_ID, 'order-1');
       expect(result).toEqual(order);
     });
 
     it('should throw NotFoundError when order not found', async () => {
-      vi.mocked(repo.findById).mockResolvedValue(null);
+      vi.mocked(OrderCrud.getById).mockResolvedValue(null);
 
-      await expect(service.getById('nonexistent')).rejects.toThrow(NotFoundError);
+      await expect(service.getById(STORE_ID, 'nonexistent')).rejects.toThrow(NotFoundError);
     });
   });
 });

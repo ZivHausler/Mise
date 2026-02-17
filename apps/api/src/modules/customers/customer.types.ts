@@ -1,7 +1,7 @@
 export interface Customer {
   id: string;
   name: string;
-  phone?: string;
+  phone: string;
   email?: string;
   address?: string;
   notes?: string;
@@ -17,7 +17,7 @@ export interface CustomerPreferences {
 
 export interface CreateCustomerDTO {
   name: string;
-  phone?: string;
+  phone: string;
   email?: string;
   address?: string;
   notes?: string;

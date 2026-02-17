@@ -42,8 +42,8 @@ export function useRegister() {
   const addToast = useToastStore((s) => s.addToast);
   const { t } = useTranslation();
   return useMutation({
-    mutationFn: (body: { name: string; email: string; password: string }) =>
-      postApi<{ user: unknown; token: string }>('/auth/register', body),
+    mutationFn: (body: { name: string; email: string; password: string; inviteToken?: string }) =>
+      postApi<{ user: unknown; token: string; hasStore: boolean }>('/auth/register', body),
     onError: () => addToast('error', t('toasts.registrationFailed')),
   });
 }
@@ -246,11 +246,15 @@ export function useCustomer(id: string) {
   return useQuery({ queryKey: ['customers', id], queryFn: () => fetchApi<unknown>(`/customers/${id}`), enabled: !!id });
 }
 
-export function useCustomerOrders(customerId: string, page = 1, limit = 10) {
+export function useCustomerOrders(customerId: string, page = 1, limit = 10, filters?: { status?: number; dateFrom?: string; dateTo?: string }) {
   return useQuery({
-    queryKey: ['orders', 'customer', customerId, page, limit],
+    queryKey: ['orders', 'customer', customerId, page, limit, filters],
     queryFn: async () => {
-      const { data } = await apiClient.get(`/orders/customer/${customerId}?page=${page}&limit=${limit}`);
+      const params = new URLSearchParams({ page: String(page), limit: String(limit) });
+      if (filters?.status !== undefined) params.set('status', String(filters.status));
+      if (filters?.dateFrom) params.set('dateFrom', filters.dateFrom);
+      if (filters?.dateTo) params.set('dateTo', filters.dateTo);
+      const { data } = await apiClient.get(`/orders/customer/${customerId}?${params}`);
       return { orders: data.data, pagination: data.pagination };
     },
     enabled: !!customerId,
@@ -264,7 +268,11 @@ export function useCreateCustomer() {
   return useMutation({
     mutationFn: (body: unknown) => postApi('/customers', body),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['customers'] }); addToast('success', t('toasts.customerCreated')); },
-    onError: () => addToast('error', t('toasts.customerCreateFailed')),
+    onError: (error: any) => {
+      const code = error?.response?.data?.error?.code;
+      if (code === 'CUSTOMER_PHONE_EXISTS' || code === 'CUSTOMER_EMAIL_EXISTS') return;
+      addToast('error', t('toasts.customerCreateFailed'));
+    },
   });
 }
 
@@ -301,11 +309,15 @@ export function usePayments(page = 1, limit = 10) {
   });
 }
 
-export function useCustomerPayments(customerId: string, page = 1, limit = 10) {
+export function useCustomerPayments(customerId: string, page = 1, limit = 10, filters?: { method?: string; dateFrom?: string; dateTo?: string }) {
   return useQuery({
-    queryKey: ['payments', 'customer', customerId, page, limit],
+    queryKey: ['payments', 'customer', customerId, page, limit, filters],
     queryFn: async () => {
-      const { data } = await apiClient.get(`/payments/customer/${customerId}?page=${page}&limit=${limit}`);
+      const params = new URLSearchParams({ page: String(page), limit: String(limit) });
+      if (filters?.method) params.set('method', filters.method);
+      if (filters?.dateFrom) params.set('dateFrom', filters.dateFrom);
+      if (filters?.dateTo) params.set('dateTo', filters.dateTo);
+      const { data } = await apiClient.get(`/payments/customer/${customerId}?${params}`);
       return { payments: data.data, pagination: data.pagination };
     },
     enabled: !!customerId,
@@ -426,6 +438,47 @@ export function useUpdateProfile() {
     mutationFn: (body: unknown) => patchApi('/settings/profile', body),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['profile'] }); addToast('success', t('toasts.profileUpdated')); },
     onError: () => addToast('error', t('toasts.profileUpdateFailed')),
+  });
+}
+
+// Stores
+export function useCreateStore() {
+  return useMutation({
+    mutationFn: (body: { name: string; code?: string; address?: string }) =>
+      postApi<{ store: unknown; token: string }>('/stores', body),
+  });
+}
+
+export function useMyStores() {
+  return useQuery({ queryKey: ['stores'], queryFn: () => fetchApi<unknown[]>('/stores/my') });
+}
+
+export function useSelectStore() {
+  return useMutation({
+    mutationFn: (body: { storeId: string }) => postApi<{ token: string }>('/stores/select', body),
+  });
+}
+
+export function useValidateInvite(token?: string) {
+  return useQuery({
+    queryKey: ['invite', token],
+    queryFn: () => fetchApi<{ storeName: string; email: string; role: number }>(`/stores/invite/${token}`),
+    enabled: !!token,
+  });
+}
+
+export function useStoreMembers() {
+  return useQuery({ queryKey: ['storeMembers'], queryFn: () => fetchApi<unknown[]>('/stores/members') });
+}
+
+export function useSendInvite() {
+  const qc = useQueryClient();
+  const addToast = useToastStore((s) => s.addToast);
+  const { t } = useTranslation();
+  return useMutation({
+    mutationFn: (body: { email: string; role: number }) => postApi('/stores/invite', body),
+    onSuccess: () => { addToast('success', t('toasts.inviteSent')); qc.invalidateQueries({ queryKey: ['storeMembers'] }); },
+    onError: () => addToast('error', t('toasts.inviteFailed')),
   });
 }
 

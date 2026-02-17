@@ -14,6 +14,7 @@ export default function LoginPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const setAuth = useAuthStore((s) => s.setAuth);
+  const setStores = useAuthStore((s) => s.setStores);
   const addToast = useToastStore((s) => s.addToast);
   const login = useLogin();
   const googleLogin = useGoogleLogin();
@@ -31,8 +32,9 @@ export default function LoginPage() {
         { idToken },
         {
           onSuccess: (data: any) => {
-            setAuth(data.user, data.token);
-            navigate('/');
+            setAuth(data.user, data.token, data.hasStore);
+            if (data.stores) setStores(data.stores);
+            navigate(data.hasStore ? '/' : '/store-setup');
           },
           onError: (error: any) => {
             const msg = error?.response?.data?.error?.message;
@@ -46,7 +48,7 @@ export default function LoginPage() {
         },
       );
     },
-    [googleLogin, setAuth, navigate, addToast, t],
+    [googleLogin, setAuth, setStores, navigate, addToast, t],
   );
 
   const { renderButton, isAvailable } = useGoogleAuth(handleGoogleCredential);
@@ -65,8 +67,9 @@ export default function LoginPage() {
         { email, password },
         {
           onSuccess: (data: any) => {
-            setAuth(data.user, data.token);
-            navigate('/');
+            setAuth(data.user, data.token, data.hasStore);
+            if (data.stores) setStores(data.stores);
+            navigate(data.hasStore ? '/' : '/store-setup');
           },
           onError: (error: any) => {
             const msg = error?.response?.data?.error?.message;
@@ -79,7 +82,7 @@ export default function LoginPage() {
         },
       );
     },
-    [email, password, login, setAuth, navigate, addToast, t],
+    [email, password, login, setAuth, setStores, navigate, addToast, t],
   );
 
   return (

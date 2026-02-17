@@ -9,7 +9,7 @@ import { StatusBadge } from '@/components/DataDisplay';
 import { PageLoading } from '@/components/Feedback';
 import { ConfirmModal } from '@/components/Modal';
 import { useCustomer, useCustomerOrders, useCustomerPayments, useDeleteCustomer } from '@/api/hooks';
-import { getStatusLabel } from '@/utils/orderStatus';
+import { getStatusLabel, STATUS_LABELS } from '@/utils/orderStatus';
 import { useFormatDate } from '@/utils/dateFormat';
 
 export default function CustomerDetailPage() {
@@ -19,8 +19,30 @@ export default function CustomerDetailPage() {
   const { data: customer, isLoading } = useCustomer(id!);
   const [ordersPage, setOrdersPage] = useState(1);
   const [paymentsPage, setPaymentsPage] = useState(1);
-  const { data: customerOrders } = useCustomerOrders(id!, ordersPage);
-  const { data: customerPayments } = useCustomerPayments(id!, paymentsPage);
+
+  // Order filters
+  const [orderStatusFilter, setOrderStatusFilter] = useState<number | undefined>(undefined);
+  const [orderDateFrom, setOrderDateFrom] = useState('');
+  const [orderDateTo, setOrderDateTo] = useState('');
+
+  // Payment filters
+  const [paymentMethodFilter, setPaymentMethodFilter] = useState<string | undefined>(undefined);
+  const [paymentDateFrom, setPaymentDateFrom] = useState('');
+  const [paymentDateTo, setPaymentDateTo] = useState('');
+
+  const orderFilters = {
+    ...(orderStatusFilter !== undefined && { status: orderStatusFilter }),
+    ...(orderDateFrom && { dateFrom: orderDateFrom }),
+    ...(orderDateTo && { dateTo: orderDateTo }),
+  };
+  const paymentFilters = {
+    ...(paymentMethodFilter && { method: paymentMethodFilter }),
+    ...(paymentDateFrom && { dateFrom: paymentDateFrom }),
+    ...(paymentDateTo && { dateTo: paymentDateTo }),
+  };
+
+  const { data: customerOrders } = useCustomerOrders(id!, ordersPage, 10, Object.keys(orderFilters).length ? orderFilters : undefined);
+  const { data: customerPayments } = useCustomerPayments(id!, paymentsPage, 10, Object.keys(paymentFilters).length ? paymentFilters : undefined);
   const deleteCustomer = useDeleteCustomer();
   const formatDate = useFormatDate();
   const [showDelete, setShowDelete] = useState(false);
@@ -96,6 +118,40 @@ export default function CustomerDetailPage() {
 
         {activeTab === 'orders' && (
           <div className="overflow-x-auto">
+            <div className="mb-3 flex flex-wrap items-center gap-2 px-1">
+              <select
+                className="rounded-md border border-neutral-300 bg-white px-2 py-1.5 text-body-sm text-neutral-700"
+                value={orderStatusFilter ?? ''}
+                onChange={(e) => { setOrderStatusFilter(e.target.value === '' ? undefined : Number(e.target.value)); setOrdersPage(1); }}
+              >
+                <option value="">{t('common.allStatuses', 'All statuses')}</option>
+                {STATUS_LABELS.map((label, idx) => (
+                  <option key={idx} value={idx}>{t(`orders.status.${label}`, label)}</option>
+                ))}
+              </select>
+              <input
+                type="date"
+                className="rounded-md border border-neutral-300 bg-white px-2 py-1.5 text-body-sm text-neutral-700"
+                value={orderDateFrom}
+                onChange={(e) => { setOrderDateFrom(e.target.value); setOrdersPage(1); }}
+                placeholder={t('common.from', 'From')}
+              />
+              <input
+                type="date"
+                className="rounded-md border border-neutral-300 bg-white px-2 py-1.5 text-body-sm text-neutral-700"
+                value={orderDateTo}
+                onChange={(e) => { setOrderDateTo(e.target.value); setOrdersPage(1); }}
+                placeholder={t('common.to', 'To')}
+              />
+              {(orderStatusFilter !== undefined || orderDateFrom || orderDateTo) && (
+                <button
+                  className="text-body-sm text-primary-600 hover:text-primary-700"
+                  onClick={() => { setOrderStatusFilter(undefined); setOrderDateFrom(''); setOrderDateTo(''); setOrdersPage(1); }}
+                >
+                  {t('common.clearFilters', 'Clear')}
+                </button>
+              )}
+            </div>
             <table className="w-full text-body-sm">
               <thead>
                 <tr className="border-b bg-neutral-50">
@@ -169,6 +225,39 @@ export default function CustomerDetailPage() {
 
         {activeTab === 'payments' && (
           <div className="overflow-x-auto">
+            <div className="mb-3 flex flex-wrap items-center gap-2 px-1">
+              <select
+                className="rounded-md border border-neutral-300 bg-white px-2 py-1.5 text-body-sm text-neutral-700"
+                value={paymentMethodFilter ?? ''}
+                onChange={(e) => { setPaymentMethodFilter(e.target.value || undefined); setPaymentsPage(1); }}
+              >
+                <option value="">{t('payments.allMethods', 'All methods')}</option>
+                <option value="cash">{t('payments.cash', 'Cash')}</option>
+                <option value="credit_card">{t('payments.card', 'Card')}</option>
+              </select>
+              <input
+                type="date"
+                className="rounded-md border border-neutral-300 bg-white px-2 py-1.5 text-body-sm text-neutral-700"
+                value={paymentDateFrom}
+                onChange={(e) => { setPaymentDateFrom(e.target.value); setPaymentsPage(1); }}
+                placeholder={t('common.from', 'From')}
+              />
+              <input
+                type="date"
+                className="rounded-md border border-neutral-300 bg-white px-2 py-1.5 text-body-sm text-neutral-700"
+                value={paymentDateTo}
+                onChange={(e) => { setPaymentDateTo(e.target.value); setPaymentsPage(1); }}
+                placeholder={t('common.to', 'To')}
+              />
+              {(paymentMethodFilter || paymentDateFrom || paymentDateTo) && (
+                <button
+                  className="text-body-sm text-primary-600 hover:text-primary-700"
+                  onClick={() => { setPaymentMethodFilter(undefined); setPaymentDateFrom(''); setPaymentDateTo(''); setPaymentsPage(1); }}
+                >
+                  {t('common.clearFilters', 'Clear')}
+                </button>
+              )}
+            </div>
             <table className="w-full text-body-sm">
               <thead>
                 <tr className="border-b bg-neutral-50">

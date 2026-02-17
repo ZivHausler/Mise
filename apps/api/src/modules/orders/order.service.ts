@@ -1,59 +1,49 @@
-import type { IOrderRepository } from './order.repository.js';
 import type { CreateOrderDTO, Order, OrderStatus } from './order.types.js';
+import type { CustomerOrderFilters } from './order.repository.js';
 import { ORDER_STATUS } from './order.types.js';
-import type { EventBus } from '../../core/events/event-bus.js';
-import { CreateOrderUseCase } from './use-cases/createOrder.js';
+import { getEventBus } from '../../core/events/event-bus.js';
+import { OrderCrud } from './orderCrud.js';
 import { UpdateOrderStatusUseCase } from './use-cases/updateOrderStatus.js';
 import { GetOrdersByCustomerUseCase } from './use-cases/getOrdersByCustomer.js';
-import { DeleteOrderUseCase } from './use-cases/deleteOrder.js';
 import { NotFoundError } from '../../core/errors/app-error.js';
 import type { RecipeService } from '../recipes/recipe.service.js';
 import type { InventoryService } from '../inventory/inventory.service.js';
+import { InventoryLogType } from '@mise/shared';
 import { unitConversionFactor } from '../shared/unitConversion.js';
 
 export class OrderService {
-  private createOrderUseCase: CreateOrderUseCase;
-  private updateOrderStatusUseCase: UpdateOrderStatusUseCase;
-  private getOrdersByCustomerUseCase: GetOrdersByCustomerUseCase;
-  private deleteOrderUseCase: DeleteOrderUseCase;
+  private updateOrderStatusUseCase = new UpdateOrderStatusUseCase();
+  private getOrdersByCustomerUseCase = new GetOrdersByCustomerUseCase();
 
   constructor(
-    private orderRepository: IOrderRepository,
-    private eventBus: EventBus,
     private recipeService?: RecipeService,
     private inventoryService?: InventoryService,
-  ) {
-    this.createOrderUseCase = new CreateOrderUseCase(orderRepository);
-    this.updateOrderStatusUseCase = new UpdateOrderStatusUseCase(orderRepository);
-    this.getOrdersByCustomerUseCase = new GetOrdersByCustomerUseCase(orderRepository);
-    this.deleteOrderUseCase = new DeleteOrderUseCase(orderRepository);
-  }
+  ) {}
 
-  async getById(id: string): Promise<Order> {
-    const order = await this.orderRepository.findById(id);
+  async getById(storeId: string, id: string): Promise<Order> {
+    const order = await OrderCrud.getById(storeId, id);
     if (!order) throw new NotFoundError('Order not found');
     return order;
   }
 
-  async getByCustomerId(customerId: string, options?: { limit: number; offset: number }): Promise<{ orders: Order[]; total: number }> {
-    return this.getOrdersByCustomerUseCase.execute(customerId, options);
+  async getByCustomerId(storeId: string, customerId: string, options?: { limit: number; offset: number }, filters?: CustomerOrderFilters): Promise<{ orders: Order[]; total: number }> {
+    return this.getOrdersByCustomerUseCase.execute(storeId, customerId, options, filters);
   }
 
-  async getAll(filters?: { status?: OrderStatus }): Promise<Order[]> {
-    return this.orderRepository.findAll(filters);
+  async getAll(storeId: string, filters?: { status?: OrderStatus }): Promise<Order[]> {
+    return OrderCrud.getAll(storeId, filters);
   }
 
-  async create(data: CreateOrderDTO): Promise<Order> {
+  async create(storeId: string, data: CreateOrderDTO): Promise<Order> {
     let totalAmount = 0;
 
     for (const item of data.items) {
       let unitPrice = (item as any).price ?? 0;
       let recipeName = (item as any).recipeName ?? '';
 
-      // Enrich from recipe service if available
       if (this.recipeService) {
         try {
-          const recipe = await this.recipeService.getById(item.recipeId);
+          const recipe = await this.recipeService.getById(storeId, item.recipeId);
           if (!unitPrice) unitPrice = recipe.sellingPrice ?? recipe.totalCost ?? 0;
           if (!recipeName) recipeName = recipe.name ?? '';
         } catch {
@@ -66,9 +56,9 @@ export class OrderService {
       totalAmount += unitPrice * item.quantity;
     }
 
-    const order = await this.createOrderUseCase.execute({ ...data, totalAmount });
+    const order = await OrderCrud.create(storeId, { ...data, totalAmount });
 
-    await this.eventBus.publish({
+    await getEventBus().publish({
       eventName: 'order.created',
       payload: { orderId: order.id, customerId: order.customerId },
       timestamp: new Date(),
@@ -77,17 +67,16 @@ export class OrderService {
     return order;
   }
 
-  async updateStatus(id: string, status: OrderStatus): Promise<Order> {
-    const { order, previousStatus } = await this.updateOrderStatusUseCase.execute(id, status);
+  async updateStatus(storeId: string, id: string, status: OrderStatus): Promise<Order> {
+    const { order, previousStatus } = await this.updateOrderStatusUseCase.execute(storeId, id, status);
 
-    // Auto-deduct inventory when transitioning to READY, restore when moving back to IN_PROGRESS
     if (previousStatus === ORDER_STATUS.IN_PROGRESS && status === ORDER_STATUS.READY) {
-      await this.adjustInventoryForOrder(order, 'usage');
+      await this.adjustInventoryForOrder(storeId, order, InventoryLogType.USAGE);
     } else if (previousStatus === ORDER_STATUS.READY && status === ORDER_STATUS.IN_PROGRESS) {
-      await this.adjustInventoryForOrder(order, 'addition');
+      await this.adjustInventoryForOrder(storeId, order, InventoryLogType.ADDITION);
     }
 
-    await this.eventBus.publish({
+    await getEventBus().publish({
       eventName: 'order.statusChanged',
       payload: { orderId: id, previousStatus, newStatus: status },
       timestamp: new Date(),
@@ -96,21 +85,21 @@ export class OrderService {
     return order;
   }
 
-  private async adjustInventoryForOrder(order: Order, type: 'usage' | 'addition'): Promise<void> {
+  private async adjustInventoryForOrder(storeId: string, order: Order, type: InventoryLogType): Promise<void> {
     if (!this.recipeService || !this.inventoryService) return;
 
     for (const item of order.items) {
       try {
-        const recipe = await this.recipeService.getById(item.recipeId);
+        const recipe = await this.recipeService.getById(storeId, item.recipeId);
         if (!recipe.ingredients) continue;
 
         for (const ingredient of recipe.ingredients) {
           try {
-            const inventoryItem = await this.inventoryService.getById(ingredient.ingredientId);
+            const inventoryItem = await this.inventoryService.getById(storeId, ingredient.ingredientId);
             const factor = unitConversionFactor(ingredient.unit, inventoryItem.unit);
             const convertedQty = ingredient.quantity * factor * item.quantity;
 
-            await this.inventoryService.adjustStock({
+            await this.inventoryService.adjustStock(storeId, {
               ingredientId: ingredient.ingredientId,
               type,
               quantity: convertedQty,
@@ -126,13 +115,13 @@ export class OrderService {
     }
   }
 
-  async update(id: string, data: Partial<Order>): Promise<Order> {
-    const existing = await this.orderRepository.findById(id);
+  async update(storeId: string, id: string, data: Partial<Order>): Promise<Order> {
+    const existing = await OrderCrud.getById(storeId, id);
     if (!existing) throw new NotFoundError('Order not found');
-    return this.orderRepository.update(id, data);
+    return OrderCrud.update(storeId, id, data);
   }
 
-  async delete(id: string): Promise<void> {
-    return this.deleteOrderUseCase.execute(id);
+  async delete(storeId: string, id: string): Promise<void> {
+    return OrderCrud.delete(storeId, id);
   }
 }

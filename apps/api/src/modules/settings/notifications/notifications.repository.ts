@@ -3,14 +3,8 @@ import { getPool } from '../../../core/database/postgres.js';
 
 export type NotificationRecipientRow = NotificationPreference & { email: string; name: string; phone?: string };
 
-export interface INotifPrefsRepository {
-  findAll(userId: string): Promise<NotificationPreference[]>;
-  upsert(userId: string, prefs: { eventType: string; email: boolean; push: boolean; sms: boolean }[]): Promise<NotificationPreference[]>;
-  findByEventType(eventType: string): Promise<NotificationRecipientRow[]>;
-}
-
-export class PgNotifPrefsRepository implements INotifPrefsRepository {
-  async findAll(userId: string): Promise<NotificationPreference[]> {
+export class PgNotifPrefsRepository {
+  static async findAll(userId: string): Promise<NotificationPreference[]> {
     const pool = getPool();
     const result = await pool.query(
       'SELECT id, user_id, event_type, channel_email, channel_push, channel_sms, created_at, updated_at FROM notification_preferences WHERE user_id = $1 ORDER BY event_type',
@@ -19,7 +13,7 @@ export class PgNotifPrefsRepository implements INotifPrefsRepository {
     return result.rows.map(this.mapRow);
   }
 
-  async upsert(userId: string, prefs: { eventType: string; email: boolean; push: boolean; sms: boolean }[]): Promise<NotificationPreference[]> {
+  static async upsert(userId: string, prefs: { eventType: string; email: boolean; push: boolean; sms: boolean }[]): Promise<NotificationPreference[]> {
     const pool = getPool();
 
     for (const pref of prefs) {
@@ -35,7 +29,7 @@ export class PgNotifPrefsRepository implements INotifPrefsRepository {
     return this.findAll(userId);
   }
 
-  async findByEventType(eventType: string): Promise<NotificationRecipientRow[]> {
+  static async findByEventType(eventType: string): Promise<NotificationRecipientRow[]> {
     const pool = getPool();
     const result = await pool.query(
       `SELECT np.id, np.user_id, np.event_type, np.channel_email, np.channel_push, np.channel_sms,
@@ -54,7 +48,7 @@ export class PgNotifPrefsRepository implements INotifPrefsRepository {
     }));
   }
 
-  private mapRow(row: Record<string, unknown>): NotificationPreference {
+  private static mapRow(row: Record<string, unknown>): NotificationPreference {
     return {
       id: row['id'] as string,
       userId: row['user_id'] as string,

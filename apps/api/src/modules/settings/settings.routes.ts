@@ -1,31 +1,24 @@
 import type { FastifyInstance } from 'fastify';
-import { authMiddleware } from '../../core/middleware/auth.js';
+import { authMiddleware, requireStoreMiddleware } from '../../core/middleware/auth.js';
 
-import { PgUnitsRepository } from './units/units.repository.js';
 import { UnitsService } from './units/units.service.js';
 import { UnitsController } from './units/units.controller.js';
 
-import { PgGroupsRepository } from './groups/groups.repository.js';
 import { GroupsService } from './groups/groups.service.js';
 import { GroupsController } from './groups/groups.controller.js';
 
-import { PgAuthRepository } from '../auth/auth.repository.js';
 import { ProfileService } from './profile/profile.service.js';
 import { ProfileController } from './profile/profile.controller.js';
 
-import { PgNotifPrefsRepository } from './notifications/notifications.repository.js';
 import { NotificationsService } from './notifications/notifications.service.js';
 import { NotificationsController } from './notifications/notifications.controller.js';
 
 export default async function settingsRoutes(app: FastifyInstance) {
   app.addHook('preHandler', authMiddleware);
-
-  // Shared repositories
-  const authRepository = new PgAuthRepository();
+  app.addHook('preHandler', requireStoreMiddleware);
 
   // Units
-  const unitsRepository = new PgUnitsRepository();
-  const unitsService = new UnitsService(unitsRepository);
+  const unitsService = new UnitsService();
   const unitsController = new UnitsController(unitsService);
 
   app.get('/units', (req, reply) => unitsController.list(req, reply));
@@ -35,8 +28,7 @@ export default async function settingsRoutes(app: FastifyInstance) {
   app.delete('/units/:id', (req, reply) => unitsController.delete(req, reply));
 
   // Groups
-  const groupsRepository = new PgGroupsRepository();
-  const groupsService = new GroupsService(groupsRepository);
+  const groupsService = new GroupsService();
   const groupsController = new GroupsController(groupsService);
 
   app.get('/groups', (req, reply) => groupsController.list(req, reply));
@@ -45,15 +37,14 @@ export default async function settingsRoutes(app: FastifyInstance) {
   app.delete('/groups/:id', (req, reply) => groupsController.delete(req, reply));
 
   // Profile
-  const profileService = new ProfileService(authRepository);
+  const profileService = new ProfileService();
   const profileController = new ProfileController(profileService);
 
   app.get('/profile', (req, reply) => profileController.get(req, reply));
   app.patch('/profile', (req, reply) => profileController.update(req, reply));
 
   // Notifications
-  const notifPrefsRepository = new PgNotifPrefsRepository();
-  const notificationsService = new NotificationsService(notifPrefsRepository, authRepository);
+  const notificationsService = new NotificationsService();
   const notificationsController = new NotificationsController(notificationsService);
 
   app.get('/notifications', (req, reply) => notificationsController.get(req, reply));

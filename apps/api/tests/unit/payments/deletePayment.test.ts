@@ -1,21 +1,30 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { DeletePaymentUseCase } from '../../../src/modules/payments/use-cases/deletePayment.js';
-import { createMockPaymentRepository } from '../helpers/mock-factories.js';
-import type { IPaymentRepository } from '../../../src/modules/payments/payment.repository.js';
+import { PaymentCrud } from '../../../src/modules/payments/crud/paymentCrud.js';
 
-describe('DeletePaymentUseCase', () => {
-  let useCase: DeletePaymentUseCase;
-  let repo: IPaymentRepository;
+vi.mock('../../../src/modules/payments/payment.repository.js', () => ({
+  PgPaymentRepository: {
+    create: vi.fn(),
+    findById: vi.fn(),
+    findAll: vi.fn(),
+    findByOrderId: vi.fn(),
+    findByCustomerId: vi.fn(),
+    delete: vi.fn(),
+  },
+}));
 
+import { PgPaymentRepository } from '../../../src/modules/payments/payment.repository.js';
+
+const STORE_ID = 'store-1';
+
+describe('PaymentCrud.delete', () => {
   beforeEach(() => {
-    repo = createMockPaymentRepository();
-    useCase = new DeletePaymentUseCase(repo);
+    vi.clearAllMocks();
   });
 
   it('should delete a payment', async () => {
-    vi.mocked(repo.delete).mockResolvedValue(undefined);
+    vi.mocked(PgPaymentRepository.delete).mockResolvedValue(undefined);
 
-    await expect(useCase.execute('pay-1')).resolves.toBeUndefined();
-    expect(repo.delete).toHaveBeenCalledWith('pay-1');
+    await expect(PaymentCrud.delete(STORE_ID, 'pay-1')).resolves.toBeUndefined();
+    expect(PgPaymentRepository.delete).toHaveBeenCalledWith(STORE_ID, 'pay-1');
   });
 });

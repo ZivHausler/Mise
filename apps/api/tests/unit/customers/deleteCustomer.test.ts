@@ -1,29 +1,38 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { DeleteCustomerUseCase } from '../../../src/modules/customers/use-cases/deleteCustomer.js';
-import { createMockCustomerRepository, createCustomer } from '../helpers/mock-factories.js';
+import { CustomerCrud } from '../../../src/modules/customers/crud/customerCrud.js';
+import { createCustomer } from '../helpers/mock-factories.js';
 import { NotFoundError } from '../../../src/core/errors/app-error.js';
-import type { ICustomerRepository } from '../../../src/modules/customers/customer.repository.js';
 
-describe('DeleteCustomerUseCase', () => {
-  let useCase: DeleteCustomerUseCase;
-  let repo: ICustomerRepository;
+vi.mock('../../../src/modules/customers/customer.repository.js', () => ({
+  PgCustomerRepository: {
+    create: vi.fn(),
+    findById: vi.fn(),
+    findAll: vi.fn(),
+    update: vi.fn(),
+    delete: vi.fn(),
+  },
+}));
 
+import { PgCustomerRepository } from '../../../src/modules/customers/customer.repository.js';
+
+const STORE_ID = 'store-1';
+
+describe('CustomerCrud.delete', () => {
   beforeEach(() => {
-    repo = createMockCustomerRepository();
-    useCase = new DeleteCustomerUseCase(repo);
+    vi.clearAllMocks();
   });
 
   it('should delete an existing customer', async () => {
-    vi.mocked(repo.findById).mockResolvedValue(createCustomer());
-    vi.mocked(repo.delete).mockResolvedValue(undefined);
+    vi.mocked(PgCustomerRepository.findById).mockResolvedValue(createCustomer());
+    vi.mocked(PgCustomerRepository.delete).mockResolvedValue(undefined);
 
-    await expect(useCase.execute('cust-1')).resolves.toBeUndefined();
-    expect(repo.delete).toHaveBeenCalledWith('cust-1');
+    await expect(CustomerCrud.delete('cust-1', STORE_ID)).resolves.toBeUndefined();
+    expect(PgCustomerRepository.delete).toHaveBeenCalledWith('cust-1', STORE_ID);
   });
 
   it('should throw NotFoundError when customer does not exist', async () => {
-    vi.mocked(repo.findById).mockResolvedValue(null);
+    vi.mocked(PgCustomerRepository.findById).mockResolvedValue(null);
 
-    await expect(useCase.execute('nonexistent')).rejects.toThrow(NotFoundError);
+    await expect(CustomerCrud.delete('nonexistent', STORE_ID)).rejects.toThrow(NotFoundError);
   });
 });

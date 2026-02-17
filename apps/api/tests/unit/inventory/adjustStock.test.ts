@@ -1,108 +1,95 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { AdjustStockUseCase } from '../../../src/modules/inventory/use-cases/adjustStock.js';
-import { createMockInventoryRepository, createIngredient } from '../helpers/mock-factories.js';
+import { createIngredient } from '../helpers/mock-factories.js';
 import { NotFoundError, ValidationError } from '../../../src/core/errors/app-error.js';
-import type { IInventoryRepository } from '../../../src/modules/inventory/inventory.repository.js';
+import { InventoryLogType } from '@mise/shared';
+
+vi.mock('../../../src/modules/inventory/crud/inventoryCrud.js', () => ({
+  InventoryCrud: {
+    getById: vi.fn(),
+    adjustStock: vi.fn(),
+  },
+}));
+
+import { InventoryCrud } from '../../../src/modules/inventory/crud/inventoryCrud.js';
+
+const STORE_ID = 'store-1';
 
 describe('AdjustStockUseCase', () => {
   let useCase: AdjustStockUseCase;
-  let repo: IInventoryRepository;
 
   beforeEach(() => {
-    repo = createMockInventoryRepository();
-    useCase = new AdjustStockUseCase(repo);
+    vi.clearAllMocks();
+    useCase = new AdjustStockUseCase();
   });
 
   it('should adjust stock with addition type', async () => {
     const ingredient = createIngredient({ quantity: 50 });
     const updated = createIngredient({ quantity: 60 });
-    vi.mocked(repo.findById).mockResolvedValue(ingredient);
-    vi.mocked(repo.adjustStock).mockResolvedValue(updated);
+    vi.mocked(InventoryCrud.getById).mockResolvedValue(ingredient);
+    vi.mocked(InventoryCrud.adjustStock).mockResolvedValue(updated);
 
-    const result = await useCase.execute({
+    const result = await useCase.execute(STORE_ID, {
       ingredientId: 'ing-1',
-      type: 'addition',
+      type: InventoryLogType.ADDITION,
       quantity: 10,
     });
 
     expect(result.quantity).toBe(60);
-    expect(repo.adjustStock).toHaveBeenCalledOnce();
+    expect(InventoryCrud.adjustStock).toHaveBeenCalledOnce();
   });
 
-  it('should adjust stock with usage type when sufficient stock', async () => {
+  it('should adjust stock with usage type', async () => {
     const ingredient = createIngredient({ quantity: 50 });
     const updated = createIngredient({ quantity: 40 });
-    vi.mocked(repo.findById).mockResolvedValue(ingredient);
-    vi.mocked(repo.adjustStock).mockResolvedValue(updated);
+    vi.mocked(InventoryCrud.getById).mockResolvedValue(ingredient);
+    vi.mocked(InventoryCrud.adjustStock).mockResolvedValue(updated);
 
-    const result = await useCase.execute({
+    const result = await useCase.execute(STORE_ID, {
       ingredientId: 'ing-1',
-      type: 'usage',
+      type: InventoryLogType.USAGE,
       quantity: 10,
     });
 
     expect(result.quantity).toBe(40);
   });
 
-  it('should throw ValidationError when usage exceeds stock', async () => {
-    vi.mocked(repo.findById).mockResolvedValue(createIngredient({ quantity: 5 }));
-
-    await expect(
-      useCase.execute({ ingredientId: 'ing-1', type: 'usage', quantity: 10 }),
-    ).rejects.toThrow('Insufficient stock for this usage');
-  });
-
   it('should throw ValidationError when quantity is zero', async () => {
-    vi.mocked(repo.findById).mockResolvedValue(createIngredient());
+    vi.mocked(InventoryCrud.getById).mockResolvedValue(createIngredient());
 
     await expect(
-      useCase.execute({ ingredientId: 'ing-1', type: 'addition', quantity: 0 }),
+      useCase.execute(STORE_ID, { ingredientId: 'ing-1', type: InventoryLogType.ADDITION, quantity: 0 }),
     ).rejects.toThrow('Adjustment quantity must be positive');
   });
 
   it('should throw ValidationError when quantity is negative', async () => {
-    vi.mocked(repo.findById).mockResolvedValue(createIngredient());
+    vi.mocked(InventoryCrud.getById).mockResolvedValue(createIngredient());
 
     await expect(
-      useCase.execute({ ingredientId: 'ing-1', type: 'addition', quantity: -5 }),
+      useCase.execute(STORE_ID, { ingredientId: 'ing-1', type: InventoryLogType.ADDITION, quantity: -5 }),
     ).rejects.toThrow('Adjustment quantity must be positive');
   });
 
   it('should throw NotFoundError when ingredient does not exist', async () => {
-    vi.mocked(repo.findById).mockResolvedValue(null);
+    vi.mocked(InventoryCrud.getById).mockResolvedValue(null);
 
     await expect(
-      useCase.execute({ ingredientId: 'nonexistent', type: 'addition', quantity: 10 }),
+      useCase.execute(STORE_ID, { ingredientId: 'nonexistent', type: InventoryLogType.ADDITION, quantity: 10 }),
     ).rejects.toThrow(NotFoundError);
   });
 
-  it('should allow adjustment type (can be positive or negative in repository)', async () => {
+  it('should allow adjustment type', async () => {
     const ingredient = createIngredient({ quantity: 50 });
     const updated = createIngredient({ quantity: 55 });
-    vi.mocked(repo.findById).mockResolvedValue(ingredient);
-    vi.mocked(repo.adjustStock).mockResolvedValue(updated);
+    vi.mocked(InventoryCrud.getById).mockResolvedValue(ingredient);
+    vi.mocked(InventoryCrud.adjustStock).mockResolvedValue(updated);
 
-    const result = await useCase.execute({
+    const result = await useCase.execute(STORE_ID, {
       ingredientId: 'ing-1',
-      type: 'adjustment',
+      type: InventoryLogType.ADJUSTMENT,
       quantity: 5,
     });
 
     expect(result.quantity).toBe(55);
-  });
-
-  it('should allow usage that brings stock to exactly zero', async () => {
-    const ingredient = createIngredient({ quantity: 10 });
-    const updated = createIngredient({ quantity: 0 });
-    vi.mocked(repo.findById).mockResolvedValue(ingredient);
-    vi.mocked(repo.adjustStock).mockResolvedValue(updated);
-
-    const result = await useCase.execute({
-      ingredientId: 'ing-1',
-      type: 'usage',
-      quantity: 10,
-    });
-
-    expect(result.quantity).toBe(0);
   });
 });

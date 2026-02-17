@@ -2,6 +2,7 @@ import type { FastifyInstance } from 'fastify';
 
 export async function registerModules(app: FastifyInstance) {
   await app.register(import('./auth/auth.routes.js'), { prefix: '/api/auth' });
+  await app.register(import('./stores/store.routes.js'), { prefix: '/api/stores' });
   await app.register(import('./customers/customer.routes.js'), { prefix: '/api/customers' });
   await app.register(import('./inventory/inventory.routes.js'), { prefix: '/api/inventory' });
   await app.register(import('./recipes/recipe.routes.js'), { prefix: '/api/recipes' });

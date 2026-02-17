@@ -1,16 +1,28 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { CalculateRecipeCostUseCase } from '../../../src/modules/recipes/use-cases/calculateRecipeCost.js';
-import { createMockRecipeRepository, createRecipe } from '../helpers/mock-factories.js';
+import { createRecipe } from '../helpers/mock-factories.js';
 import { NotFoundError } from '../../../src/core/errors/app-error.js';
-import type { IRecipeRepository } from '../../../src/modules/recipes/recipe.repository.js';
+
+vi.mock('../../../src/modules/recipes/crud/recipeCrud.js', () => ({
+  RecipeCrud: {
+    getById: vi.fn(),
+  },
+}));
+
+vi.mock('../../../src/modules/shared/unitConversion.js', () => ({
+  unitConversionFactor: vi.fn().mockReturnValue(1),
+}));
+
+import { RecipeCrud } from '../../../src/modules/recipes/crud/recipeCrud.js';
+
+const STORE_ID = 'store-1';
 
 describe('CalculateRecipeCostUseCase', () => {
   let useCase: CalculateRecipeCostUseCase;
-  let repo: IRecipeRepository;
 
   beforeEach(() => {
-    repo = createMockRecipeRepository();
-    useCase = new CalculateRecipeCostUseCase(repo);
+    vi.clearAllMocks();
+    useCase = new CalculateRecipeCostUseCase();
   });
 
   it('should calculate cost from direct ingredients', async () => {
@@ -23,9 +35,9 @@ describe('CalculateRecipeCostUseCase', () => {
         { order: 1, type: 'step', instruction: 'Mix' },
       ],
     });
-    vi.mocked(repo.findById).mockResolvedValue(recipe);
+    vi.mocked(RecipeCrud.getById).mockResolvedValue(recipe);
 
-    const cost = await useCase.execute('recipe-1');
+    const cost = await useCase.execute(STORE_ID, 'recipe-1');
 
     // 2 * 3.5 + 1 * 5 = 12
     expect(cost).toBe(12);
@@ -52,13 +64,13 @@ describe('CalculateRecipeCostUseCase', () => {
       ],
     });
 
-    vi.mocked(repo.findById).mockImplementation(async (id) => {
+    vi.mocked(RecipeCrud.getById).mockImplementation(async (storeId, id) => {
       if (id === 'parent') return parentRecipe;
       if (id === 'child') return childRecipe;
       return null;
     });
 
-    const cost = await useCase.execute('parent');
+    const cost = await useCase.execute(STORE_ID, 'parent');
 
     // Parent ingredients: 1 * 3 = 3
     // Child ingredients: 0.5 * 10 = 5, multiplied by quantity 2 = 10
@@ -89,14 +101,14 @@ describe('CalculateRecipeCostUseCase', () => {
       ],
     });
 
-    vi.mocked(repo.findById).mockImplementation(async (id) => {
+    vi.mocked(RecipeCrud.getById).mockImplementation(async (storeId, id) => {
       if (id === 'gp') return grandparent;
       if (id === 'parent') return parent;
       if (id === 'child') return child;
       return null;
     });
 
-    const cost = await useCase.execute('gp');
+    const cost = await useCase.execute(STORE_ID, 'gp');
 
     // gp: 1*10 = 10
     // parent: 1*5 = 5 + child: (2*2)*3 = 12 => 17
@@ -120,22 +132,22 @@ describe('CalculateRecipeCostUseCase', () => {
       ],
     });
 
-    vi.mocked(repo.findById).mockImplementation(async (id) => {
+    vi.mocked(RecipeCrud.getById).mockImplementation(async (storeId, id) => {
       if (id === 'a') return recipeA;
       if (id === 'b') return recipeB;
       return null;
     });
 
-    const cost = await useCase.execute('a');
+    const cost = await useCase.execute(STORE_ID, 'a');
 
     // a: 10 + b(5 + a(0 circular)) = 15
     expect(cost).toBe(15);
   });
 
   it('should throw NotFoundError when recipe does not exist', async () => {
-    vi.mocked(repo.findById).mockResolvedValue(null);
+    vi.mocked(RecipeCrud.getById).mockResolvedValue(null);
 
-    await expect(useCase.execute('nonexistent')).rejects.toThrow(NotFoundError);
+    await expect(useCase.execute(STORE_ID, 'nonexistent')).rejects.toThrow(NotFoundError);
   });
 
   it('should handle ingredients with no costPerUnit', async () => {
@@ -147,9 +159,9 @@ describe('CalculateRecipeCostUseCase', () => {
         { order: 1, type: 'step', instruction: 'Use it' },
       ],
     });
-    vi.mocked(repo.findById).mockResolvedValue(recipe);
+    vi.mocked(RecipeCrud.getById).mockResolvedValue(recipe);
 
-    const cost = await useCase.execute('recipe-1');
+    const cost = await useCase.execute(STORE_ID, 'recipe-1');
     expect(cost).toBe(0); // undefined costPerUnit treated as 0
   });
 
@@ -158,9 +170,9 @@ describe('CalculateRecipeCostUseCase', () => {
       ingredients: [],
       steps: [],
     });
-    vi.mocked(repo.findById).mockResolvedValue(recipe);
+    vi.mocked(RecipeCrud.getById).mockResolvedValue(recipe);
 
-    const cost = await useCase.execute('recipe-1');
+    const cost = await useCase.execute(STORE_ID, 'recipe-1');
     expect(cost).toBe(0);
   });
 });

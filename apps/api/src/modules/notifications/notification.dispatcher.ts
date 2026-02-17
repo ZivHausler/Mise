@@ -1,5 +1,5 @@
 import type { DomainEvent } from '../../core/events/event-bus.js';
-import type { INotifPrefsRepository } from '../settings/notifications/notifications.repository.js';
+import { PgNotifPrefsRepository } from '../settings/notifications/notifications.repository.js';
 import type { NotificationChannel } from './channels/channel.js';
 import type { FastifyBaseLogger } from 'fastify';
 
@@ -12,7 +12,6 @@ const EVENT_NAME_MAP: Record<string, string> = {
 
 export class NotificationDispatcher {
   constructor(
-    private notifPrefsRepo: INotifPrefsRepository,
     private emailNotifier: NotificationChannel,
     private smsNotifier: NotificationChannel,
     private logger: FastifyBaseLogger,
@@ -25,7 +24,7 @@ export class NotificationDispatcher {
       return;
     }
 
-    const recipients = await this.notifPrefsRepo.findByEventType(eventType);
+    const recipients = await PgNotifPrefsRepository.findByEventType(eventType);
     let emailCount = 0;
     let smsCount = 0;
 

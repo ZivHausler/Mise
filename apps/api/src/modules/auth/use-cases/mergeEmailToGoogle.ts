@@ -1,14 +1,15 @@
 import bcrypt from 'bcrypt';
 import { OAuth2Client } from 'google-auth-library';
-import type { IAuthRepository } from '../auth.repository.js';
+import type { UseCase } from '../../../core/use-case.js';
+import { PgAuthRepository } from '../auth.repository.js';
 import type { User } from '../auth.types.js';
 import { UnauthorizedError, ValidationError } from '../../../core/errors/app-error.js';
 import { env } from '../../../config/env.js';
 
-export class MergeEmailToGoogleUseCase {
+export class MergeEmailToGoogleUseCase implements UseCase<User, [string, string]> {
   private client: OAuth2Client;
 
-  constructor(private authRepository: IAuthRepository) {
+  constructor() {
     this.client = new OAuth2Client(env.GOOGLE_CLIENT_ID);
   }
 
@@ -24,7 +25,7 @@ export class MergeEmailToGoogleUseCase {
 
     const { sub: googleId } = payload;
 
-    const user = await this.authRepository.findByGoogleId(googleId);
+    const user = await PgAuthRepository.findByGoogleId(googleId);
     if (!user) {
       throw new UnauthorizedError('No account found');
     }
@@ -44,6 +45,6 @@ export class MergeEmailToGoogleUseCase {
     }
 
     const passwordHash = await bcrypt.hash(newPassword, 12);
-    return this.authRepository.setPassword(user.id, passwordHash);
+    return PgAuthRepository.setPassword(user.id, passwordHash);
   }
 }

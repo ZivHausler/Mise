@@ -10,6 +10,7 @@ import { PageLoading } from '@/components/Feedback';
 import { Modal } from '@/components/Modal';
 import { TextInput, NumberInput, Select } from '@/components/FormFields';
 import { useInventory, useCreateInventoryItem, useUpdateInventoryItem, useDeleteInventoryItem, useAdjustStock, useGroups, type PaginationInfo } from '@/api/hooks';
+import { InventoryLogType } from '@mise/shared';
 
 function getStockStatus(stock: number, threshold: number): 'good' | 'ok' | 'low' | 'out' {
   if (stock === 0) return 'out';
@@ -147,11 +148,11 @@ export default function InventoryPage() {
 
   const handleAdjust = useCallback(() => {
     if (!showAdjust || adjustAmount === '') return;
-    const typeMap: Record<string, string> = { add: 'addition', use: 'usage' };
+    const typeMap: Record<string, InventoryLogType> = { add: InventoryLogType.ADDITION, use: InventoryLogType.USAGE };
     const pkgSize = showAdjust.packageSize ?? 1;
     const realAmount = adjustInputMode === 'packages' && adjustType === 'add' ? (adjustAmount as number) * pkgSize : adjustAmount;
     const qty = adjustType === 'set' ? (realAmount as number) - (showAdjust.quantity ?? 0) : realAmount;
-    const apiType = adjustType === 'set' ? ((qty as number) >= 0 ? 'addition' : 'usage') : (typeMap[adjustType] ?? 'adjustment');
+    const apiType = adjustType === 'set' ? ((qty as number) >= 0 ? InventoryLogType.ADDITION : InventoryLogType.USAGE) : (typeMap[adjustType] ?? InventoryLogType.ADJUSTMENT);
     adjustStock.mutate(
       { ingredientId: showAdjust.id, type: apiType, quantity: Math.abs(qty as number), ...(adjustType === 'add' && adjustPrice !== '' ? { pricePaid: adjustPrice } : {}) },
       {
@@ -305,7 +306,7 @@ export default function InventoryPage() {
               }
             }} min={0} step={0.01} hint={priceInput !== '' && newItem.packageSize !== '' && (newItem.packageSize as number) > 0 ? `= ${Math.round(((priceInput as number) / (newItem.packageSize as number)) * 100) / 100} ₪/${t(`common.units.${newItem.unit}`, newItem.unit)}` : undefined} />
           </div>
-          <NumberInput label={t('inventory.threshold', 'Low-Stock Threshold')} value={newItem.threshold} onChange={(v) => setNewItem({ ...newItem, threshold: v })} min={0} info={t('inventory.thresholdTooltip', 'You\'ll be alerted when stock drops to this level. At double this value, status shows as "OK".')} />
+          <NumberInput label={t('inventory.threshold', 'Low-Stock Threshold')} value={newItem.threshold} onChange={(v) => setNewItem({ ...newItem, threshold: v })} min={0} info={t('inventory.thresholdTooltip', 'If notifications are enabled, you\'ll be notified when stock drops to this level.')} suffix={newItem.unit ? t(`common.units.${newItem.unit}`, newItem.unit) : undefined} />
         </Stack>
       </Modal>
 
@@ -340,7 +341,7 @@ export default function InventoryPage() {
           {adjustType === 'add' && showAdjust?.packageSize > 0 && (
             <div className="flex gap-1 rounded-lg bg-neutral-100 p-1">
               <button type="button" onClick={() => { setAdjustInputMode('units'); setAdjustAmount(''); }} className={`flex-1 rounded-md px-3 py-1.5 text-body-sm font-medium transition-colors ${adjustInputMode === 'units' ? 'bg-white text-neutral-900 shadow-sm' : 'text-neutral-500 hover:text-neutral-700'}`}>
-                {t(`common.units.${showAdjust?.unit}`, showAdjust?.unit ?? '')}
+                {t('inventory.units', 'Units')}
               </button>
               <button type="button" onClick={() => { setAdjustInputMode('packages'); setAdjustAmount(''); }} className={`flex-1 rounded-md px-3 py-1.5 text-body-sm font-medium transition-colors ${adjustInputMode === 'packages' ? 'bg-white text-neutral-900 shadow-sm' : 'text-neutral-500 hover:text-neutral-700'}`}>
                 {t('inventory.packages', 'Packages')}
@@ -354,6 +355,7 @@ export default function InventoryPage() {
               onChange={setAdjustAmount}
               min={0}
               hint={adjustInputMode === 'packages' && adjustType === 'add' && adjustAmount !== '' && showAdjust?.packageSize ? `= ${(adjustAmount as number) * showAdjust.packageSize} ${t(`common.units.${showAdjust?.unit}`, showAdjust?.unit ?? '')}` : undefined}
+              suffix={adjustInputMode !== 'packages' && showAdjust?.unit ? t(`common.units.${showAdjust.unit}`, showAdjust.unit) : undefined}
             />
             {adjustType === 'add' && (
               <NumberInput label={t('inventory.pricePaid', 'Price Paid (₪)')} value={adjustPrice} onChange={setAdjustPrice} min={0} step={0.01} hint={adjustPrice !== '' && adjustAmount !== '' && (adjustAmount as number) > 0 ? (() => { const totalUnits = adjustInputMode === 'packages' ? (adjustAmount as number) * (showAdjust?.packageSize ?? 1) : (adjustAmount as number); return `= ${(Math.round(((adjustPrice as number) / totalUnits) * 100) / 100).toFixed(2)} ₪/${showAdjust?.unit ?? ''}`; })() : undefined} />

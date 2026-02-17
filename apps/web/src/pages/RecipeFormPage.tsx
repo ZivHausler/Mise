@@ -8,6 +8,7 @@ import { TextInput, TextArea, NumberInput, Select } from '@/components/FormField
 import { Button } from '@/components/Button';
 import { useCreateRecipe, useUpdateRecipe, useRecipe, useRecipes, useInventory } from '@/api/hooks';
 import { cn } from '@/utils/cn';
+import { useToastStore } from '@/store/toast';
 
 const unitGroups: Record<string, string[]> = {
   kg: ['g', 'kg'],
@@ -64,9 +65,10 @@ export default function RecipeFormPage() {
   const { data: existingRecipe } = useRecipe(id ?? '');
   const createRecipe = useCreateRecipe();
   const updateRecipe = useUpdateRecipe();
+  const addToast = useToastStore((s) => s.addToast);
 
-  const { data: inventory } = useInventory();
-  const inventoryItems = ((inventory as any[]) ?? []);
+  const { data: inventory } = useInventory(1, 1000);
+  const inventoryItems = ((inventory as any)?.items as any[] ?? []);
 
   const { data: allRecipes } = useRecipes();
   const recipeOptions = ((allRecipes as any[]) ?? [])
@@ -235,6 +237,10 @@ export default function RecipeFormPage() {
           }
           return { type: 'step' as const, instruction: (s as any).instruction, order: i + 1, ...((s as any).duration ? { duration: (s as any).duration } : {}) };
         });
+      if (formattedSteps.length === 0) {
+        addToast('error', t('recipes.stepsRequired', 'At least one step is required'));
+        return;
+      }
       const body = { name, category, description, yield: yieldAmount, sellingPrice: price === '' ? undefined : Number(price), ingredients, steps: formattedSteps };
       if (isEdit) {
         updateRecipe.mutate({ id: id!, ...body }, { onSuccess: () => navigate(`/recipes/${id}`) });

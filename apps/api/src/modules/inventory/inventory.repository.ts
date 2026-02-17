@@ -1,3 +1,4 @@
+import { InventoryLogType, INVENTORY_LOG_TYPE_DB, INVENTORY_LOG_TYPE_FROM_DB } from '@mise/shared';
 import type {
   Ingredient,
   CreateIngredientDTO,
@@ -6,23 +7,10 @@ import type {
   AdjustStockDTO,
   PaginatedResult,
 } from './inventory.types.js';
-
-export interface IInventoryRepository {
-  findById(id: string): Promise<Ingredient | null>;
-  findAll(search?: string): Promise<Ingredient[]>;
-  findAllPaginated(page: number, limit: number, search?: string, groupIds?: string[]): Promise<PaginatedResult<Ingredient>>;
-  findLowStock(): Promise<Ingredient[]>;
-  create(data: CreateIngredientDTO): Promise<Ingredient>;
-  update(id: string, data: UpdateIngredientDTO): Promise<Ingredient>;
-  adjustStock(data: AdjustStockDTO): Promise<Ingredient>;
-  getLog(ingredientId: string): Promise<InventoryLog[]>;
-  delete(id: string): Promise<void>;
-}
-
 import { getPool } from '../../core/database/postgres.js';
 
-export class PgInventoryRepository implements IInventoryRepository {
-  private async attachGroups(ingredients: Ingredient[]): Promise<Ingredient[]> {
+export class PgInventoryRepository {
+  private static async attachGroups(ingredients: Ingredient[]): Promise<Ingredient[]> {
     if (ingredients.length === 0) return ingredients;
     const pool = getPool();
     const ids = ingredients.map((i) => i.id);
@@ -46,7 +34,7 @@ export class PgInventoryRepository implements IInventoryRepository {
     return ingredients;
   }
 
-  private async syncGroups(ingredientId: string, groupIds: string[]): Promise<void> {
+  private static async syncGroups(ingredientId: string, groupIds: string[]): Promise<void> {
     const pool = getPool();
     await pool.query('DELETE FROM ingredient_groups WHERE ingredient_id = $1', [ingredientId]);
     if (groupIds.length > 0) {
@@ -55,21 +43,21 @@ export class PgInventoryRepository implements IInventoryRepository {
     }
   }
 
-  async findById(id: string): Promise<Ingredient | null> {
+  static async findById(storeId: string, id: string): Promise<Ingredient | null> {
     const pool = getPool();
-    const result = await pool.query('SELECT * FROM ingredients WHERE id = $1', [id]);
+    const result = await pool.query('SELECT * FROM ingredients WHERE id = $1 AND store_id = $2', [id, storeId]);
     if (!result.rows[0]) return null;
     const ingredients = await this.attachGroups([this.mapRow(result.rows[0])]);
-    return ingredients[0];
+    return ingredients[0] ?? null;
   }
 
-  async findAll(search?: string): Promise<Ingredient[]> {
+  static async findAll(storeId: string, search?: string): Promise<Ingredient[]> {
     const pool = getPool();
-    let query = 'SELECT * FROM ingredients';
-    const params: unknown[] = [];
+    let query = 'SELECT * FROM ingredients WHERE store_id = $1';
+    const params: unknown[] = [storeId];
     if (search) {
       const escaped = search.replace(/[%_\\]/g, '\\$&');
-      query += ` WHERE name ILIKE $1 ESCAPE '\\'`;
+      query += ` AND name ILIKE $2 ESCAPE '\\'`;
       params.push(`%${escaped}%`);
     }
     query += ' ORDER BY name ASC';
@@ -78,12 +66,16 @@ export class PgInventoryRepository implements IInventoryRepository {
     return this.attachGroups(ingredients);
   }
 
-  async findAllPaginated(page: number, limit: number, search?: string, groupIds?: string[]): Promise<PaginatedResult<Ingredient>> {
+  static async findAllPaginated(storeId: string, page: number, limit: number, search?: string, groupIds?: string[]): Promise<PaginatedResult<Ingredient>> {
     const pool = getPool();
     const offset = (page - 1) * limit;
     const conditions: string[] = [];
     const params: unknown[] = [];
     let idx = 1;
+
+    conditions.push(`store_id = $${idx}`);
+    params.push(storeId);
+    idx++;
 
     if (search) {
       const escaped = search.replace(/[%_\\]/g, '\\$&');
@@ -97,7 +89,7 @@ export class PgInventoryRepository implements IInventoryRepository {
       idx++;
     }
 
-    const whereClause = conditions.length > 0 ? ` WHERE ${conditions.join(' AND ')}` : '';
+    const whereClause = ` WHERE ${conditions.join(' AND ')}`;
 
     const countResult = await pool.query(`SELECT COUNT(*) FROM ingredients${whereClause}`, params);
     const total = parseInt(countResult.rows[0]['count'] as string, 10);
@@ -113,29 +105,30 @@ export class PgInventoryRepository implements IInventoryRepository {
     return { items, total, page, limit, totalPages: Math.ceil(total / limit) };
   }
 
-  async findLowStock(): Promise<Ingredient[]> {
+  static async findLowStock(storeId: string): Promise<Ingredient[]> {
     const pool = getPool();
     const result = await pool.query(
-      'SELECT * FROM ingredients WHERE quantity <= low_stock_threshold ORDER BY quantity ASC',
+      'SELECT * FROM ingredients WHERE store_id = $1 AND quantity <= low_stock_threshold ORDER BY quantity ASC',
+      [storeId],
     );
     const ingredients = result.rows.map((r: Record<string, unknown>) => this.mapRow(r));
     return this.attachGroups(ingredients);
   }
 
-  async create(data: CreateIngredientDTO): Promise<Ingredient> {
+  static async create(storeId: string, data: CreateIngredientDTO): Promise<Ingredient> {
     const pool = getPool();
     const result = await pool.query(
-      `INSERT INTO ingredients (id, name, unit, quantity, cost_per_unit, package_size, low_stock_threshold, supplier, notes, created_at, updated_at)
-       VALUES (gen_random_uuid(), $1, $2, $3, $4, $5, $6, $7, $8, NOW(), NOW())
+      `INSERT INTO ingredients (id, store_id, name, unit, quantity, cost_per_unit, package_size, low_stock_threshold, supplier, notes, created_at, updated_at)
+       VALUES (gen_random_uuid(), $1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), NOW())
        RETURNING *`,
-      [data.name, data.unit, data.quantity, data.costPerUnit, data.packageSize ?? null, data.lowStockThreshold, data.supplier ?? null, data.notes ?? null],
+      [storeId, data.name, data.unit, data.quantity, data.costPerUnit, data.packageSize ?? null, data.lowStockThreshold, data.supplier ?? null, data.notes ?? null],
     );
     const id = result.rows[0]['id'] as string;
     if (data.groupIds?.length) await this.syncGroups(id, data.groupIds);
-    return (await this.findById(id))!;
+    return (await this.findById(storeId, id))!;
   }
 
-  async update(id: string, data: UpdateIngredientDTO): Promise<Ingredient> {
+  static async update(storeId: string, id: string, data: UpdateIngredientDTO): Promise<Ingredient> {
     const pool = getPool();
     const fields: string[] = [];
     const values: unknown[] = [];
@@ -152,47 +145,56 @@ export class PgInventoryRepository implements IInventoryRepository {
 
     fields.push(`updated_at = NOW()`);
     values.push(id);
+    const idIdx = idx;
+    idx++;
+    values.push(storeId);
 
     await pool.query(
-      `UPDATE ingredients SET ${fields.join(', ')} WHERE id = $${idx}`,
+      `UPDATE ingredients SET ${fields.join(', ')} WHERE id = $${idIdx} AND store_id = $${idx}`,
       values,
     );
     if (data.groupIds !== undefined) await this.syncGroups(id, data.groupIds);
-    return (await this.findById(id))!;
+    return (await this.findById(storeId, id))!;
   }
 
-  async adjustStock(data: AdjustStockDTO): Promise<Ingredient> {
+  static async adjustStock(storeId: string, data: AdjustStockDTO): Promise<Ingredient> {
     const pool = getPool();
     const client = await pool.connect();
     try {
       await client.query('BEGIN');
 
+      // Verify the ingredient belongs to this store
+      const verify = await client.query('SELECT id FROM ingredients WHERE id = $1 AND store_id = $2', [data.ingredientId, storeId]);
+      if (!verify.rows[0]) {
+        throw new Error('Ingredient not found');
+      }
+
       let quantityChange: number;
       switch (data.type) {
-        case 'addition':
+        case InventoryLogType.ADDITION:
           quantityChange = data.quantity;
           break;
-        case 'usage':
+        case InventoryLogType.USAGE:
           quantityChange = -data.quantity;
           break;
-        case 'adjustment':
+        case InventoryLogType.ADJUSTMENT:
           quantityChange = data.quantity;
           break;
       }
 
       const result = await client.query(
-        `UPDATE ingredients SET quantity = quantity + $1, updated_at = NOW() WHERE id = $2 RETURNING *`,
-        [quantityChange, data.ingredientId],
+        `UPDATE ingredients SET quantity = quantity + $1, updated_at = NOW() WHERE id = $2 AND store_id = $3 RETURNING *`,
+        [quantityChange, data.ingredientId, storeId],
       );
 
       await client.query(
         `INSERT INTO inventory_log (id, ingredient_id, type, quantity, reason, price_paid, created_at)
          VALUES (gen_random_uuid(), $1, $2, $3, $4, $5, NOW())`,
-        [data.ingredientId, data.type, data.quantity, data.reason ?? null, data.pricePaid ?? null],
+        [data.ingredientId, INVENTORY_LOG_TYPE_DB[data.type], data.quantity, data.reason ?? null, data.pricePaid ?? null],
       );
 
       // Recalculate average cost per unit from all additions with a price
-      if (data.type === 'addition' && data.pricePaid != null) {
+      if (data.type === InventoryLogType.ADDITION && data.pricePaid != null) {
         const avgResult = await client.query(
           `SELECT SUM(price_paid) as total_spent, SUM(quantity) as total_qty
            FROM inventory_log
@@ -202,14 +204,14 @@ export class PgInventoryRepository implements IInventoryRepository {
         const { total_spent, total_qty } = avgResult.rows[0];
         if (total_qty > 0) {
           await client.query(
-            `UPDATE ingredients SET cost_per_unit = ROUND($1::numeric / $2::numeric, 4), updated_at = NOW() WHERE id = $3`,
-            [total_spent, total_qty, data.ingredientId],
+            `UPDATE ingredients SET cost_per_unit = ROUND($1::numeric / $2::numeric, 4), updated_at = NOW() WHERE id = $3 AND store_id = $4`,
+            [total_spent, total_qty, data.ingredientId, storeId],
           );
         }
       }
 
       // Re-fetch to get updated cost_per_unit
-      const updated = await client.query('SELECT * FROM ingredients WHERE id = $1', [data.ingredientId]);
+      const updated = await client.query('SELECT * FROM ingredients WHERE id = $1 AND store_id = $2', [data.ingredientId, storeId]);
 
       await client.query('COMMIT');
       return this.mapRow(updated.rows[0]);
@@ -221,16 +223,19 @@ export class PgInventoryRepository implements IInventoryRepository {
     }
   }
 
-  async getLog(ingredientId: string): Promise<InventoryLog[]> {
+  static async getLog(storeId: string, ingredientId: string): Promise<InventoryLog[]> {
     const pool = getPool();
     const result = await pool.query(
-      'SELECT * FROM inventory_log WHERE ingredient_id = $1 ORDER BY created_at DESC',
-      [ingredientId],
+      `SELECT il.* FROM inventory_log il
+       JOIN ingredients i ON i.id = il.ingredient_id
+       WHERE il.ingredient_id = $1 AND i.store_id = $2
+       ORDER BY il.created_at DESC`,
+      [ingredientId, storeId],
     );
     return result.rows.map((r: Record<string, unknown>) => ({
       id: r['id'] as string,
       ingredientId: r['ingredient_id'] as string,
-      type: r['type'] as InventoryLog['type'],
+      type: INVENTORY_LOG_TYPE_FROM_DB[r['type'] as string],
       quantity: Number(r['quantity']),
       reason: r['reason'] as string | undefined,
       pricePaid: r['price_paid'] != null ? Number(r['price_paid']) : undefined,
@@ -238,12 +243,12 @@ export class PgInventoryRepository implements IInventoryRepository {
     }));
   }
 
-  async delete(id: string): Promise<void> {
+  static async delete(storeId: string, id: string): Promise<void> {
     const pool = getPool();
-    await pool.query('DELETE FROM ingredients WHERE id = $1', [id]);
+    await pool.query('DELETE FROM ingredients WHERE id = $1 AND store_id = $2', [id, storeId]);
   }
 
-  private mapRow(row: Record<string, unknown>): Ingredient {
+  private static mapRow(row: Record<string, unknown>): Ingredient {
     return {
       id: row['id'] as string,
       name: row['name'] as string,

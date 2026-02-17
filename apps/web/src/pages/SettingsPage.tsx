@@ -6,8 +6,9 @@ import UnitsTab from '@/components/settings/UnitsTab';
 import GroupsTab from '@/components/settings/GroupsTab';
 import AccountTab from '@/components/settings/AccountTab';
 import NotificationsTab from '@/components/settings/NotificationsTab';
+import TeamTab from '@/components/settings/TeamTab';
 
-type SettingsTabKey = 'units' | 'groups' | 'account' | 'notifications';
+type SettingsTabKey = 'account' | 'team' | 'units' | 'groups' | 'notifications';
 
 export default function SettingsPage() {
   const { t } = useTranslation();
@@ -15,6 +16,7 @@ export default function SettingsPage() {
 
   const tabs = [
     { key: 'account' as const, label: t('settings.tabs.account', 'Account') },
+    { key: 'team' as const, label: t('settings.tabs.team', 'Team') },
     { key: 'units' as const, label: t('settings.tabs.units', 'Units') },
     { key: 'groups' as const, label: t('settings.tabs.groups', 'Groups') },
     { key: 'notifications' as const, label: t('settings.tabs.notifications', 'Notifications') },
@@ -28,6 +30,7 @@ export default function SettingsPage() {
 
       <div className="mt-6">
         {activeTab === 'account' && <AccountTab />}
+        {activeTab === 'team' && <TeamTab />}
         {activeTab === 'units' && <UnitsTab />}
         {activeTab === 'groups' && <GroupsTab />}
         {activeTab === 'notifications' && <NotificationsTab />}

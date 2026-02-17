@@ -115,7 +115,7 @@
     "yield": "Yield",
     "cost": "Cost",
     "price": "Price",
-    "sellingPrice": "Selling Price",
+    "sellingPrice": "Selling Price (₪)",
     "ingredients": "Ingredients",
     "ingredient": "Ingredient",
     "addIngredient": "Add",
@@ -127,6 +127,7 @@
     "subRecipes": "Sub-Recipes",
     "noSubRecipes": "No sub-recipes.",
     "noSteps": "No steps added.",
+    "stepsRequired": "At least one step is required",
     "costTab": "Cost",
     "ingredientCost": "Ingredient Cost",
     "subRecipeCost": "Sub-Recipe Cost",
@@ -149,7 +150,7 @@
     "adjustType": "Type",
     "amount": "Amount",
     "threshold": "Low-Stock Threshold",
-    "thresholdTooltip": "You'll be alerted when stock drops to this level.",
+    "thresholdTooltip": "If notifications are enabled, you'll be notified when stock drops to this level.",
     "costPerUnit": "Cost per Unit (₪)",
     "price": "Price (₪)",
     "perUnit": "Per Unit",
@@ -168,6 +169,7 @@
     "packagePrice": "Package Price (₪)",
     "pricePaid": "Price Paid (₪)",
     "packages": "Packages",
+    "units": "Units",
     "groups": "Groups",
     "editItem": "Edit Item",
     "deleteTitle": "Delete Item?",
@@ -193,7 +195,11 @@
     "emptyDesc": "Add your first customer.",
     "searchPlaceholder": "Search customers...",
     "deleteTitle": "Delete Customer?",
-    "deleteMsg": "This will permanently remove the customer."
+    "deleteMsg": "This will permanently remove the customer.",
+    "existingFound": "Customer Already Exists",
+    "existingFoundDesc": "A customer with this contact info already exists. Would you like to use them instead?",
+    "existingFoundInfoDesc": "A customer with this contact info already exists.",
+    "useExisting": "Use This Customer"
   },
   "payments": {
     "logPayment": "Log Payment",
@@ -221,9 +227,21 @@
     },
     "tabs": {
       "account": "Account",
+      "team": "Team",
       "units": "Units",
       "groups": "Groups",
       "notifications": "Notifications"
+    },
+    "team": {
+      "title": "Team Members",
+      "invite": "Invite",
+      "inviteMember": "Invite Member",
+      "sendInvite": "Send Invite",
+      "roleLabel": "Role",
+      "role1": "Owner",
+      "role2": "Manager",
+      "role3": "Employee",
+      "noMembers": "No team members yet."
     },
     "units": {
       "weight": "Weight",
@@ -320,6 +338,21 @@
     "profileUpdated": "Profile updated",
     "profileUpdateFailed": "Failed to update profile",
     "notificationsUpdated": "Notification preferences updated",
-    "notificationsUpdateFailed": "Failed to update notification preferences"
+    "notificationsUpdateFailed": "Failed to update notification preferences",
+    "inviteSent": "Invitation sent",
+    "inviteFailed": "Failed to send invitation",
+    "storeCreated": "Store created",
+    "storeCreateFailed": "Failed to create store"
+  },
+  "store": {
+    "setupTitle": "Set up your bakery",
+    "name": "Store Name",
+    "namePlaceholder": "e.g. Sarah's Bakery",
+    "code": "Store Code",
+    "codePlaceholder": "e.g. SARAH-BKR",
+    "address": "Address",
+    "create": "Create Store",
+    "createFailed": "Failed to create store",
+    "invitedTo": "You've been invited to join"
   }
 }

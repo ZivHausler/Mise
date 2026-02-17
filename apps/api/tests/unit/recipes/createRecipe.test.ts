@@ -1,55 +1,64 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { CreateRecipeUseCase } from '../../../src/modules/recipes/use-cases/createRecipe.js';
-import { createMockRecipeRepository, createRecipe } from '../helpers/mock-factories.js';
+import { RecipeCrud } from '../../../src/modules/recipes/crud/recipeCrud.js';
+import { createRecipe } from '../helpers/mock-factories.js';
 import { ValidationError } from '../../../src/core/errors/app-error.js';
-import type { IRecipeRepository } from '../../../src/modules/recipes/recipe.repository.js';
 
-describe('CreateRecipeUseCase', () => {
-  let useCase: CreateRecipeUseCase;
-  let repo: IRecipeRepository;
+vi.mock('../../../src/modules/recipes/recipe.repository.js', () => ({
+  MongoRecipeRepository: {
+    create: vi.fn(),
+    findById: vi.fn(),
+    findAll: vi.fn(),
+    update: vi.fn(),
+    delete: vi.fn(),
+  },
+}));
 
+import { MongoRecipeRepository } from '../../../src/modules/recipes/recipe.repository.js';
+
+const STORE_ID = 'store-1';
+
+describe('RecipeCrud.create', () => {
   beforeEach(() => {
-    repo = createMockRecipeRepository();
-    useCase = new CreateRecipeUseCase(repo);
+    vi.clearAllMocks();
   });
 
   it('should create a recipe with valid data', async () => {
     const recipe = createRecipe();
-    vi.mocked(repo.create).mockResolvedValue(recipe);
+    vi.mocked(MongoRecipeRepository.create).mockResolvedValue(recipe);
 
-    const result = await useCase.execute({
+    const result = await RecipeCrud.create(STORE_ID, {
       name: 'Chocolate Cake',
       ingredients: [{ ingredientId: 'ing-1', quantity: 2, unit: 'kg' }],
-      steps: [{ order: 1, instruction: 'Mix ingredients' }],
+      steps: [{ order: 1, type: 'step', instruction: 'Mix ingredients' }],
     });
 
     expect(result).toEqual(recipe);
-    expect(repo.create).toHaveBeenCalledOnce();
+    expect(MongoRecipeRepository.create).toHaveBeenCalledOnce();
   });
 
   it('should throw ValidationError when name is empty', async () => {
     await expect(
-      useCase.execute({
+      RecipeCrud.create(STORE_ID, {
         name: '',
         ingredients: [],
-        steps: [{ order: 1, instruction: 'Do something' }],
+        steps: [{ order: 1, type: 'step', instruction: 'Do something' }],
       }),
     ).rejects.toThrow('Recipe name is required');
   });
 
   it('should throw ValidationError when name is whitespace only', async () => {
     await expect(
-      useCase.execute({
+      RecipeCrud.create(STORE_ID, {
         name: '   ',
         ingredients: [],
-        steps: [{ order: 1, instruction: 'Do something' }],
+        steps: [{ order: 1, type: 'step', instruction: 'Do something' }],
       }),
     ).rejects.toThrow(ValidationError);
   });
 
   it('should throw ValidationError when no steps provided', async () => {
     await expect(
-      useCase.execute({
+      RecipeCrud.create(STORE_ID, {
         name: 'Test',
         ingredients: [],
         steps: [],
@@ -59,12 +68,12 @@ describe('CreateRecipeUseCase', () => {
 
   it('should throw ValidationError when a step has empty instruction', async () => {
     await expect(
-      useCase.execute({
+      RecipeCrud.create(STORE_ID, {
         name: 'Test',
         ingredients: [],
         steps: [
-          { order: 1, instruction: 'Good step' },
-          { order: 2, instruction: '' },
+          { order: 1, type: 'step', instruction: 'Good step' },
+          { order: 2, type: 'step', instruction: '' },
         ],
       }),
     ).rejects.toThrow('Step 2 must have an instruction');
@@ -72,10 +81,10 @@ describe('CreateRecipeUseCase', () => {
 
   it('should throw ValidationError when a step instruction is whitespace', async () => {
     await expect(
-      useCase.execute({
+      RecipeCrud.create(STORE_ID, {
         name: 'Test',
         ingredients: [],
-        steps: [{ order: 1, instruction: '   ' }],
+        steps: [{ order: 1, type: 'step', instruction: '   ' }],
       }),
     ).rejects.toThrow('Step 1 must have an instruction');
   });
@@ -89,15 +98,15 @@ describe('CreateRecipeUseCase', () => {
       yieldUnit: 'slices',
       sellingPrice: 120,
     });
-    vi.mocked(repo.create).mockResolvedValue(recipe);
+    vi.mocked(MongoRecipeRepository.create).mockResolvedValue(recipe);
 
-    const result = await useCase.execute({
+    const result = await RecipeCrud.create(STORE_ID, {
       name: 'Chocolate Cake',
       description: 'Delicious cake',
       category: 'cakes',
       tags: ['chocolate', 'birthday'],
       ingredients: [{ ingredientId: 'ing-1', quantity: 2, unit: 'kg' }],
-      steps: [{ order: 1, instruction: 'Mix' }],
+      steps: [{ order: 1, type: 'step', instruction: 'Mix' }],
       yield: 12,
       yieldUnit: 'slices',
       sellingPrice: 120,

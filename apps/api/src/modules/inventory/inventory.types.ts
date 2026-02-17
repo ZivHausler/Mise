@@ -1,3 +1,7 @@
+import { InventoryLogType } from '@mise/shared';
+
+export { InventoryLogType };
+
 export interface IngredientGroup {
   id: string;
   name: string;
@@ -24,7 +28,7 @@ export interface Ingredient {
 export interface InventoryLog {
   id: string;
   ingredientId: string;
-  type: 'addition' | 'usage' | 'adjustment';
+  type: InventoryLogType;
   quantity: number;
   reason?: string;
   pricePaid?: number;
@@ -47,7 +51,7 @@ export interface UpdateIngredientDTO extends Partial<CreateIngredientDTO> {}
 
 export interface AdjustStockDTO {
   ingredientId: string;
-  type: 'addition' | 'usage' | 'adjustment';
+  type: InventoryLogType;
   quantity: number;
   reason?: string;
   pricePaid?: number;

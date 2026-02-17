@@ -1,3 +1,21 @@
+export enum InventoryLogType {
+  ADDITION = 0,
+  USAGE = 1,
+  ADJUSTMENT = 2,
+}
+
+export const INVENTORY_LOG_TYPE_DB: Record<InventoryLogType, string> = {
+  [InventoryLogType.ADDITION]: 'addition',
+  [InventoryLogType.USAGE]: 'usage',
+  [InventoryLogType.ADJUSTMENT]: 'adjustment',
+};
+
+export const INVENTORY_LOG_TYPE_FROM_DB: Record<string, InventoryLogType> = {
+  addition: InventoryLogType.ADDITION,
+  usage: InventoryLogType.USAGE,
+  adjustment: InventoryLogType.ADJUSTMENT,
+};
+
 export const ORDER_STATUSES = ['received', 'in_progress', 'ready', 'delivered'] as const;
 export const PAYMENT_STATUSES = ['unpaid', 'partial', 'paid'] as const;
 export const PAYMENT_METHODS = ['cash', 'credit_card'] as const;
