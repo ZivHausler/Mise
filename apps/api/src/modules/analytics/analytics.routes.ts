@@ -14,7 +14,7 @@ export default async function analyticsRoutes(app: FastifyInstance) {
       `SELECT DATE(p.created_at) as date, SUM(p.amount) as total
        FROM payments p
        JOIN orders o ON o.id = p.order_id
-       WHERE o.store_id = $1 AND p.created_at >= NOW() - INTERVAL '30 days'
+       WHERE o.store_id = $1 AND p.created_at >= NOW() - INTERVAL '30 days' AND p.status != 'refunded'
        GROUP BY DATE(p.created_at)
        ORDER BY date DESC`,
       [storeId],
@@ -24,7 +24,7 @@ export default async function analyticsRoutes(app: FastifyInstance) {
       `SELECT SUM(p.amount) as total
        FROM payments p
        JOIN orders o ON o.id = p.order_id
-       WHERE o.store_id = $1`,
+       WHERE o.store_id = $1 AND p.status != 'refunded'`,
       [storeId],
     );
 
@@ -87,7 +87,7 @@ export default async function analyticsRoutes(app: FastifyInstance) {
         `SELECT COALESCE(SUM(p.amount), 0) as total
          FROM payments p
          JOIN orders o ON o.id = p.order_id
-         WHERE o.store_id = $1 AND DATE(p.created_at) = CURRENT_DATE`,
+         WHERE o.store_id = $1 AND DATE(p.created_at) = CURRENT_DATE AND p.status != 'refunded'`,
         [storeId],
       ),
     ]);

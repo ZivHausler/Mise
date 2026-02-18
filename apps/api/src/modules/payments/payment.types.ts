@@ -13,6 +13,13 @@ export const PAYMENT_STATUS = {
 
 export type PaymentStatus = (typeof PAYMENT_STATUS)[keyof typeof PAYMENT_STATUS];
 
+export const PAYMENT_RECORD_STATUS = {
+  COMPLETED: 'completed',
+  REFUNDED: 'refunded',
+} as const;
+
+export type PaymentRecordStatus = (typeof PAYMENT_RECORD_STATUS)[keyof typeof PAYMENT_RECORD_STATUS];
+
 export interface Payment {
   id: string;
   orderId: string;
@@ -20,6 +27,7 @@ export interface Payment {
   customerName?: string;
   amount: number;
   method: PaymentMethod;
+  status: PaymentRecordStatus;
   notes?: string;
   createdAt: Date;
 }

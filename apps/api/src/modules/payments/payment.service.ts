@@ -1,6 +1,7 @@
 import { getEventBus } from '../../core/events/event-bus.js';
 import type { PaginationOptions, PaginatedResult, CustomerPaymentFilters } from './payment.repository.js';
-import type { CreatePaymentDTO, Payment, OrderPaymentSummary } from './payment.types.js';
+import type { CreatePaymentDTO, Payment, OrderPaymentSummary, PaymentStatus } from './payment.types.js';
+import { PAYMENT_STATUS } from './payment.types.js';
 import { PaymentCrud } from './paymentCrud.js';
 import { GetPaymentSummaryUseCase } from './use-cases/getPaymentSummary.js';
 import type { OrderService } from '../orders/order.service.js';
@@ -32,6 +33,21 @@ export class PaymentService {
     return this.getPaymentSummaryUseCase.execute(storeId, orderId, orderTotal);
   }
 
+  async getPaymentStatuses(storeId: string): Promise<Record<string, PaymentStatus>> {
+    const orders = this.orderService ? await this.orderService.getAll(storeId) : [];
+    const paidAmounts = await PaymentCrud.getPaidAmountsByStore(storeId);
+    const paidMap = new Map(paidAmounts.map((p) => [p.orderId, p.paidAmount]));
+
+    const statuses: Record<string, PaymentStatus> = {};
+    for (const order of orders) {
+      const paid = paidMap.get(order.id) ?? 0;
+      if (paid <= 0) statuses[order.id] = PAYMENT_STATUS.UNPAID;
+      else if (paid >= order.totalAmount) statuses[order.id] = PAYMENT_STATUS.PAID;
+      else statuses[order.id] = PAYMENT_STATUS.PARTIAL;
+    }
+    return statuses;
+  }
+
   async create(storeId: string, data: CreatePaymentDTO): Promise<Payment> {
     if (this.orderService) {
       await this.orderService.getById(storeId, data.orderId);
@@ -46,6 +62,22 @@ export class PaymentService {
     });
 
     return payment;
+  }
+
+  async refund(storeId: string, id: string): Promise<Payment> {
+    const payment = await PaymentCrud.getById(storeId, id);
+    if (!payment) throw new NotFoundError('Payment not found');
+    if (payment.status === 'refunded') throw new NotFoundError('Payment already refunded');
+
+    const refunded = await PaymentCrud.refund(storeId, id);
+
+    await getEventBus().publish({
+      eventName: 'payment.refunded',
+      payload: { paymentId: refunded.id, orderId: refunded.orderId, amount: refunded.amount },
+      timestamp: new Date(),
+    });
+
+    return refunded;
   }
 
   async delete(storeId: string, id: string): Promise<void> {

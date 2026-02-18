@@ -5,7 +5,9 @@ import type { OrderPaymentSummary, PaymentStatus } from '../payment.types.js';
 export class GetPaymentSummaryUseCase implements UseCase<OrderPaymentSummary, [string, string, number]> {
   async execute(storeId: string, orderId: string, orderTotalAmount: number): Promise<OrderPaymentSummary> {
     const payments = await PaymentCrud.getByOrderId(storeId, orderId);
-    const paidAmount = payments.reduce((sum, p) => sum + p.amount, 0);
+    const paidAmount = payments
+      .filter((p) => p.status !== 'refunded')
+      .reduce((sum, p) => sum + p.amount, 0);
 
     let status: PaymentStatus;
     if (paidAmount <= 0) {

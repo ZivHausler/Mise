@@ -39,11 +39,23 @@ export class PaymentController {
     return reply.send({ success: true, data: summary });
   }
 
+  async getStatuses(request: FastifyRequest, reply: FastifyReply) {
+    const storeId = request.currentUser!.storeId!;
+    const statuses = await this.paymentService.getPaymentStatuses(storeId);
+    return reply.send({ success: true, data: statuses });
+  }
+
   async create(request: FastifyRequest, reply: FastifyReply) {
     const storeId = request.currentUser!.storeId!;
     const data = createPaymentSchema.parse(request.body);
     const payment = await this.paymentService.create(storeId, data);
     return reply.status(201).send({ success: true, data: payment });
+  }
+
+  async refund(request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) {
+    const storeId = request.currentUser!.storeId!;
+    const payment = await this.paymentService.refund(storeId, request.params.id);
+    return reply.send({ success: true, data: payment });
   }
 
   async delete(request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) {

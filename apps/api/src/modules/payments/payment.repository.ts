@@ -1,5 +1,24 @@
 import type { Payment, CreatePaymentDTO } from './payment.types.js';
+import { PAYMENT_RECORD_STATUS } from './payment.types.js';
 import { getPool } from '../../core/database/postgres.js';
+
+let ensuredStatusColumn = false;
+
+async function ensureStatusColumn() {
+  if (ensuredStatusColumn) return;
+  const pool = getPool();
+  await pool.query(`
+    DO $$ BEGIN
+      IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_name = 'payments' AND column_name = 'status'
+      ) THEN
+        ALTER TABLE payments ADD COLUMN status VARCHAR(20) NOT NULL DEFAULT 'completed';
+      END IF;
+    END $$;
+  `);
+  ensuredStatusColumn = true;
+}
 
 export interface PaginationOptions {
   limit: number;
@@ -19,6 +38,7 @@ export interface CustomerPaymentFilters {
 
 export class PgPaymentRepository {
   static async findAll(storeId: string, options?: PaginationOptions): Promise<PaginatedResult<Payment>> {
+    await ensureStatusColumn();
     const pool = getPool();
     const countResult = await pool.query(
       `SELECT COUNT(*) FROM payments p
@@ -45,6 +65,7 @@ export class PgPaymentRepository {
   }
 
   static async findByCustomerId(storeId: string, customerId: string, options?: PaginationOptions, filters?: CustomerPaymentFilters): Promise<PaginatedResult<Payment>> {
+    await ensureStatusColumn();
     const pool = getPool();
     let whereClause = 'WHERE o.customer_id = $1 AND o.store_id = $2';
     const baseParams: unknown[] = [customerId, storeId];
@@ -87,6 +108,7 @@ export class PgPaymentRepository {
   }
 
   static async findById(storeId: string, id: string): Promise<Payment | null> {
+    await ensureStatusColumn();
     const pool = getPool();
     const result = await pool.query(
       `SELECT p.* FROM payments p
@@ -98,6 +120,7 @@ export class PgPaymentRepository {
   }
 
   static async findByOrderId(storeId: string, orderId: string): Promise<Payment[]> {
+    await ensureStatusColumn();
     const pool = getPool();
     const result = await pool.query(
       `SELECT p.* FROM payments p
@@ -110,6 +133,7 @@ export class PgPaymentRepository {
   }
 
   static async create(storeId: string, data: CreatePaymentDTO): Promise<Payment> {
+    await ensureStatusColumn();
     const pool = getPool();
     // Verify the order belongs to the store
     const orderCheck = await pool.query(
@@ -120,12 +144,46 @@ export class PgPaymentRepository {
       throw new Error('Order not found in this store');
     }
     const result = await pool.query(
-      `INSERT INTO payments (id, order_id, amount, method, notes, created_at)
-       VALUES (gen_random_uuid(), $1, $2, $3, $4, NOW())
+      `INSERT INTO payments (id, order_id, amount, method, notes, status, created_at)
+       VALUES (gen_random_uuid(), $1, $2, $3, $4, $5, NOW())
        RETURNING *`,
-      [data.orderId, data.amount, data.method, data.notes ?? null],
+      [data.orderId, data.amount, data.method, data.notes ?? null, PAYMENT_RECORD_STATUS.COMPLETED],
     );
     return this.mapRow(result.rows[0]);
+  }
+
+  static async refund(storeId: string, id: string): Promise<Payment> {
+    await ensureStatusColumn();
+    const pool = getPool();
+    const result = await pool.query(
+      `UPDATE payments p
+       SET status = $3
+       FROM orders o
+       WHERE p.order_id = o.id AND p.id = $1 AND o.store_id = $2
+       RETURNING p.*`,
+      [id, storeId, PAYMENT_RECORD_STATUS.REFUNDED],
+    );
+    if (result.rows.length === 0) {
+      throw new Error('Payment not found');
+    }
+    return this.mapRow(result.rows[0]);
+  }
+
+  static async findPaidAmountsByStore(storeId: string): Promise<{ orderId: string; paidAmount: number }[]> {
+    await ensureStatusColumn();
+    const pool = getPool();
+    const result = await pool.query(
+      `SELECT p.order_id, SUM(p.amount) as paid_amount
+       FROM payments p
+       JOIN orders o ON p.order_id = o.id
+       WHERE o.store_id = $1 AND p.status = $2
+       GROUP BY p.order_id`,
+      [storeId, PAYMENT_RECORD_STATUS.COMPLETED],
+    );
+    return result.rows.map((r: Record<string, unknown>) => ({
+      orderId: r['order_id'] as string,
+      paidAmount: Number(r['paid_amount']),
+    }));
   }
 
   static async delete(storeId: string, id: string): Promise<void> {
@@ -146,6 +204,7 @@ export class PgPaymentRepository {
       customerName: (row['customer_name'] as string) || undefined,
       amount: Number(row['amount']),
       method: row['method'] as Payment['method'],
+      status: (row['status'] as Payment['status']) || PAYMENT_RECORD_STATUS.COMPLETED,
       notes: row['notes'] as string | undefined,
       createdAt: new Date(row['created_at'] as string),
     };

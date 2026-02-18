@@ -30,6 +30,14 @@ export class PaymentCrud {
     return PgPaymentRepository.findByCustomerId(storeId, customerId, options, filters);
   }
 
+  static async getPaidAmountsByStore(storeId: string): Promise<{ orderId: string; paidAmount: number }[]> {
+    return PgPaymentRepository.findPaidAmountsByStore(storeId);
+  }
+
+  static async refund(storeId: string, id: string): Promise<Payment> {
+    return PgPaymentRepository.refund(storeId, id);
+  }
+
   static async delete(storeId: string, id: string): Promise<void> {
     return PgPaymentRepository.delete(storeId, id);
   }
