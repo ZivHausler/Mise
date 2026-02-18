@@ -6,6 +6,7 @@ import jwt from '@fastify/jwt';
 
 import { env } from '../config/env.js';
 import { requestContextPlugin } from './middleware/request-context.js';
+import { adminAuditPlugin } from './middleware/admin-audit.js';
 
 export async function registerCorePlugins(app: FastifyInstance) {
   // CORS — restrict to configured origins, never wildcard in production
@@ -58,6 +59,7 @@ export async function registerCorePlugins(app: FastifyInstance) {
   });
 
   await app.register(requestContextPlugin);
+  await app.register(adminAuditPlugin);
 }
 
 /**

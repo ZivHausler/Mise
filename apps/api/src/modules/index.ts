@@ -11,6 +11,7 @@ export async function registerModules(app: FastifyInstance) {
   await app.register(import('./notifications/notification.routes.js'), { prefix: '/api/notifications' });
   await app.register(import('./analytics/analytics.routes.js'), { prefix: '/api/analytics' });
   await app.register(import('./settings/settings.routes.js'), { prefix: '/api/settings' });
+  await app.register(import('./admin/admin.routes.js'), { prefix: '/api/admin' });
 
   app.log.info('All modules registered');
 }

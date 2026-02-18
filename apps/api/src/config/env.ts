@@ -31,6 +31,9 @@ const envSchema = z.object({
   // Frontend URL (for invite links)
   FRONTEND_URL: z.string().default('http://localhost:5173'),
 
+  // Admin
+  ADMIN_SECRET: z.string().min(16).default('dev-admin-secret-change-in-production'),
+
   // CORS
   CORS_ORIGIN: z.string().default('http://localhost:5173'),
 
