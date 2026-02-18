@@ -15,6 +15,8 @@ export default function StoreSetupPage() {
   const setHasStore = useAuthStore((s) => s.setHasStore);
   const setStores = useAuthStore((s) => s.setStores);
   const user = useAuthStore((s) => s.user);
+  const pendingCreateStoreToken = useAuthStore((s) => s.pendingCreateStoreToken);
+  const setPendingCreateStoreToken = useAuthStore((s) => s.setPendingCreateStoreToken);
   const addToast = useToastStore((s) => s.addToast);
   const createStore = useCreateStore();
 
@@ -26,7 +28,7 @@ export default function StoreSetupPage() {
     (e: React.FormEvent) => {
       e.preventDefault();
       createStore.mutate(
-        { name, code: code || undefined, address: address || undefined },
+        { name, code: code || undefined, address: address || undefined, inviteToken: pendingCreateStoreToken || undefined },
         {
           onSuccess: (data: any) => {
             if (user && data.token) {
@@ -35,6 +37,7 @@ export default function StoreSetupPage() {
               if (data.stores) setStores(data.stores);
               else if (data.store) setStores([{ storeId: data.store.id, storeName: data.store.name, role: 1 }]);
             }
+            setPendingCreateStoreToken(null);
             navigate('/');
           },
           onError: () => {
@@ -43,7 +46,7 @@ export default function StoreSetupPage() {
         },
       );
     },
-    [name, code, address, createStore, user, setAuth, setHasStore, setStores, navigate, addToast, t],
+    [name, code, address, pendingCreateStoreToken, createStore, user, setAuth, setHasStore, setStores, setPendingCreateStoreToken, navigate, addToast, t],
   );
 
   return (

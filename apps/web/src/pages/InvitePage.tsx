@@ -14,9 +14,12 @@ export default function InvitePage() {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const updateToken = useAuthStore((s) => s.updateToken);
   const setHasStore = useAuthStore((s) => s.setHasStore);
+  const setPendingCreateStoreToken = useAuthStore((s) => s.setPendingCreateStoreToken);
   const acceptInvite = useAcceptInvite();
 
   const { data: invite, isLoading, isError } = useValidateInvite(token);
+
+  const isCreateStoreInvite = invite?.type === 'create_store';
 
   const handleJoin = () => {
     if (!token) return;
@@ -30,6 +33,12 @@ export default function InvitePage() {
         },
       },
     );
+  };
+
+  const handleSetupStore = () => {
+    if (!token) return;
+    setPendingCreateStoreToken(token);
+    navigate('/store-setup');
   };
 
   if (isLoading) {
@@ -63,16 +72,26 @@ export default function InvitePage() {
 
         <div className="mb-6 rounded-md bg-primary-50 border border-primary-200 p-4 text-center">
           <p className="text-body-sm text-primary-700">
-            {t('store.invitedTo', "You've been invited to join")}
+            {isCreateStoreInvite
+              ? t('store.invitedToCreate', "You've been invited to create your own store")
+              : t('store.invitedTo', "You've been invited to join")}
           </p>
-          <p className="font-semibold text-primary-800 mt-1">{invite.storeName}</p>
+          {!isCreateStoreInvite && invite.storeName && (
+            <p className="font-semibold text-primary-800 mt-1">{invite.storeName}</p>
+          )}
         </div>
 
         {isAuthenticated ? (
           <Stack gap={3}>
-            <Button variant="primary" fullWidth onClick={handleJoin} loading={acceptInvite.isPending}>
-              {t('store.joinStore', 'Join Store')}
-            </Button>
+            {isCreateStoreInvite ? (
+              <Button variant="primary" fullWidth onClick={handleSetupStore}>
+                {t('store.setupStore', 'Set Up Store')}
+              </Button>
+            ) : (
+              <Button variant="primary" fullWidth onClick={handleJoin} loading={acceptInvite.isPending}>
+                {t('store.joinStore', 'Join Store')}
+              </Button>
+            )}
           </Stack>
         ) : (
           <Stack gap={3}>
