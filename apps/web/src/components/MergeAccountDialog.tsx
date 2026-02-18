@@ -8,31 +8,34 @@ import { useAuthStore } from '@/store/auth';
 
 interface MergeAccountDialogProps {
   idToken: string | null;
-  onSuccess: () => void;
+  onSuccess: (data: { user: any; token: string; hasStore: boolean; stores?: any[] }) => void;
   onClose: () => void;
 }
 
 export function MergeAccountDialog({ idToken, onSuccess, onClose }: MergeAccountDialogProps) {
   const { t } = useTranslation();
-  const setAuth = useAuthStore((s) => s.setAuth);
   const mergeGoogleToEmail = useMergeGoogleToEmail();
   const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
 
   const handleSubmit = useCallback(
     (e: React.FormEvent) => {
       e.preventDefault();
       if (!idToken) return;
+      setError('');
       mergeGoogleToEmail.mutate(
         { idToken, password },
         {
           onSuccess: (data: any) => {
-            setAuth(data.user, data.token);
-            onSuccess();
+            onSuccess(data);
+          },
+          onError: () => {
+            setError(t('auth.incorrectPassword'));
           },
         },
       );
     },
-    [idToken, password, mergeGoogleToEmail, setAuth, onSuccess],
+    [idToken, password, mergeGoogleToEmail, onSuccess, t],
   );
 
   return (
@@ -45,14 +48,19 @@ export function MergeAccountDialog({ idToken, onSuccess, onClose }: MergeAccount
         <p className="mb-4 text-body-sm text-neutral-500">{t('auth.mergeGoogleToEmail')}</p>
         <form onSubmit={handleSubmit}>
           <Stack gap={4}>
-            <TextInput
-              label={t('auth.password')}
-              type="password"
-              dir="ltr"
-              required
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-            />
+            <div>
+              <TextInput
+                label={t('auth.password')}
+                type="password"
+                dir="ltr"
+                required
+                value={password}
+                onChange={(e) => { setPassword(e.target.value); setError(''); }}
+              />
+              {error && (
+                <p className="mt-1 text-sm text-red-600">{error}</p>
+              )}
+            </div>
             <div className="flex gap-2">
               <Button type="button" variant="secondary" fullWidth onClick={onClose}>
                 {t('common.cancel')}

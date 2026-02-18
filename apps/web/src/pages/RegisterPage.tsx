@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/Button';
 import { TextInput } from '@/components/FormFields';
 import { Stack } from '@/components/Layout';
-import { useRegister, useGoogleLogin, useValidateInvite } from '@/api/hooks';
+import { useRegister, useGoogleRegister, useValidateInvite, useAcceptInvite } from '@/api/hooks';
 import { useAuthStore } from '@/store/auth';
 import { useToastStore } from '@/store/toast';
 import { useGoogleAuth } from '@/hooks/useGoogleAuth';
@@ -17,14 +17,25 @@ export default function RegisterPage() {
 
   const setAuth = useAuthStore((s) => s.setAuth);
   const setStores = useAuthStore((s) => s.setStores);
+  const updateToken = useAuthStore((s) => s.updateToken);
+  const setHasStore = useAuthStore((s) => s.setHasStore);
+  const setPendingCreateStoreToken = useAuthStore((s) => s.setPendingCreateStoreToken);
   const addToast = useToastStore((s) => s.addToast);
   const register = useRegister();
-  const googleLogin = useGoogleLogin();
+  const googleRegister = useGoogleRegister();
+  const acceptInvite = useAcceptInvite();
   const inviteQuery = useValidateInvite(inviteToken);
 
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+
+  // Redirect to /login if no invite token
+  useEffect(() => {
+    if (!inviteToken) {
+      navigate('/login', { replace: true });
+    }
+  }, [inviteToken, navigate]);
 
   // Pre-fill email from invite
   useEffect(() => {
@@ -33,24 +44,32 @@ export default function RegisterPage() {
     }
   }, [inviteQuery.data?.email, email]);
 
+  const isCreateStoreInvite = inviteQuery.data?.type === 'create_store';
+
   const handleGoogleCredential = useCallback(
     (idToken: string) => {
-      googleLogin.mutate(
-        { idToken },
+      googleRegister.mutate(
+        { idToken, inviteToken },
         {
           onSuccess: (data: any) => {
-            setAuth(data.user, data.token, data.hasStore);
+            setAuth(data.user, data.token, data.hasStore, data.user?.isAdmin);
             if (data.stores) setStores(data.stores);
-            navigate(data.hasStore ? '/' : '/store-setup');
+
+            if (data.pendingCreateStoreToken) {
+              setPendingCreateStoreToken(data.pendingCreateStoreToken);
+              navigate('/store-setup');
+            } else {
+              navigate(data.hasStore ? '/' : '/store-setup');
+            }
           },
           onError: (error: any) => {
             const msg = error?.response?.data?.error?.message;
-            addToast('error', msg || t('toasts.loginFailed'));
+            addToast('error', msg || t('toasts.registrationFailed'));
           },
         },
       );
     },
-    [googleLogin, setAuth, setStores, navigate, addToast, t],
+    [googleRegister, inviteToken, setAuth, setStores, setPendingCreateStoreToken, navigate, addToast, t],
   );
 
   const { renderButton, isAvailable } = useGoogleAuth(handleGoogleCredential);
@@ -69,9 +88,15 @@ export default function RegisterPage() {
         { name, email, password, inviteToken },
         {
           onSuccess: (data: any) => {
-            setAuth(data.user, data.token, data.hasStore);
+            setAuth(data.user, data.token, data.hasStore, data.user?.isAdmin);
             if (data.stores) setStores(data.stores);
-            navigate(data.hasStore ? '/' : '/store-setup');
+
+            if (data.pendingCreateStoreToken) {
+              setPendingCreateStoreToken(data.pendingCreateStoreToken);
+              navigate('/store-setup');
+            } else {
+              navigate(data.hasStore ? '/' : '/store-setup');
+            }
           },
           onError: (error: any) => {
             const msg = error?.response?.data?.error?.message;
@@ -84,8 +109,10 @@ export default function RegisterPage() {
         }
       );
     },
-    [name, email, password, inviteToken, register, setAuth, setStores, navigate, addToast, t]
+    [name, email, password, inviteToken, register, setAuth, setStores, setPendingCreateStoreToken, navigate, addToast, t]
   );
+
+  if (!inviteToken) return null;
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-primary-50 p-4">
@@ -98,9 +125,13 @@ export default function RegisterPage() {
         {inviteToken && inviteQuery.data && (
           <div className="mb-6 rounded-md bg-primary-50 border border-primary-200 p-4 text-center">
             <p className="text-body-sm text-primary-700">
-              {t('store.invitedTo', "You've been invited to join")}
+              {isCreateStoreInvite
+                ? t('store.invitedToCreate', "You've been invited to create your own store")
+                : t('store.invitedTo', "You've been invited to join")}
             </p>
-            <p className="font-semibold text-primary-800 mt-1">{inviteQuery.data.storeName}</p>
+            {!isCreateStoreInvite && inviteQuery.data.storeName && (
+              <p className="font-semibold text-primary-800 mt-1">{inviteQuery.data.storeName}</p>
+            )}
           </div>
         )}
 
@@ -139,7 +170,7 @@ export default function RegisterPage() {
 
         <p className="mt-6 text-center text-body-sm text-neutral-500">
           {t('auth.hasAccount', 'Already have an account?')}{' '}
-          <Link to="/login" className="text-primary-500 hover:underline">
+          <Link to={inviteToken ? `/login?invite=${inviteToken}` : '/login'} className="text-primary-500 hover:underline">
             {t('auth.login')}
           </Link>
         </p>

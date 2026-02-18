@@ -2,10 +2,10 @@ import { OAuth2Client } from 'google-auth-library';
 import type { UseCase } from '../../../core/use-case.js';
 import { PgAuthRepository } from '../auth.repository.js';
 import type { User } from '../auth.types.js';
-import { ConflictError, UnauthorizedError, ValidationError } from '../../../core/errors/app-error.js';
+import { ConflictError, ValidationError } from '../../../core/errors/app-error.js';
 import { env } from '../../../config/env.js';
 
-export class GoogleAuthUseCase implements UseCase<User, [string]> {
+export class GoogleRegisterUseCase implements UseCase<User, [string]> {
   private client: OAuth2Client;
 
   constructor() {
@@ -24,22 +24,22 @@ export class GoogleAuthUseCase implements UseCase<User, [string]> {
 
     const { email, name, sub: googleId } = payload;
 
-    // 1. User already linked to this google_id -> login
+    // If user already exists, reject — they should use login instead
     const existingByGoogle = await PgAuthRepository.findByGoogleId(googleId);
     if (existingByGoogle) {
-      return existingByGoogle;
+      throw new ConflictError('An account with this Google account already exists. Please log in instead.');
     }
 
-    // 2. User with this email exists + has password but no google_id -> merge required
     const existingByEmail = await PgAuthRepository.findByEmail(email);
     if (existingByEmail) {
-      if (existingByEmail.passwordHash && !existingByEmail.googleId) {
-        throw new ConflictError('MERGE_REQUIRED_GOOGLE');
-      }
-      throw new ConflictError('Account configuration error');
+      throw new ConflictError('An account with this email already exists. Please log in instead.');
     }
 
-    // 3. No user found -> invitation-only, reject
-    throw new UnauthorizedError('NO_ACCOUNT_FOUND');
+    // Create new user with Google
+    return PgAuthRepository.createWithGoogle({
+      email,
+      name: name ?? email.split('@')[0] ?? email,
+      googleId,
+    });
   }
 }

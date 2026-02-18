@@ -5,6 +5,7 @@ export interface User {
   googleId?: string;
   name: string;
   phone?: string;
+  isAdmin: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -14,6 +15,7 @@ export interface UserPublic {
   email: string;
   name: string;
   phone?: string;
+  isAdmin: boolean;
 }
 
 export interface RegisterDTO {
@@ -32,6 +34,7 @@ export interface AuthTokenPayload {
   email: string;
   storeId?: string;
   storeRole?: number;
+  isAdmin?: boolean;
 }
 
 export interface AuthResponse {
@@ -39,4 +42,5 @@ export interface AuthResponse {
   token: string;
   hasStore: boolean;
   stores: { storeId: string; storeName: string; role: number }[];
+  pendingCreateStoreToken?: string;
 }

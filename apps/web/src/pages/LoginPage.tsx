@@ -19,6 +19,7 @@ export default function LoginPage() {
   const setStores = useAuthStore((s) => s.setStores);
   const updateToken = useAuthStore((s) => s.updateToken);
   const setHasStore = useAuthStore((s) => s.setHasStore);
+  const setPendingCreateStoreToken = useAuthStore((s) => s.setPendingCreateStoreToken);
   const addToast = useToastStore((s) => s.addToast);
   const login = useLogin();
   const googleLogin = useGoogleLogin();
@@ -32,21 +33,46 @@ export default function LoginPage() {
   const [showGoogleHint, setShowGoogleHint] = useState(false);
   const [mergeIdToken, setMergeIdToken] = useState<string | null>(null);
 
+  const isCreateStoreInvite = inviteQuery.data?.type === 'create_store';
+
   const handleGoogleCredential = useCallback(
     (idToken: string) => {
       googleLogin.mutate(
         { idToken },
         {
           onSuccess: (data: any) => {
-            setAuth(data.user, data.token, data.hasStore);
+            setAuth(data.user, data.token, data.hasStore, data.user?.isAdmin);
             if (data.stores) setStores(data.stores);
-            navigate(data.hasStore ? '/' : '/store-setup');
+
+            if (inviteToken && isCreateStoreInvite) {
+              setPendingCreateStoreToken(inviteToken);
+              navigate('/store-setup');
+            } else if (inviteToken) {
+              acceptInvite.mutate(
+                { token: inviteToken },
+                {
+                  onSuccess: (inviteData) => {
+                    updateToken(inviteData.token);
+                    setHasStore(true);
+                    if (inviteData.stores) setStores(inviteData.stores);
+                    navigate('/');
+                  },
+                  onError: () => {
+                    navigate(data.hasStore ? '/' : '/store-setup');
+                  },
+                },
+              );
+            } else {
+              navigate(data.hasStore ? '/' : '/store-setup');
+            }
           },
           onError: (error: any) => {
             const msg = error?.response?.data?.error?.message;
             if (msg === 'MERGE_REQUIRED_GOOGLE') {
               setMergeIdToken(idToken);
               setShowMerge(true);
+            } else if (msg === 'NO_ACCOUNT_FOUND') {
+              addToast('error', t('auth.noAccountFound'));
             } else {
               addToast('error', msg || t('toasts.loginFailed'));
             }
@@ -54,7 +80,7 @@ export default function LoginPage() {
         },
       );
     },
-    [googleLogin, setAuth, setStores, navigate, addToast, t],
+    [googleLogin, inviteToken, isCreateStoreInvite, acceptInvite, setAuth, setStores, updateToken, setHasStore, setPendingCreateStoreToken, navigate, addToast, t],
   );
 
   const { renderButton, isAvailable } = useGoogleAuth(handleGoogleCredential);
@@ -73,10 +99,13 @@ export default function LoginPage() {
         { email, password },
         {
           onSuccess: (data: any) => {
-            setAuth(data.user, data.token, data.hasStore);
+            setAuth(data.user, data.token, data.hasStore, data.user?.isAdmin);
             if (data.stores) setStores(data.stores);
 
-            if (inviteToken) {
+            if (inviteToken && isCreateStoreInvite) {
+              setPendingCreateStoreToken(inviteToken);
+              navigate('/store-setup');
+            } else if (inviteToken) {
               acceptInvite.mutate(
                 { token: inviteToken },
                 {
@@ -98,6 +127,8 @@ export default function LoginPage() {
             const msg = error?.response?.data?.error?.message;
             if (msg === 'MERGE_REQUIRED_EMAIL') {
               setShowGoogleHint(true);
+            } else if (msg === 'NO_ACCOUNT_FOUND') {
+              addToast('error', t('auth.noAccountFound'));
             } else {
               addToast('error', t('toasts.loginFailed'));
             }
@@ -105,7 +136,7 @@ export default function LoginPage() {
         },
       );
     },
-    [email, password, inviteToken, login, acceptInvite, setAuth, setStores, updateToken, setHasStore, navigate, addToast, t],
+    [email, password, inviteToken, isCreateStoreInvite, login, acceptInvite, setAuth, setStores, updateToken, setHasStore, setPendingCreateStoreToken, navigate, addToast, t],
   );
 
   return (
@@ -119,9 +150,13 @@ export default function LoginPage() {
         {inviteToken && inviteQuery.data && (
           <div className="mb-6 rounded-md bg-primary-50 border border-primary-200 p-4 text-center">
             <p className="text-body-sm text-primary-700">
-              {t('store.invitedTo', "You've been invited to join")}
+              {isCreateStoreInvite
+                ? t('store.invitedToCreate', "You've been invited to create your own store")
+                : t('store.invitedTo', "You've been invited to join")}
             </p>
-            <p className="font-semibold text-primary-800 mt-1">{inviteQuery.data.storeName}</p>
+            {!isCreateStoreInvite && inviteQuery.data.storeName && (
+              <p className="font-semibold text-primary-800 mt-1">{inviteQuery.data.storeName}</p>
+            )}
           </div>
         )}
 
@@ -172,9 +207,11 @@ export default function LoginPage() {
       {showMerge && (
         <MergeAccountDialog
           idToken={mergeIdToken}
-          onSuccess={() => {
+          onSuccess={(data) => {
+            setAuth(data.user, data.token, data.hasStore, data.user?.isAdmin);
+            if (data.stores) setStores(data.stores);
             setShowMerge(false);
-            navigate('/');
+            navigate(data.hasStore ? '/' : '/store-setup');
           }}
           onClose={() => setShowMerge(false)}
         />

@@ -1,7 +1,7 @@
 import type { User, RegisterDTO } from './auth.types.js';
 import { getPool } from '../../core/database/postgres.js';
 
-const SELECT_COLS = 'id, email, password_hash, google_id, name, phone, created_at, updated_at';
+const SELECT_COLS = 'id, email, password_hash, google_id, name, phone, is_admin, created_at, updated_at';
 
 export class PgAuthRepository {
   static async findById(id: string): Promise<User | null> {
@@ -113,6 +113,7 @@ export class PgAuthRepository {
       googleId: (row['google_id'] as string) || undefined,
       name: row['name'] as string,
       phone: (row['phone'] as string) || undefined,
+      isAdmin: row['is_admin'] === true,
       createdAt: new Date(row['created_at'] as string),
       updatedAt: new Date(row['updated_at'] as string),
     };

@@ -6,9 +6,11 @@ import { GetUserProfileUseCase } from './use-cases/getUserProfile.js';
 import { GoogleAuthUseCase } from './use-cases/googleAuth.js';
 import { MergeGoogleAccountUseCase } from './use-cases/mergeGoogleAccount.js';
 import { MergeEmailToGoogleUseCase } from './use-cases/mergeEmailToGoogle.js';
+import { GoogleRegisterUseCase } from './use-cases/googleRegister.js';
 import type { User } from './auth.types.js';
 import { PgStoreRepository } from '../stores/store.repository.js';
 import { StoreRole } from '../stores/store.types.js';
+import { ForbiddenError } from '../../core/errors/app-error.js';
 import { env } from '../../config/env.js';
 
 export class AuthService {
@@ -18,6 +20,7 @@ export class AuthService {
   private googleAuthUseCase: GoogleAuthUseCase;
   private mergeGoogleAccountUseCase: MergeGoogleAccountUseCase;
   private mergeEmailToGoogleUseCase: MergeEmailToGoogleUseCase;
+  private googleRegisterUseCase: GoogleRegisterUseCase;
 
   constructor(
     private app: FastifyInstance,
@@ -28,54 +31,101 @@ export class AuthService {
     this.googleAuthUseCase = new GoogleAuthUseCase();
     this.mergeGoogleAccountUseCase = new MergeGoogleAccountUseCase();
     this.mergeEmailToGoogleUseCase = new MergeEmailToGoogleUseCase();
+    this.googleRegisterUseCase = new GoogleRegisterUseCase();
   }
 
   async register(data: RegisterDTO, inviteToken?: string): Promise<AuthResponse> {
-    const user = await this.registerUseCase.execute(data);
-
-    // Handle invite token
-    if (inviteToken) {
-      const invitation = await PgStoreRepository.findInvitationByToken(inviteToken);
-      if (invitation) {
-        await PgStoreRepository.addUserToStore(user.id, invitation.storeId, invitation.role);
-        await PgStoreRepository.markInvitationUsed(inviteToken);
-        const token = this.generateToken(user, invitation.storeId, invitation.role);
-        const invStores = await PgStoreRepository.getUserStores(user.id);
-        return { user: this.toPublic(user), token, hasStore: true, stores: this.formatStores(invStores) };
-      }
+    // Registration is invitation-only
+    if (!inviteToken) {
+      throw new ForbiddenError('Registration requires an invitation');
     }
 
-    const token = await this.generateTokenWithStoreInfo(user);
-    const stores = await PgStoreRepository.getUserStores(user.id);
-    return { user: this.toPublic(user), token, hasStore: stores.length > 0, stores: this.formatStores(stores) };
+    const invitation = await PgStoreRepository.findInvitationByToken(inviteToken);
+    if (!invitation) {
+      throw new ForbiddenError('Invalid or expired invitation');
+    }
+
+    const user = await this.registerUseCase.execute(data);
+
+    // Join-store invite: add user to store immediately
+    if (invitation.storeId !== null) {
+      await PgStoreRepository.addUserToStore(user.id, invitation.storeId, invitation.role);
+      await PgStoreRepository.markInvitationUsed(inviteToken);
+      const token = this.generateToken(user, invitation.storeId, invitation.role);
+      const invStores = await PgStoreRepository.getUserStores(user.id);
+      return { user: this.toPublic(user), token, hasStore: true, stores: this.formatStores(invStores) };
+    }
+
+    // Create-store invite: create user but don't mark invite used yet (marked when store is created)
+    const token = this.generateToken(user);
+    return {
+      user: this.toPublic(user),
+      token,
+      hasStore: false,
+      stores: [],
+      pendingCreateStoreToken: inviteToken,
+    };
   }
 
   async login(data: LoginDTO): Promise<AuthResponse> {
     const user = await this.loginUseCase.execute(data);
     const token = await this.generateTokenWithStoreInfo(user);
     const stores = await PgStoreRepository.getUserStores(user.id);
-    return { user: this.toPublic(user), token, hasStore: stores.length > 0, stores: this.formatStores(stores) };
+    return { user: this.toPublic(user), token, hasStore: user.isAdmin || stores.length > 0, stores: this.formatStores(stores) };
   }
 
   async googleLogin(idToken: string): Promise<AuthResponse> {
     const user = await this.googleAuthUseCase.execute(idToken);
     const token = await this.generateTokenWithStoreInfo(user);
     const stores = await PgStoreRepository.getUserStores(user.id);
-    return { user: this.toPublic(user), token, hasStore: stores.length > 0, stores: this.formatStores(stores) };
+    return { user: this.toPublic(user), token, hasStore: user.isAdmin || stores.length > 0, stores: this.formatStores(stores) };
+  }
+
+  async googleRegister(idToken: string, inviteToken?: string): Promise<AuthResponse> {
+    // Registration is invitation-only
+    if (!inviteToken) {
+      throw new ForbiddenError('Registration requires an invitation');
+    }
+
+    const invitation = await PgStoreRepository.findInvitationByToken(inviteToken);
+    if (!invitation) {
+      throw new ForbiddenError('Invalid or expired invitation');
+    }
+
+    const user = await this.googleRegisterUseCase.execute(idToken);
+
+    // Join-store invite: add user to store immediately
+    if (invitation.storeId !== null) {
+      await PgStoreRepository.addUserToStore(user.id, invitation.storeId, invitation.role);
+      await PgStoreRepository.markInvitationUsed(inviteToken);
+      const token = this.generateToken(user, invitation.storeId, invitation.role);
+      const invStores = await PgStoreRepository.getUserStores(user.id);
+      return { user: this.toPublic(user), token, hasStore: true, stores: this.formatStores(invStores) };
+    }
+
+    // Create-store invite: create user but don't mark invite used yet
+    const token = this.generateToken(user);
+    return {
+      user: this.toPublic(user),
+      token,
+      hasStore: false,
+      stores: [],
+      pendingCreateStoreToken: inviteToken,
+    };
   }
 
   async mergeGoogleToEmail(idToken: string, password: string): Promise<AuthResponse> {
     const user = await this.mergeGoogleAccountUseCase.execute(idToken, password);
     const token = await this.generateTokenWithStoreInfo(user);
     const stores = await PgStoreRepository.getUserStores(user.id);
-    return { user: this.toPublic(user), token, hasStore: stores.length > 0, stores: this.formatStores(stores) };
+    return { user: this.toPublic(user), token, hasStore: user.isAdmin || stores.length > 0, stores: this.formatStores(stores) };
   }
 
   async mergeEmailToGoogle(idToken: string, newPassword: string): Promise<AuthResponse> {
     const user = await this.mergeEmailToGoogleUseCase.execute(idToken, newPassword);
     const token = await this.generateTokenWithStoreInfo(user);
     const stores = await PgStoreRepository.getUserStores(user.id);
-    return { user: this.toPublic(user), token, hasStore: stores.length > 0, stores: this.formatStores(stores) };
+    return { user: this.toPublic(user), token, hasStore: user.isAdmin || stores.length > 0, stores: this.formatStores(stores) };
   }
 
   async getProfile(userId: string): Promise<UserPublic & { stores: { storeId: string; storeName: string; role: number }[]; hasStore: boolean }> {
@@ -84,7 +134,7 @@ export class AuthService {
     return {
       ...this.toPublic(user),
       stores: stores.map((s) => ({ storeId: s.storeId, storeName: s.storeName, role: s.role })),
-      hasStore: stores.length > 0,
+      hasStore: user.isAdmin || stores.length > 0,
     };
   }
 
@@ -92,10 +142,14 @@ export class AuthService {
     const user = await this.getUserProfileUseCase.execute(userId);
     const token = await this.generateTokenWithStoreInfo(user);
     const stores = await PgStoreRepository.getUserStores(user.id);
-    return { user: this.toPublic(user), token, hasStore: stores.length > 0, stores: this.formatStores(stores) };
+    return { user: this.toPublic(user), token, hasStore: user.isAdmin || stores.length > 0, stores: this.formatStores(stores) };
   }
 
   private async generateTokenWithStoreInfo(user: User): Promise<string> {
+    // Admins get a token without a store pre-selected (they pick via sidebar)
+    if (user.isAdmin) {
+      return this.generateToken(user);
+    }
     const stores = await PgStoreRepository.getUserStores(user.id);
     if (stores.length > 0) {
       return this.generateToken(user, stores[0]!.storeId, stores[0]!.role);
@@ -105,6 +159,9 @@ export class AuthService {
 
   private generateToken(user: User, storeId?: string, storeRole?: StoreRole): string {
     const payload: AuthTokenPayload = { userId: user.id, email: user.email };
+    if (user.isAdmin) {
+      payload.isAdmin = true;
+    }
     if (storeId) {
       payload.storeId = storeId;
       payload.storeRole = storeRole;
@@ -117,6 +174,6 @@ export class AuthService {
   }
 
   private toPublic(user: User): UserPublic {
-    return { id: user.id, email: user.email, name: user.name, phone: user.phone };
+    return { id: user.id, email: user.email, name: user.name, phone: user.phone, isAdmin: user.isAdmin };
   }
 }

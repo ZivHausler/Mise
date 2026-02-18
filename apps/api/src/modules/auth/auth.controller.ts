@@ -33,6 +33,15 @@ export class AuthController {
     return reply.send({ success: true, data: result });
   }
 
+  async googleRegister(
+    request: FastifyRequest<{ Body: { idToken: string; inviteToken?: string } }>,
+    reply: FastifyReply,
+  ) {
+    const { idToken, inviteToken } = request.body;
+    const result = await this.authService.googleRegister(idToken, inviteToken);
+    return reply.status(201).send({ success: true, data: result });
+  }
+
   async mergeGoogleToEmail(
     request: FastifyRequest<{ Body: { idToken: string; password: string } }>,
     reply: FastifyReply,

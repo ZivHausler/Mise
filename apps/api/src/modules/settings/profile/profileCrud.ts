@@ -12,6 +12,7 @@ export class ProfileCrud {
       email: user.email,
       name: user.name,
       phone: user.phone,
+      isAdmin: user.isAdmin,
     };
   }
 
@@ -29,6 +30,7 @@ export class ProfileCrud {
       email: updated.email,
       name: updated.name,
       phone: updated.phone,
+      isAdmin: updated.isAdmin,
     };
   }
 }
