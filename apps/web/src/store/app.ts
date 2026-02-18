@@ -1,7 +1,8 @@
 import { create } from 'zustand';
+import { DEFAULT_DATE_FORMAT, DEFAULT_LANGUAGE } from '@/constants/defaults';
+import type { DateFormat, Language } from '@/constants/defaults';
 
-type Language = 'he' | 'en';
-export type DateFormat = 'dd/mm/yyyy' | 'mm/dd/yyyy';
+export type { DateFormat, Language };
 
 interface AppState {
   language: Language;
@@ -14,8 +15,8 @@ interface AppState {
 }
 
 export const useAppStore = create<AppState>((set) => ({
-  language: (localStorage.getItem('i18nextLng') as Language) || 'he',
-  dateFormat: (localStorage.getItem('dateFormat') as DateFormat) || 'dd/mm/yyyy',
+  language: (localStorage.getItem('i18nextLng') as Language) || DEFAULT_LANGUAGE,
+  dateFormat: (localStorage.getItem('dateFormat') as DateFormat) || DEFAULT_DATE_FORMAT,
   sidebarCollapsed: false,
   setLanguage: (language) => {
     localStorage.setItem('i18nextLng', language);
