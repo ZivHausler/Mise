@@ -176,16 +176,24 @@ export interface PaginatedResponse<T> {
   pagination: PaginationInfo;
 }
 
-export function useInventory(page = 1, limit = 10, search?: string, groupIds?: string[]) {
+export function useInventory(page = 1, limit = 10, search?: string, groupIds?: string[], statuses?: string[]) {
   return useQuery({
-    queryKey: ['inventory', page, limit, search, groupIds],
+    queryKey: ['inventory', page, limit, search, groupIds, statuses],
     queryFn: async (): Promise<PaginatedResponse<unknown>> => {
       const params = new URLSearchParams({ page: String(page), limit: String(limit) });
       if (search) params.set('search', search);
       if (groupIds?.length) params.set('groupIds', groupIds.join(','));
+      if (statuses?.length) params.set('status', statuses.join(','));
       const { data } = await apiClient.get(`/inventory?${params}`);
       return { items: data.data ?? [], pagination: data.pagination };
     },
+  });
+}
+
+export function useLowStock() {
+  return useQuery({
+    queryKey: ['inventory', 'low-stock'],
+    queryFn: () => fetchApi<unknown[]>('/inventory/low-stock'),
   });
 }
 
@@ -332,11 +340,39 @@ export function useCreatePayment() {
     mutationFn: (body: unknown) => postApi('/payments', body),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['payments'] });
+      qc.invalidateQueries({ queryKey: ['paymentStatuses'] });
       qc.invalidateQueries({ queryKey: ['orders'] });
       qc.invalidateQueries({ queryKey: ['dashboard'] });
       addToast('success', t('toasts.paymentLogged'));
     },
     onError: () => addToast('error', t('toasts.paymentLogFailed')),
+  });
+}
+
+export function useRefundPayment() {
+  const qc = useQueryClient();
+  const addToast = useToastStore((s) => s.addToast);
+  const { t } = useTranslation();
+  return useMutation({
+    mutationFn: (id: string) => postApi(`/payments/${id}/refund`, {}),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['payments'] });
+      qc.invalidateQueries({ queryKey: ['paymentStatuses'] });
+      qc.invalidateQueries({ queryKey: ['orders'] });
+      qc.invalidateQueries({ queryKey: ['dashboard'] });
+      addToast('success', t('toasts.paymentRefunded'));
+    },
+    onError: () => addToast('error', t('toasts.paymentRefundFailed')),
+  });
+}
+
+export function usePaymentStatuses() {
+  return useQuery({
+    queryKey: ['paymentStatuses'],
+    queryFn: async () => {
+      const { data } = await apiClient.get('/payments/statuses');
+      return data.data as Record<string, string>;
+    },
   });
 }
 
@@ -476,9 +512,15 @@ export function useSendInvite() {
   const addToast = useToastStore((s) => s.addToast);
   const { t } = useTranslation();
   return useMutation({
-    mutationFn: (body: { email: string; role: number }) => postApi('/stores/invite', body),
+    mutationFn: (body: { email: string; role: number }) => postApi<{ token: string; inviteLink: string }>('/stores/invite', body),
     onSuccess: () => { addToast('success', t('toasts.inviteSent')); qc.invalidateQueries({ queryKey: ['storeMembers'] }); },
     onError: () => addToast('error', t('toasts.inviteFailed')),
+  });
+}
+
+export function useAcceptInvite() {
+  return useMutation({
+    mutationFn: (body: { token: string }) => postApi<{ token: string; storeId: string; role: number }>('/stores/accept-invite', body),
   });
 }
 
