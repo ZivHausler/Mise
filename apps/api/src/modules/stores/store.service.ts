@@ -42,17 +42,17 @@ export class StoreService {
     return PgStoreRepository.getStoreMembers(storeId);
   }
 
-  async sendInvite(storeId: string, storeRole: StoreRole, email: string, inviteRole: StoreRole): Promise<StoreInvitation> {
+  async sendInvite(storeId: string, storeRole: StoreRole, email: string, inviteRole: StoreRole): Promise<StoreInvitation & { inviteLink: string }> {
     if (storeRole !== StoreRole.OWNER) {
       throw new ForbiddenError('Only store owners can send invitations');
     }
 
     const invitation = await PgStoreRepository.createInvitation(storeId, email, inviteRole);
 
-    const inviteLink = `${env.FRONTEND_URL ?? 'http://localhost:5173'}/register?invite=${invitation.token}`;
+    const inviteLink = `${env.FRONTEND_URL ?? 'http://localhost:5173'}/invite/${invitation.token}`;
     console.log(`\n📧 INVITE LINK for ${email}: ${inviteLink}\n`);
 
-    return invitation;
+    return { ...invitation, inviteLink };
   }
 
   async validateInvite(token: string): Promise<{ storeName: string; email: string; role: StoreRole }> {

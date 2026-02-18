@@ -42,12 +42,23 @@ export class StoreController {
 
     const data = inviteSchema.parse(request.body);
     const invitation = await this.storeService.sendInvite(storeId, storeRole as StoreRole, data.email, data.role as StoreRole);
-    return reply.status(201).send({ success: true, data: { token: invitation.token } });
+    return reply.status(201).send({ success: true, data: { token: invitation.token, inviteLink: invitation.inviteLink } });
   }
 
   async validateInvite(request: FastifyRequest<{ Params: { token: string } }>, reply: FastifyReply) {
     const { token } = request.params;
     const result = await this.storeService.validateInvite(token);
     return reply.send({ success: true, data: result });
+  }
+
+  async acceptInvite(request: FastifyRequest, reply: FastifyReply) {
+    const userId = request.currentUser!.userId;
+    const email = request.currentUser!.email;
+    const { token } = request.body as { token: string };
+
+    const { storeId, role } = await this.storeService.acceptInvite(userId, token);
+    const jwt = this.storeService.generateTokenWithStore(userId, email, storeId, role);
+
+    return reply.send({ success: true, data: { token: jwt, storeId, role } });
   }
 }

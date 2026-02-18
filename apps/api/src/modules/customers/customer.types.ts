@@ -6,6 +6,8 @@ export interface Customer {
   address?: string;
   notes?: string;
   preferences?: CustomerPreferences;
+  orderCount?: number;
+  totalSpent?: number;
   createdAt: Date;
   updatedAt: Date;
 }

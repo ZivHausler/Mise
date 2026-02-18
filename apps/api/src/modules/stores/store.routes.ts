@@ -14,6 +14,7 @@ export default async function storeRoutes(app: FastifyInstance) {
   app.post('/', { preHandler: [authMiddleware] }, (req, reply) => controller.createStore(req, reply));
   app.get('/my', { preHandler: [authMiddleware] }, (req, reply) => controller.getMyStores(req, reply));
   app.post('/select', { preHandler: [authMiddleware] }, (req, reply) => controller.selectStore(req, reply));
+  app.post('/accept-invite', { preHandler: [authMiddleware] }, (req, reply) => controller.acceptInvite(req, reply));
 
   // Auth + store required routes
   app.get('/members', { preHandler: [authMiddleware] }, (req, reply) => controller.getMembers(req, reply));

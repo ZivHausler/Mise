@@ -10,15 +10,18 @@ export class PgCustomerRepository {
 
   static async findAll(storeId: string, search?: string): Promise<Customer[]> {
     const pool = getPool();
-    let query = 'SELECT * FROM customers WHERE store_id = $1';
+    let query = `SELECT c.*, COUNT(o.id) AS order_count, COALESCE(SUM(o.total_amount), 0) AS total_spent
+      FROM customers c
+      LEFT JOIN orders o ON o.customer_id = c.id AND o.store_id = c.store_id
+      WHERE c.store_id = $1`;
     const params: unknown[] = [storeId];
     if (search) {
       // Escape SQL LIKE special characters to prevent wildcard injection
       const escaped = search.replace(/[%_\\]/g, '\\$&');
-      query += ` AND (name ILIKE $2 ESCAPE '\\' OR email ILIKE $2 ESCAPE '\\' OR phone ILIKE $2 ESCAPE '\\')`;
+      query += ` AND (c.name ILIKE $2 ESCAPE '\\' OR c.email ILIKE $2 ESCAPE '\\' OR c.phone ILIKE $2 ESCAPE '\\')`;
       params.push(`%${escaped}%`);
     }
-    query += ' ORDER BY name ASC';
+    query += ' GROUP BY c.id ORDER BY c.name ASC';
     const result = await pool.query(query, params);
     return result.rows.map((r: Record<string, unknown>) => this.mapRow(r));
   }
@@ -106,6 +109,8 @@ export class PgCustomerRepository {
       address: row['address'] as string | undefined,
       notes: row['notes'] as string | undefined,
       preferences,
+      ...(row['order_count'] !== undefined && { orderCount: Number(row['order_count']) }),
+      ...(row['total_spent'] !== undefined && { totalSpent: Number(row['total_spent']) }),
       createdAt: new Date(row['created_at'] as string),
       updatedAt: new Date(row['updated_at'] as string),
     };
