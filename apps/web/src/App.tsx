@@ -35,21 +35,32 @@ const MorePage = lazy(() => import('@/pages/MorePage'));
 const InvitePage = lazy(() => import('@/pages/InvitePage'));
 const NotFoundPage = lazy(() => import('@/pages/NotFoundPage'));
 
+// Admin pages
+const AdminRoute = lazy(() => import('@/pages/admin/AdminRoute'));
+const AdminShell = lazy(() => import('@/pages/admin/AdminShell'));
+const AdminDashboardPage = lazy(() => import('@/pages/admin/AdminDashboardPage'));
+const AdminUsersPage = lazy(() => import('@/pages/admin/AdminUsersPage'));
+const AdminStoresPage = lazy(() => import('@/pages/admin/AdminStoresPage'));
+const AdminInvitationsPage = lazy(() => import('@/pages/admin/AdminInvitationsPage'));
+const AdminAuditLogPage = lazy(() => import('@/pages/admin/AdminAuditLogPage'));
+
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const hasStore = useAuthStore((s) => s.hasStore);
 
   if (!isAuthenticated) return <Navigate to="/login" replace />;
-  if (!hasStore) return <Navigate to="/store-setup" replace />;
+  if (!hasStore) return <Navigate to="/login" replace />;
   return <>{children}</>;
 }
 
 function StoreSetupRoute({ children }: { children: React.ReactNode }) {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const hasStore = useAuthStore((s) => s.hasStore);
+  const pendingCreateStoreToken = useAuthStore((s) => s.pendingCreateStoreToken);
 
   if (!isAuthenticated) return <Navigate to="/login" replace />;
   if (hasStore) return <Navigate to="/" replace />;
+  if (!pendingCreateStoreToken) return <Navigate to="/login" replace />;
   return <>{children}</>;
 }
 
@@ -83,6 +94,21 @@ export function App() {
                   </StoreSetupRoute>
                 }
               />
+
+              {/* Admin routes */}
+              <Route
+                element={
+                  <AdminRoute>
+                    <AdminShell />
+                  </AdminRoute>
+                }
+              >
+                <Route path="admin" element={<AdminDashboardPage />} />
+                <Route path="admin/users" element={<AdminUsersPage />} />
+                <Route path="admin/stores" element={<AdminStoresPage />} />
+                <Route path="admin/invitations" element={<AdminInvitationsPage />} />
+                <Route path="admin/audit-log" element={<AdminAuditLogPage />} />
+              </Route>
 
               {/* Protected routes with app shell */}
               <Route

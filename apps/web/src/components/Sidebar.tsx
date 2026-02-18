@@ -8,6 +8,7 @@ import {
   Users,
   CreditCard,
   Settings,
+  Shield,
   ChevronLeft,
   ChevronRight,
   ChevronDown,
@@ -17,7 +18,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { cn } from '@/utils/cn';
 import { useAppStore } from '@/store/app';
 import { useAuthStore } from '@/store/auth';
-import { useSelectStore } from '@/api/hooks';
+import { useSelectStore, useAllStores } from '@/api/hooks';
 
 const navItems = [
   { path: '/', icon: LayoutDashboard, labelKey: 'nav.dashboard' },
@@ -37,9 +38,16 @@ export function Sidebar() {
   const collapsed = useAppStore((s) => s.sidebarCollapsed);
   const toggleSidebar = useAppStore((s) => s.toggleSidebar);
   const stores = useAuthStore((s) => s.stores);
+  const isAdmin = useAuthStore((s) => s.isAdmin);
   const updateToken = useAuthStore((s) => s.updateToken);
   const selectStore = useSelectStore();
+  const allStoresQuery = useAllStores(isAdmin);
   const qc = useQueryClient();
+
+  // For admins, show all stores in the system; for non-admins, show their stores
+  const displayStores = isAdmin && allStoresQuery.data
+    ? allStoresQuery.data.map((s) => ({ storeId: s.id, storeName: s.name, role: -1 }))
+    : stores;
 
   const handleToggle = useCallback(() => toggleSidebar(), [toggleSidebar]);
 
@@ -76,15 +84,16 @@ export function Sidebar() {
         </button>
       </div>
 
-      {!collapsed && stores.length > 1 && (
+      {!collapsed && (isAdmin ? displayStores.length > 0 : displayStores.length > 1) && (
         <div className="border-b border-primary-800 px-3 py-3">
           <div className="relative">
             <select
               onChange={handleStoreSwitch}
-              defaultValue={stores[0]?.storeId}
+              defaultValue={displayStores[0]?.storeId}
               className="w-full appearance-none rounded-md bg-primary-800 px-3 py-2 pe-8 text-body-sm text-white outline-none focus:ring-2 focus:ring-primary-500"
             >
-              {stores.map((s) => (
+              {isAdmin && <option value="" disabled>{t('nav.selectStore', 'Select a store')}</option>}
+              {displayStores.map((s) => (
                 <option key={s.storeId} value={s.storeId}>{s.storeName}</option>
               ))}
             </select>
@@ -118,6 +127,22 @@ export function Sidebar() {
       </nav>
 
       <div className="border-t border-primary-800 py-4 px-2">
+        {isAdmin && (
+          <NavLink
+            to="/admin"
+            className={({ isActive }) =>
+              cn(
+                'flex items-center gap-3 rounded-md px-3 py-2.5 text-body-sm transition-colors mb-1',
+                isActive
+                  ? 'bg-primary-800 text-white border-s-4 border-primary-500'
+                  : 'text-primary-300 hover:bg-primary-800 hover:text-white'
+              )
+            }
+          >
+            <Shield className="h-5 w-5 shrink-0" />
+            {!collapsed && <span>{t('nav.admin')}</span>}
+          </NavLink>
+        )}
         {bottomItems.map((item) => (
           <NavLink
             key={item.path}

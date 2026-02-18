@@ -30,11 +30,8 @@ async function deleteApi(url: string): Promise<void> {
 
 // Auth
 export function useLogin() {
-  const addToast = useToastStore((s) => s.addToast);
-  const { t } = useTranslation();
   return useMutation({
     mutationFn: (body: { email: string; password: string }) => postApi<{ user: unknown; token: string }>('/auth/login', body),
-    onError: () => addToast('error', t('toasts.loginFailed')),
   });
 }
 
@@ -51,6 +48,13 @@ export function useRegister() {
 export function useGoogleLogin() {
   return useMutation({
     mutationFn: (body: { idToken: string }) => postApi<{ user: unknown; token: string }>('/auth/google', body),
+  });
+}
+
+export function useGoogleRegister() {
+  return useMutation({
+    mutationFn: (body: { idToken: string; inviteToken?: string }) =>
+      postApi<{ user: unknown; token: string; hasStore: boolean; pendingCreateStoreToken?: string }>('/auth/google/register', body),
   });
 }
 
@@ -480,13 +484,21 @@ export function useUpdateProfile() {
 // Stores
 export function useCreateStore() {
   return useMutation({
-    mutationFn: (body: { name: string; code?: string; address?: string }) =>
+    mutationFn: (body: { name: string; code?: string; address?: string; inviteToken?: string }) =>
       postApi<{ store: unknown; token: string }>('/stores', body),
   });
 }
 
 export function useMyStores() {
   return useQuery({ queryKey: ['stores'], queryFn: () => fetchApi<unknown[]>('/stores/my') });
+}
+
+export function useAllStores(enabled = false) {
+  return useQuery({
+    queryKey: ['stores', 'all'],
+    queryFn: () => fetchApi<{ id: string; name: string; code: string | null; address: string | null }[]>('/stores/all'),
+    enabled,
+  });
 }
 
 export function useSelectStore() {
@@ -498,7 +510,7 @@ export function useSelectStore() {
 export function useValidateInvite(token?: string) {
   return useQuery({
     queryKey: ['invite', token],
-    queryFn: () => fetchApi<{ storeName: string; email: string; role: number }>(`/stores/invite/${token}`),
+    queryFn: () => fetchApi<{ storeName: string | null; email: string; role: number; type: 'join_store' | 'create_store' }>(`/stores/invite/${token}`),
     enabled: !!token,
   });
 }
@@ -507,13 +519,20 @@ export function useStoreMembers() {
   return useQuery({ queryKey: ['storeMembers'], queryFn: () => fetchApi<unknown[]>('/stores/members') });
 }
 
+export function usePendingInvitations() {
+  return useQuery({
+    queryKey: ['pendingInvitations'],
+    queryFn: () => fetchApi<{ email: string; role: number; inviteLink: string; createdAt: string; expiresAt: string }[]>('/stores/invitations/pending'),
+  });
+}
+
 export function useSendInvite() {
   const qc = useQueryClient();
   const addToast = useToastStore((s) => s.addToast);
   const { t } = useTranslation();
   return useMutation({
     mutationFn: (body: { email: string; role: number }) => postApi<{ token: string; inviteLink: string }>('/stores/invite', body),
-    onSuccess: () => { addToast('success', t('toasts.inviteSent')); qc.invalidateQueries({ queryKey: ['storeMembers'] }); },
+    onSuccess: () => { addToast('success', t('toasts.inviteSent')); qc.invalidateQueries({ queryKey: ['storeMembers'] }); qc.invalidateQueries({ queryKey: ['pendingInvitations'] }); },
     onError: () => addToast('error', t('toasts.inviteFailed')),
   });
 }
@@ -521,6 +540,128 @@ export function useSendInvite() {
 export function useAcceptInvite() {
   return useMutation({
     mutationFn: (body: { token: string }) => postApi<{ token: string; storeId: string; role: number }>('/stores/accept-invite', body),
+  });
+}
+
+// Admin
+export function useAdminUsers(page = 1, limit = 20, search?: string) {
+  return useQuery({
+    queryKey: ['admin', 'users', page, limit, search],
+    queryFn: async () => {
+      const params = new URLSearchParams({ page: String(page), limit: String(limit) });
+      if (search) params.set('search', search);
+      const { data } = await apiClient.get(`/admin/users?${params}`);
+      return data.data as PaginatedResponse<{ id: string; email: string; name: string; isAdmin: boolean; disabledAt: string | null; createdAt: string; storeCount: number }>;
+    },
+  });
+}
+
+export function useAdminToggleAdmin() {
+  const qc = useQueryClient();
+  const addToast = useToastStore((s) => s.addToast);
+  const { t } = useTranslation();
+  return useMutation({
+    mutationFn: ({ userId, isAdmin }: { userId: string; isAdmin: boolean }) => patchApi(`/admin/users/${userId}/admin`, { isAdmin }),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['admin', 'users'] }); addToast('success', t('toasts.adminToggled')); },
+    onError: () => addToast('error', t('toasts.adminToggleFailed')),
+  });
+}
+
+export function useAdminToggleDisabled() {
+  const qc = useQueryClient();
+  const addToast = useToastStore((s) => s.addToast);
+  const { t } = useTranslation();
+  return useMutation({
+    mutationFn: ({ userId, disabled }: { userId: string; disabled: boolean }) => patchApi(`/admin/users/${userId}/disabled`, { disabled }),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['admin', 'users'] }); addToast('success', t('toasts.userStatusUpdated')); },
+    onError: () => addToast('error', t('toasts.userStatusUpdateFailed')),
+  });
+}
+
+export function useAdminStores(page = 1, limit = 20, search?: string) {
+  return useQuery({
+    queryKey: ['admin', 'stores', page, limit, search],
+    queryFn: async () => {
+      const params = new URLSearchParams({ page: String(page), limit: String(limit) });
+      if (search) params.set('search', search);
+      const { data } = await apiClient.get(`/admin/stores?${params}`);
+      return data.data as PaginatedResponse<{ id: string; name: string; code: string | null; address: string | null; createdAt: string; memberCount: number }>;
+    },
+  });
+}
+
+export function useAdminStoreMembers(storeId: string | null) {
+  return useQuery({
+    queryKey: ['admin', 'storeMembers', storeId],
+    queryFn: () => fetchApi<{ userId: string; email: string; name: string; role: number; joinedAt: string }[]>(`/admin/stores/${storeId}/members`),
+    enabled: !!storeId,
+  });
+}
+
+export function useAdminUpdateStore() {
+  const qc = useQueryClient();
+  const addToast = useToastStore((s) => s.addToast);
+  const { t } = useTranslation();
+  return useMutation({
+    mutationFn: ({ storeId, ...body }: { storeId: string; name?: string; address?: string }) => patchApi(`/admin/stores/${storeId}`, body),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['admin', 'stores'] }); addToast('success', t('toasts.storeUpdated')); },
+    onError: () => addToast('error', t('toasts.storeUpdateFailed')),
+  });
+}
+
+export function useAdminInvitations(page = 1, limit = 20, status?: string) {
+  return useQuery({
+    queryKey: ['admin', 'invitations', page, limit, status],
+    queryFn: async () => {
+      const params = new URLSearchParams({ page: String(page), limit: String(limit) });
+      if (status) params.set('status', status);
+      const { data } = await apiClient.get(`/admin/invitations?${params}`);
+      return data.data as PaginatedResponse<{ id: string; email: string; storeId: string | null; storeName: string | null; role: number; status: string; expiresAt: string; createdAt: string }>;
+    },
+  });
+}
+
+export function useAdminCreateStoreInvite() {
+  const qc = useQueryClient();
+  const addToast = useToastStore((s) => s.addToast);
+  const { t } = useTranslation();
+  return useMutation({
+    mutationFn: ({ email }: { email: string }) => postApi('/admin/invitations/create-store', { email }),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['admin', 'invitations'] }); addToast('success', t('toasts.inviteCreated')); },
+    onError: () => addToast('error', t('toasts.inviteCreateFailed')),
+  });
+}
+
+export function useAdminRevokeInvitation() {
+  const qc = useQueryClient();
+  const addToast = useToastStore((s) => s.addToast);
+  const { t } = useTranslation();
+  return useMutation({
+    mutationFn: (id: string) => patchApi(`/admin/invitations/${id}/revoke`, {}),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['admin', 'invitations'] }); addToast('success', t('toasts.inviteRevoked')); },
+    onError: () => addToast('error', t('toasts.inviteRevokeFailed')),
+  });
+}
+
+export function useAdminAuditLog(page = 1, limit = 20, filters?: { userId?: string; method?: string; dateFrom?: string; dateTo?: string }) {
+  return useQuery({
+    queryKey: ['admin', 'auditLog', page, limit, filters],
+    queryFn: async () => {
+      const params = new URLSearchParams({ page: String(page), limit: String(limit) });
+      if (filters?.userId) params.set('userId', filters.userId);
+      if (filters?.method) params.set('method', filters.method);
+      if (filters?.dateFrom) params.set('dateFrom', filters.dateFrom);
+      if (filters?.dateTo) params.set('dateTo', filters.dateTo);
+      const { data } = await apiClient.get(`/admin/audit-log?${params}`);
+      return data.data as PaginatedResponse<{ id: string; userId: string; userEmail: string; storeId: string | null; method: string; path: string; statusCode: number; ip: string; createdAt: string }>;
+    },
+  });
+}
+
+export function useAdminAnalytics(range: 'week' | 'month' | 'year' = 'month') {
+  return useQuery({
+    queryKey: ['admin', 'analytics', range],
+    queryFn: () => fetchApi<{ totalUsers: number; totalStores: number; activeInvitations: number; signupsPerDay: { date: string; count: number }[] }>(`/admin/analytics?range=${range}`),
   });
 }
 

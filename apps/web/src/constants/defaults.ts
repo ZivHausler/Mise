@@ -25,9 +25,10 @@ export const PAYMENT_METHOD_I18N: Record<PaymentMethod, string> = {
 };
 
 // --- Store roles -----------------------------------------------------------
-export const STORE_ROLES = { OWNER: 1, MANAGER: 2, EMPLOYEE: 3 } as const;
+export const STORE_ROLES = { ADMIN: -1, OWNER: 1, MANAGER: 2, EMPLOYEE: 3 } as const;
 
 export const ROLE_LABELS: Record<number, string> = {
+  [STORE_ROLES.ADMIN]: 'System Admin',
   [STORE_ROLES.OWNER]: 'Owner',
   [STORE_ROLES.MANAGER]: 'Manager',
   [STORE_ROLES.EMPLOYEE]: 'Employee',

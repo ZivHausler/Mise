@@ -108,18 +108,20 @@ export default function AccountTab() {
 
       <Card>
         <Section title={t('settings.preferences', 'Preferences')}>
-          <Select
-            label={t('settings.language', 'Language')}
-            options={languageOptions}
-            value={i18n.language}
-            onChange={handleLanguageChange}
-          />
-          <Select
-            label={t('settings.dateFormat', 'Date Format')}
-            options={DATE_FORMATS.map((f) => ({ value: f, label: f }))}
-            value={dateFormat}
-            onChange={(e) => setDateFormat(e.target.value as DateFormat)}
-          />
+          <Stack gap={3}>
+            <Select
+              label={t('settings.language', 'Language')}
+              options={languageOptions}
+              value={i18n.language}
+              onChange={handleLanguageChange}
+            />
+            <Select
+              label={t('settings.dateFormat', 'Date Format')}
+              options={DATE_FORMATS.map((f) => ({ value: f, label: f }))}
+              value={dateFormat}
+              onChange={(e) => setDateFormat(e.target.value as DateFormat)}
+            />
+          </Stack>
         </Section>
       </Card>
 

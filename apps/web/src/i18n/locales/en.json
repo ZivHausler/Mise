@@ -33,7 +33,9 @@
     "from": "From",
     "to": "To",
     "allStatuses": "All statuses",
-    "clearFilters": "Clear"
+    "clearFilters": "Clear",
+    "previous": "Previous",
+    "next": "Next"
   },
   "nav": {
     "dashboard": "Dashboard",
@@ -43,7 +45,8 @@
     "inventory": "Inventory",
     "payments": "Payments",
     "settings": "Settings",
-    "more": "More"
+    "more": "More",
+    "admin": "Admin Panel"
   },
   "auth": {
     "login": "Log In",
@@ -60,12 +63,14 @@
     "mergeGoogleToEmail": "This email already has an account. Enter your password to link Google sign-in.",
     "mergeEmailToGoogle": "This account uses Google Sign-In. Sign in with Google and set a password to also use email login.",
     "linkAccounts": "Link Accounts",
+    "incorrectPassword": "Incorrect password. Please try again.",
     "noGoogleAccount": "No account found with this email. Please register first.",
     "setPassword": "Set Password",
     "newPassword": "New Password",
     "accountExistsGoogle": "This email is already registered with Google. Please sign in with Google.",
     "googleHintTitle": "Google Account Detected",
-    "googleHintMessage": "It looks like you previously signed in with Google using this email. Please use the \"Sign in with Google\" button below to log in."
+    "googleHintMessage": "It looks like you previously signed in with Google using this email. Please use the \"Sign in with Google\" button below to log in.",
+    "noAccountFound": "No account found. You need an invitation to register."
   },
   "dashboard": {
     "greeting": "Good morning!",
@@ -268,7 +273,12 @@
       "role1": "Owner",
       "role2": "Manager",
       "role3": "Employee",
-      "noMembers": "No team members yet."
+      "noMembers": "No team members yet.",
+      "pending": "Pending",
+      "copyLink": "Copy invite link",
+      "linkCopied": "Link copied!",
+      "linkGenerated": "Invite link generated",
+      "inviteAnother": "Invite Another"
     },
     "units": {
       "weight": "Weight",
@@ -376,7 +386,17 @@
     "inviteSent": "Invitation sent",
     "inviteFailed": "Failed to send invitation",
     "storeCreated": "Store created",
-    "storeCreateFailed": "Failed to create store"
+    "storeCreateFailed": "Failed to create store",
+    "adminToggled": "Admin status updated",
+    "adminToggleFailed": "Failed to update admin status",
+    "userStatusUpdated": "User status updated",
+    "userStatusUpdateFailed": "Failed to update user status",
+    "storeUpdated": "Store updated",
+    "storeUpdateFailed": "Failed to update store",
+    "inviteCreated": "Invitation created",
+    "inviteCreateFailed": "Failed to create invitation",
+    "inviteRevoked": "Invitation revoked",
+    "inviteRevokeFailed": "Failed to revoke invitation"
   },
   "store": {
     "setupTitle": "Set up your bakery",
@@ -387,6 +407,102 @@
     "address": "Address",
     "create": "Create Store",
     "createFailed": "Failed to create store",
-    "invitedTo": "You've been invited to join"
+    "invitedTo": "You've been invited to join",
+    "invitedToCreate": "You've been invited to create your own store",
+    "setupStore": "Set Up Store",
+    "invalidInvite": "This invite link is invalid or has expired.",
+    "joinStore": "Join Store"
+  },
+  "admin": {
+    "nav": {
+      "title": "Admin Panel",
+      "dashboard": "Dashboard",
+      "users": "Users",
+      "stores": "Stores",
+      "invitations": "Invitations",
+      "auditLog": "Audit Log",
+      "backToApp": "Back to App"
+    },
+    "dashboard": {
+      "title": "Admin Dashboard",
+      "totalUsers": "Total Users",
+      "totalStores": "Total Stores",
+      "activeInvitations": "Active Invitations",
+      "signupTrend": "Days with Signups",
+      "signupsChart": "User Signups",
+      "range": {
+        "week": "Week",
+        "month": "Month",
+        "year": "Year"
+      }
+    },
+    "users": {
+      "title": "Users",
+      "searchPlaceholder": "Search by name or email...",
+      "name": "Name",
+      "email": "Email",
+      "stores": "Stores",
+      "status": "Status",
+      "role": "Role",
+      "actions": "Actions",
+      "active": "Active",
+      "disabled": "Disabled",
+      "admin": "Admin",
+      "promote": "Make Admin",
+      "demote": "Remove Admin",
+      "enable": "Enable User",
+      "disable": "Disable User",
+      "promoteConfirm": "Grant admin privileges to this user?",
+      "demoteConfirm": "Remove admin privileges from this user?",
+      "enableConfirm": "Enable this user account?",
+      "disableConfirm": "Disable this user account?",
+      "noUsers": "No users found"
+    },
+    "stores": {
+      "title": "Stores",
+      "searchPlaceholder": "Search stores...",
+      "name": "Name",
+      "address": "Address",
+      "members": "Members",
+      "created": "Created",
+      "noStores": "No stores found",
+      "noMembers": "No members",
+      "memberList": "Members"
+    },
+    "invitations": {
+      "title": "Invitations",
+      "email": "Email",
+      "store": "Store",
+      "role": "Role",
+      "statusLabel": "Status",
+      "expires": "Expires",
+      "createStore": "Create Store Invite",
+      "createStoreTitle": "Create Store Invitation",
+      "createStoreType": "Create Store",
+      "emailPlaceholder": "Enter email address...",
+      "revoke": "Revoke",
+      "revokeConfirm": "Revoke this invitation?",
+      "noInvitations": "No invitations found",
+      "status": {
+        "all": "All",
+        "pending": "Pending",
+        "used": "Used",
+        "expired": "Expired",
+        "revoked": "Revoked"
+      }
+    },
+    "auditLog": {
+      "title": "Audit Log",
+      "user": "User",
+      "method": "Method",
+      "path": "Path",
+      "statusCode": "Status",
+      "ip": "IP",
+      "date": "Date",
+      "allMethods": "All Methods",
+      "from": "From",
+      "to": "To",
+      "noEntries": "No audit log entries"
+    }
   }
 }
