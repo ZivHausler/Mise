@@ -53,13 +53,17 @@ export class PgOrderRepository {
     return { orders: result.rows.map((r: Record<string, unknown>) => this.mapRow(r)), total };
   }
 
-  static async findAll(storeId: string, filters?: { status?: OrderStatus }): Promise<Order[]> {
+  static async findAll(storeId: string, filters?: { status?: OrderStatus; excludePaid?: boolean }): Promise<Order[]> {
     const pool = getPool();
     let query = 'SELECT o.*, c.name as customer_name FROM orders o LEFT JOIN customers c ON o.customer_id = c.id WHERE o.store_id = $1';
     const params: unknown[] = [storeId];
+    let idx = 2;
     if (filters?.status !== undefined) {
-      query += ' AND o.status = $2';
+      query += ` AND o.status = $${idx++}`;
       params.push(filters.status);
+    }
+    if (filters?.excludePaid) {
+      query += ` AND NOT EXISTS (SELECT 1 FROM payments p WHERE p.order_id = o.id AND p.status = 'completed')`;
     }
     query += ' ORDER BY o.created_at DESC';
     const result = await pool.query(query, params);

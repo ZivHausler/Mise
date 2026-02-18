@@ -30,7 +30,7 @@ export class OrderService {
     return this.getOrdersByCustomerUseCase.execute(storeId, customerId, options, filters);
   }
 
-  async getAll(storeId: string, filters?: { status?: OrderStatus }): Promise<Order[]> {
+  async getAll(storeId: string, filters?: { status?: OrderStatus; excludePaid?: boolean }): Promise<Order[]> {
     return OrderCrud.getAll(storeId, filters);
   }
 

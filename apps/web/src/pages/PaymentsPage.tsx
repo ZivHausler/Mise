@@ -14,7 +14,7 @@ export default function PaymentsPage() {
   const { t } = useTranslation();
   const [page, setPage] = useState(1);
   const { data: paymentsData, isLoading } = usePayments(page);
-  const { data: orders } = useOrders();
+  const { data: orders } = useOrders({ excludePaid: true });
   const createPayment = useCreatePayment();
   const refundPayment = useRefundPayment();
   const [showAdd, setShowAdd] = useState(false);

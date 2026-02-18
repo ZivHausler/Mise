@@ -24,7 +24,7 @@ export class OrderCrud {
     return PgOrderRepository.findById(storeId, id);
   }
 
-  static async getAll(storeId: string, filters?: { status?: OrderStatus }): Promise<Order[]> {
+  static async getAll(storeId: string, filters?: { status?: OrderStatus; excludePaid?: boolean }): Promise<Order[]> {
     return PgOrderRepository.findAll(storeId, filters);
   }
 

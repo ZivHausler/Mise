@@ -6,11 +6,13 @@ import { createOrderSchema, updateOrderStatusSchema, updateOrderSchema } from '.
 export class OrderController {
   constructor(private orderService: OrderService) {}
 
-  async getAll(request: FastifyRequest<{ Querystring: { status?: string } }>, reply: FastifyReply) {
+  async getAll(request: FastifyRequest<{ Querystring: { status?: string; excludePaid?: string } }>, reply: FastifyReply) {
     const storeId = request.currentUser!.storeId!;
     const statusParam = request.query.status;
-    const filters = statusParam !== undefined ? { status: Number(statusParam) as any } : undefined;
-    const orders = await this.orderService.getAll(storeId, filters);
+    const filters: { status?: any; excludePaid?: boolean } = {};
+    if (statusParam !== undefined) filters.status = Number(statusParam) as any;
+    if (request.query.excludePaid === 'true') filters.excludePaid = true;
+    const orders = await this.orderService.getAll(storeId, Object.keys(filters).length ? filters : undefined);
     return reply.send({ success: true, data: orders });
   }
 

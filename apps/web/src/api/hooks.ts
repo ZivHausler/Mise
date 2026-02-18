@@ -73,8 +73,11 @@ export function useMergeEmailToGoogle() {
 }
 
 // Orders
-export function useOrders() {
-  return useQuery({ queryKey: ['orders'], queryFn: () => fetchApi<unknown[]>('/orders') });
+export function useOrders(filters?: { excludePaid?: boolean }) {
+  const params = new URLSearchParams();
+  if (filters?.excludePaid) params.set('excludePaid', 'true');
+  const qs = params.toString();
+  return useQuery({ queryKey: ['orders', filters], queryFn: () => fetchApi<unknown[]>(`/orders${qs ? `?${qs}` : ''}`) });
 }
 
 export function useOrder(id: string) {
