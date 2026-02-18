@@ -33,6 +33,16 @@ export default function RecipeDetailPage() {
     { key: 'cost', label: t('recipes.costTab', 'Cost') },
   ];
 
+  const totalMinutes = (r.steps ?? []).reduce((sum: number, s: any) => {
+    let dur = s.duration ?? 0;
+    if (s.subSteps) {
+      dur += s.subSteps.reduce((ss: number, sub: any) => ss + (sub.duration ?? 0), 0);
+    }
+    return sum + dur;
+  }, 0);
+  const totalHours = Math.floor(totalMinutes / 60);
+  const remainingMinutes = totalMinutes % 60;
+
   const ingredientCost = (r.ingredients ?? []).reduce((sum: number, ing: any) => sum + (ing.totalCost ?? 0), 0);
   const subRecipeCost = subRecipeSteps.reduce((sum: number, s: any) => sum + (s.totalCost ?? 0), 0);
   const totalCost = ingredientCost + subRecipeCost;
@@ -60,15 +70,32 @@ export default function RecipeDetailPage() {
         </Row>
       </div>
 
-      {(r.description || r.yield || r.sellingPrice) && (
+      {(r.description || r.yield || r.sellingPrice != null || totalMinutes > 0) && (
         <Card className="mb-6">
           {r.description && <p className="text-body text-neutral-600">{r.description}</p>}
-          {(r.yield || r.sellingPrice) && (
-            <div className="mt-2 flex gap-4 text-body-sm text-neutral-500">
-              {r.yield && <span>{t('recipes.yield', 'Yield')}: {r.yield}</span>}
-              {r.sellingPrice != null && <span>{t('recipes.sellingPrice', 'Selling Price')}: {r.sellingPrice} {t('common.currency')}</span>}
-            </div>
-          )}
+          {r.description && <hr className="mt-3 border-neutral-200" />}
+          <div className={`${r.description ? 'mt-3' : ''} flex justify-evenly text-center`}>
+            {r.yield && (
+              <div>
+                <p className="text-body-sm text-neutral-500">{t('recipes.yield')}</p>
+                <p className="text-body font-semibold text-neutral-800">{r.yield}</p>
+              </div>
+            )}
+            {r.sellingPrice != null && (
+              <div>
+                <p className="text-body-sm text-neutral-500">{t('recipes.sellingPrice')}</p>
+                <p className="text-body font-semibold text-neutral-800">{r.sellingPrice} {t('common.currency')}</p>
+              </div>
+            )}
+            {totalMinutes > 0 && (
+              <div>
+                <p className="text-body-sm text-neutral-500">{t('recipes.prepTime')}</p>
+                <p className="text-body font-semibold text-neutral-800">
+                  {totalHours > 0 && `${totalHours} ${t('recipes.hours', 'h')}`}{totalHours > 0 && remainingMinutes > 0 && ' '}{remainingMinutes > 0 && `${remainingMinutes} ${t('recipes.minutes', 'min')}`}
+                </p>
+              </div>
+            )}
+          </div>
         </Card>
       )}
 
@@ -89,18 +116,61 @@ export default function RecipeDetailPage() {
           ))}
         </div>
 
-        {activeTab === 'ingredients' && (
-          <div className="overflow-x-auto">
-            <IngredientsTable label={r.name} ingredients={r.ingredients ?? []} t={t} />
-            {subRecipeSteps.map((sr: any, i: number) => (
-              sr.ingredients && sr.ingredients.length > 0 && (
-                <div key={i} className="mt-6">
-                  <IngredientsTable label={`${sr.name} (x${sr.quantity})`} ingredients={sr.ingredients} t={t} />
+        {activeTab === 'ingredients' && (() => {
+          const selfIngredients = r.ingredients ?? [];
+          const subTables = subRecipeSteps.filter((sr: any) => sr.ingredients && sr.ingredients.length > 0);
+          const tableCount = (selfIngredients.length > 0 ? 1 : 0) + subTables.length;
+
+          // Build combined ingredients when multiple tables exist
+          const combinedIngredients: Record<string, { name: string; quantity: number; unit: string }> = {};
+          if (tableCount > 1) {
+            for (const ing of selfIngredients) {
+              const key = `${ing.name}__${ing.unit}`;
+              if (combinedIngredients[key]) {
+                combinedIngredients[key].quantity += ing.quantity;
+              } else {
+                combinedIngredients[key] = { name: ing.name, quantity: ing.quantity, unit: ing.unit };
+              }
+            }
+            for (const sr of subTables) {
+              const mult = sr.quantity ?? 1;
+              for (const ing of sr.ingredients) {
+                const key = `${ing.name}__${ing.unit}`;
+                if (combinedIngredients[key]) {
+                  combinedIngredients[key].quantity += ing.quantity * mult;
+                } else {
+                  combinedIngredients[key] = { name: ing.name, quantity: ing.quantity * mult, unit: ing.unit };
+                }
+              }
+            }
+          }
+
+          return (
+            <div className="overflow-x-auto">
+              {tableCount > 1 && (
+                <TotalIngredientsTable ingredients={Object.values(combinedIngredients)} t={t} />
+              )}
+              {selfIngredients.length > 0 && (
+                <div className={tableCount > 1 ? 'mt-6' : ''}>
+                  <IngredientsTable label={r.name} ingredients={selfIngredients} t={t} />
                 </div>
-              )
-            ))}
-          </div>
-        )}
+              )}
+              {subTables.map((sr: any, i: number) => {
+                const mult = sr.quantity ?? 1;
+                const scaledIngredients = sr.ingredients.map((ing: any) => ({
+                  ...ing,
+                  quantity: ing.quantity * mult,
+                  totalCost: (ing.totalCost ?? 0) * mult,
+                }));
+                return (
+                  <div key={i} className="mt-6">
+                    <IngredientsTable label={sr.name} ingredients={scaledIngredients} t={t} />
+                  </div>
+                );
+              })}
+            </div>
+          );
+        })()}
 
         {activeTab === 'steps' && (
           <Stack gap={3}>
@@ -220,8 +290,15 @@ function IngredientsTable({ label, ingredients, t }: { label: string; ingredient
               <td className="px-2 py-2 sm:px-3">{ing.name}</td>
               <td className="px-2 py-2 text-end font-mono sm:px-3">{ing.quantity}</td>
               <td className="px-2 py-2 text-end sm:px-3">{t(`common.units.${ing.unit}`, ing.unit)}</td>
-              <td className="hidden px-2 py-2 text-end font-mono sm:table-cell sm:px-3">{ing.costPerUnit}</td>
-              <td className="px-2 py-2 text-end font-mono sm:px-3">{ing.totalCost}</td>
+              <td className="hidden px-2 py-2 text-end font-mono sm:table-cell sm:px-3">
+                {ing.costPerUnit}
+                <span className="ms-1.5 relative inline-flex items-center align-middle text-xs text-neutral-500">
+                  <span className="relative -top-[3px]">{t('common.currency')}</span>
+                  <span className="text-neutral-300">/</span>
+                  <span className="relative top-[3px]">{t(`common.units.${ing.unit}`, ing.unit)}</span>
+                </span>
+              </td>
+              <td className="px-2 py-2 text-end font-mono sm:px-3">{ing.totalCost} {t('common.currency')}</td>
             </tr>
           ))}
         </tbody>
@@ -244,6 +321,32 @@ function IngredientsTable({ label, ingredients, t }: { label: string; ingredient
             </td>
           </tr>
         </tfoot>
+      </table>
+    </>
+  );
+}
+
+function TotalIngredientsTable({ ingredients, t }: { ingredients: { name: string; quantity: number; unit: string }[]; t: (key: string, fallback?: string) => string }) {
+  return (
+    <>
+      <h3 className="mb-2 font-heading text-h4 text-neutral-800">{t('recipes.totalIngredients', 'Total Ingredients')}</h3>
+      <table className="mb-2 w-full text-body-sm">
+        <thead>
+          <tr className="border-b bg-neutral-50">
+            <th className="px-2 py-2 text-start font-semibold sm:px-3">{t('recipes.ingredient', 'Ingredient')}</th>
+            <th className="px-2 py-2 text-end font-semibold sm:px-3">{t('recipes.qty', 'Qty')}</th>
+            <th className="px-2 py-2 text-end font-semibold sm:px-3">{t('recipes.unit', 'Unit')}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {ingredients.map((ing, i) => (
+            <tr key={i} className="border-b border-neutral-100">
+              <td className="px-2 py-2 sm:px-3">{ing.name}</td>
+              <td className="px-2 py-2 text-end font-mono sm:px-3">{parseFloat(ing.quantity.toFixed(2))}</td>
+              <td className="px-2 py-2 text-end sm:px-3">{t(`common.units.${ing.unit}`, ing.unit)}</td>
+            </tr>
+          ))}
+        </tbody>
       </table>
     </>
   );

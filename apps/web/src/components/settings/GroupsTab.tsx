@@ -11,6 +11,7 @@ import { TextInput } from '@/components/FormFields';
 import { Modal } from '@/components/Modal';
 import { Spinner } from '@/components/Feedback';
 import { useGroups, useCreateGroup, useUpdateGroup, useDeleteGroup } from '@/api/hooks';
+import { PRESET_COLORS } from '@/constants/defaults';
 
 interface GroupItem {
   id: string;
@@ -19,8 +20,6 @@ interface GroupItem {
   icon: string | null;
   isDefault: boolean;
 }
-
-const PRESET_COLORS = ['#EF4444', '#F97316', '#EAB308', '#22C55E', '#3B82F6', '#8B5CF6', '#EC4899'];
 
 const ICON_MAP: Record<string, LucideIcon> = {
   Milk,
@@ -35,10 +34,17 @@ function GroupIcon({ icon, color, size = 14 }: { icon: string | null; color: str
   return <Icon className="shrink-0" style={{ color: color || '#94A3B8' }} size={size} />;
 }
 
-export { ICON_MAP, GroupIcon };
+function useGroupName() {
+  const { t } = useTranslation();
+  return (group: { name: string; isDefault?: boolean }) =>
+    group.isDefault ? t(`settings.groups.defaultNames.${group.name}`, group.name) : group.name;
+}
+
+export { ICON_MAP, GroupIcon, useGroupName };
 
 export default function GroupsTab() {
   const { t } = useTranslation();
+  const getGroupName = useGroupName();
   const { data: groups, isLoading } = useGroups();
   const createGroup = useCreateGroup();
   const updateGroup = useUpdateGroup();
@@ -94,7 +100,7 @@ export default function GroupsTab() {
               <div key={group.id} className="flex items-center justify-between rounded-md px-3 py-2.5">
                 <span className="flex items-center gap-3">
                   <GroupIcon icon={group.icon} color={group.color} />
-                  <span className="text-body-sm font-medium text-neutral-800">{group.name}</span>
+                  <span className="text-body-sm font-medium text-neutral-800">{getGroupName(group)}</span>
                 </span>
               </div>
             ))}

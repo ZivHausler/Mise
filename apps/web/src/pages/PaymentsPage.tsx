@@ -1,13 +1,14 @@
 import React, { useMemo, useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Plus, CreditCard, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Plus, CreditCard, ChevronLeft, ChevronRight, RotateCcw } from 'lucide-react';
 import { Page, PageHeader, Stack } from '@/components/Layout';
 import { Button } from '@/components/Button';
 import { DataTable, StatusBadge, EmptyState, type Column } from '@/components/DataDisplay';
 import { PageLoading } from '@/components/Feedback';
 import { Modal } from '@/components/Modal';
 import { NumberInput, Select, DatePicker, TextInput } from '@/components/FormFields';
-import { usePayments, useCreatePayment, useOrders } from '@/api/hooks';
+import { usePayments, useCreatePayment, useRefundPayment, useOrders } from '@/api/hooks';
+import { PAYMENT_METHODS, DEFAULT_PAYMENT_METHOD, PAYMENT_METHOD_I18N } from '@/constants/defaults';
 
 export default function PaymentsPage() {
   const { t } = useTranslation();
@@ -15,8 +16,10 @@ export default function PaymentsPage() {
   const { data: paymentsData, isLoading } = usePayments(page);
   const { data: orders } = useOrders();
   const createPayment = useCreatePayment();
+  const refundPayment = useRefundPayment();
   const [showAdd, setShowAdd] = useState(false);
-  const [form, setForm] = useState({ orderId: '', amount: '' as number | '', method: 'cash', date: '', notes: '' });
+  const [refundTarget, setRefundTarget] = useState<any>(null);
+  const [form, setForm] = useState({ orderId: '', amount: '' as number | '', method: DEFAULT_PAYMENT_METHOD as string, date: '', notes: '' });
 
   const paymentsResult = paymentsData as any;
   const list = (paymentsResult?.payments as any[]) ?? [];
@@ -29,7 +32,7 @@ export default function PaymentsPage() {
 
   const columns: Column<any>[] = useMemo(
     () => [
-      { key: 'date', header: t('payments.date', 'Date'), sortable: true },
+      { key: 'createdAt', header: t('payments.date', 'Date'), sortable: true, render: (row: any) => row.createdAt ? new Date(row.createdAt).toLocaleDateString() : '-' },
       { key: 'orderNumber', header: t('payments.order', 'Order'), render: (row: any) => `#${row.orderNumber}` },
       { key: 'customerName', header: t('payments.customer', 'Customer'), sortable: true },
       {
@@ -46,15 +49,48 @@ export default function PaymentsPage() {
           <StatusBadge variant="info" label={row.method === 'cash' ? t('payments.cash', 'Cash') : t('payments.card', 'Card')} />
         ),
       },
+      {
+        key: 'status',
+        header: t('payments.status', 'Status'),
+        shrink: true,
+        render: (row: any) => (
+          <StatusBadge
+            variant={row.status === 'refunded' ? 'error' : 'success'}
+            label={row.status === 'refunded' ? t('payments.refunded', 'Refunded') : t('payments.completed', 'Completed')}
+          />
+        ),
+      },
+      {
+        key: 'actions',
+        header: '',
+        shrink: true,
+        render: (row: any) => row.status !== 'refunded' ? (
+          <Button
+            size="sm"
+            variant="secondary"
+            icon={<RotateCcw className="h-3.5 w-3.5" />}
+            onClick={(e) => { e.stopPropagation(); setRefundTarget(row); }}
+          >
+            {t('payments.refund', 'Refund')}
+          </Button>
+        ) : null,
+      },
     ],
     [t]
   );
+
+  const handleRefund = useCallback(() => {
+    if (!refundTarget) return;
+    refundPayment.mutate(refundTarget.id, {
+      onSuccess: () => setRefundTarget(null),
+    });
+  }, [refundTarget, refundPayment]);
 
   const handleCreate = useCallback(() => {
     createPayment.mutate(form, {
       onSuccess: () => {
         setShowAdd(false);
-        setForm({ orderId: '', amount: '', method: 'cash', date: '', notes: '' });
+        setForm({ orderId: '', amount: '', method: DEFAULT_PAYMENT_METHOD, date: '', notes: '' });
       },
     });
   }, [form, createPayment]);
@@ -90,7 +126,6 @@ export default function PaymentsPage() {
             data={list}
             keyExtractor={(row: any) => row.id}
             searchable
-            bare
           />
           {pagination && pagination.totalPages > 1 && (
             <div className="flex items-center justify-between border-t border-neutral-200 px-4 py-3">
@@ -154,17 +189,37 @@ export default function PaymentsPage() {
           </div>
           <Select
             label={t('payments.method', 'Method')}
-            options={[
-              { value: 'cash', label: t('payments.cash', 'Cash') },
-              { value: 'credit_card', label: t('payments.card', 'Credit Card') },
-              { value: 'bank_transfer', label: t('payments.bankTransfer', 'Bank Transfer') },
-            ]}
+            options={PAYMENT_METHODS.map((m) => ({
+              value: m,
+              label: t(`payments.${PAYMENT_METHOD_I18N[m]}`, m),
+            }))}
             value={form.method}
             onChange={(e) => setForm({ ...form, method: e.target.value })}
           />
           <DatePicker label={t('payments.date', 'Date')} value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })} />
           <TextInput label={t('payments.notes', 'Notes')} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} dir="auto" />
         </Stack>
+      </Modal>
+
+      <Modal
+        open={!!refundTarget}
+        onClose={() => setRefundTarget(null)}
+        title={t('payments.refundTitle', 'Refund Payment?')}
+        size="sm"
+        footer={
+          <>
+            <Button variant="secondary" onClick={() => setRefundTarget(null)}>{t('common.cancel')}</Button>
+            <Button variant="danger" onClick={handleRefund} loading={refundPayment.isPending}>{t('payments.refund', 'Refund')}</Button>
+          </>
+        }
+      >
+        <p className="text-body-sm text-neutral-600">
+          {t('payments.refundMsg', 'This will mark the payment of {{amount}} {{currency}} for order #{{order}} as refunded.', {
+            amount: refundTarget?.amount,
+            currency: t('common.currency'),
+            order: refundTarget?.orderNumber,
+          })}
+        </p>
       </Modal>
     </Page>
   );

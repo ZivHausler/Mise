@@ -69,7 +69,7 @@ export const Modal = React.memo(function Modal({
             </button>
           </div>
         )}
-        <div className="max-h-[60vh] overflow-y-auto px-6 py-4">{children}</div>
+        <div className="max-h-[65vh] overflow-y-auto px-6 py-4">{children}</div>
         {footer && (
           <div className="flex items-center justify-end gap-2 border-t border-neutral-200 px-6 py-4">
             {footer}

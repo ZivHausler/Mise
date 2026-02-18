@@ -257,7 +257,6 @@ export const NumberInput = React.memo(function NumberInput({
           type="text"
           inputMode="decimal"
           pattern="[0-9]*\.?[0-9]*"
-          dir="ltr"
           value={displayValue}
           onFocus={() => { isFocused.current = true; setRawValue(value === '' ? '' : String(value)); }}
           onBlur={() => { isFocused.current = false; setRawValue(''); }}
@@ -271,7 +270,7 @@ export const NumberInput = React.memo(function NumberInput({
             const num = Number(cleaned);
             if (!isNaN(num)) onChange(num);
           }}
-          className={cn(inputBase, sizeClasses[size], error ? inputError : inputDefault, 'font-mono', suffix && 'pr-12')}
+          className={cn(inputBase, sizeClasses[size], error ? inputError : inputDefault, 'font-mono', suffix && 'pe-12')}
           {...props}
         />
         {suffix && (

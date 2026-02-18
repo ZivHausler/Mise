@@ -1,14 +1,14 @@
 import React, { useCallback } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { ChevronLeft, ChevronRight, Trash2, Edit } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Trash2, Edit, BadgeDollarSign } from 'lucide-react';
 import { Page, Card, Section, Stack, Row } from '@/components/Layout';
 import { Breadcrumbs } from '@/components/Breadcrumbs';
 import { StatusBadge } from '@/components/DataDisplay';
 import { Button } from '@/components/Button';
 import { PageLoading } from '@/components/Feedback';
 import { ConfirmModal } from '@/components/Modal';
-import { useOrder, useUpdateOrderStatus, useDeleteOrder } from '@/api/hooks';
+import { useOrder, useUpdateOrderStatus, useDeleteOrder, usePaymentStatuses } from '@/api/hooks';
 import { ORDER_STATUS, getStatusLabel } from '@/utils/orderStatus';
 import { useFormatDate } from '@/utils/dateFormat';
 
@@ -19,6 +19,7 @@ export default function OrderDetailPage() {
   const { data: order, isLoading } = useOrder(id!);
   const updateOrderStatus = useUpdateOrderStatus();
   const deleteOrder = useDeleteOrder();
+  const { data: paymentStatuses } = usePaymentStatuses();
   const [showDelete, setShowDelete] = React.useState(false);
 
   const formatDate = useFormatDate();
@@ -57,6 +58,7 @@ export default function OrderDetailPage() {
             {t('orders.orderNum', 'Order')} #{o.orderNumber}
           </h1>
           <StatusBadge variant={getStatusLabel(o.status)} label={t(`orders.status.${getStatusLabel(o.status)}`, getStatusLabel(o.status))} />
+          {paymentStatuses?.[o.id] === 'paid' && <BadgeDollarSign className="h-6 w-6 text-green-600" />}
         </div>
         <Row gap={2}>
           {o.status > ORDER_STATUS.RECEIVED && (

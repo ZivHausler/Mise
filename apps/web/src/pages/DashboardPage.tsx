@@ -1,12 +1,12 @@
 import React, { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Package, Clock, AlertTriangle, Coins, Plus, BookOpen, CreditCard, ChevronDown, ChevronUp } from 'lucide-react';
+import { Package, Clock, AlertTriangle, Coins, Plus, BookOpen, CreditCard, ChevronDown, ChevronUp, BadgeDollarSign } from 'lucide-react';
 import { Page, PageHeader, Section, Card, Row } from '@/components/Layout';
 import { StatCard, StatusBadge } from '@/components/DataDisplay';
 import { Button } from '@/components/Button';
 import { PageLoading } from '@/components/Feedback';
-import { useDashboardStats, useOrders } from '@/api/hooks';
+import { useDashboardStats, useOrders, usePaymentStatuses } from '@/api/hooks';
 import { ORDER_STATUS, getStatusLabel } from '@/utils/orderStatus';
 import { useFormatDate } from '@/utils/dateFormat';
 
@@ -15,6 +15,7 @@ export default function DashboardPage() {
   const navigate = useNavigate();
   const { data: stats, isLoading: statsLoading } = useDashboardStats();
   const { data: orders, isLoading: ordersLoading } = useOrders();
+  const { data: paymentStatuses } = usePaymentStatuses();
 
   const formatDate = useFormatDate();
   const dashStats = stats as any;
@@ -45,7 +46,7 @@ export default function DashboardPage() {
   const statCards = [
     { label: t('dashboard.todaysOrders', "Today's Orders"), value: todayOrders, icon: <Package className="h-6 w-6" /> },
     { label: t('dashboard.pendingOrders', 'Pending Orders'), value: pendingOrders, icon: <Clock className="h-6 w-6" /> },
-    { label: t('dashboard.lowStock', 'Low Stock'), value: dashStats?.lowStockItems ?? 0, icon: <AlertTriangle className="h-6 w-6" /> },
+    { label: t('dashboard.lowStock', 'Low Stock'), value: dashStats?.lowStockItems ?? 0, icon: <AlertTriangle className="h-6 w-6" />, onClick: () => navigate('/inventory?status=low,ok') },
     { label: t('dashboard.todaysRevenue', "Today's Revenue"), value: `${dashStats?.todayRevenue ?? 0} ${t('common.currency', '₪')}`, icon: <Coins className="h-6 w-6" /> },
   ];
 
@@ -65,7 +66,7 @@ export default function DashboardPage() {
 
       <div className="mb-8 grid grid-cols-2 gap-4 lg:grid-cols-4">
         {statCards.map((s) => (
-          <StatCard key={s.label} label={s.label} value={s.value} icon={s.icon} />
+          <StatCard key={s.label} label={s.label} value={s.value} icon={s.icon} onClick={s.onClick} />
         ))}
       </div>
 
@@ -93,7 +94,10 @@ export default function DashboardPage() {
                     className="cursor-pointer rounded-md border border-neutral-100 p-2 text-body-sm hover:bg-primary-50"
                   >
                     <div className="flex items-center justify-between">
-                      <p className="font-medium text-neutral-800">#{order.orderNumber}</p>
+                      <p className="flex items-center gap-1 font-medium text-neutral-800">
+                        #{order.orderNumber}
+                        {paymentStatuses?.[order.id] === 'paid' && <BadgeDollarSign className="h-4 w-4 text-green-600" />}
+                      </p>
                       <p className="text-caption font-medium text-neutral-700">{order.totalAmount ?? 0} {t('common.currency', '₪')}</p>
                     </div>
                     <p className="text-caption text-neutral-500">{order.customerName ?? 'Customer'}</p>

@@ -118,9 +118,27 @@ export default function CustomerDetailPage() {
 
         {activeTab === 'orders' && (
           <div className="overflow-x-auto">
-            <div className="mb-3 flex flex-wrap items-center gap-2 px-1">
+            <div className="mb-3 mt-1 flex flex-wrap items-end gap-4 px-1">
+              <label className="flex flex-col gap-1">
+                <span className="text-body-sm font-semibold text-neutral-700">{t('common.from')}</span>
+                <input
+                  type="date"
+                  className="h-9 rounded-md border border-neutral-300 bg-white px-2 text-body-sm text-neutral-700"
+                  value={orderDateFrom}
+                  onChange={(e) => { setOrderDateFrom(e.target.value); setOrdersPage(1); }}
+                />
+              </label>
+              <label className="flex flex-col gap-1">
+                <span className="text-body-sm font-semibold text-neutral-700">{t('common.to')}</span>
+                <input
+                  type="date"
+                  className="h-9 rounded-md border border-neutral-300 bg-white px-2 text-body-sm text-neutral-700"
+                  value={orderDateTo}
+                  onChange={(e) => { setOrderDateTo(e.target.value); setOrdersPage(1); }}
+                />
+              </label>
               <select
-                className="rounded-md border border-neutral-300 bg-white px-2 py-1.5 text-body-sm text-neutral-700"
+                className="h-9 rounded-md border border-neutral-300 bg-white px-2 text-body-sm text-neutral-700"
                 value={orderStatusFilter ?? ''}
                 onChange={(e) => { setOrderStatusFilter(e.target.value === '' ? undefined : Number(e.target.value)); setOrdersPage(1); }}
               >
@@ -129,20 +147,6 @@ export default function CustomerDetailPage() {
                   <option key={idx} value={idx}>{t(`orders.status.${label}`, label)}</option>
                 ))}
               </select>
-              <input
-                type="date"
-                className="rounded-md border border-neutral-300 bg-white px-2 py-1.5 text-body-sm text-neutral-700"
-                value={orderDateFrom}
-                onChange={(e) => { setOrderDateFrom(e.target.value); setOrdersPage(1); }}
-                placeholder={t('common.from', 'From')}
-              />
-              <input
-                type="date"
-                className="rounded-md border border-neutral-300 bg-white px-2 py-1.5 text-body-sm text-neutral-700"
-                value={orderDateTo}
-                onChange={(e) => { setOrderDateTo(e.target.value); setOrdersPage(1); }}
-                placeholder={t('common.to', 'To')}
-              />
               {(orderStatusFilter !== undefined || orderDateFrom || orderDateTo) && (
                 <button
                   className="text-body-sm text-primary-600 hover:text-primary-700"
@@ -225,9 +229,27 @@ export default function CustomerDetailPage() {
 
         {activeTab === 'payments' && (
           <div className="overflow-x-auto">
-            <div className="mb-3 flex flex-wrap items-center gap-2 px-1">
+            <div className="mb-3 mt-1 flex flex-wrap items-end gap-4 px-1">
+              <label className="flex flex-col gap-1">
+                <span className="text-body-sm font-semibold text-neutral-700">{t('common.from')}</span>
+                <input
+                  type="date"
+                  className="h-9 rounded-md border border-neutral-300 bg-white px-2 text-body-sm text-neutral-700"
+                  value={paymentDateFrom}
+                  onChange={(e) => { setPaymentDateFrom(e.target.value); setPaymentsPage(1); }}
+                />
+              </label>
+              <label className="flex flex-col gap-1">
+                <span className="text-body-sm font-semibold text-neutral-700">{t('common.to')}</span>
+                <input
+                  type="date"
+                  className="h-9 rounded-md border border-neutral-300 bg-white px-2 text-body-sm text-neutral-700"
+                  value={paymentDateTo}
+                  onChange={(e) => { setPaymentDateTo(e.target.value); setPaymentsPage(1); }}
+                />
+              </label>
               <select
-                className="rounded-md border border-neutral-300 bg-white px-2 py-1.5 text-body-sm text-neutral-700"
+                className="h-9 rounded-md border border-neutral-300 bg-white px-2 text-body-sm text-neutral-700"
                 value={paymentMethodFilter ?? ''}
                 onChange={(e) => { setPaymentMethodFilter(e.target.value || undefined); setPaymentsPage(1); }}
               >
@@ -235,20 +257,6 @@ export default function CustomerDetailPage() {
                 <option value="cash">{t('payments.cash', 'Cash')}</option>
                 <option value="credit_card">{t('payments.card', 'Card')}</option>
               </select>
-              <input
-                type="date"
-                className="rounded-md border border-neutral-300 bg-white px-2 py-1.5 text-body-sm text-neutral-700"
-                value={paymentDateFrom}
-                onChange={(e) => { setPaymentDateFrom(e.target.value); setPaymentsPage(1); }}
-                placeholder={t('common.from', 'From')}
-              />
-              <input
-                type="date"
-                className="rounded-md border border-neutral-300 bg-white px-2 py-1.5 text-body-sm text-neutral-700"
-                value={paymentDateTo}
-                onChange={(e) => { setPaymentDateTo(e.target.value); setPaymentsPage(1); }}
-                placeholder={t('common.to', 'To')}
-              />
               {(paymentMethodFilter || paymentDateFrom || paymentDateTo) && (
                 <button
                   className="text-body-sm text-primary-600 hover:text-primary-700"

@@ -32,6 +32,7 @@ const CustomerDetailPage = lazy(() => import('@/pages/CustomerDetailPage'));
 const PaymentsPage = lazy(() => import('@/pages/PaymentsPage'));
 const SettingsPage = lazy(() => import('@/pages/SettingsPage'));
 const MorePage = lazy(() => import('@/pages/MorePage'));
+const InvitePage = lazy(() => import('@/pages/InvitePage'));
 const NotFoundPage = lazy(() => import('@/pages/NotFoundPage'));
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -71,6 +72,7 @@ export function App() {
               {/* Public routes */}
               <Route path="/login" element={<LoginPage />} />
               <Route path="/register" element={<RegisterPage />} />
+              <Route path="/invite/:token" element={<InvitePage />} />
 
               {/* Store setup route */}
               <Route

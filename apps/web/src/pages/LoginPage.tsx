@@ -1,10 +1,10 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/Button';
 import { TextInput } from '@/components/FormFields';
 import { Stack } from '@/components/Layout';
-import { useLogin, useGoogleLogin } from '@/api/hooks';
+import { useLogin, useGoogleLogin, useAcceptInvite, useValidateInvite } from '@/api/hooks';
 import { useAuthStore } from '@/store/auth';
 import { useToastStore } from '@/store/toast';
 import { useGoogleAuth } from '@/hooks/useGoogleAuth';
@@ -13,11 +13,17 @@ import { MergeAccountDialog } from '@/components/MergeAccountDialog';
 export default function LoginPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const inviteToken = searchParams.get('invite') || undefined;
   const setAuth = useAuthStore((s) => s.setAuth);
   const setStores = useAuthStore((s) => s.setStores);
+  const updateToken = useAuthStore((s) => s.updateToken);
+  const setHasStore = useAuthStore((s) => s.setHasStore);
   const addToast = useToastStore((s) => s.addToast);
   const login = useLogin();
   const googleLogin = useGoogleLogin();
+  const acceptInvite = useAcceptInvite();
+  const inviteQuery = useValidateInvite(inviteToken);
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -69,7 +75,24 @@ export default function LoginPage() {
           onSuccess: (data: any) => {
             setAuth(data.user, data.token, data.hasStore);
             if (data.stores) setStores(data.stores);
-            navigate(data.hasStore ? '/' : '/store-setup');
+
+            if (inviteToken) {
+              acceptInvite.mutate(
+                { token: inviteToken },
+                {
+                  onSuccess: (inviteData) => {
+                    updateToken(inviteData.token);
+                    setHasStore(true);
+                    navigate('/');
+                  },
+                  onError: () => {
+                    navigate(data.hasStore ? '/' : '/store-setup');
+                  },
+                },
+              );
+            } else {
+              navigate(data.hasStore ? '/' : '/store-setup');
+            }
           },
           onError: (error: any) => {
             const msg = error?.response?.data?.error?.message;
@@ -82,7 +105,7 @@ export default function LoginPage() {
         },
       );
     },
-    [email, password, login, setAuth, setStores, navigate, addToast, t],
+    [email, password, inviteToken, login, acceptInvite, setAuth, setStores, updateToken, setHasStore, navigate, addToast, t],
   );
 
   return (
@@ -92,6 +115,15 @@ export default function LoginPage() {
           <h1 className="font-heading text-display text-primary-700">Mise</h1>
           <p className="mt-2 text-body-sm text-neutral-500">{t('app.tagline')}</p>
         </div>
+
+        {inviteToken && inviteQuery.data && (
+          <div className="mb-6 rounded-md bg-primary-50 border border-primary-200 p-4 text-center">
+            <p className="text-body-sm text-primary-700">
+              {t('store.invitedTo', "You've been invited to join")}
+            </p>
+            <p className="font-semibold text-primary-800 mt-1">{inviteQuery.data.storeName}</p>
+          </div>
+        )}
 
         <form onSubmit={handleSubmit}>
           <Stack gap={4}>
@@ -120,7 +152,7 @@ export default function LoginPage() {
 
         <p className="mt-6 text-center text-body-sm text-neutral-500">
           {t('auth.noAccount', "Don't have an account?")}{' '}
-          <Link to="/register" className="text-primary-500 hover:underline">
+          <Link to={inviteToken ? `/register?invite=${inviteToken}` : '/register'} className="text-primary-500 hover:underline">
             {t('auth.register')}
           </Link>
         </p>

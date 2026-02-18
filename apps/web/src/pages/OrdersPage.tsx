@@ -1,12 +1,12 @@
 import React, { useState, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Plus, LayoutGrid, List, ChevronRight } from 'lucide-react';
+import { Plus, LayoutGrid, List, ChevronRight, BadgeDollarSign } from 'lucide-react';
 import { Page, PageHeader } from '@/components/Layout';
 import { Button } from '@/components/Button';
 import { DataTable, StatusBadge, EmptyState, type Column } from '@/components/DataDisplay';
 import { PageLoading } from '@/components/Feedback';
-import { useOrders, useUpdateOrderStatus } from '@/api/hooks';
+import { useOrders, useUpdateOrderStatus, usePaymentStatuses } from '@/api/hooks';
 import { ORDER_STATUS, STATUS_LABELS, getStatusLabel } from '@/utils/orderStatus';
 import { useFormatDate } from '@/utils/dateFormat';
 
@@ -24,6 +24,7 @@ export default function OrdersPage() {
   const navigate = useNavigate();
   const { data: orders, isLoading } = useOrders();
   const updateOrderStatus = useUpdateOrderStatus();
+  const { data: paymentStatuses } = usePaymentStatuses();
   const formatDate = useFormatDate();
   const [viewMode, setViewMode] = useState<ViewMode>('pipeline');
 
@@ -47,7 +48,12 @@ export default function OrdersPage() {
 
   const columns: Column<any>[] = useMemo(
     () => [
-      { key: 'orderNumber', header: '#', sortable: true, render: (row: any) => `#${row.orderNumber}` },
+      { key: 'orderNumber', header: '#', sortable: true, render: (row: any) => (
+        <span className="inline-flex items-center gap-1">
+          #{row.orderNumber}
+          {paymentStatuses?.[row.id] === 'paid' && <BadgeDollarSign className="h-4 w-4 text-green-600" />}
+        </span>
+      ) },
       { key: 'customerName', header: t('orders.customer', 'Customer'), sortable: true },
       {
         key: 'status',
@@ -77,7 +83,7 @@ export default function OrdersPage() {
           ) : null,
       },
     ],
-    [t, handleAdvance, formatDate]
+    [t, handleAdvance, formatDate, paymentStatuses]
   );
 
   if (isLoading) return <PageLoading />;
@@ -130,7 +136,10 @@ export default function OrdersPage() {
                         className="cursor-pointer rounded-md border border-neutral-100 p-3 transition-shadow hover:shadow-sm"
                       >
                         <div className="flex items-center justify-between">
-                          <span className="text-body-sm font-medium text-neutral-800">#{order.orderNumber}</span>
+                          <span className="inline-flex items-center gap-1 text-body-sm font-medium text-neutral-800">
+                            #{order.orderNumber}
+                            {paymentStatuses?.[order.id] === 'paid' && <BadgeDollarSign className="h-4 w-4 text-green-600" />}
+                          </span>
                           {status < ORDER_STATUS.DELIVERED && (
                             <button
                               onClick={(e) => { e.stopPropagation(); handleAdvance(order); }}

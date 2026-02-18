@@ -5,8 +5,7 @@ import { Button } from '@/components/Button';
 import { Spinner } from '@/components/Feedback';
 import { useNotificationPreferences, useUpdateNotificationPreferences, useProfile } from '@/api/hooks';
 import { Save } from 'lucide-react';
-
-const EVENT_TYPES = ['order_created', 'order_status_changed', 'low_stock', 'payment_received'] as const;
+import { NOTIFICATION_EVENTS } from '@/constants/defaults';
 
 interface PrefRow {
   eventType: string;
@@ -29,7 +28,7 @@ export default function NotificationsTab() {
 
   useEffect(() => {
     const existing = (prefs ?? []) as { eventType: string; channelEmail: boolean; channelPush: boolean; channelSms: boolean }[];
-    const mapped = EVENT_TYPES.map((et) => {
+    const mapped = NOTIFICATION_EVENTS.map((et) => {
       const found = existing.find((e) => e.eventType === et);
       return {
         eventType: et,

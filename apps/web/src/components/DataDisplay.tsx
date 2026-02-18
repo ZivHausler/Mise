@@ -69,11 +69,12 @@ interface StatCardProps {
   value: string | number;
   icon?: React.ReactNode;
   trend?: { value: number; label?: string };
+  onClick?: () => void;
 }
 
-export const StatCard = React.memo(function StatCard({ label, value, icon, trend }: StatCardProps) {
+export const StatCard = React.memo(function StatCard({ label, value, icon, trend, onClick }: StatCardProps) {
   return (
-    <div className="rounded-lg bg-white p-6 shadow-md">
+    <div className={cn('rounded-lg bg-white p-6 shadow-md', onClick && 'cursor-pointer transition-shadow hover:shadow-lg')} onClick={onClick}>
       <div className="flex items-start justify-between">
         <div>
           <p className="text-caption text-neutral-500">{label}</p>

@@ -153,28 +153,39 @@ export default function RecipeFormPage() {
   }, []);
 
   // Desktop drag — only the grip handle has draggable, so these fire from there
+  const dragState = useRef<{ from: number | null; over: number | null; pos: 'before' | 'after' }>({ from: null, over: null, pos: 'before' });
   const handleDragStart = useCallback((e: React.DragEvent, i: number) => {
+    dragState.current.from = i;
     setDragIndex(i);
     e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', '');
   }, []);
   const handleDragOver = useCallback((e: React.DragEvent, i: number) => {
     e.preventDefault();
     e.dataTransfer.dropEffect = 'move';
     const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
     const midY = rect.top + rect.height / 2;
-    setDropPosition(e.clientY < midY ? 'before' : 'after');
+    const pos = e.clientY < midY ? 'before' : 'after';
+    dragState.current.over = i;
+    dragState.current.pos = pos;
+    setDropPosition(pos);
     setDragOverIndex(i);
   }, []);
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+  }, []);
   const handleDragEnd = useCallback(() => {
-    if (dragIndex !== null && dragOverIndex !== null) {
-      let to = dragOverIndex;
-      if (dropPosition === 'after') to += 1;
-      if (to > dragIndex) to -= 1;
-      reorderSteps(dragIndex, to);
+    const { from, over, pos } = dragState.current;
+    if (from !== null && over !== null && from !== over) {
+      let to = over;
+      if (pos === 'after') to += 1;
+      if (to > from) to -= 1;
+      reorderSteps(from, to);
     }
+    dragState.current = { from: null, over: null, pos: 'before' };
     setDragIndex(null);
     setDragOverIndex(null);
-  }, [dragIndex, dragOverIndex, dropPosition, reorderSteps]);
+  }, [reorderSteps]);
 
   // Touch drag — only triggered via long-press on the grip handle
   const handleGripTouchStart = useCallback((i: number) => {
@@ -344,7 +355,7 @@ export default function RecipeFormPage() {
                   <div
                     ref={(el) => { stepRefs.current[i] = el; }}
                     onDragOver={(e: React.DragEvent) => handleDragOver(e, i)}
-                    onDragEnd={handleDragEnd}
+                    onDrop={handleDrop}
                     className={cn(
                       'flex gap-2 rounded-md border border-neutral-100 p-2 transition-colors sm:items-center sm:border-0 sm:p-0',
                       dragIndex === i && 'opacity-40 scale-[0.98]'
@@ -354,6 +365,7 @@ export default function RecipeFormPage() {
                     ref={(el) => { gripRefs.current[i] = el; }}
                     draggable
                     onDragStart={(e) => handleDragStart(e, i)}
+                    onDragEnd={handleDragEnd}
                     onTouchStart={() => handleGripTouchStart(i)}
                     onTouchMove={handleGripTouchMove}
                     onTouchEnd={handleGripTouchEnd}

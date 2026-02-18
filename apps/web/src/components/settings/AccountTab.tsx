@@ -9,6 +9,8 @@ import { Spinner } from '@/components/Feedback';
 import { useAuthStore } from '@/store/auth';
 import { useAppStore } from '@/store/app';
 import { useProfile, useUpdateProfile } from '@/api/hooks';
+import { DATE_FORMATS, LANGUAGES } from '@/constants/defaults';
+import type { DateFormat } from '@/constants/defaults';
 
 export default function AccountTab() {
   const { t, i18n } = useTranslation();
@@ -62,10 +64,10 @@ export default function AccountTab() {
     setDirty(true);
   };
 
-  const languageOptions = [
-    { value: 'en', label: t('settings.languages.en', 'English') },
-    { value: 'he', label: t('settings.languages.he', 'Hebrew') },
-  ];
+  const languageOptions = LANGUAGES.map((lng) => ({
+    value: lng,
+    label: t(`settings.languages.${lng}`, lng),
+  }));
 
   const handleLanguageChange = useCallback(
     (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -114,12 +116,9 @@ export default function AccountTab() {
           />
           <Select
             label={t('settings.dateFormat', 'Date Format')}
-            options={[
-              { value: 'dd/mm/yyyy', label: 'dd/mm/yyyy' },
-              { value: 'mm/dd/yyyy', label: 'mm/dd/yyyy' },
-            ]}
+            options={DATE_FORMATS.map((f) => ({ value: f, label: f }))}
             value={dateFormat}
-            onChange={(e) => setDateFormat(e.target.value as 'dd/mm/yyyy' | 'mm/dd/yyyy')}
+            onChange={(e) => setDateFormat(e.target.value as DateFormat)}
           />
         </Section>
       </Card>
