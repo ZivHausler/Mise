@@ -29,7 +29,11 @@
     "select": "Select...",
     "qty": "Qty",
     "showMore": "Show {{count}} more",
-    "showLess": "Show less"
+    "showLess": "Show less",
+    "from": "From",
+    "to": "To",
+    "allStatuses": "All statuses",
+    "clearFilters": "Clear"
   },
   "nav": {
     "dashboard": "Dashboard",
@@ -117,13 +121,16 @@
     "price": "Price",
     "sellingPrice": "Selling Price (₪)",
     "ingredients": "Ingredients",
+    "totalIngredients": "Total Ingredients",
     "ingredient": "Ingredient",
     "addIngredient": "Add",
     "ingredientName": "Ingredient",
     "unit": "Unit",
-    "costPerUnit": "Cost/Unit",
+    "costPerUnit": "Cost per Unit",
     "steps": "Steps",
     "addStep": "Add Step",
+    "minutes": "min",
+    "hours": "hour",
     "subRecipes": "Sub-Recipes",
     "noSubRecipes": "No sub-recipes.",
     "noSteps": "No steps added.",
@@ -133,6 +140,7 @@
     "subRecipeCost": "Sub-Recipe Cost",
     "totalCost": "Total Cost",
     "margin": "Margin",
+    "prepTime": "Prep Time",
     "empty": "No recipes yet",
     "emptyDesc": "Add your first recipe to get started.",
     "deleteTitle": "Delete Recipe?",
@@ -145,15 +153,17 @@
     "stock": "Stock",
     "unit": "Unit",
     "status": "Status",
+    "inventoryStatus": "Inventory Status",
     "addItem": "Add Item",
     "adjust": "Adjust",
     "adjustType": "Type",
     "amount": "Amount",
     "threshold": "Low-Stock Threshold",
-    "thresholdTooltip": "If notifications are enabled, you'll be notified when stock drops to this level.",
+    "thresholdTooltip": "If notifications are enabled, you'll be notified when stock drops below this level.",
     "costPerUnit": "Cost per Unit (₪)",
     "price": "Price (₪)",
     "perUnit": "Per Unit",
+    "perPackage": "Per Package",
     "perAmount": "Per Amount",
     "empty": "No inventory items",
     "emptyDesc": "Add ingredients and supplies to track stock levels.",
@@ -173,7 +183,17 @@
     "groups": "Groups",
     "editItem": "Edit Item",
     "deleteTitle": "Delete Item?",
-    "deleteMsg": "This item will be permanently deleted."
+    "deleteMsg": "This item will be permanently deleted.",
+    "shoppingList": {
+      "title": "Shopping List",
+      "allStocked": "All items are fully stocked!",
+      "ingredient": "Ingredient",
+      "currentStock": "Current Stock",
+      "toOrder": "To Order",
+      "estPrice": "Est. Price",
+      "total": "Total",
+      "export": "Export Shopping List"
+    }
   },
   "customers": {
     "name": "Name",
@@ -214,7 +234,14 @@
     "bankTransfer": "Bank Transfer",
     "notes": "Notes",
     "empty": "No payments yet",
-    "emptyDesc": "Log your first payment."
+    "emptyDesc": "Log your first payment.",
+    "status": "Status",
+    "completed": "Completed",
+    "refund": "Refund",
+    "refunded": "Refunded",
+    "refundTitle": "Refund Payment?",
+    "refundMsg": "This will mark the payment of {{amount}} {{currency}} for order #{{order}} as refunded. This action cannot be undone.",
+    "allMethods": "All methods"
   },
   "settings": {
     "profile": "Profile",
@@ -265,7 +292,12 @@
       "defaults": "Defaults",
       "custom": "Custom",
       "empty": "No custom groups yet.",
-      "emptyDesc": "Create groups to tag and organize items."
+      "emptyDesc": "Create groups to tag and organize items.",
+      "defaultNames": {
+        "Dairy": "Dairy",
+        "Gluten": "Gluten",
+        "Nuts": "Nuts"
+      }
     },
     "account": {
       "title": "Account",
@@ -323,6 +355,8 @@
     "customerDeleteFailed": "Failed to delete customer",
     "paymentLogged": "Payment logged",
     "paymentLogFailed": "Failed to log payment",
+    "paymentRefunded": "Payment refunded",
+    "paymentRefundFailed": "Failed to refund payment",
     "unitCreated": "Unit created",
     "unitCreateFailed": "Failed to create unit",
     "unitUpdated": "Unit updated",

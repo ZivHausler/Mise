@@ -29,7 +29,11 @@
     "select": "בחר...",
     "qty": "כמות",
     "showMore": "הצג עוד {{count}}",
-    "showLess": "הצג פחות"
+    "showLess": "הצג פחות",
+    "from": "מתאריך",
+    "to": "עד תאריך",
+    "allStatuses": "כל הסטטוסים",
+    "clearFilters": "נקה"
   },
   "nav": {
     "dashboard": "לוח בקרה",
@@ -117,6 +121,7 @@
     "price": "מחיר",
     "sellingPrice": "מחיר מכירה (₪)",
     "ingredients": "מרכיבים",
+    "totalIngredients": "סה״כ מרכיבים",
     "ingredient": "מרכיב",
     "addIngredient": "הוסף",
     "ingredientName": "מרכיב",
@@ -125,6 +130,7 @@
     "steps": "שלבים",
     "addStep": "הוסף שלב",
     "minutes": "דק׳",
+    "hours": "שע׳",
     "subRecipes": "תת-מתכונים",
     "noSubRecipes": "אין תת-מתכונים.",
     "noSteps": "לא נוספו שלבים.",
@@ -134,6 +140,7 @@
     "subRecipeCost": "עלות תת-מתכונים",
     "totalCost": "עלות כוללת",
     "margin": "רווח",
+    "prepTime": "זמן הכנה",
     "empty": "אין מתכונים עדיין",
     "emptyDesc": "הוסף את המתכון הראשון שלך.",
     "deleteTitle": "למחוק מתכון?",
@@ -146,15 +153,17 @@
     "stock": "מלאי",
     "unit": "יחידה",
     "status": "סטטוס",
+    "inventoryStatus": "סטטוס מלאי",
     "addItem": "הוסף פריט",
     "adjust": "עדכן",
     "adjustType": "סוג",
     "amount": "כמות",
     "threshold": "סף מלאי נמוך",
-    "thresholdTooltip": "אם התראות מופעלות, תקבל/י הודעה כשהמלאי יורד לרמה זו.",
+    "thresholdTooltip": "אם ההתראות מופעלות, תקבל/י הודעה כשהמלאי יורד מתחת לרמה זו.",
     "costPerUnit": "עלות ליחידה (₪)",
     "price": "מחיר (₪)",
     "perUnit": "ליחידה",
+    "perPackage": "לאריזה",
     "perAmount": "לכמות",
     "empty": "אין פריטי מלאי",
     "emptyDesc": "הוסף מרכיבים וחומרים למעקב רמות מלאי.",
@@ -174,7 +183,17 @@
     "groups": "קבוצות",
     "editItem": "עריכת פריט",
     "deleteTitle": "למחוק פריט?",
-    "deleteMsg": "הפריט יימחק לצמיתות."
+    "deleteMsg": "הפריט יימחק לצמיתות.",
+    "shoppingList": {
+      "title": "רשימת קניות",
+      "allStocked": "כל הפריטים במלאי מלא!",
+      "ingredient": "מרכיב",
+      "currentStock": "מלאי נוכחי",
+      "toOrder": "להזמין",
+      "estPrice": "מחיר משוער",
+      "total": "סה\"כ",
+      "export": "ייצוא רשימת קניות"
+    }
   },
   "customers": {
     "name": "שם",
@@ -215,7 +234,14 @@
     "bankTransfer": "העברה בנקאית",
     "notes": "הערות",
     "empty": "אין תשלומים עדיין",
-    "emptyDesc": "רשום את התשלום הראשון שלך."
+    "emptyDesc": "רשום את התשלום הראשון שלך.",
+    "status": "סטטוס",
+    "completed": "שולם",
+    "refund": "החזר",
+    "refunded": "הוחזר",
+    "refundTitle": "להחזיר תשלום?",
+    "refundMsg": "פעולה זו תסמן את התשלום בסך {{amount}} {{currency}} עבור הזמנה #{{order}} כהוחזר. לא ניתן לבטל פעולה זו.",
+    "allMethods": "כל האמצעים"
   },
   "settings": {
     "profile": "פרופיל",
@@ -266,7 +292,12 @@
       "defaults": "ברירת מחדל",
       "custom": "מותאם אישית",
       "empty": "אין קבוצות מותאמות אישית עדיין.",
-      "emptyDesc": "צור קבוצות לתיוג וארגון פריטים."
+      "emptyDesc": "צור קבוצות לתיוג וארגון פריטים.",
+      "defaultNames": {
+        "Dairy": "חלבי",
+        "Gluten": "גלוטן",
+        "Nuts": "אגוזים"
+      }
     },
     "account": {
       "title": "חשבון",
@@ -324,6 +355,8 @@
     "customerDeleteFailed": "מחיקת הלקוח נכשלה",
     "paymentLogged": "התשלום נרשם",
     "paymentLogFailed": "רישום התשלום נכשל",
+    "paymentRefunded": "התשלום הוחזר",
+    "paymentRefundFailed": "החזר התשלום נכשל",
     "unitCreated": "היחידה נוצרה",
     "unitCreateFailed": "יצירת היחידה נכשלה",
     "unitUpdated": "היחידה עודכנה",
