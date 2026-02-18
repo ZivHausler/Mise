@@ -16,8 +16,8 @@ export class InventoryService {
     return InventoryCrud.getAll(storeId, search);
   }
 
-  async getAllPaginated(storeId: string, page: number, limit: number, search?: string, groupIds?: string[]): Promise<PaginatedResult<Ingredient>> {
-    return InventoryCrud.getAllPaginated(storeId, page, limit, search, groupIds);
+  async getAllPaginated(storeId: string, page: number, limit: number, search?: string, groupIds?: string[], statuses?: string[]): Promise<PaginatedResult<Ingredient>> {
+    return InventoryCrud.getAllPaginated(storeId, page, limit, search, groupIds, statuses);
   }
 
   async getLowStock(storeId: string): Promise<Ingredient[]> {

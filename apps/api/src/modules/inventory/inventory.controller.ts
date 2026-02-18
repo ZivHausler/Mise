@@ -5,14 +5,15 @@ import { createIngredientSchema, updateIngredientSchema, adjustStockSchema } fro
 export class InventoryController {
   constructor(private inventoryService: InventoryService) {}
 
-  async getAll(request: FastifyRequest<{ Querystring: { search?: string; page?: string; limit?: string; groupIds?: string } }>, reply: FastifyReply) {
+  async getAll(request: FastifyRequest<{ Querystring: { search?: string; page?: string; limit?: string; groupIds?: string; status?: string } }>, reply: FastifyReply) {
     const storeId = request.currentUser!.storeId!;
-    const { search, page, limit, groupIds: groupIdsParam } = request.query;
+    const { search, page, limit, groupIds: groupIdsParam, status: statusParam } = request.query;
     if (page || limit) {
       const pageNum = Math.max(1, parseInt(page || '1', 10) || 1);
       const limitNum = Math.min(100, Math.max(1, parseInt(limit || '10', 10) || 10));
       const groupIds = groupIdsParam ? groupIdsParam.split(',').filter(Boolean) : undefined;
-      const result = await this.inventoryService.getAllPaginated(storeId, pageNum, limitNum, search, groupIds);
+      const statuses = statusParam ? statusParam.split(',').filter(Boolean) : undefined;
+      const result = await this.inventoryService.getAllPaginated(storeId, pageNum, limitNum, search, groupIds, statuses);
       return reply.send({ success: true, data: result.items, pagination: { total: result.total, page: result.page, limit: result.limit, totalPages: result.totalPages } });
     }
     const ingredients = await this.inventoryService.getAll(storeId, search);

@@ -66,7 +66,7 @@ export class PgInventoryRepository {
     return this.attachGroups(ingredients);
   }
 
-  static async findAllPaginated(storeId: string, page: number, limit: number, search?: string, groupIds?: string[]): Promise<PaginatedResult<Ingredient>> {
+  static async findAllPaginated(storeId: string, page: number, limit: number, search?: string, groupIds?: string[], statuses?: string[]): Promise<PaginatedResult<Ingredient>> {
     const pool = getPool();
     const offset = (page - 1) * limit;
     const conditions: string[] = [];
@@ -88,6 +88,28 @@ export class PgInventoryRepository {
       params.push(groupIds);
       idx++;
     }
+    if (statuses?.length) {
+      const statusConditions: string[] = [];
+      for (const s of statuses) {
+        switch (s) {
+          case 'out':
+            statusConditions.push('quantity = 0');
+            break;
+          case 'low':
+            statusConditions.push('(quantity > 0 AND quantity <= low_stock_threshold)');
+            break;
+          case 'ok':
+            statusConditions.push('(quantity > low_stock_threshold AND quantity <= low_stock_threshold * 2)');
+            break;
+          case 'good':
+            statusConditions.push('(quantity > low_stock_threshold * 2)');
+            break;
+        }
+      }
+      if (statusConditions.length) {
+        conditions.push(`(${statusConditions.join(' OR ')})`);
+      }
+    }
 
     const whereClause = ` WHERE ${conditions.join(' AND ')}`;
 
@@ -108,7 +130,7 @@ export class PgInventoryRepository {
   static async findLowStock(storeId: string): Promise<Ingredient[]> {
     const pool = getPool();
     const result = await pool.query(
-      'SELECT * FROM ingredients WHERE store_id = $1 AND quantity <= low_stock_threshold ORDER BY quantity ASC',
+      'SELECT * FROM ingredients WHERE store_id = $1 AND quantity < low_stock_threshold ORDER BY quantity ASC',
       [storeId],
     );
     const ingredients = result.rows.map((r: Record<string, unknown>) => this.mapRow(r));
