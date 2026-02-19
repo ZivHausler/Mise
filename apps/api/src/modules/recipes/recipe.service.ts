@@ -25,6 +25,7 @@ export class RecipeService {
     const recipes = await RecipeCrud.getAll(storeId, filters);
     for (const recipe of recipes) {
       await this.enrichIngredients(storeId, recipe);
+      await this.enrichSubRecipeSteps(storeId, recipe);
     }
     return recipes;
   }
@@ -58,6 +59,7 @@ export class RecipeService {
 
   private async enrichSubRecipeSteps(storeId: string, recipe: Recipe): Promise<void> {
     if (!recipe.steps) return;
+    let subRecipeCost = 0;
     for (const step of recipe.steps) {
       if (step.type !== 'sub_recipe' || !step.recipeId) continue;
       try {
@@ -66,17 +68,25 @@ export class RecipeService {
           step.name = subRecipe.name;
           await this.enrichIngredients(storeId, subRecipe);
           const qty = step.quantity ?? 1;
-          (step as any).ingredients = subRecipe.ingredients.map((ing) => ({
+          const scaledIngredients = subRecipe.ingredients.map((ing) => ({
             ...ing,
             quantity: +(ing.quantity * qty).toFixed(4),
             totalCost: +((ing as any).totalCost * qty).toFixed(2),
           }));
+          (step as any).ingredients = scaledIngredients;
           (step as any).subSteps = subRecipe.steps;
-          (step as any).totalCost = +((subRecipe.totalCost ?? 0) * qty).toFixed(2);
+          const stepCost = +scaledIngredients.reduce((sum: number, ing: any) => sum + (ing.totalCost ?? 0), 0).toFixed(2);
+          (step as any).totalCost = stepCost;
+          subRecipeCost += stepCost;
         }
       } catch {
         // skip if sub-recipe not found
       }
+    }
+    // Add sub-recipe costs to the recipe total (enrichIngredients only sets direct ingredient costs)
+    if (subRecipeCost > 0) {
+      recipe.totalCost = +((recipe.totalCost ?? 0) + subRecipeCost).toFixed(2);
+      recipe.costPerUnit = recipe.yield ? +(recipe.totalCost / recipe.yield).toFixed(2) : recipe.totalCost;
     }
   }
 
@@ -110,8 +120,7 @@ export class RecipeService {
 
     const totalCost = await this.calculateCostUseCase.execute(storeId, recipe.id);
     const costPerUnit = recipe.yield ? totalCost / recipe.yield : totalCost;
-    await RecipeCrud.update(storeId, recipe.id, { ...data } as any);
-    await RecipeCrud.update(storeId, recipe.id, {} as any);
+    await RecipeCrud.update(storeId, recipe.id, { totalCost, costPerUnit } as any);
     const finalRecipe = await RecipeCrud.getById(storeId, recipe.id);
 
     return finalRecipe ?? recipe;

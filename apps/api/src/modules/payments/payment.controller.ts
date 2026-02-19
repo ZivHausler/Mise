@@ -5,12 +5,15 @@ import { createPaymentSchema } from './payment.schema.js';
 export class PaymentController {
   constructor(private paymentService: PaymentService) {}
 
-  async getAll(request: FastifyRequest<{ Querystring: { page?: string; limit?: string } }>, reply: FastifyReply) {
+  async getAll(request: FastifyRequest<{ Querystring: { page?: string; limit?: string; status?: string; method?: string } }>, reply: FastifyReply) {
     const storeId = request.currentUser!.storeId!;
     const page = Math.max(1, Number(request.query.page) || 1);
     const limit = Math.min(100, Math.max(1, Number(request.query.limit) || 10));
     const offset = (page - 1) * limit;
-    const { items, total } = await this.paymentService.getAll(storeId, { limit, offset });
+    const filters: { status?: string; method?: string } = {};
+    if (request.query.status) filters.status = request.query.status;
+    if (request.query.method) filters.method = request.query.method;
+    const { items, total } = await this.paymentService.getAll(storeId, { limit, offset }, Object.keys(filters).length ? filters : undefined);
     return reply.send({ success: true, data: items, pagination: { page, limit, total, totalPages: Math.ceil(total / limit) } });
   }
 
