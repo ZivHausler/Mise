@@ -1,6 +1,7 @@
 import type { Config } from 'tailwindcss';
 
 const config: Config = {
+  darkMode: 'class',
   content: ['./index.html', './src/**/*.{ts,tsx}'],
   theme: {
     extend: {
@@ -123,12 +124,23 @@ const config: Config = {
           '0%': { opacity: '0', transform: 'translateX(16px)' },
           '100%': { opacity: '1', transform: 'translateX(0)' },
         },
+        'progress-indeterminate': {
+          '0%': { transform: 'translateX(-100%)' },
+          '50%': { transform: 'translateX(0%)' },
+          '100%': { transform: 'translateX(200%)' },
+        },
+        'image-crossfade': {
+          '0%': { opacity: '0' },
+          '100%': { opacity: '1' },
+        },
       },
       animation: {
         shimmer: 'shimmer 1.5s infinite',
         'fade-in': 'fade-in 200ms ease-out',
         'slide-up': 'slide-up 200ms ease-out',
         'slide-in': 'slide-in-from-end 300ms ease-out',
+        'progress-indeterminate': 'progress-indeterminate 1.2s ease-in-out infinite',
+        'image-crossfade': 'image-crossfade 700ms ease-in-out forwards',
       },
     },
   },
