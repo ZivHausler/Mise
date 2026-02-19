@@ -2,6 +2,7 @@ import React, { useMemo, useState, useCallback } from 'react';
 import { ChevronUp, ChevronDown, Search } from 'lucide-react';
 import { cn } from '@/utils/cn';
 import { useTranslation } from 'react-i18next';
+import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 
 // StatusBadge
 type BadgeVariant = 'received' | 'in_progress' | 'ready' | 'delivered' | 'cancelled' | 'unpaid' | 'partial' | 'paid' | 'low' | 'ok' | 'good' | 'out' | 'info' | 'success' | 'warning' | 'error';
@@ -154,6 +155,7 @@ export function DataTable<T extends Record<string, unknown>>({
 }: DataTableProps<T>) {
   const { t } = useTranslation();
   const [search, setSearch] = useState('');
+  const debouncedSearch = useDebouncedValue(search);
   const [sortKey, setSortKey] = useState<string | null>(null);
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
 
@@ -171,8 +173,8 @@ export function DataTable<T extends Record<string, unknown>>({
 
   const filteredData = useMemo(() => {
     let result = data;
-    if (search) {
-      const lower = search.toLowerCase();
+    if (debouncedSearch) {
+      const lower = debouncedSearch.toLowerCase();
       result = result.filter((row) =>
         Object.values(row).some((v) => String(v).toLowerCase().includes(lower))
       );
@@ -186,12 +188,12 @@ export function DataTable<T extends Record<string, unknown>>({
       });
     }
     return result;
-  }, [data, search, sortKey, sortDir]);
+  }, [data, debouncedSearch, sortKey, sortDir]);
 
   const alignClass = { start: 'text-start', center: 'text-center', end: 'text-end' };
 
   return (
-    <div className={bare ? '' : 'overflow-hidden rounded-lg border border-neutral-200 bg-white'}>
+    <div className={bare ? '' : 'overflow-visible rounded-lg border border-neutral-200 bg-white'}>
       {(searchable || toolbar) && (
         <div className="flex flex-col gap-2 border-b border-neutral-200 p-4 sm:flex-row sm:items-center sm:justify-between">
           {searchable && (

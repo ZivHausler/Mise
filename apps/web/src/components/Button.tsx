@@ -15,9 +15,9 @@ const buttonVariants = cva(
         link: 'bg-transparent text-primary-500 hover:underline p-0 h-auto',
       },
       size: {
-        sm: 'h-8 px-3 text-body-sm',
-        md: 'h-10 px-4 text-body-sm',
-        lg: 'h-12 px-6 text-body',
+        sm: 'h-8 px-3 text-[0.875rem] leading-[1.5]',
+        md: 'h-10 px-4 text-[0.875rem] leading-[1.5]',
+        lg: 'h-12 px-6 text-[1rem] leading-[1.6]',
       },
       fullWidth: {
         true: 'w-full',

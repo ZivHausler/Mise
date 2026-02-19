@@ -24,7 +24,7 @@ export const BottomTabs = React.memo(function BottomTabs() {
           end={tab.path === '/'}
           className={({ isActive }) =>
             cn(
-              'flex flex-col items-center gap-0.5 px-3 py-2 text-[11px]',
+              'flex flex-col items-center gap-0.5 px-3 py-3 text-[11px]',
               isActive ? 'text-primary-500' : 'text-neutral-400'
             )
           }
