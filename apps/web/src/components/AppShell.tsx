@@ -1,10 +1,14 @@
 import React, { useState, useCallback, Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Outlet } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
+import { ChevronDown, Shield, LayoutDashboard, ClipboardList, BookOpen, Package, Users, CreditCard, Settings } from 'lucide-react';
 import { Sidebar } from './Sidebar';
 import { TopBar } from './TopBar';
 import { BottomTabs } from './BottomTabs';
-import { PageLoading } from './Feedback';
+import { NavigationProgress, PageSkeleton } from './Feedback';
+import { useAuthStore } from '@/store/auth';
+import { useSelectStore, useAllStores } from '@/api/hooks';
 
 export const AppShell = React.memo(function AppShell() {
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -13,7 +17,8 @@ export const AppShell = React.memo(function AppShell() {
   const handleCloseDrawer = useCallback(() => setDrawerOpen(false), []);
 
   return (
-    <div className="flex min-h-screen">
+    <div className="flex h-[100dvh] overflow-hidden">
+      <NavigationProgress />
       <Sidebar />
 
       {/* Mobile drawer overlay */}
@@ -28,8 +33,8 @@ export const AppShell = React.memo(function AppShell() {
 
       <div className="flex min-w-0 flex-1 flex-col">
         <TopBar onMenuClick={handleMenuClick} />
-        <div className="flex-1 pb-16 lg:pb-0">
-          <Suspense fallback={<PageLoading />}>
+        <div className="flex-1 overflow-y-auto pb-20 lg:pb-0">
+          <Suspense fallback={<PageSkeleton />}>
             <Outlet />
           </Suspense>
         </div>
@@ -42,17 +47,42 @@ export const AppShell = React.memo(function AppShell() {
 
 // Simple mobile nav reusing the same items as sidebar
 const navItems = [
-  { path: '/', labelKey: 'nav.dashboard' },
-  { path: '/orders', labelKey: 'nav.orders' },
-  { path: '/recipes', labelKey: 'nav.recipes' },
-  { path: '/inventory', labelKey: 'nav.inventory' },
-  { path: '/customers', labelKey: 'nav.customers' },
-  { path: '/payments', labelKey: 'nav.payments' },
-  { path: '/settings', labelKey: 'nav.settings' },
+  { path: '/', icon: LayoutDashboard, labelKey: 'nav.dashboard' },
+  { path: '/orders', icon: ClipboardList, labelKey: 'nav.orders' },
+  { path: '/recipes', icon: BookOpen, labelKey: 'nav.recipes' },
+  { path: '/inventory', icon: Package, labelKey: 'nav.inventory' },
+  { path: '/customers', icon: Users, labelKey: 'nav.customers' },
+  { path: '/payments', icon: CreditCard, labelKey: 'nav.payments' },
 ];
 
 const MobileNav = React.memo(function MobileNav({ onClose }: { onClose: () => void }) {
   const { t } = useTranslation();
+  const stores = useAuthStore((s) => s.stores);
+  const isAdmin = useAuthStore((s) => s.isAdmin);
+  const updateToken = useAuthStore((s) => s.updateToken);
+  const selectStore = useSelectStore();
+  const allStoresQuery = useAllStores(isAdmin);
+  const qc = useQueryClient();
+
+  const displayStores = isAdmin && allStoresQuery.data
+    ? allStoresQuery.data.map((s: any) => ({ storeId: s.id, storeName: s.name, role: -1 }))
+    : stores;
+
+  const handleStoreSwitch = useCallback(
+    (e: React.ChangeEvent<HTMLSelectElement>) => {
+      const storeId = e.target.value;
+      selectStore.mutate(
+        { storeId },
+        {
+          onSuccess: (data: any) => {
+            updateToken(data.token);
+            qc.invalidateQueries();
+          },
+        },
+      );
+    },
+    [selectStore, updateToken, qc],
+  );
 
   return (
     <div className="flex h-full flex-col p-4">
@@ -62,21 +92,62 @@ const MobileNav = React.memo(function MobileNav({ onClose }: { onClose: () => vo
           ✕
         </button>
       </div>
-      <nav>
+
+      {(isAdmin ? displayStores.length > 0 : displayStores.length > 1) && (
+        <div className="mb-4 border-b border-primary-800 pb-4">
+          <div className="relative">
+            <select
+              onChange={handleStoreSwitch}
+              defaultValue={displayStores[0]?.storeId}
+              className="w-full appearance-none rounded-md bg-primary-800 px-3 py-2 pe-8 text-body-sm text-white outline-none focus:ring-2 focus:ring-primary-500"
+            >
+              {isAdmin && <option value="" disabled>{t('nav.selectStore', 'Select a store')}</option>}
+              {displayStores.map((s: any) => (
+                <option key={s.storeId} value={s.storeId}>{s.storeName}</option>
+              ))}
+            </select>
+            <ChevronDown className="pointer-events-none absolute end-2 top-1/2 h-4 w-4 -translate-y-1/2 text-primary-400" />
+          </div>
+        </div>
+      )}
+
+      <nav className="flex-1">
         <ul className="flex flex-col gap-1">
           {navItems.map((item) => (
             <li key={item.path}>
               <a
                 href={item.path}
                 onClick={onClose}
-                className="block rounded-md px-3 py-2.5 text-body-sm text-primary-200 hover:bg-primary-800 hover:text-white"
+                className="flex items-center gap-3 rounded-md px-3 py-2.5 text-body-sm text-primary-200 hover:bg-primary-800 hover:text-white"
               >
-                {t(item.labelKey)}
+                <item.icon className="h-5 w-5 shrink-0" />
+                <span>{t(item.labelKey)}</span>
               </a>
             </li>
           ))}
         </ul>
       </nav>
+
+      <div className="border-t border-primary-800 pt-4 flex flex-col gap-1">
+        {isAdmin && (
+          <a
+            href="/admin"
+            onClick={onClose}
+            className="flex items-center gap-3 rounded-md px-3 py-2.5 text-body-sm text-primary-200 hover:bg-primary-800 hover:text-white"
+          >
+            <Shield className="h-5 w-5 shrink-0" />
+            <span>{t('nav.admin')}</span>
+          </a>
+        )}
+        <a
+          href="/settings"
+          onClick={onClose}
+          className="flex items-center gap-3 rounded-md px-3 py-2.5 text-body-sm text-primary-200 hover:bg-primary-800 hover:text-white"
+        >
+          <Settings className="h-5 w-5 shrink-0" />
+          <span>{t('nav.settings')}</span>
+        </a>
+      </div>
     </div>
   );
 });

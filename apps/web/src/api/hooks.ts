@@ -1,4 +1,4 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { apiClient } from './client';
 import { useToastStore } from '@/store/toast';
@@ -194,6 +194,7 @@ export function useInventory(page = 1, limit = 10, search?: string, groupIds?: s
       const { data } = await apiClient.get(`/inventory?${params}`);
       return { items: data.data ?? [], pagination: data.pagination };
     },
+    placeholderData: keepPreviousData,
   });
 }
 
@@ -314,13 +315,17 @@ export function useDeleteCustomer() {
 }
 
 // Payments
-export function usePayments(page = 1, limit = 10) {
+export function usePayments(page = 1, limit = 10, filters?: { status?: string; method?: string }) {
   return useQuery({
-    queryKey: ['payments', page, limit],
+    queryKey: ['payments', page, limit, filters],
     queryFn: async () => {
-      const { data } = await apiClient.get(`/payments?page=${page}&limit=${limit}`);
+      const params = new URLSearchParams({ page: String(page), limit: String(limit) });
+      if (filters?.status) params.set('status', filters.status);
+      if (filters?.method) params.set('method', filters.method);
+      const { data } = await apiClient.get(`/payments?${params}`);
       return { payments: data.data, pagination: data.pagination };
     },
+    placeholderData: keepPreviousData,
   });
 }
 
@@ -336,6 +341,7 @@ export function useCustomerPayments(customerId: string, page = 1, limit = 10, fi
       return { payments: data.data, pagination: data.pagination };
     },
     enabled: !!customerId,
+    placeholderData: keepPreviousData,
   });
 }
 
@@ -547,15 +553,28 @@ export function useAcceptInvite() {
 }
 
 // Admin
-export function useAdminUsers(page = 1, limit = 20, search?: string) {
+export function useAdminAccess() {
   return useQuery({
-    queryKey: ['admin', 'users', page, limit, search],
+    queryKey: ['admin', 'access'],
+    queryFn: async () => {
+      await apiClient.get('/admin/access');
+      return true;
+    },
+    retry: false,
+  });
+}
+
+export function useAdminUsers(page = 1, limit = 20, search?: string, includeAdmins = false) {
+  return useQuery({
+    queryKey: ['admin', 'users', page, limit, search, includeAdmins],
     queryFn: async () => {
       const params = new URLSearchParams({ page: String(page), limit: String(limit) });
       if (search) params.set('search', search);
+      if (includeAdmins) params.set('includeAdmins', 'true');
       const { data } = await apiClient.get(`/admin/users?${params}`);
       return data.data as PaginatedResponse<{ id: string; email: string; name: string; isAdmin: boolean; disabledAt: string | null; createdAt: string; storeCount: number }>;
     },
+    placeholderData: keepPreviousData,
   });
 }
 
@@ -590,6 +609,7 @@ export function useAdminStores(page = 1, limit = 20, search?: string) {
       const { data } = await apiClient.get(`/admin/stores?${params}`);
       return data.data as PaginatedResponse<{ id: string; name: string; code: string | null; address: string | null; createdAt: string; memberCount: number }>;
     },
+    placeholderData: keepPreviousData,
   });
 }
 
@@ -612,15 +632,22 @@ export function useAdminUpdateStore() {
   });
 }
 
-export function useAdminInvitations(page = 1, limit = 20, status?: string) {
+export function useAdminInvitations(page = 1, limit = 20, filters?: { status?: string; search?: string; storeId?: string; userId?: string; role?: string; dateFrom?: string; dateTo?: string }) {
   return useQuery({
-    queryKey: ['admin', 'invitations', page, limit, status],
+    queryKey: ['admin', 'invitations', page, limit, filters],
     queryFn: async () => {
       const params = new URLSearchParams({ page: String(page), limit: String(limit) });
-      if (status) params.set('status', status);
+      if (filters?.status) params.set('status', filters.status);
+      if (filters?.search) params.set('search', filters.search);
+      if (filters?.storeId) params.set('storeId', filters.storeId);
+      if (filters?.userId) params.set('userId', filters.userId);
+      if (filters?.role) params.set('role', filters.role);
+      if (filters?.dateFrom) params.set('dateFrom', filters.dateFrom);
+      if (filters?.dateTo) params.set('dateTo', filters.dateTo);
       const { data } = await apiClient.get(`/admin/invitations?${params}`);
       return data.data as PaginatedResponse<{ id: string; email: string; storeId: string | null; storeName: string | null; role: number; status: string; expiresAt: string; createdAt: string }>;
     },
+    placeholderData: keepPreviousData,
   });
 }
 
@@ -646,18 +673,64 @@ export function useAdminRevokeInvitation() {
   });
 }
 
-export function useAdminAuditLog(page = 1, limit = 20, filters?: { userId?: string; method?: string; dateFrom?: string; dateTo?: string }) {
+export function useAdminAuditLog(page = 1, limit = 20, filters?: { userId?: string; method?: string; statusCode?: string; dateFrom?: string; dateTo?: string; search?: string }) {
   return useQuery({
     queryKey: ['admin', 'auditLog', page, limit, filters],
     queryFn: async () => {
       const params = new URLSearchParams({ page: String(page), limit: String(limit) });
       if (filters?.userId) params.set('userId', filters.userId);
       if (filters?.method) params.set('method', filters.method);
-      if (filters?.dateFrom) params.set('dateFrom', filters.dateFrom);
-      if (filters?.dateTo) params.set('dateTo', filters.dateTo);
+      if (filters?.statusCode) params.set('statusCode', filters.statusCode);
+      if (filters?.dateFrom) params.set('dateFrom', new Date(filters.dateFrom).toISOString());
+      if (filters?.dateTo) params.set('dateTo', new Date(filters.dateTo).toISOString());
+      if (filters?.search) params.set('search', filters.search);
       const { data } = await apiClient.get(`/admin/audit-log?${params}`);
       return data.data as PaginatedResponse<{ id: string; userId: string; userEmail: string; storeId: string | null; method: string; path: string; statusCode: number; ip: string; createdAt: string }>;
     },
+    staleTime: 0,
+    placeholderData: keepPreviousData,
+  });
+}
+
+type AuditLogEntry = { id: string; userId: string; userEmail: string; storeId: string | null; method: string; path: string; statusCode: number; ip: string; createdAt: string };
+
+export function useAuditLogUpdates(
+  since: string | null,
+  excludeIds: string[],
+  filters?: { userId?: string; method?: string; statusCode?: string; dateFrom?: string; dateTo?: string; search?: string },
+) {
+  return useQuery({
+    queryKey: ['admin', 'auditLog', 'updates', since, filters],
+    queryFn: async () => {
+      const params = new URLSearchParams({ page: '1', limit: '100', since: since! });
+      if (excludeIds.length) params.set('excludeIds', excludeIds.join(','));
+      if (filters?.userId) params.set('userId', filters.userId);
+      if (filters?.method) params.set('method', filters.method);
+      if (filters?.statusCode) params.set('statusCode', filters.statusCode);
+      if (filters?.dateFrom) params.set('dateFrom', new Date(filters.dateFrom).toISOString());
+      if (filters?.dateTo) params.set('dateTo', new Date(filters.dateTo).toISOString());
+      if (filters?.search) params.set('search', filters.search);
+      const { data } = await apiClient.get(`/admin/audit-log?${params}`);
+      return (data.data as PaginatedResponse<AuditLogEntry>).items;
+    },
+    enabled: !!since,
+    refetchInterval: 10000,
+  });
+}
+
+export function useAuditLogRequestBody(auditLogId: string | null) {
+  return useQuery({
+    queryKey: ['admin', 'auditLog', auditLogId, 'requestBody'],
+    queryFn: () => fetchApi<unknown>(`/admin/audit-log/${auditLogId}/request-body`),
+    enabled: !!auditLogId,
+  });
+}
+
+export function useAuditLogResponseBody(auditLogId: string | null) {
+  return useQuery({
+    queryKey: ['admin', 'auditLog', auditLogId, 'responseBody'],
+    queryFn: () => fetchApi<unknown>(`/admin/audit-log/${auditLogId}/response-body`),
+    enabled: !!auditLogId,
   });
 }
 
