@@ -5,8 +5,8 @@ export class AdminController {
   constructor(private service: AdminService) {}
 
   async getUsers(request: FastifyRequest, reply: FastifyReply) {
-    const { page = '1', limit = '20', search } = request.query as Record<string, string>;
-    const result = await this.service.getUsers(parseInt(page, 10), parseInt(limit, 10), search);
+    const { page = '1', limit = '20', search, includeAdmins } = request.query as Record<string, string>;
+    const result = await this.service.getUsers(parseInt(page, 10), parseInt(limit, 10), search, includeAdmins === 'true');
     return reply.send({ success: true, data: result });
   }
 
@@ -44,8 +44,16 @@ export class AdminController {
   }
 
   async getInvitations(request: FastifyRequest, reply: FastifyReply) {
-    const { page = '1', limit = '20', status } = request.query as Record<string, string>;
-    const result = await this.service.getInvitations(parseInt(page, 10), parseInt(limit, 10), status);
+    const { page = '1', limit = '20', status, search, storeId, userId, role, dateFrom, dateTo } = request.query as Record<string, string>;
+    const result = await this.service.getInvitations(parseInt(page, 10), parseInt(limit, 10), {
+      status,
+      search,
+      storeId,
+      userId,
+      role,
+      dateFrom,
+      dateTo,
+    });
     return reply.send({ success: true, data: result });
   }
 
@@ -62,14 +70,30 @@ export class AdminController {
   }
 
   async getAuditLog(request: FastifyRequest, reply: FastifyReply) {
-    const { page = '1', limit = '20', userId, method, dateFrom, dateTo } = request.query as Record<string, string>;
+    const { page = '1', limit = '20', userId, method, statusCode, dateFrom, dateTo, search, since, excludeIds } = request.query as Record<string, string>;
     const result = await this.service.getAuditLog(parseInt(page, 10), parseInt(limit, 10), {
       userId,
       method,
+      statusCode,
       dateFrom,
       dateTo,
+      search,
+      since,
+      excludeIds: excludeIds ? excludeIds.split(',') : undefined,
     });
     return reply.send({ success: true, data: result });
+  }
+
+  async getAuditLogRequestBody(request: FastifyRequest, reply: FastifyReply) {
+    const { id } = request.params as { id: string };
+    const body = await this.service.getAuditLogRequestBody(id);
+    return reply.send({ success: true, data: body });
+  }
+
+  async getAuditLogResponseBody(request: FastifyRequest, reply: FastifyReply) {
+    const { id } = request.params as { id: string };
+    const body = await this.service.getAuditLogResponseBody(id);
+    return reply.send({ success: true, data: body });
   }
 
   async getAnalytics(request: FastifyRequest, reply: FastifyReply) {

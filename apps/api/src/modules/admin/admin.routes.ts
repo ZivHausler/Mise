@@ -26,7 +26,12 @@ export default async function adminRoutes(app: FastifyInstance) {
 
   // Audit log
   app.get('/audit-log', adminPreHandler, (req, reply) => controller.getAuditLog(req, reply));
+  app.get('/audit-log/:id/request-body', adminPreHandler, (req, reply) => controller.getAuditLogRequestBody(req, reply));
+  app.get('/audit-log/:id/response-body', adminPreHandler, (req, reply) => controller.getAuditLogResponseBody(req, reply));
 
   // Analytics
   app.get('/analytics', adminPreHandler, (req, reply) => controller.getAnalytics(req, reply));
+
+  // Lightweight gate check used by frontend on admin panel entry
+  app.get('/access', adminPreHandler, (_req, reply) => reply.send({ success: true }));
 }
