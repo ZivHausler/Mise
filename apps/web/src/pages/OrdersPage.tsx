@@ -5,7 +5,7 @@ import { Plus, LayoutGrid, List, ChevronRight, BadgeDollarSign } from 'lucide-re
 import { Page, PageHeader } from '@/components/Layout';
 import { Button } from '@/components/Button';
 import { DataTable, StatusBadge, EmptyState, type Column } from '@/components/DataDisplay';
-import { PageLoading } from '@/components/Feedback';
+import { PageSkeleton } from '@/components/Feedback';
 import { useOrders, useUpdateOrderStatus, usePaymentStatuses } from '@/api/hooks';
 import { ORDER_STATUS, STATUS_LABELS, getStatusLabel } from '@/utils/orderStatus';
 import { useFormatDate } from '@/utils/dateFormat';
@@ -86,7 +86,7 @@ export default function OrdersPage() {
     [t, handleAdvance, formatDate, paymentStatuses]
   );
 
-  if (isLoading) return <PageLoading />;
+  if (isLoading) return <PageSkeleton />;
 
   return (
     <Page>

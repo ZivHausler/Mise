@@ -6,7 +6,7 @@ import { Page, Card, Section, Stack, Row } from '@/components/Layout';
 import { Breadcrumbs } from '@/components/Breadcrumbs';
 import { StatusBadge } from '@/components/DataDisplay';
 import { Button } from '@/components/Button';
-import { PageLoading } from '@/components/Feedback';
+import { PageSkeleton } from '@/components/Feedback';
 import { ConfirmModal } from '@/components/Modal';
 import { useOrder, useUpdateOrderStatus, useDeleteOrder, usePaymentStatuses } from '@/api/hooks';
 import { ORDER_STATUS, getStatusLabel } from '@/utils/orderStatus';
@@ -40,7 +40,7 @@ export default function OrderDetailPage() {
     deleteOrder.mutate(o.id, { onSuccess: () => navigate('/orders') });
   }, [o, deleteOrder, navigate]);
 
-  if (isLoading) return <PageLoading />;
+  if (isLoading) return <PageSkeleton />;
   if (!o) return null;
 
   return (
@@ -82,7 +82,7 @@ export default function OrderDetailPage() {
               {t('orders.advance', 'Advance')}
             </Button>
           )}
-          {o.status <= ORDER_STATUS.IN_PROGRESS && (
+          {o.status <= ORDER_STATUS.IN_PROGRESS && paymentStatuses?.[o.id] !== 'paid' && (
             <Button variant="secondary" icon={<Edit className="h-4 w-4" />} onClick={() => navigate(`/orders/${o.id}/edit`)}>
               {t('common.edit')}
             </Button>

@@ -6,11 +6,12 @@ import { GroupIcon, useGroupName } from '@/components/settings/GroupsTab';
 import { Page, PageHeader, Stack } from '@/components/Layout';
 import { Button } from '@/components/Button';
 import { DataTable, StatusBadge, EmptyState, type Column } from '@/components/DataDisplay';
-import { PageLoading } from '@/components/Feedback';
+import { PageSkeleton } from '@/components/Feedback';
 import { Modal } from '@/components/Modal';
 import { TextInput, NumberInput, Select } from '@/components/FormFields';
 import { useInventory, useLowStock, useCreateInventoryItem, useUpdateInventoryItem, useDeleteInventoryItem, useAdjustStock, useGroups, type PaginationInfo } from '@/api/hooks';
 import { useAppStore } from '@/store/app';
+import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 import { generateShoppingListPdf } from '@/utils/shoppingListPdf';
 import { InventoryLogType } from '@mise/shared';
 
@@ -70,7 +71,7 @@ export default function InventoryPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
-  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const debouncedSearch = useDebouncedValue(search, 500, () => setPage(1));
   const [selectedGroupIds, setSelectedGroupIds] = useState<string[]>([]);
   const [selectedStatuses, setSelectedStatuses] = useState<string[]>(() => {
     const param = searchParams.get('status');
@@ -100,14 +101,6 @@ export default function InventoryPage() {
   const [adjustInputMode, setAdjustInputMode] = useState<'units' | 'packages'>('units');
   const [thresholdMode, setThresholdMode] = useState<'units' | 'packages'>('units');
 
-  // Debounce search and reset page on filter changes
-  useEffect(() => {
-    const timeout = setTimeout(() => {
-      setDebouncedSearch(search);
-      setPage(1);
-    }, 300);
-    return () => clearTimeout(timeout);
-  }, [search]);
 
   useEffect(() => {
     setPage(1);
@@ -251,7 +244,7 @@ export default function InventoryPage() {
     await generateShoppingListPdf(items, dateFormat, t, t('common.currency', '₪'), language === 'he');
   }, [lowStockItems, dateFormat, t, language]);
 
-  if (isLoading) return <PageLoading />;
+  if (isLoading) return <PageSkeleton />;
 
   const items = (inventoryData?.items as any[]) ?? [];
   const pagination = inventoryData?.pagination;
@@ -284,7 +277,7 @@ export default function InventoryPage() {
           }
         />
       ) : (
-        <div className="overflow-hidden rounded-lg border border-neutral-200 bg-white">
+        <div className="overflow-visible rounded-lg border border-neutral-200 bg-white">
           <div className="flex flex-col gap-3 border-b border-neutral-200 p-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="relative max-w-xs">
               <Search className="absolute inset-y-0 start-0 my-auto ms-3 h-4 w-4 text-neutral-400" />
@@ -429,10 +422,10 @@ export default function InventoryPage() {
                     className="absolute inset-y-0.5 rounded bg-white shadow-sm transition-[inset-inline-start] duration-200 ease-in-out"
                     style={{ width: 'calc(50% - 2px)', insetInlineStart: thresholdMode === 'units' ? '2px' : 'calc(50% + 0px)' }}
                   />
-                  <button type="button" onClick={() => setThresholdMode('units')} className={`relative z-10 flex-1 rounded px-2 py-0.5 text-caption font-medium transition-colors duration-200 ${thresholdMode === 'units' ? 'text-neutral-900' : 'text-neutral-500 hover:text-neutral-700'}`}>
+                  <button type="button" onClick={() => setThresholdMode('units')} className={`relative z-10 flex-1 whitespace-nowrap rounded px-3 py-0.5 text-caption font-medium transition-colors duration-200 ${thresholdMode === 'units' ? 'text-neutral-900' : 'text-neutral-500 hover:text-neutral-700'}`}>
                     {t('inventory.perUnit', 'Per Unit')}
                   </button>
-                  <button type="button" onClick={() => setThresholdMode('packages')} className={`relative z-10 flex-1 rounded px-2 py-0.5 text-caption font-medium transition-colors duration-200 ${thresholdMode === 'packages' ? 'text-neutral-900' : 'text-neutral-500 hover:text-neutral-700'}`}>
+                  <button type="button" onClick={() => setThresholdMode('packages')} className={`relative z-10 flex-1 whitespace-nowrap rounded px-3 py-0.5 text-caption font-medium transition-colors duration-200 ${thresholdMode === 'packages' ? 'text-neutral-900' : 'text-neutral-500 hover:text-neutral-700'}`}>
                     {t('inventory.perPackage', 'Per Package')}
                   </button>
                 </div>
@@ -491,11 +484,15 @@ export default function InventoryPage() {
             onChange={(e) => { setAdjustType(e.target.value); setAdjustPrice(''); setAdjustInputMode('units'); setAdjustAmount(''); }}
           />
           {adjustType === 'add' && showAdjust?.packageSize > 0 && (
-            <div className="flex gap-1 rounded-lg bg-neutral-100 p-1">
-              <button type="button" onClick={() => { setAdjustInputMode('units'); setAdjustAmount(''); }} className={`flex-1 rounded-md px-3 py-1.5 text-body-sm font-medium transition-colors ${adjustInputMode === 'units' ? 'bg-white text-neutral-900 shadow-sm' : 'text-neutral-500 hover:text-neutral-700'}`}>
+            <div className="relative flex rounded-lg bg-neutral-100 p-1">
+              <div
+                className="absolute inset-y-1 rounded-md bg-white shadow-sm transition-[inset-inline-start] duration-200 ease-in-out"
+                style={{ width: 'calc(50% - 4px)', insetInlineStart: adjustInputMode === 'units' ? '4px' : 'calc(50%)' }}
+              />
+              <button type="button" onClick={() => { setAdjustInputMode('units'); setAdjustAmount(''); }} className={`relative z-10 flex-1 rounded-md px-3 py-1.5 text-body-sm font-medium transition-colors duration-200 ${adjustInputMode === 'units' ? 'text-neutral-900' : 'text-neutral-500 hover:text-neutral-700'}`}>
                 {t('inventory.units', 'Units')}
               </button>
-              <button type="button" onClick={() => { setAdjustInputMode('packages'); setAdjustAmount(''); }} className={`flex-1 rounded-md px-3 py-1.5 text-body-sm font-medium transition-colors ${adjustInputMode === 'packages' ? 'bg-white text-neutral-900 shadow-sm' : 'text-neutral-500 hover:text-neutral-700'}`}>
+              <button type="button" onClick={() => { setAdjustInputMode('packages'); setAdjustAmount(''); }} className={`relative z-10 flex-1 rounded-md px-3 py-1.5 text-body-sm font-medium transition-colors duration-200 ${adjustInputMode === 'packages' ? 'text-neutral-900' : 'text-neutral-500 hover:text-neutral-700'}`}>
                 {t('inventory.packages', 'Packages')}
               </button>
             </div>

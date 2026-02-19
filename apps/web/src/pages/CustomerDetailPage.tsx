@@ -6,7 +6,7 @@ import { Page, Card, Section, Stack, Row } from '@/components/Layout';
 import { Breadcrumbs } from '@/components/Breadcrumbs';
 import { Button } from '@/components/Button';
 import { StatusBadge } from '@/components/DataDisplay';
-import { PageLoading } from '@/components/Feedback';
+import { PageSkeleton } from '@/components/Feedback';
 import { ConfirmModal } from '@/components/Modal';
 import { useCustomer, useCustomerOrders, useCustomerPayments, useDeleteCustomer } from '@/api/hooks';
 import { getStatusLabel, STATUS_LABELS } from '@/utils/orderStatus';
@@ -57,7 +57,7 @@ export default function CustomerDetailPage() {
   const payments = (paymentsData?.payments as any[]) ?? [];
   const paymentsPagination = paymentsData?.pagination;
 
-  if (isLoading) return <PageLoading />;
+  if (isLoading) return <PageSkeleton />;
   if (!c) return null;
 
   return (

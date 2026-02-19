@@ -46,7 +46,7 @@ export default function DashboardPage() {
   const statCards = [
     { label: t('dashboard.todaysOrders', "Today's Orders"), value: todayOrders, icon: <Package className="h-6 w-6" /> },
     { label: t('dashboard.pendingOrders', 'Pending Orders'), value: pendingOrders, icon: <Clock className="h-6 w-6" /> },
-    { label: t('dashboard.lowStock', 'Low Stock'), value: dashStats?.lowStockItems ?? 0, icon: <AlertTriangle className="h-6 w-6" />, onClick: () => navigate('/inventory?status=low,ok') },
+    { label: t('dashboard.lowStock', 'Low Stock'), value: dashStats?.lowStockItems ?? 0, icon: <AlertTriangle className="h-6 w-6" />, onClick: () => navigate('/inventory?status=low') },
     { label: t('dashboard.todaysRevenue', "Today's Revenue"), value: `${dashStats?.todayRevenue ?? 0} ${t('common.currency', '₪')}`, icon: <Coins className="h-6 w-6" /> },
   ];
 
@@ -71,7 +71,7 @@ export default function DashboardPage() {
       </div>
 
       <Section title={t('dashboard.orderPipeline', 'Order Pipeline')}>
-        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {([ORDER_STATUS.RECEIVED, ORDER_STATUS.IN_PROGRESS, ORDER_STATUS.READY, ORDER_STATUS.DELIVERED] as const).map((status) => {
             const label = getStatusLabel(status);
             const columnOrders = (ordersByStatus[status] ?? []) as any[];

@@ -334,7 +334,7 @@ export default function RecipeFormPage() {
                   </div>
                 </div>
               ))}
-              <Button type="button" variant="ghost" size="sm" icon={<Plus className="h-4 w-4" />} onClick={addIngredient} className="self-center">
+              <Button type="button" variant="primary" size="sm" icon={<Plus className="h-4 w-4" />} onClick={addIngredient} className="self-center">
                 {t('recipes.addIngredient', 'Add')}
               </Button>
             </Stack>
@@ -435,7 +435,7 @@ export default function RecipeFormPage() {
                 </div>
               ))}
               <Row gap={2} className="justify-center">
-                <Button type="button" variant="ghost" size="sm" icon={<Plus className="h-4 w-4" />} onClick={addStep}>
+                <Button type="button" variant="primary" size="sm" icon={<Plus className="h-4 w-4" />} onClick={addStep}>
                   {t('recipes.addStep', 'Add Step')}
                 </Button>
                 <Button type="button" variant="ghost" size="sm" icon={<ChefHat className="h-4 w-4" />} onClick={addSubRecipeStep}>

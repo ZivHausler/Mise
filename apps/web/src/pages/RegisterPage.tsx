@@ -1,6 +1,7 @@
-import React, { useState, useCallback, useRef, useEffect } from 'react';
+import React, { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { Check, X } from 'lucide-react';
 import { Button } from '@/components/Button';
 import { TextInput } from '@/components/FormFields';
 import { Stack } from '@/components/Layout';
@@ -29,6 +30,13 @@ export default function RegisterPage() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+
+  const passwordRules = useMemo(() => [
+    { key: 'minLength', test: (p: string) => p.length >= 8 },
+    { key: 'uppercase', test: (p: string) => /[A-Z]/.test(p) },
+    { key: 'number', test: (p: string) => /[0-9]/.test(p) },
+  ], []);
+  const isPasswordValid = password.length === 0 || passwordRules.every((r) => r.test(password));
 
   // Redirect to /login if no invite token
   useEffect(() => {
@@ -84,6 +92,7 @@ export default function RegisterPage() {
   const handleSubmit = useCallback(
     (e: React.FormEvent) => {
       e.preventDefault();
+      if (!passwordRules.every((r) => r.test(password))) return;
       register.mutate(
         { name, email, password, inviteToken },
         {
@@ -109,7 +118,7 @@ export default function RegisterPage() {
         }
       );
     },
-    [name, email, password, inviteToken, register, setAuth, setStores, setPendingCreateStoreToken, navigate, addToast, t]
+    [name, email, password, inviteToken, register, setAuth, setStores, setPendingCreateStoreToken, navigate, addToast, t, passwordRules]
   );
 
   if (!inviteToken) return null;
@@ -153,16 +162,30 @@ export default function RegisterPage() {
               onChange={(e) => setEmail(e.target.value)}
               placeholder="baker@mise.app"
             />
-            <TextInput
-              label={t('auth.password')}
-              type="password"
-              dir="ltr"
-              required
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              minLength={6}
-            />
-            <Button type="submit" variant="primary" fullWidth loading={register.isPending}>
+            <div>
+              <TextInput
+                label={t('auth.password')}
+                type="password"
+                dir="ltr"
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
+              {password.length > 0 && (
+                <ul className="mt-2 space-y-1">
+                  {passwordRules.map((rule) => {
+                    const passed = rule.test(password);
+                    return (
+                      <li key={rule.key} className={`flex items-center gap-1.5 text-caption ${passed ? 'text-success' : 'text-neutral-400'}`}>
+                        {passed ? <Check className="h-3.5 w-3.5" /> : <X className="h-3.5 w-3.5" />}
+                        {t(`auth.passwordRules.${rule.key}`)}
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+            </div>
+            <Button type="submit" variant="primary" fullWidth loading={register.isPending} disabled={!isPasswordValid}>
               {t('auth.register')}
             </Button>
           </Stack>

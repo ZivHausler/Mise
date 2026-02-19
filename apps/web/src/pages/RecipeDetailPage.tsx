@@ -5,7 +5,8 @@ import { Edit, Trash2, ChefHat } from 'lucide-react';
 import { Page, Card, Section, Stack, Row } from '@/components/Layout';
 import { Breadcrumbs } from '@/components/Breadcrumbs';
 import { Button } from '@/components/Button';
-import { PageLoading } from '@/components/Feedback';
+import { PageSkeleton } from '@/components/Feedback';
+import { RotatingImage } from '@/components/RotatingImage';
 import { ConfirmModal } from '@/components/Modal';
 import { useRecipe, useDeleteRecipe } from '@/api/hooks';
 
@@ -22,7 +23,7 @@ export default function RecipeDetailPage() {
 
   const r = recipe as any;
 
-  if (isLoading) return <PageLoading />;
+  if (isLoading) return <PageSkeleton />;
   if (!r) return null;
 
   const subRecipeSteps = (r.steps ?? []).filter((s: any) => s.type === 'sub_recipe');
@@ -52,7 +53,7 @@ export default function RecipeDetailPage() {
       <Breadcrumbs items={[{ label: t('nav.recipes'), path: '/recipes' }, { label: r.name }]} />
 
       {r.photos && r.photos.length > 0 && (
-        <img src={r.photos[0]} alt={r.name} className="mb-6 h-64 w-full rounded-lg object-cover" />
+        <RotatingImage photos={r.photos} alt={r.name} className="mb-6 h-64 w-full rounded-lg" />
       )}
 
       <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -133,13 +134,12 @@ export default function RecipeDetailPage() {
               }
             }
             for (const sr of subTables) {
-              const mult = sr.quantity ?? 1;
               for (const ing of sr.ingredients) {
                 const key = `${ing.name}__${ing.unit}`;
                 if (combinedIngredients[key]) {
-                  combinedIngredients[key].quantity += ing.quantity * mult;
+                  combinedIngredients[key].quantity += ing.quantity;
                 } else {
-                  combinedIngredients[key] = { name: ing.name, quantity: ing.quantity * mult, unit: ing.unit };
+                  combinedIngredients[key] = { name: ing.name, quantity: ing.quantity, unit: ing.unit };
                 }
               }
             }
@@ -155,19 +155,11 @@ export default function RecipeDetailPage() {
                   <IngredientsTable label={r.name} ingredients={selfIngredients} t={t} />
                 </div>
               )}
-              {subTables.map((sr: any, i: number) => {
-                const mult = sr.quantity ?? 1;
-                const scaledIngredients = sr.ingredients.map((ing: any) => ({
-                  ...ing,
-                  quantity: ing.quantity * mult,
-                  totalCost: (ing.totalCost ?? 0) * mult,
-                }));
-                return (
-                  <div key={i} className="mt-6">
-                    <IngredientsTable label={sr.name} ingredients={scaledIngredients} t={t} />
-                  </div>
-                );
-              })}
+              {subTables.map((sr: any, i: number) => (
+                <div key={i} className="mt-6">
+                  <IngredientsTable label={sr.name} ingredients={sr.ingredients} t={t} />
+                </div>
+              ))}
             </div>
           );
         })()}
