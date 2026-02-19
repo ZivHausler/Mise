@@ -62,7 +62,8 @@ export class StoreController {
     if (!storeId || !storeRole) return reply.status(400).send({ success: false, error: { message: 'No store selected' } });
 
     const data = inviteSchema.parse(request.body);
-    const invitation = await this.storeService.sendInvite(storeId, storeRole as StoreRole, data.email, data.role as StoreRole);
+    const isAdmin = request.currentUser!.isAdmin;
+    const invitation = await this.storeService.sendInvite(storeId, storeRole as StoreRole, data.email, data.role as StoreRole, isAdmin);
     return reply.status(201).send({ success: true, data: { token: invitation.token, inviteLink: invitation.inviteLink } });
   }
 

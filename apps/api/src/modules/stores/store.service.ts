@@ -47,7 +47,7 @@ export class StoreService {
       if (!storeResult.rows[0]) {
         throw new NotFoundError('Store not found');
       }
-      const token = this.generateTokenWithStore(userId, email, storeId, StoreRole.ADMIN);
+      const token = this.generateTokenWithStore(userId, email, storeId, StoreRole.ADMIN, true);
       return { token };
     }
 
@@ -79,8 +79,8 @@ export class StoreService {
     }));
   }
 
-  async sendInvite(storeId: string, storeRole: StoreRole, email: string, inviteRole: StoreRole): Promise<StoreInvitation & { inviteLink: string }> {
-    if (storeRole !== StoreRole.OWNER) {
+  async sendInvite(storeId: string, storeRole: StoreRole, email: string, inviteRole: StoreRole, isAdmin?: boolean): Promise<StoreInvitation & { inviteLink: string }> {
+    if (storeRole !== StoreRole.OWNER && !isAdmin) {
       throw new ForbiddenError('Only store owners can send invitations');
     }
 
@@ -129,11 +129,10 @@ export class StoreService {
     return { ...invitation, inviteLink };
   }
 
-  generateTokenWithStore(userId: string, email: string, storeId: string, storeRole: StoreRole): string {
-    return this.app.jwt.sign(
-      { userId, email, storeId, storeRole },
-      { expiresIn: env.JWT_EXPIRES_IN },
-    );
+  generateTokenWithStore(userId: string, email: string, storeId: string, storeRole: StoreRole, isAdmin?: boolean): string {
+    const payload: Record<string, unknown> = { userId, email, storeId, storeRole };
+    if (isAdmin) payload.isAdmin = true;
+    return this.app.jwt.sign(payload, { expiresIn: env.JWT_EXPIRES_IN });
   }
 
   generateTokenWithoutStore(userId: string, email: string): string {

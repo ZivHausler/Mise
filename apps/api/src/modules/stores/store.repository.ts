@@ -122,7 +122,7 @@ export class PgStoreRepository {
     const result = await pool.query(
       `SELECT email, role, token, created_at, expires_at
        FROM store_invitations
-       WHERE store_id = $1 AND used_at IS NULL AND expires_at > NOW()
+       WHERE store_id = $1 AND used_at IS NULL AND revoked_at IS NULL AND expires_at > NOW()
        ORDER BY created_at DESC`,
       [storeId],
     );
