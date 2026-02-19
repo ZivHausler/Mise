@@ -306,6 +306,7 @@ export const DatePicker = React.memo(function DatePicker({
         id={id}
         type="date"
         dir="ltr"
+        lang="en-CA"
         className={cn(inputBase, sizeClasses[size], error ? inputError : inputDefault)}
         {...props}
       />

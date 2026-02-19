@@ -5,7 +5,7 @@ import { Plus, Users } from 'lucide-react';
 import { Page, PageHeader } from '@/components/Layout';
 import { Button } from '@/components/Button';
 import { DataTable, EmptyState, type Column } from '@/components/DataDisplay';
-import { PageLoading } from '@/components/Feedback';
+import { PageSkeleton } from '@/components/Feedback';
 import { NewCustomerModal } from '@/components/NewCustomerModal';
 import { useCustomers } from '@/api/hooks';
 
@@ -32,7 +32,7 @@ export default function CustomersPage() {
     [t]
   );
 
-  if (isLoading) return <PageLoading />;
+  if (isLoading) return <PageSkeleton />;
 
   const list = (customers as any[]) ?? [];
 

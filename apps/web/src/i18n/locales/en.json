@@ -53,6 +53,11 @@
     "register": "Register",
     "email": "Email",
     "password": "Password",
+    "passwordRules": {
+      "minLength": "At least 8 characters",
+      "uppercase": "At least one uppercase letter",
+      "number": "At least one number"
+    },
     "name": "Name",
     "logout": "Log Out",
     "noAccount": "Don't have an account?",
@@ -421,7 +426,9 @@
       "stores": "Stores",
       "invitations": "Invitations",
       "auditLog": "Audit Log",
-      "backToApp": "Back to App"
+      "backToApp": "Back to App",
+      "darkMode": "Switch to dark mode",
+      "lightMode": "Switch to light mode"
     },
     "dashboard": {
       "title": "Admin Dashboard",
@@ -434,11 +441,25 @@
         "week": "Week",
         "month": "Month",
         "year": "Year"
-      }
+      },
+      "ordersPerDay": "Orders per Day",
+      "revenuePerDay": "Revenue per Day",
+      "totalRevenue": "Total Revenue",
+      "avgOrderValue": "Avg Order Value",
+      "outstandingBalance": "Outstanding Balance",
+      "activeStores": "Active Stores (30d)",
+      "ordersByStatus": "Orders by Status",
+      "paymentsByMethod": "Payments by Method",
+      "storesCreated": "Stores Created",
+      "topStores": "Top Stores by Orders",
+      "inactiveStores": "Inactive Stores (30+ days)",
+      "invitationConversion": "Invitation Conversion"
     },
     "users": {
       "title": "Users",
+      "search": "Search",
       "searchPlaceholder": "Search by name or email...",
+      "id": "User ID",
       "name": "Name",
       "email": "Email",
       "stores": "Stores",
@@ -456,10 +477,12 @@
       "demoteConfirm": "Remove admin privileges from this user?",
       "enableConfirm": "Enable this user account?",
       "disableConfirm": "Disable this user account?",
-      "noUsers": "No users found"
+      "noUsers": "No users found",
+      "includeAdmins": "Include admins"
     },
     "stores": {
       "title": "Stores",
+      "search": "Search",
       "searchPlaceholder": "Search stores...",
       "name": "Name",
       "address": "Address",
@@ -467,7 +490,8 @@
       "created": "Created",
       "noStores": "No stores found",
       "noMembers": "No members",
-      "memberList": "Members"
+      "memberList": "Members",
+      "allStores": "All stores"
     },
     "invitations": {
       "title": "Invitations",
@@ -480,7 +504,9 @@
       "createStoreTitle": "Create Store Invitation",
       "createStoreType": "Create Store",
       "emailPlaceholder": "Enter email address...",
+      "searchPlaceholder": "Search by email or store...",
       "revoke": "Revoke",
+      "copyLink": "Copy invitation link",
       "revokeConfirm": "Revoke this invitation?",
       "noInvitations": "No invitations found",
       "status": {
@@ -494,14 +520,23 @@
     "auditLog": {
       "title": "Audit Log",
       "user": "User",
+      "userId": "User ID",
       "method": "Method",
       "path": "Path",
       "statusCode": "Status",
       "ip": "IP",
       "date": "Date",
       "allMethods": "All Methods",
+      "allStatuses": "All Statuses",
+      "allUsers": "All Users",
+      "search": "Search",
+      "searchPlaceholder": "Search by email, method, path, status, or IP...",
+      "searchUserPlaceholder": "Search email...",
       "from": "From",
       "to": "To",
+      "requestPayload": "Request Payload",
+      "responseBody": "Response Body",
+      "noBody": "No body",
       "noEntries": "No audit log entries"
     }
   }

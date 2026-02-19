@@ -1,5 +1,5 @@
 import { getEventBus } from '../../core/events/event-bus.js';
-import type { PaginationOptions, PaginatedResult, CustomerPaymentFilters } from './payment.repository.js';
+import type { PaginationOptions, PaginatedResult, CustomerPaymentFilters, PaymentFilters } from './payment.repository.js';
 import type { CreatePaymentDTO, Payment, OrderPaymentSummary, PaymentStatus } from './payment.types.js';
 import { PAYMENT_STATUS } from './payment.types.js';
 import { PaymentCrud } from './paymentCrud.js';
@@ -12,8 +12,8 @@ export class PaymentService {
 
   constructor(private orderService?: OrderService) {}
 
-  async getAll(storeId: string, options?: PaginationOptions): Promise<PaginatedResult<Payment>> {
-    return PaymentCrud.getAll(storeId, options);
+  async getAll(storeId: string, options?: PaginationOptions, filters?: PaymentFilters): Promise<PaginatedResult<Payment>> {
+    return PaymentCrud.getAll(storeId, options, filters);
   }
 
   async getByCustomerId(storeId: string, customerId: string, options?: PaginationOptions, filters?: CustomerPaymentFilters): Promise<PaginatedResult<Payment>> {

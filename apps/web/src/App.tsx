@@ -15,34 +15,75 @@ const queryClient = new QueryClient({
   },
 });
 
-// Lazy-loaded pages
-const LoginPage = lazy(() => import('@/pages/LoginPage'));
-const RegisterPage = lazy(() => import('@/pages/RegisterPage'));
-const StoreSetupPage = lazy(() => import('@/pages/StoreSetupPage'));
-const DashboardPage = lazy(() => import('@/pages/DashboardPage'));
-const OrdersPage = lazy(() => import('@/pages/OrdersPage'));
-const OrderDetailPage = lazy(() => import('@/pages/OrderDetailPage'));
-const OrderFormPage = lazy(() => import('@/pages/OrderFormPage'));
-const RecipesPage = lazy(() => import('@/pages/RecipesPage'));
-const RecipeDetailPage = lazy(() => import('@/pages/RecipeDetailPage'));
-const RecipeFormPage = lazy(() => import('@/pages/RecipeFormPage'));
-const InventoryPage = lazy(() => import('@/pages/InventoryPage'));
-const CustomersPage = lazy(() => import('@/pages/CustomersPage'));
-const CustomerDetailPage = lazy(() => import('@/pages/CustomerDetailPage'));
-const PaymentsPage = lazy(() => import('@/pages/PaymentsPage'));
-const SettingsPage = lazy(() => import('@/pages/SettingsPage'));
-const MorePage = lazy(() => import('@/pages/MorePage'));
-const InvitePage = lazy(() => import('@/pages/InvitePage'));
-const NotFoundPage = lazy(() => import('@/pages/NotFoundPage'));
+// Lazy-loaded pages – each import is stored so we can prefetch chunks after first paint
+const pageImports = {
+  login: () => import('@/pages/LoginPage'),
+  register: () => import('@/pages/RegisterPage'),
+  storeSetup: () => import('@/pages/StoreSetupPage'),
+  dashboard: () => import('@/pages/DashboardPage'),
+  orders: () => import('@/pages/OrdersPage'),
+  orderDetail: () => import('@/pages/OrderDetailPage'),
+  orderForm: () => import('@/pages/OrderFormPage'),
+  recipes: () => import('@/pages/RecipesPage'),
+  recipeDetail: () => import('@/pages/RecipeDetailPage'),
+  recipeForm: () => import('@/pages/RecipeFormPage'),
+  inventory: () => import('@/pages/InventoryPage'),
+  customers: () => import('@/pages/CustomersPage'),
+  customerDetail: () => import('@/pages/CustomerDetailPage'),
+  payments: () => import('@/pages/PaymentsPage'),
+  settings: () => import('@/pages/SettingsPage'),
+  more: () => import('@/pages/MorePage'),
+  invite: () => import('@/pages/InvitePage'),
+  notFound: () => import('@/pages/NotFoundPage'),
+  adminRoute: () => import('@/pages/admin/AdminRoute'),
+  adminShell: () => import('@/pages/admin/AdminShell'),
+  adminDashboard: () => import('@/pages/admin/AdminDashboardPage'),
+  adminUsers: () => import('@/pages/admin/AdminUsersPage'),
+  adminStores: () => import('@/pages/admin/AdminStoresPage'),
+  adminInvitations: () => import('@/pages/admin/AdminInvitationsPage'),
+  adminAuditLog: () => import('@/pages/admin/AdminAuditLogPage'),
+};
+
+const LoginPage = lazy(pageImports.login);
+const RegisterPage = lazy(pageImports.register);
+const StoreSetupPage = lazy(pageImports.storeSetup);
+const DashboardPage = lazy(pageImports.dashboard);
+const OrdersPage = lazy(pageImports.orders);
+const OrderDetailPage = lazy(pageImports.orderDetail);
+const OrderFormPage = lazy(pageImports.orderForm);
+const RecipesPage = lazy(pageImports.recipes);
+const RecipeDetailPage = lazy(pageImports.recipeDetail);
+const RecipeFormPage = lazy(pageImports.recipeForm);
+const InventoryPage = lazy(pageImports.inventory);
+const CustomersPage = lazy(pageImports.customers);
+const CustomerDetailPage = lazy(pageImports.customerDetail);
+const PaymentsPage = lazy(pageImports.payments);
+const SettingsPage = lazy(pageImports.settings);
+const MorePage = lazy(pageImports.more);
+const InvitePage = lazy(pageImports.invite);
+const NotFoundPage = lazy(pageImports.notFound);
 
 // Admin pages
-const AdminRoute = lazy(() => import('@/pages/admin/AdminRoute'));
-const AdminShell = lazy(() => import('@/pages/admin/AdminShell'));
-const AdminDashboardPage = lazy(() => import('@/pages/admin/AdminDashboardPage'));
-const AdminUsersPage = lazy(() => import('@/pages/admin/AdminUsersPage'));
-const AdminStoresPage = lazy(() => import('@/pages/admin/AdminStoresPage'));
-const AdminInvitationsPage = lazy(() => import('@/pages/admin/AdminInvitationsPage'));
-const AdminAuditLogPage = lazy(() => import('@/pages/admin/AdminAuditLogPage'));
+const AdminRoute = lazy(pageImports.adminRoute);
+const AdminShell = lazy(pageImports.adminShell);
+const AdminDashboardPage = lazy(pageImports.adminDashboard);
+const AdminUsersPage = lazy(pageImports.adminUsers);
+const AdminStoresPage = lazy(pageImports.adminStores);
+const AdminInvitationsPage = lazy(pageImports.adminInvitations);
+const AdminAuditLogPage = lazy(pageImports.adminAuditLog);
+
+// Prefetch all page chunks once the app is idle after first paint
+function prefetchAllPages() {
+  Object.values(pageImports).forEach((importFn) => importFn());
+}
+
+if (typeof window !== 'undefined') {
+  if ('requestIdleCallback' in window) {
+    (window as any).requestIdleCallback(prefetchAllPages);
+  } else {
+    setTimeout(prefetchAllPages, 2000);
+  }
+}
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
@@ -76,7 +117,7 @@ export function App() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <div dir={dir} className="min-h-screen bg-primary-50 text-neutral-900 font-body">
+      <div dir={dir} className="min-h-screen bg-primary-50 dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 font-body">
         <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
           <Suspense fallback={<PageLoading />}>
             <Routes>

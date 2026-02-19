@@ -10,20 +10,26 @@ import type {
 } from './admin.types.js';
 
 export class PgAdminRepository {
-  static async getUsers(page: number, limit: number, search?: string): Promise<PaginatedResult<AdminUser>> {
+  static async getUsers(page: number, limit: number, search?: string, includeAdmins = false): Promise<PaginatedResult<AdminUser>> {
     const pool = getPool();
     const offset = (page - 1) * limit;
     const params: unknown[] = [limit, offset];
-    let whereClause = '';
+    const conditions: string[] = [];
+
+    if (!includeAdmins) {
+      conditions.push('u.is_admin = false');
+    }
 
     if (search) {
       params.push(`%${search}%`);
-      whereClause = `WHERE u.email ILIKE $3 OR u.name ILIKE $3`;
+      conditions.push(`(u.email ILIKE $${params.length} OR u.name ILIKE $${params.length})`);
     }
+
+    const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
 
     const countResult = await pool.query(
       `SELECT COUNT(*) FROM users u ${whereClause}`,
-      search ? [params[2]] : [],
+      params.slice(2),
     );
     const total = parseInt(countResult.rows[0].count as string, 10);
 
@@ -125,35 +131,74 @@ export class PgAdminRepository {
     await pool.query(`UPDATE stores SET ${sets.join(', ')} WHERE id = $${idx}`, params);
   }
 
-  static async getInvitations(page: number, limit: number, status?: string): Promise<PaginatedResult<AdminInvitation>> {
+  static async getInvitations(
+    page: number,
+    limit: number,
+    filters: { status?: string; search?: string; storeId?: string; userId?: string; role?: string; dateFrom?: string; dateTo?: string },
+  ): Promise<PaginatedResult<AdminInvitation>> {
     const pool = getPool();
     const offset = (page - 1) * limit;
-    const params: unknown[] = [limit, offset];
-    let whereClause = '';
+    const conditions: string[] = [];
+    const filterParams: unknown[] = [];
+    let idx = 1;
 
-    if (status) {
-      switch (status) {
+    if (filters.status) {
+      switch (filters.status) {
         case 'pending':
-          whereClause = 'WHERE si.used_at IS NULL AND si.revoked_at IS NULL AND si.expires_at > NOW()';
+          conditions.push('si.used_at IS NULL AND si.revoked_at IS NULL AND si.expires_at > NOW()');
           break;
         case 'used':
-          whereClause = 'WHERE si.used_at IS NOT NULL';
+          conditions.push('si.used_at IS NOT NULL');
           break;
         case 'expired':
-          whereClause = 'WHERE si.used_at IS NULL AND si.revoked_at IS NULL AND si.expires_at <= NOW()';
+          conditions.push('si.used_at IS NULL AND si.revoked_at IS NULL AND si.expires_at <= NOW()');
           break;
         case 'revoked':
-          whereClause = 'WHERE si.revoked_at IS NOT NULL';
+          conditions.push('si.revoked_at IS NOT NULL');
           break;
       }
     }
 
+    if (filters.search) {
+      conditions.push(`(si.email ILIKE $${idx} OR s.name ILIKE $${idx})`);
+      filterParams.push(`%${filters.search}%`);
+      idx++;
+    }
+
+    if (filters.storeId) {
+      conditions.push(`si.store_id = $${idx++}`);
+      filterParams.push(filters.storeId);
+    }
+
+    if (filters.userId) {
+      conditions.push(`si.email = (SELECT email FROM users WHERE id = $${idx++})`);
+      filterParams.push(filters.userId);
+    }
+
+    if (filters.role) {
+      conditions.push(`si.role = $${idx++}`);
+      filterParams.push(parseInt(filters.role, 10));
+    }
+
+    if (filters.dateFrom) {
+      conditions.push(`si.created_at >= $${idx++}`);
+      filterParams.push(filters.dateFrom);
+    }
+
+    if (filters.dateTo) {
+      conditions.push(`si.created_at < ($${idx++})::date + INTERVAL '1 day'`);
+      filterParams.push(filters.dateTo);
+    }
+
+    const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
+
     const countResult = await pool.query(
-      `SELECT COUNT(*) FROM store_invitations si ${whereClause}`,
-      [],
+      `SELECT COUNT(*) FROM store_invitations si LEFT JOIN stores s ON s.id = si.store_id ${whereClause}`,
+      filterParams,
     );
     const total = parseInt(countResult.rows[0].count as string, 10);
 
+    const queryParams = [...filterParams, limit, offset];
     const result = await pool.query(
       `SELECT si.id, si.email, si.store_id, s.name AS store_name, si.role, si.token,
               si.expires_at, si.used_at, si.revoked_at, si.created_at
@@ -161,8 +206,8 @@ export class PgAdminRepository {
        LEFT JOIN stores s ON s.id = si.store_id
        ${whereClause}
        ORDER BY si.created_at DESC
-       LIMIT $1 OFFSET $2`,
-      params,
+       LIMIT $${idx++} OFFSET $${idx}`,
+      queryParams,
     );
 
     return {
@@ -197,48 +242,74 @@ export class PgAdminRepository {
   static async getAuditLog(
     page: number,
     limit: number,
-    filters: { userId?: string; method?: string; dateFrom?: string; dateTo?: string },
+    filters: { userId?: string; method?: string; statusCode?: string; dateFrom?: string; dateTo?: string; search?: string; since?: string; excludeIds?: string[] },
   ): Promise<PaginatedResult<AdminAuditEntry>> {
     const pool = getPool();
     const offset = (page - 1) * limit;
     const conditions: string[] = [];
-    const params: unknown[] = [limit, offset];
-    let idx = 3;
+    const filterParams: unknown[] = [];
+    let idx = 1;
 
     if (filters.userId) {
       conditions.push(`al.user_id = $${idx++}`);
-      params.push(filters.userId);
+      filterParams.push(filters.userId);
     }
     if (filters.method) {
       conditions.push(`al.method = $${idx++}`);
-      params.push(filters.method.toUpperCase());
+      filterParams.push(filters.method.toUpperCase());
+    }
+    if (filters.statusCode) {
+      conditions.push(`al.status_code = $${idx++}`);
+      filterParams.push(parseInt(filters.statusCode, 10));
     }
     if (filters.dateFrom) {
       conditions.push(`al.created_at >= $${idx++}`);
-      params.push(filters.dateFrom);
+      filterParams.push(filters.dateFrom);
     }
     if (filters.dateTo) {
       conditions.push(`al.created_at <= $${idx++}`);
-      params.push(filters.dateTo);
+      filterParams.push(filters.dateTo);
+    }
+    if (filters.since) {
+      conditions.push(`al.created_at >= $${idx++}`);
+      filterParams.push(filters.since);
+    }
+    if (filters.excludeIds?.length) {
+      const placeholders = filters.excludeIds.map(() => `$${idx++}`).join(', ');
+      conditions.push(`al.id NOT IN (${placeholders})`);
+      filterParams.push(...filters.excludeIds);
+    }
+    if (filters.search) {
+      const searchParam = `%${filters.search}%`;
+      conditions.push(`(u.email ILIKE $${idx} OR al.method ILIKE $${idx} OR al.path ILIKE $${idx} OR al.ip ILIKE $${idx} OR al.status_code::text ILIKE $${idx})`);
+      filterParams.push(searchParam);
+      idx++;
     }
 
     const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
 
     const countResult = await pool.query(
-      `SELECT COUNT(*) FROM admin_audit_log al ${whereClause}`,
-      params.slice(2),
+      `SELECT COUNT(*) FROM admin_audit_log al JOIN users u ON u.id = al.user_id ${whereClause}`,
+      filterParams,
     );
     const total = parseInt(countResult.rows[0].count as string, 10);
 
+    // Re-number conditions for the main query which prepends $1=limit, $2=offset
+    const mainConditions = conditions.map((c) =>
+      c.replace(/\$(\d+)/g, (_, n) => `$${parseInt(n, 10) + 2}`),
+    );
+    const mainWhereClause = mainConditions.length > 0 ? `WHERE ${mainConditions.join(' AND ')}` : '';
+
     const result = await pool.query(
       `SELECT al.id, al.user_id, u.email AS user_email, al.store_id, al.method, al.path,
-              al.status_code, al.ip, al.created_at
+              al.status_code, al.ip,
+              to_char(al.created_at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.US"Z"') AS created_at
        FROM admin_audit_log al
        JOIN users u ON u.id = al.user_id
-       ${whereClause}
+       ${mainWhereClause}
        ORDER BY al.created_at DESC
        LIMIT $1 OFFSET $2`,
-      params,
+      [limit, offset, ...filterParams],
     );
 
     return {
@@ -361,6 +432,24 @@ export class PgAdminRepository {
     };
   }
 
+  static async getAuditLogRequestBody(auditLogId: string): Promise<unknown | null> {
+    const pool = getPool();
+    const result = await pool.query(
+      'SELECT body FROM admin_audit_log_request_body WHERE audit_log_id = $1',
+      [auditLogId],
+    );
+    return result.rows[0]?.body ?? null;
+  }
+
+  static async getAuditLogResponseBody(auditLogId: string): Promise<unknown | null> {
+    const pool = getPool();
+    const result = await pool.query(
+      'SELECT body FROM admin_audit_log_response_body WHERE audit_log_id = $1',
+      [auditLogId],
+    );
+    return result.rows[0]?.body ?? null;
+  }
+
   private static mapAuditEntryRow(row: Record<string, unknown>): AdminAuditEntry {
     return {
       id: row.id as string,
@@ -371,7 +460,7 @@ export class PgAdminRepository {
       path: row.path as string,
       statusCode: row.status_code as number,
       ip: row.ip as string,
-      createdAt: new Date(row.created_at as string),
+      createdAt: row.created_at as string,
     };
   }
 }

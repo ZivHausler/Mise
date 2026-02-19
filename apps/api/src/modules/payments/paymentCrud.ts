@@ -1,5 +1,5 @@
 import { PgPaymentRepository } from './payment.repository.js';
-import type { PaginationOptions, PaginatedResult, CustomerPaymentFilters } from './payment.repository.js';
+import type { PaginationOptions, PaginatedResult, CustomerPaymentFilters, PaymentFilters } from './payment.repository.js';
 import type { CreatePaymentDTO, Payment } from './payment.types.js';
 import { ValidationError } from '../../core/errors/app-error.js';
 
@@ -18,8 +18,8 @@ export class PaymentCrud {
     return PgPaymentRepository.findById(storeId, id);
   }
 
-  static async getAll(storeId: string, options?: PaginationOptions): Promise<PaginatedResult<Payment>> {
-    return PgPaymentRepository.findAll(storeId, options);
+  static async getAll(storeId: string, options?: PaginationOptions, filters?: PaymentFilters): Promise<PaginatedResult<Payment>> {
+    return PgPaymentRepository.findAll(storeId, options, filters);
   }
 
   static async getByOrderId(storeId: string, orderId: string): Promise<Payment[]> {

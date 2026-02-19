@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useEffect, useRef, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import { CheckCircle, XCircle, AlertTriangle, Info, X } from 'lucide-react';
 import { cn } from '@/utils/cn';
 import { useToastStore, type Toast as ToastType } from '@/store/toast';
@@ -41,6 +42,36 @@ export const PageLoading = React.memo(function PageLoading() {
   );
 });
 
+// Navigation Progress Bar
+export const NavigationProgress = React.memo(function NavigationProgress() {
+  const location = useLocation();
+  const [visible, setVisible] = useState(false);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout>>();
+  const prevPathRef = useRef(location.pathname);
+
+  useEffect(() => {
+    if (location.pathname === prevPathRef.current) return;
+    prevPathRef.current = location.pathname;
+
+    // Show the bar immediately on navigation
+    setVisible(true);
+    clearTimeout(timeoutRef.current);
+
+    // Hide after a short delay (enough for Suspense + data fetch to kick in)
+    timeoutRef.current = setTimeout(() => setVisible(false), 600);
+
+    return () => clearTimeout(timeoutRef.current);
+  }, [location.pathname]);
+
+  if (!visible) return null;
+
+  return (
+    <div className="fixed inset-x-0 top-0 z-toast h-[3px] overflow-hidden">
+      <div className="h-full w-1/3 bg-primary-500 animate-progress-indeterminate" />
+    </div>
+  );
+});
+
 // Skeleton
 interface SkeletonProps {
   className?: string;
@@ -50,6 +81,27 @@ export const Skeleton = React.memo(function Skeleton({ className }: SkeletonProp
   return (
     <div className={cn('relative overflow-hidden rounded-md bg-neutral-200', className)}>
       <div className="absolute inset-0 animate-shimmer bg-gradient-to-r from-transparent via-neutral-100 to-transparent" />
+    </div>
+  );
+});
+
+// Page Skeleton – a lightweight placeholder matching the typical Page + PageHeader layout
+export const PageSkeleton = React.memo(function PageSkeleton() {
+  return (
+    <div className="mx-auto min-w-0 max-w-[1200px] px-4 py-6 md:px-6 md:py-8">
+      {/* Header skeleton */}
+      <div className="mb-6 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <Skeleton className="h-8 w-40" />
+        <Skeleton className="h-9 w-28" />
+      </div>
+      {/* Content skeleton rows */}
+      <div className="flex flex-col gap-3">
+        <Skeleton className="h-14 w-full" />
+        <Skeleton className="h-14 w-full" />
+        <Skeleton className="h-14 w-full" />
+        <Skeleton className="h-14 w-full" />
+        <Skeleton className="h-14 w-full" />
+      </div>
     </div>
   );
 });

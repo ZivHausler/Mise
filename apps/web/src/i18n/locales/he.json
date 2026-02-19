@@ -53,6 +53,11 @@
     "register": "הרשמה",
     "email": "אימייל",
     "password": "סיסמה",
+    "passwordRules": {
+      "minLength": "לפחות 8 תווים",
+      "uppercase": "לפחות אות גדולה אחת",
+      "number": "לפחות ספרה אחת"
+    },
     "name": "שם",
     "logout": "התנתקות",
     "noAccount": "אין לך חשבון?",
@@ -421,7 +426,9 @@
       "stores": "חנויות",
       "invitations": "הזמנות",
       "auditLog": "יומן פעולות",
-      "backToApp": "חזרה לאפליקציה"
+      "backToApp": "חזרה לאפליקציה",
+      "darkMode": "מעבר למצב כהה",
+      "lightMode": "מעבר למצב בהיר"
     },
     "dashboard": {
       "title": "לוח בקרה - ניהול",
@@ -434,11 +441,25 @@
         "week": "שבוע",
         "month": "חודש",
         "year": "שנה"
-      }
+      },
+      "ordersPerDay": "הזמנות ליום",
+      "revenuePerDay": "הכנסות ליום",
+      "totalRevenue": "סה\"כ הכנסות",
+      "avgOrderValue": "ממוצע הזמנה",
+      "outstandingBalance": "יתרה לגבייה",
+      "activeStores": "חנויות פעילות (30 יום)",
+      "ordersByStatus": "הזמנות לפי סטטוס",
+      "paymentsByMethod": "תשלומים לפי אמצעי",
+      "storesCreated": "חנויות שנוצרו",
+      "topStores": "חנויות מובילות לפי הזמנות",
+      "inactiveStores": "חנויות לא פעילות (30+ יום)",
+      "invitationConversion": "המרת הזמנות"
     },
     "users": {
       "title": "משתמשים",
+      "search": "חיפוש",
       "searchPlaceholder": "חפש לפי שם או אימייל...",
+      "id": "מזהה משתמש",
       "name": "שם",
       "email": "אימייל",
       "stores": "חנויות",
@@ -456,10 +477,12 @@
       "demoteConfirm": "להסיר הרשאות מנהל ממשתמש זה?",
       "enableConfirm": "להפעיל את חשבון המשתמש?",
       "disableConfirm": "להשבית את חשבון המשתמש?",
-      "noUsers": "לא נמצאו משתמשים"
+      "noUsers": "לא נמצאו משתמשים",
+      "includeAdmins": "הצג מנהלים"
     },
     "stores": {
       "title": "חנויות",
+      "search": "חיפוש",
       "searchPlaceholder": "חפש חנויות...",
       "name": "שם",
       "address": "כתובת",
@@ -467,7 +490,8 @@
       "created": "נוצר",
       "noStores": "לא נמצאו חנויות",
       "noMembers": "אין חברים",
-      "memberList": "חברים"
+      "memberList": "חברים",
+      "allStores": "כל החנויות"
     },
     "invitations": {
       "title": "הזמנות",
@@ -480,7 +504,9 @@
       "createStoreTitle": "יצירת הזמנה ליצירת חנות",
       "createStoreType": "יצירת חנות",
       "emailPlaceholder": "הזן כתובת אימייל...",
+      "searchPlaceholder": "חיפוש לפי אימייל או חנות...",
       "revoke": "בטל",
+      "copyLink": "העתק קישור הזמנה",
       "revokeConfirm": "לבטל הזמנה זו?",
       "noInvitations": "לא נמצאו הזמנות",
       "status": {
@@ -494,14 +520,23 @@
     "auditLog": {
       "title": "יומן פעולות",
       "user": "משתמש",
+      "userId": "מזהה משתמש",
       "method": "שיטה",
       "path": "נתיב",
       "statusCode": "סטטוס",
       "ip": "IP",
       "date": "תאריך",
       "allMethods": "כל השיטות",
+      "allStatuses": "כל הסטטוסים",
+      "allUsers": "כל המשתמשים",
+      "search": "חיפוש",
+      "searchPlaceholder": "חיפוש לפי אימייל, שיטה, נתיב, סטטוס או IP...",
+      "searchUserPlaceholder": "חיפוש אימייל...",
       "from": "מתאריך",
       "to": "עד תאריך",
+      "requestPayload": "מטען הבקשה",
+      "responseBody": "גוף התגובה",
+      "noBody": "אין תוכן",
       "noEntries": "אין רשומות ביומן"
     }
   }

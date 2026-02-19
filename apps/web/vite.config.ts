@@ -19,9 +19,14 @@ export default defineConfig({
   server: {
     host: true,
     port: 5173,
+    allowedHosts: ['.ngrok-free.dev'],
     proxy: {
       '/api': {
         target: 'http://localhost:3001',
+        changeOrigin: true,
+      },
+      '/grafana': {
+        target: 'http://localhost:3002',
         changeOrigin: true,
       },
     },

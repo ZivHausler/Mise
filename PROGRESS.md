@@ -166,6 +166,7 @@
 - [x] Bidirectional status transitions (can move status backward)
 - [x] Price difference indicator on order form (+/- from recipe base price)
 - [x] Order detail page with formatted dates, short IDs, creation date
+- [x] Exclude paid orders from payment log modal (`excludePaid` filter)
 
 ### Server-Side Pagination & Search
 - [x] Inventory: paginated API with search and group filtering (10 items/page)
@@ -176,18 +177,23 @@
 
 ### Settings Module
 - [x] Groups management (CRUD for ingredient/recipe groups)
-- [x] Units management (CRUD for measurement units)
+- [x] Units management (CRUD for measurement units with categories and conversion factors)
 - [x] Profile settings (update name, email)
 - [x] Notification preferences (per-channel toggles)
 - [x] Language toggle (Hebrew/English)
 - [x] Team settings tab (UI)
 
-### Store Management (New Module)
+### Store Management (Multi-Tenancy)
 - [x] Store setup page for new users
 - [x] Store creation with name, type, address, phone
-- [x] Store invite system (generates invite links, console-only for now)
+- [x] Store invite system — join-store and create-store invitation types
 - [x] Store name component in sidebar/topbar
-- [x] Database migration for stores table
+- [x] Database migration for stores table with full multi-tenancy (store_id FK on all data tables)
+- [x] Store switching (`POST /stores/select` re-issues JWT with new storeId)
+- [x] Store member management (list members, invite new members)
+- [x] Store roles: Owner, Manager, Employee
+- [x] Invitation-only registration system-wide (no open signups)
+- [x] Invitation landing page (validates token, routes to register or store setup)
 
 ### Architecture Refactoring
 - [x] Generic CRUD base class with Zod schema validation
@@ -202,6 +208,8 @@
 - [x] Improved dashboard layout (Quick Actions in separate row)
 - [x] RTL fixes: date locale, currency (NIS to shekel symbol), translation keys
 - [x] Mobile nav using translation keys instead of hardcoded English
+- [x] Debounced search inputs (`useDebouncedValue` hook)
+- [x] RotatingImage decorative component
 
 ### Inventory Enhancements
 - [x] Recipe cost calculation with ingredient enrichment
@@ -210,6 +218,51 @@
 - [x] Debounced search input
 - [x] Clickable group chips for filtering
 
+### Payment Improvements
+- [x] Payment refund support (`POST /payments/:id/refund`)
+- [x] Refund confirmation modal in UI
+- [x] Exclude already-paid orders from payment log modal dropdown
+- [x] Payment method filtering (cash, credit_card)
+- [x] Payment status filtering (unpaid, partial, paid)
+
+### Admin Panel (New Module)
+- [x] Admin access gate (`GET /admin/access` + frontend `AdminRoute` guard)
+- [x] Admin layout shell with dedicated sidebar navigation
+- [x] **Admin Dashboard** — analytics cards (total users, stores, active invitations, signups/day) + embedded Grafana panels with range selector (week/month/year)
+- [x] **User Management** — paginated user table with search, promote/demote admin (with safety guards: can't self-modify, can't touch other admins), enable/disable users
+- [x] **Store Management** — paginated store table with search, expandable member list, inline edit (name, address)
+- [x] **Invitation Management** — paginated invitation list with rich filters (status, search, store, user, role, date range), create store invitations, revoke pending invitations
+- [x] **Audit Log** — paginated audit log with filters (user, HTTP method, status code, date range, text search), live polling every 10s for new entries on page 1, click-to-expand modal showing request/response body as formatted JSON
+- [x] **Audit log body storage** — request and response bodies stored in separate tables (`admin_audit_log_request_body`, `admin_audit_log_response_body`) with 10KB cap and truncation
+- [x] Admin audit middleware — global `onSend` hook that fire-and-forgets every authenticated API call to the audit log (skips admin GET requests to avoid feedback loops)
+- [x] Admin analytics endpoint (`GET /admin/analytics`) — totalUsers, totalStores, activeInvitations, signupsPerDay with configurable range
+
+### Grafana Observability
+- [x] Grafana service in Docker Compose (port 3002, anonymous viewer access)
+- [x] Provisioned PostgreSQL data source
+- [x] Pre-built admin dashboard JSON with panels: signups chart, orders/revenue per day, financial stat cards (total revenue, avg order value, outstanding balance), order status pie chart, payment method pie chart, stores created over time, top stores table, inactive stores table
+- [x] CSP configured for Grafana iframe embedding in admin dashboard
+
+---
+
+## Database Migrations
+
+| # | Migration | Description |
+|---|-----------|-------------|
+| 1 | `001_initial.sql` | Core schema: users, customers, ingredients, inventory_log, orders, payments |
+| 2 | `002_settings.sql` | Units with conversion factors, unit_categories, groups, notification_preferences, ingredient_groups (many-to-many) |
+| 3 | `003_default_groups.sql` | Seeds default ingredient groups |
+| 4 | `004_inventory_log_price.sql` | Adds `price_paid` to inventory_log |
+| 5 | `005_package_size.sql` | Adds `package_size` to ingredients |
+| 6 | `006_google_auth.sql` | Adds `google_id` to users, makes `password_hash` nullable |
+| 7 | `007_order_number.sql` | Auto-incrementing `order_number` sequence (starts at 100000001) |
+| 8 | `008_stores.sql` | Full multi-tenancy: stores, users_stores (with roles), store_invitations; adds store_id FK to customers, ingredients, orders, groups, units |
+| 9 | `009_invitation_only.sql` | Makes `store_id` nullable in invitations (NULL = create-store type), adds OWNER role |
+| 10 | `010_admin_role.sql` | Adds `is_admin` boolean to users, creates `admin_audit_log` table |
+| 11 | `011_admin_module.sql` | Adds `disabled_at` to users, `revoked_at` to store_invitations |
+| 12 | `012_audit_log_bodies.sql` | (Superseded) Added request/response body columns to audit log |
+| 13 | `013_split_audit_log_bodies.sql` | Splits bodies into separate tables, migrates existing data |
+
 ---
 
 ## Major Features Summary
@@ -217,19 +270,48 @@
 | Feature | Backend | Frontend | Status |
 |---------|---------|----------|--------|
 | Auth (email + password) | Done | Done | Complete |
-| Google OAuth | Done | Done | Complete |
+| Google OAuth + account merging | Done | Done | Complete |
 | Recipes (CRUD, sub-recipes, costing) | Done | Done | Complete |
-| Inventory (CRUD, stock, groups, search) | Done | Done | Complete |
+| Inventory (CRUD, stock, groups, search, pagination) | Done | Done | Complete |
 | Customers (CRUD, preferences, search) | Done | Done | Complete |
 | Orders (CRUD, status pipeline, numbering) | Done | Done | Complete |
-| Payments (CRUD, summary, history) | Done | Done | Complete |
+| Payments (CRUD, summary, refunds, filtering) | Done | Done | Complete |
 | Analytics (revenue, popular, stats) | Done | Done | Complete |
 | Notifications (dispatcher, preferences) | Partial | Done | Email/SMS stubbed |
-| Settings (groups, units, profile) | Done | Done | Complete |
-| Store Management | Done | Done | New |
+| Settings (groups, units, profile, notifications) | Done | Done | Complete |
+| Store Management (multi-tenancy) | Done | Done | Complete |
+| Invitation System (join-store + create-store) | Done | Done | Complete |
+| Admin Panel (users, stores, invitations, audit) | Done | Done | Complete |
+| Admin Analytics + Grafana Dashboards | Done | Done | Complete |
+| Admin Audit Log (with body capture) | Done | Done | Complete |
 | Server-Side Pagination | Done | Done | Complete |
 | i18n (Hebrew RTL + English LTR) | — | Done | Complete |
 | Security Hardening | Done | — | Complete |
+
+---
+
+## Infrastructure
+
+| Service | Image | Port | Purpose |
+|---------|-------|------|---------|
+| PostgreSQL | postgres:16-alpine | 5432 | Primary database |
+| MongoDB | mongo:7 | 27017 | Recipe document storage |
+| Redis | redis:7-alpine | 6379 | Caching layer |
+| RabbitMQ | rabbitmq:3-management | 5672 / 15672 | Message queue (event bus) |
+| Grafana | grafana/grafana-oss:latest | 3002 | Admin analytics dashboards |
+
+---
+
+## Security Model
+
+- Invitation-only registration (no open signups)
+- JWT-based authentication with refresh tokens
+- Three-tier authorization: public → authenticated → store-scoped → admin
+- Store roles: Owner (1), Manager (2), Employee (3), Admin (-1)
+- Admin audit log captures every authenticated mutation (fire-and-forget)
+- Rate limiting: 1000 req/min globally, 10 req/15min on auth endpoints
+- Helmet CSP, HSTS, referrer policy, XSS filter
+- All SQL queries parameterized, NoSQL injection guards, input length limits
 
 ---
 
@@ -242,7 +324,7 @@
 4. **App push notifications** — UI shows "Coming Soon" badge, no backend implementation
 
 ### Configuration Gaps
-5. **Rate limiting values** are hardcoded (100 req/min global, 10 req/15min auth) — should be env vars for production tuning
+5. **Rate limiting values** are hardcoded (1000 req/min global, 10 req/15min auth) — should be env vars for production tuning
 6. **RabbitMQ retry config** hardcoded (5s TTL, 3 retries) — should be configurable
 7. **No frontend `.env.example`** — only `VITE_GOOGLE_CLIENT_ID` is used but undocumented
 8. **`FRONTEND_URL`** has inline fallback to `localhost:5173` — should fail explicitly in production
@@ -281,3 +363,4 @@
 | 9 | Integration, polish, security hardening | Complete | — | — |
 | 10 | Google OAuth, notifications, pagination | Complete | — | — |
 | 11 | Stores, CRUD refactoring, caching, UI polish | Complete | feat/major-improvements | — |
+| 12 | Admin panel, audit logging, Grafana dashboards | Complete | main | — |

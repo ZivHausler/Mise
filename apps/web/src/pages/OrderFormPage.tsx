@@ -130,7 +130,7 @@ export default function OrderFormPage() {
                 required
                 className="flex-1"
               />
-              <Button type="button" variant="secondary" icon={<UserPlus className="h-4 w-4" />} onClick={() => setShowNewCustomer(true)}>
+              <Button type="button" variant="primary" icon={<UserPlus className="h-4 w-4" />} onClick={() => setShowNewCustomer(true)}>
                 {t('customers.create', 'New Customer')}
               </Button>
             </Row>
@@ -143,6 +143,7 @@ export default function OrderFormPage() {
                 ? t('orders.dueDateHint', 'Earliest possible date based on preparation time: {{date}}', { date: formatDate(minDueDate + 'T00:00:00') })
                 : undefined}
               required
+              className="max-w-xs"
             />
 
             <div>
@@ -178,7 +179,7 @@ export default function OrderFormPage() {
                     )}
                   </Row>
                 ))}
-                <Button type="button" variant="ghost" size="sm" icon={<Plus className="h-4 w-4" />} onClick={addItem} className="self-center">
+                <Button type="button" variant="primary" size="sm" icon={<Plus className="h-4 w-4" />} onClick={addItem} className="self-center">
                   {t('orders.addItem', 'Add Item')}
                 </Button>
               </Stack>

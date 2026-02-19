@@ -146,14 +146,21 @@ export class AuthService {
   }
 
   private async generateTokenWithStoreInfo(user: User): Promise<string> {
-    // Admins get a token without a store pre-selected (they pick via sidebar)
-    if (user.isAdmin) {
-      return this.generateToken(user);
-    }
+    // For regular users, pick their first store
     const stores = await PgStoreRepository.getUserStores(user.id);
     if (stores.length > 0) {
-      return this.generateToken(user, stores[0]!.storeId, stores[0]!.role);
+      const role = user.isAdmin ? StoreRole.ADMIN : stores[0]!.role;
+      return this.generateToken(user, stores[0]!.storeId, role);
     }
+
+    // Admins may not belong to any store — pick the first store in the system
+    if (user.isAdmin) {
+      const allStores = await PgStoreRepository.getAllStores();
+      if (allStores.length > 0) {
+        return this.generateToken(user, allStores[0]!.id, StoreRole.ADMIN);
+      }
+    }
+
     return this.generateToken(user);
   }
 

@@ -36,15 +36,33 @@ export interface CustomerPaymentFilters {
   dateTo?: string;
 }
 
+export interface PaymentFilters {
+  status?: string;
+  method?: string;
+}
+
 export class PgPaymentRepository {
-  static async findAll(storeId: string, options?: PaginationOptions): Promise<PaginatedResult<Payment>> {
+  static async findAll(storeId: string, options?: PaginationOptions, filters?: PaymentFilters): Promise<PaginatedResult<Payment>> {
     await ensureStatusColumn();
     const pool = getPool();
+    let whereClause = 'WHERE o2.store_id = $1';
+    const baseParams: unknown[] = [storeId];
+    let idx = 2;
+
+    if (filters?.status) {
+      whereClause += ` AND p.status = $${idx++}`;
+      baseParams.push(filters.status);
+    }
+    if (filters?.method) {
+      whereClause += ` AND p.method = $${idx++}`;
+      baseParams.push(filters.method);
+    }
+
     const countResult = await pool.query(
       `SELECT COUNT(*) FROM payments p
        JOIN orders o2 ON p.order_id = o2.id
-       WHERE o2.store_id = $1`,
-      [storeId],
+       ${whereClause}`,
+      baseParams,
     );
     const total = Number(countResult.rows[0].count);
 
@@ -53,11 +71,11 @@ export class PgPaymentRepository {
        LEFT JOIN orders o ON p.order_id = o.id
        LEFT JOIN customers c ON o.customer_id = c.id
        JOIN orders o2 ON p.order_id = o2.id
-       WHERE o2.store_id = $1
+       ${whereClause}
        ORDER BY p.created_at DESC`;
-    const params: unknown[] = [storeId];
+    const params = [...baseParams];
     if (options) {
-      query += ' LIMIT $2 OFFSET $3';
+      query += ` LIMIT $${idx++} OFFSET $${idx++}`;
       params.push(options.limit, options.offset);
     }
     const result = await pool.query(query, params);

@@ -48,7 +48,7 @@ export interface AdminAuditEntry {
   path: string;
   statusCode: number;
   ip: string;
-  createdAt: Date;
+  createdAt: string;
 }
 
 export interface SignupDataPoint {
