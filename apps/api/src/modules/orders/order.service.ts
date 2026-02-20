@@ -6,9 +6,10 @@ import { EventNames } from '../../core/events/event-names.js';
 import { OrderCrud } from './orderCrud.js';
 import { UpdateOrderStatusUseCase } from './use-cases/updateOrderStatus.js';
 import { NotFoundError, ValidationError } from '../../core/errors/app-error.js';
+import { randomUUID } from 'crypto';
 import type { RecipeService } from '../recipes/recipe.service.js';
 import type { InventoryService } from '../inventory/inventory.service.js';
-import { InventoryLogType } from '@mise/shared';
+import { InventoryLogType, MAX_RECURRING_OCCURRENCES } from '@mise/shared';
 import { unitConversionFactor } from '../shared/unitConversion.js';
 
 export class OrderService {
@@ -33,7 +34,7 @@ export class OrderService {
     return OrderCrud.getAll(storeId, filters);
   }
 
-  async create(storeId: string, data: CreateOrderDTO, correlationId?: string): Promise<Order> {
+  async create(storeId: string, data: CreateOrderDTO & { recurringGroupId?: string }, correlationId?: string): Promise<Order> {
     let totalAmount = 0;
 
     for (const item of data.items) {
@@ -59,12 +60,45 @@ export class OrderService {
 
     await getEventBus().publish({
       eventName: EventNames.ORDER_CREATED,
-      payload: { orderId: order.id, customerId: order.customerId },
+      payload: { orderId: order.id, customerId: order.customerId, storeId },
       timestamp: new Date(),
       correlationId,
     });
 
     return order;
+  }
+
+  async createBatch(
+    storeId: string,
+    data: CreateOrderDTO,
+    recurrence: { frequency: 'weekly'; daysOfWeek: number[]; endDate: string },
+    correlationId?: string,
+  ): Promise<Order[]> {
+    const daysSet = new Set(recurrence.daysOfWeek);
+    const startDate = data.dueDate ? new Date(data.dueDate) : new Date();
+    const endDate = new Date(recurrence.endDate + 'T23:59:59');
+    const occurrenceDates: Date[] = [];
+
+    const current = new Date(startDate);
+    while (current <= endDate && occurrenceDates.length < MAX_RECURRING_OCCURRENCES) {
+      if (daysSet.has(current.getDay())) {
+        occurrenceDates.push(new Date(current));
+      }
+      current.setDate(current.getDate() + 1);
+    }
+
+    if (occurrenceDates.length === 0) {
+      throw new ValidationError('No occurrences match the selected days within the date range');
+    }
+
+    const recurringGroupId = randomUUID();
+    const orders: Order[] = [];
+    for (const date of occurrenceDates) {
+      const order = await this.create(storeId, { ...data, dueDate: date, recurringGroupId }, correlationId);
+      orders.push(order);
+    }
+
+    return orders;
   }
 
   async updateStatus(storeId: string, id: string, status: OrderStatus, correlationId?: string): Promise<Order> {
@@ -158,13 +192,38 @@ export class OrderService {
     return OrderCrud.update(storeId, id, updateData);
   }
 
+  async updateFutureRecurring(storeId: string, id: string, data: UpdateOrderDTO): Promise<{ updated: Order; futureUpdated: number }> {
+    // First update the current order
+    const updated = await this.update(storeId, id, data);
+
+    // Find and update future siblings
+    if (!updated.recurringGroupId || !updated.dueDate) {
+      return { updated, futureUpdated: 0 };
+    }
+
+    const futureOrders = await OrderCrud.findFutureByRecurringGroup(storeId, updated.recurringGroupId, updated.dueDate);
+
+    // Build the update payload (same items/notes, keep each order's own dueDate)
+    const updatePayload: UpdateOrderDTO = {};
+    if (data.items) updatePayload.items = data.items;
+    if (data.notes !== undefined) updatePayload.notes = data.notes;
+
+    let futureUpdated = 0;
+    for (const futureOrder of futureOrders) {
+      await this.update(storeId, futureOrder.id, updatePayload);
+      futureUpdated++;
+    }
+
+    return { updated, futureUpdated };
+  }
+
   async delete(storeId: string, id: string): Promise<void> {
     const existing = await OrderCrud.getById(storeId, id);
     if (!existing) {
       throw new NotFoundError('Order not found');
     }
-    if (existing.status !== ORDER_STATUS.RECEIVED) {
-      throw new ValidationError('Can only delete orders with "received" status');
+    if (existing.status === ORDER_STATUS.RECEIVED) {
+      throw new ValidationError('Cannot delete orders with received status');
     }
     return OrderCrud.delete(storeId, id);
   }

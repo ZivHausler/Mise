@@ -46,7 +46,7 @@ export default function DashboardPage() {
   const statCards = [
     { label: t('dashboard.todaysOrders', "Today's Orders"), value: todayOrders, icon: <Package className="h-6 w-6" /> },
     { label: t('dashboard.pendingOrders', 'Pending Orders'), value: pendingOrders, icon: <Clock className="h-6 w-6" /> },
-    { label: t('dashboard.lowStock', 'Low Stock'), value: dashStats?.lowStockItems ?? 0, icon: <AlertTriangle className="h-6 w-6" />, onClick: () => navigate('/inventory?status=low') },
+    { label: t('dashboard.lowStock', 'Low Stock'), value: dashStats?.lowStockItems ?? 0, icon: <AlertTriangle className="h-6 w-6" />, onClick: () => navigate('/inventory?status=low,out') },
     { label: t('dashboard.todaysRevenue', "Today's Revenue"), value: `${dashStats?.todayRevenue ?? 0} ${t('common.currency', '₪')}`, icon: <Coins className="h-6 w-6" /> },
   ];
 
@@ -129,7 +129,7 @@ export default function DashboardPage() {
       </Section>
 
       <Section title={t('dashboard.quickActions', 'Quick Actions')}>
-        <Card variant="flat" className="flex flex-col gap-2 lg:flex-row">
+        <Card variant="flat" className="flex flex-col gap-2 px-6 py-0 lg:flex-row">
           <Button variant="primary" fullWidth icon={<Plus className="h-4 w-4" />} onClick={() => navigate('/orders/new')}>
             {t('orders.create', 'New Order')}
           </Button>

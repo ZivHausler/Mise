@@ -3,7 +3,7 @@ import type { CustomerOrderFilters } from './order.repository.js';
 import type { CreateOrderDTO, Order, OrderStatus } from './order.types.js';
 
 export class OrderCrud {
-  static async create(storeId: string, data: CreateOrderDTO & { totalAmount: number }): Promise<Order> {
+  static async create(storeId: string, data: CreateOrderDTO & { totalAmount: number; recurringGroupId?: string }): Promise<Order> {
     return PgOrderRepository.create(storeId, data);
   }
 
@@ -41,5 +41,9 @@ export class OrderCrud {
 
   static async findByDay(storeId: string, filters: { date: string; status?: number; limit: number; offset: number }): Promise<{ orders: Order[]; total: number }> {
     return PgOrderRepository.findByDay(storeId, filters);
+  }
+
+  static async findFutureByRecurringGroup(storeId: string, recurringGroupId: string, afterDate: Date): Promise<Order[]> {
+    return PgOrderRepository.findFutureByRecurringGroup(storeId, recurringGroupId, afterDate);
   }
 }

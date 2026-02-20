@@ -119,12 +119,29 @@
     "statusLabel": "Status",
     "deleteTitle": "Delete Order?",
     "deleteMsg": "This action cannot be undone. The order and its payment records will be permanently removed.",
+    "recurring": "Recurring order",
+    "recurringDays": "Repeat on",
+    "recurringEnd": "Until",
+    "recurringCreated": "Created {{count}} orders",
+    "recurringEditTitle": "Update recurring order",
+    "recurringEditMessage": "This order is part of a recurring series. Would you like to update only this order, or this and all future orders in the series?",
+    "recurringEditThisOnly": "This order only",
+    "recurringEditAllFuture": "This & future orders",
     "status": {
       "received": "Received",
       "in_progress": "In Progress",
       "ready": "Ready",
       "delivered": "Delivered"
     }
+  },
+  "weekdays": {
+    "sun": "Sun",
+    "mon": "Mon",
+    "tue": "Tue",
+    "wed": "Wed",
+    "thu": "Thu",
+    "fri": "Fri",
+    "sat": "Sat"
   },
   "calendar": {
     "today": "Today",
@@ -374,9 +391,12 @@
     "goHome": "Back to Dashboard"
   },
   "toasts": {
+    "newOrderReceived": "New order: {{orderNum}}\nFrom: {{customer}}",
     "loginFailed": "Login failed",
     "registrationFailed": "Registration failed",
     "orderCreated": "Order created",
+    "recurringOrderCreated": "Created {{count}} orders",
+    "recurringOrdersUpdated": "Updated {{count}} orders",
     "orderCreateFailed": "Failed to create order",
     "orderUpdated": "Order updated",
     "orderUpdateFailed": "Failed to update order",

@@ -21,7 +21,9 @@ export default async function orderRoutes(app: FastifyInstance) {
   app.get<{ Params: { id: string } }>('/:id', (req, reply) => controller.getById(req, reply));
   app.get<{ Params: { customerId: string }; Querystring: { page?: string; limit?: string; status?: string; dateFrom?: string; dateTo?: string } }>('/customer/:customerId', (req, reply) => controller.getByCustomerId(req, reply));
   app.post('/', (req, reply) => controller.create(req, reply));
+  app.post('/recurring', (req, reply) => controller.createRecurring(req, reply));
   app.patch<{ Params: { id: string } }>('/:id/status', (req, reply) => controller.updateStatus(req, reply));
   app.put<{ Params: { id: string } }>('/:id', (req, reply) => controller.update(req, reply));
+  app.put<{ Params: { id: string } }>('/:id/recurring', (req, reply) => controller.updateRecurring(req, reply));
   app.delete<{ Params: { id: string } }>('/:id', (req, reply) => controller.delete(req, reply));
 }

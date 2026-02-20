@@ -185,23 +185,27 @@ export default function AdminStoresPage() {
                     </tr>
                     {expandedStore === store.id && (
                       <tr key={`${store.id}-members`}>
-                        <td colSpan={6} className="px-8 py-3 bg-neutral-50 dark:bg-neutral-800/50">
-                          {membersLoading ? (
-                            <p className="text-body-sm text-neutral-400">{t('common.loading')}</p>
-                          ) : members?.length === 0 ? (
-                            <p className="text-body-sm text-neutral-400">{t('admin.stores.noMembers')}</p>
-                          ) : (
-                            <div className="space-y-2">
-                              <p className="text-caption font-medium text-neutral-500 dark:text-neutral-400 uppercase">{t('admin.stores.memberList')}</p>
-                              {members?.map((member) => (
-                                <div key={member.userId} className="flex items-center gap-4 text-body-sm">
-                                  <span className="font-medium text-neutral-900 dark:text-neutral-100">{member.name}</span>
-                                  <span className="text-neutral-500 dark:text-neutral-400">{member.email}</span>
-                                  <span className="text-caption px-2 py-0.5 bg-neutral-200 dark:bg-neutral-700 rounded-full text-neutral-700 dark:text-neutral-300">{ROLE_LABELS[member.role] ?? 'Unknown'}</span>
+                        <td colSpan={6} className="px-8 py-0 bg-neutral-50 dark:bg-neutral-800/50">
+                          <div className="animate-expand-down overflow-hidden">
+                            <div className="py-3">
+                              {membersLoading ? (
+                                <p className="text-body-sm text-neutral-400">{t('common.loading')}</p>
+                              ) : members?.length === 0 ? (
+                                <p className="text-body-sm text-neutral-400">{t('admin.stores.noMembers')}</p>
+                              ) : (
+                                <div className="space-y-2">
+                                  <p className="text-caption font-medium text-neutral-500 dark:text-neutral-400 uppercase">{t('admin.stores.memberList')}</p>
+                                  {members?.map((member) => (
+                                    <div key={member.userId} className="flex items-center gap-4 text-body-sm">
+                                      <span className="font-medium text-neutral-900 dark:text-neutral-100">{member.name}</span>
+                                      <span className="text-neutral-500 dark:text-neutral-400">{member.email}</span>
+                                      <span className="text-caption px-2 py-0.5 bg-neutral-200 dark:bg-neutral-700 rounded-full text-neutral-700 dark:text-neutral-300">{ROLE_LABELS[member.role] ?? 'Unknown'}</span>
+                                    </div>
+                                  ))}
                                 </div>
-                              ))}
+                              )}
                             </div>
-                          )}
+                          </div>
                         </td>
                       </tr>
                     )}

@@ -21,6 +21,8 @@ export const PAYMENT_STATUSES = ['unpaid', 'partial', 'paid'] as const;
 export const PAYMENT_METHODS = ['cash', 'credit_card'] as const;
 export const USER_ROLES = ['admin', 'staff', 'viewer'] as const;
 
+export const MAX_RECURRING_OCCURRENCES = 52;
+
 export const ORDER_STATUS_FLOW: Record<number, number[]> = {
   0: [1],    // received → in_progress
   1: [0, 2], // in_progress → received, ready

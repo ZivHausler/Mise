@@ -1,11 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ChevronLeft, ChevronRight, X, Search, Filter, ChevronDown } from 'lucide-react';
 import { useAdminAuditLog, useAdminUsers, useAuditLogRequestBody, useAuditLogResponseBody, useAuditLogUpdates } from '@/api/hooks';
 import { useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/Button';
 import { useDebouncedValue } from '@/hooks/useDebouncedValue';
-import { useEffect, useRef } from 'react';
 
 type AuditEntry = {
   id: string;
@@ -60,7 +59,7 @@ function AuditFilterDropdown({ label, count, children }: { label: string; count:
         <ChevronDown className={`h-3.5 w-3.5 transition-transform ${open ? 'rotate-180' : ''}`} />
       </button>
       {open && (
-        <div ref={panelRef} className={`absolute top-full z-20 mt-1 min-w-[140px] rounded-lg border border-neutral-200 dark:border-neutral-600 bg-white dark:bg-neutral-800 p-1 shadow-lg ${alignEnd ? 'end-0' : 'start-0'}`}>
+        <div ref={panelRef} className={`absolute top-full z-20 mt-1 min-w-[140px] max-w-[calc(100vw-2rem)] rounded-lg border border-neutral-200 dark:border-neutral-600 bg-white dark:bg-neutral-800 p-1 shadow-lg ${alignEnd ? 'end-0' : 'start-0'}`}>
           {children}
         </div>
       )}
@@ -176,6 +175,13 @@ export default function AdminAuditLogPage() {
     }
   }, [updates, qc]);
 
+  useEffect(() => {
+    if (selectedEntry) {
+      document.body.style.overflow = 'hidden';
+      return () => { document.body.style.overflow = ''; };
+    }
+  }, [selectedEntry]);
+
   const displayItems = data?.items ?? [];
 
   const methodColor = (m: string) => {
@@ -209,7 +215,7 @@ export default function AdminAuditLogPage() {
 
       <div className="overflow-hidden rounded-lg border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800">
         <div className="flex flex-col gap-3 border-b border-neutral-200 dark:border-neutral-700 p-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="relative w-96">
+          <div className="relative w-full sm:w-96">
             <Search className="absolute inset-y-0 start-0 my-auto ms-3 h-4 w-4 text-neutral-400" />
             <input
               type="text"
@@ -263,7 +269,7 @@ export default function AdminAuditLogPage() {
               ))}
             </AuditFilterDropdown>
             <AuditFilterDropdown label={t('admin.auditLog.date')} count={dateFilterCount}>
-              <div className="p-2 space-y-2 min-w-[200px]">
+              <div className="p-2 space-y-2 w-[200px] max-w-full">
                 <div>
                   <label className="text-caption font-medium text-neutral-500 dark:text-neutral-400">{t('admin.auditLog.from')}</label>
                   <input
@@ -321,7 +327,7 @@ export default function AdminAuditLogPage() {
                     className={`group/row border-b border-neutral-100 dark:border-neutral-700 transition-colors hover:bg-primary-50 dark:hover:bg-neutral-700 cursor-pointer ${i % 2 === 1 ? 'bg-neutral-50 dark:bg-neutral-800/50' : ''}`}
                     onClick={() => setSelectedEntry(entry as AuditEntry)}
                   >
-                    <td className={`sticky start-0 z-10 px-3 py-2 text-body-sm text-neutral-900 dark:text-neutral-100 ${i % 2 === 1 ? 'bg-neutral-50 dark:bg-neutral-800/50' : 'bg-white dark:bg-neutral-800'} group-hover/row:bg-primary-50 dark:group-hover/row:bg-neutral-700 transition-colors`}>{entry.userEmail}</td>
+                    <td className={`sticky start-0 z-10 px-3 py-2 text-body-sm text-neutral-900 dark:text-neutral-100 ${i % 2 === 1 ? 'bg-neutral-50 dark:bg-neutral-800' : 'bg-white dark:bg-neutral-800'} group-hover/row:bg-primary-50 dark:group-hover/row:bg-neutral-700 transition-colors`}>{entry.userEmail}</td>
                     <td className="px-3 py-2 text-body-sm text-neutral-500 dark:text-neutral-400 font-mono">{entry.userId.slice(0, 8)}...</td>
                     <td className="px-3 py-2">
                       <span className={`inline-flex px-2 py-0.5 rounded text-caption font-mono font-medium ${methodColor(entry.method)}`}>{entry.method}</span>
@@ -378,9 +384,9 @@ export default function AdminAuditLogPage() {
 
     {/* Detail Modal */}
     {selectedEntry && (
-      <div className="fixed inset-0 z-modal flex items-center justify-center bg-black/40" onClick={() => setSelectedEntry(null)}>
+      <div className="fixed inset-0 z-modal flex items-center justify-center bg-black/40 overscroll-contain" onClick={() => setSelectedEntry(null)}>
         <div
-          className="bg-white dark:bg-neutral-800 rounded-xl shadow-xl border border-neutral-200 dark:border-neutral-700 w-full max-w-2xl max-h-[80vh] flex flex-col mx-4"
+          className="bg-white dark:bg-neutral-800 rounded-xl shadow-xl border border-neutral-200 dark:border-neutral-700 w-full max-w-2xl max-h-[80vh] flex flex-col mx-4 overscroll-contain"
           onClick={(e) => e.stopPropagation()}
         >
           <div className="flex items-center justify-between px-6 py-4 border-b border-neutral-200 dark:border-neutral-700">

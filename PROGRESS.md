@@ -237,6 +237,10 @@
 - [x] Admin audit middleware — global `onSend` hook that fire-and-forgets every authenticated API call to the audit log (skips admin GET requests to avoid feedback loops)
 - [x] Admin analytics endpoint (`GET /admin/analytics`) — totalUsers, totalStores, activeInvitations, signupsPerDay with configurable range
 
+### Server-Sent Events (SSE)
+- [x] SSE infrastructure (connection manager, heartbeat, reconnection)
+- [x] Real-time order updates via SSE
+
 ### Grafana Observability
 - [x] Grafana service in Docker Compose (port 3002, anonymous viewer access)
 - [x] Provisioned PostgreSQL data source
@@ -335,7 +339,7 @@
 
 ### Missing
 11. **No README.md** — no project README or setup instructions
-12. **E2E tests** — detailed plan exists (`E2E_PLAN.md`) but not yet implemented
+12. ~~**E2E tests**~~ — **Done**: E2E test suite implemented
 13. **No CONTRIBUTING.md or SETUP.md** for onboarding new developers
 
 ---
@@ -344,7 +348,7 @@
 
 - **136 unit tests** across 27 test files (Vitest) — all passing
 - Covers: Auth, Recipes, Inventory, Customers, Orders, Payments, Core infrastructure
-- E2E test plan drafted but not yet executed
+- E2E test suite implemented
 
 ---
 
@@ -352,9 +356,9 @@
 
 ### High Impact
 - [ ] **Reports & Export** — PDF/Excel export for orders, payments, inventory (bakers need printable summaries for end-of-day/week/month)
-- [ ] **Order calendar view** — see orders by due date on a calendar, critical for bakery production planning
+- [x] **Order calendar view** — see orders by due date on a calendar, critical for bakery production planning
 - [ ] **Production planning** — aggregate ingredient needs across upcoming orders ("I need 5kg flour for tomorrow's orders")
-- [ ] **Recurring orders** — many bakeries have weekly standing orders from cafes/restaurants
+- [x] **Recurring orders** — many bakeries have weekly standing orders from cafes/restaurants
 - [ ] **Customer-facing order portal** — let customers place orders directly via a link (right now it's baker-only)
 
 ### Medium Impact
@@ -366,10 +370,9 @@
 - [ ] **Search across modules** — global search bar (find a customer, order, or recipe from one input)
 
 ### Polish & DevEx
-- [ ] **Dark mode** — the admin panel already has `adminDarkMode` in the store, extend to the main app
 - [ ] **Onboarding wizard** — guide new store owners through adding their first recipe, ingredient, customer
 - [ ] **Offline support** — service worker + local cache for flaky connections (bakeries aren't always in great WiFi zones)
-- [ ] **Mobile PWA** — add manifest + install prompt, bakeries often use tablets/phones
+- [x] **Mobile PWA** — add manifest + install prompt, bakeries often use tablets/phones
 - [ ] **Webhook integrations** — let stores connect to external services (accounting software, delivery apps)
 
 ---

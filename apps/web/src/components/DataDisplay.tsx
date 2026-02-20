@@ -54,7 +54,7 @@ export const StatusBadge = React.memo(function StatusBadge({ variant, label }: S
   return (
     <span
       className={cn(
-        'inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-caption font-medium',
+        'inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border px-2.5 py-0.5 text-caption font-medium',
         badgeStyles[variant]
       )}
     >
@@ -193,7 +193,7 @@ export function DataTable<T extends Record<string, unknown>>({
   const alignClass = { start: 'text-start', center: 'text-center', end: 'text-end' };
 
   return (
-    <div className={bare ? '' : 'overflow-visible rounded-lg border border-neutral-200 bg-white'}>
+    <div className={bare ? '' : 'overflow-hidden rounded-lg border border-neutral-200 bg-white'}>
       {(searchable || toolbar) && (
         <div className="flex flex-col gap-2 border-b border-neutral-200 p-4 sm:flex-row sm:items-center sm:justify-between">
           {searchable && (

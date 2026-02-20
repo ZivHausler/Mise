@@ -133,6 +133,10 @@ const config: Config = {
           '0%': { opacity: '0' },
           '100%': { opacity: '1' },
         },
+        'expand-down': {
+          '0%': { opacity: '0', maxHeight: '0' },
+          '100%': { opacity: '1', maxHeight: '500px' },
+        },
       },
       animation: {
         shimmer: 'shimmer 1.5s infinite',
@@ -141,6 +145,7 @@ const config: Config = {
         'slide-in': 'slide-in-from-end 300ms ease-out',
         'progress-indeterminate': 'progress-indeterminate 1.2s ease-in-out infinite',
         'image-crossfade': 'image-crossfade 700ms ease-in-out forwards',
+        'expand-down': 'expand-down 250ms ease-out forwards',
       },
     },
   },

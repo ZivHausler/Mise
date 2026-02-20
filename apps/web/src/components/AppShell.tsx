@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Outlet } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { ChevronDown, Shield, LayoutDashboard, ClipboardList, BookOpen, Package, Users, CreditCard, Settings } from 'lucide-react';
+import { useOrderSSE } from '@/api/useOrderSSE';
 import { Sidebar } from './Sidebar';
 import { TopBar } from './TopBar';
 import { BottomTabs } from './BottomTabs';
@@ -12,6 +13,7 @@ import { useSelectStore, useAllStores } from '@/api/hooks';
 
 export const AppShell = React.memo(function AppShell() {
   const [drawerOpen, setDrawerOpen] = useState(false);
+  useOrderSSE();
 
   const handleMenuClick = useCallback(() => setDrawerOpen(true), []);
   const handleCloseDrawer = useCallback(() => setDrawerOpen(false), []);

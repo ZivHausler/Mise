@@ -18,6 +18,7 @@ export interface Order {
   totalAmount: number;
   notes?: string;
   dueDate?: Date;
+  recurringGroupId?: string;
   createdAt: Date;
   updatedAt: Date;
 }

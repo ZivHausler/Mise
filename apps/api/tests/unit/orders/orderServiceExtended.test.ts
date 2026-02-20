@@ -137,8 +137,8 @@ describe('OrderService - extended', () => {
   });
 
   describe('delete', () => {
-    it('should delete an order with received status', async () => {
-      vi.mocked(OrderCrud.getById).mockResolvedValue(createOrder({ status: ORDER_STATUS.RECEIVED }));
+    it('should delete an order with non-received status', async () => {
+      vi.mocked(OrderCrud.getById).mockResolvedValue(createOrder({ status: ORDER_STATUS.IN_PROGRESS }));
       vi.mocked(OrderCrud.delete).mockResolvedValue(undefined);
 
       await expect(service.delete(STORE_ID, 'order-1')).resolves.toBeUndefined();
@@ -150,8 +150,8 @@ describe('OrderService - extended', () => {
       await expect(service.delete(STORE_ID, 'nonexistent')).rejects.toThrow(NotFoundError);
     });
 
-    it('should throw ValidationError when order status is not received', async () => {
-      vi.mocked(OrderCrud.getById).mockResolvedValue(createOrder({ status: ORDER_STATUS.IN_PROGRESS }));
+    it('should throw ValidationError when order status is received', async () => {
+      vi.mocked(OrderCrud.getById).mockResolvedValue(createOrder({ status: ORDER_STATUS.RECEIVED }));
 
       await expect(service.delete(STORE_ID, 'order-1')).rejects.toThrow(ValidationError);
     });

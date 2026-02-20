@@ -124,6 +124,22 @@ export function useCreateOrder() {
   });
 }
 
+export function useCreateRecurringOrder() {
+  const qc = useQueryClient();
+  const addToast = useToastStore((s) => s.addToast);
+  const { t } = useTranslation();
+  return useMutation({
+    mutationFn: (body: unknown) => postApi<{ generatedCount: number; orders: unknown[] }>('/orders/recurring', body),
+    onSuccess: (data) => {
+      qc.invalidateQueries({ queryKey: ['orders'] });
+      qc.invalidateQueries({ queryKey: ['dashboard'] });
+      qc.invalidateQueries({ queryKey: ['inventory'] });
+      addToast('success', t('toasts.recurringOrderCreated', { count: data.generatedCount }));
+    },
+    onError: () => addToast('error', t('toasts.orderCreateFailed')),
+  });
+}
+
 export function useUpdateOrder() {
   const qc = useQueryClient();
   const addToast = useToastStore((s) => s.addToast);
@@ -131,6 +147,22 @@ export function useUpdateOrder() {
   return useMutation({
     mutationFn: ({ id, ...body }: { id: string } & Record<string, unknown>) => putApi(`/orders/${id}`, body),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['orders'] }); qc.invalidateQueries({ queryKey: ['dashboard'] }); addToast('success', t('toasts.orderUpdated')); },
+    onError: () => addToast('error', t('toasts.orderUpdateFailed')),
+  });
+}
+
+export function useUpdateRecurringOrders() {
+  const qc = useQueryClient();
+  const addToast = useToastStore((s) => s.addToast);
+  const { t } = useTranslation();
+  return useMutation({
+    mutationFn: ({ id, ...body }: { id: string } & Record<string, unknown>) =>
+      putApi<{ order: unknown; futureUpdated: number }>(`/orders/${id}/recurring`, body),
+    onSuccess: (data) => {
+      qc.invalidateQueries({ queryKey: ['orders'] });
+      qc.invalidateQueries({ queryKey: ['dashboard'] });
+      addToast('success', t('toasts.recurringOrdersUpdated', { count: data.futureUpdated + 1 }));
+    },
     onError: () => addToast('error', t('toasts.orderUpdateFailed')),
   });
 }

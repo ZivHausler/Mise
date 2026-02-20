@@ -5,7 +5,7 @@ import { Stack, Row } from '@/components/Layout';
 import { TextArea, DatePicker, NumberInput, Select } from '@/components/FormFields';
 import { Button } from '@/components/Button';
 import { NewCustomerModal } from '@/components/NewCustomerModal';
-import { useCreateOrder, useUpdateOrder, useCustomers, useRecipes } from '@/api/hooks';
+import { useCreateOrder, useCreateRecurringOrder, useUpdateOrder, useUpdateRecurringOrders, useCustomers, useRecipes } from '@/api/hooks';
 import { useFormatDate } from '@/utils/dateFormat';
 
 interface OrderItem {
@@ -33,7 +33,9 @@ export function OrderForm({ existingOrder, defaultDueDate, onSuccess, onCancel }
   const { data: customers } = useCustomers();
   const { data: recipes } = useRecipes();
   const createOrder = useCreateOrder();
+  const createRecurringOrder = useCreateRecurringOrder();
   const updateOrder = useUpdateOrder();
+  const updateRecurringOrders = useUpdateRecurringOrders();
   const formatDate = useFormatDate();
 
   const o = existingOrder as any;
@@ -48,6 +50,11 @@ export function OrderForm({ existingOrder, defaultDueDate, onSuccess, onCancel }
   );
 
   const [showNewCustomer, setShowNewCustomer] = useState(false);
+
+  // Recurring order state (create mode only)
+  const [isRecurring, setIsRecurring] = useState(false);
+  const [recurringDays, setRecurringDays] = useState<number[]>([]);
+  const [recurringEndDate, setRecurringEndDate] = useState('');
 
   const customerOptions = ((customers as any[]) ?? []).map((c: any) => ({ value: c.id, label: c.name }));
   const recipeOptions = ((recipes as any[]) ?? []).map((r: any) => ({ value: r.id, label: r.name }));
@@ -97,16 +104,34 @@ export function OrderForm({ existingOrder, defaultDueDate, onSuccess, onCancel }
   }, [items, recipes]);
 
   const [showPrepWarning, setShowPrepWarning] = useState(false);
+  const [showRecurringEditDialog, setShowRecurringEditDialog] = useState(false);
   const pendingSubmit = useRef(false);
+
+  const doUpdateThisOnly = useCallback(() => {
+    const body = { customerId, dueDate, notes, items, total };
+    updateOrder.mutate({ id: o.id, ...body }, { onSuccess: (data: any) => onSuccess?.(data) });
+  }, [customerId, dueDate, notes, items, total, o?.id, updateOrder, onSuccess]);
+
+  const doUpdateAllFuture = useCallback(() => {
+    const body = { customerId, dueDate, notes, items, total };
+    updateRecurringOrders.mutate({ id: o.id, ...body }, { onSuccess: (data: any) => onSuccess?.(data) });
+  }, [customerId, dueDate, notes, items, total, o?.id, updateRecurringOrders, onSuccess]);
 
   const submitOrder = useCallback(() => {
     const body = { customerId, dueDate, notes, items, total };
     if (isEdit) {
+      if (o?.recurringGroupId) {
+        setShowRecurringEditDialog(true);
+        return;
+      }
       updateOrder.mutate({ id: o.id, ...body }, { onSuccess: (data: any) => onSuccess?.(data) });
+    } else if (isRecurring && recurringDays.length > 0 && recurringEndDate) {
+      const recurringBody = { ...body, recurrence: { frequency: 'weekly' as const, daysOfWeek: recurringDays, endDate: recurringEndDate } };
+      createRecurringOrder.mutate(recurringBody, { onSuccess: (data: any) => onSuccess?.(data) });
     } else {
       createOrder.mutate(body, { onSuccess: (data: any) => onSuccess?.(data) });
     }
-  }, [customerId, dueDate, notes, items, total, isEdit, o?.id, createOrder, updateOrder, onSuccess]);
+  }, [customerId, dueDate, notes, items, total, isEdit, o?.id, o?.recurringGroupId, isRecurring, recurringDays, recurringEndDate, createOrder, createRecurringOrder, updateOrder, onSuccess]);
 
   const handleSubmit = useCallback(
     (e: React.FormEvent) => {
@@ -126,7 +151,7 @@ export function OrderForm({ existingOrder, defaultDueDate, onSuccess, onCancel }
     submitOrder();
   }, [submitOrder]);
 
-  const isPending = createOrder.isPending || updateOrder.isPending;
+  const isPending = createOrder.isPending || createRecurringOrder.isPending || updateOrder.isPending || updateRecurringOrders.isPending;
 
   return (
     <>
@@ -156,6 +181,64 @@ export function OrderForm({ existingOrder, defaultDueDate, onSuccess, onCancel }
             required
             className="max-w-xs"
           />
+
+          {!isEdit && (
+            <div>
+              <label className="flex items-center gap-2 cursor-pointer text-body-sm font-semibold text-neutral-700">
+                <input
+                  type="checkbox"
+                  checked={isRecurring}
+                  onChange={(e) => {
+                    setIsRecurring(e.target.checked);
+                    if (e.target.checked && dueDate && recurringDays.length === 0) {
+                      const dayOfWeek = new Date(dueDate + 'T00:00:00').getDay();
+                      setRecurringDays([dayOfWeek]);
+                    }
+                  }}
+                  className="h-4 w-4 rounded border-neutral-300 text-primary-600 focus:ring-primary-500"
+                />
+                {t('orders.recurring', 'Recurring order')}
+              </label>
+
+              {isRecurring && (
+                <div className="mt-3 space-y-3 rounded-lg border border-neutral-200 dark:border-neutral-700 p-3">
+                  <div>
+                    <label className="mb-1 block text-body-sm font-medium text-neutral-600 dark:text-neutral-300">
+                      {t('orders.recurringDays', 'Repeat on')}
+                    </label>
+                    <div className="flex flex-wrap gap-1">
+                      {(['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'] as const).map((day, idx) => (
+                        <button
+                          key={day}
+                          type="button"
+                          onClick={() => {
+                            setRecurringDays((prev) =>
+                              prev.includes(idx) ? prev.filter((d) => d !== idx) : [...prev, idx]
+                            );
+                          }}
+                          className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+                            recurringDays.includes(idx)
+                              ? 'bg-primary-600 text-white'
+                              : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200 dark:bg-neutral-700 dark:text-neutral-300 dark:hover:bg-neutral-600'
+                          }`}
+                        >
+                          {t(`weekdays.${day}`)}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <DatePicker
+                    label={t('orders.recurringEnd', 'Until')}
+                    value={recurringEndDate}
+                    onChange={(e) => setRecurringEndDate(e.target.value)}
+                    min={dueDate || undefined}
+                    required={isRecurring}
+                    className="max-w-xs"
+                  />
+                </div>
+              )}
+            </div>
+          )}
 
           <div>
             <label className="mb-2 block text-body-sm font-semibold text-neutral-700">{t('orders.items', 'Items')}</label>
@@ -240,6 +323,30 @@ export function OrderForm({ existingOrder, defaultDueDate, onSuccess, onCancel }
               </Button>
               <Button variant="primary" onClick={confirmPrepWarning}>
                 {t('orders.prepWarningConfirm', 'Continue anyway')}
+              </Button>
+            </Row>
+          </div>
+        </div>
+      )}
+
+      {showRecurringEditDialog && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setShowRecurringEditDialog(false)}>
+          <div className="w-full max-w-md rounded-lg bg-white dark:bg-neutral-800 p-6 shadow-xl" onClick={(e) => e.stopPropagation()}>
+            <h2 className="mb-2 text-lg font-semibold text-neutral-800 dark:text-neutral-100">
+              {t('orders.recurringEditTitle', 'Update recurring order')}
+            </h2>
+            <p className="mb-5 text-body-sm text-neutral-600 dark:text-neutral-300">
+              {t('orders.recurringEditMessage', 'This order is part of a recurring series. Would you like to update only this order, or this and all future orders in the series?')}
+            </p>
+            <Row gap={2} className="justify-end">
+              <Button variant="secondary" onClick={() => setShowRecurringEditDialog(false)}>
+                {t('common.cancel')}
+              </Button>
+              <Button variant="secondary" onClick={() => { setShowRecurringEditDialog(false); doUpdateThisOnly(); }}>
+                {t('orders.recurringEditThisOnly', 'This order only')}
+              </Button>
+              <Button variant="primary" onClick={() => { setShowRecurringEditDialog(false); doUpdateAllFuture(); }}>
+                {t('orders.recurringEditAllFuture', 'This & future orders')}
               </Button>
             </Row>
           </div>

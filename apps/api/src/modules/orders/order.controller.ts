@@ -1,7 +1,7 @@
 import type { FastifyRequest, FastifyReply } from 'fastify';
 import type { OrderService } from './order.service.js';
 import type { OrderStatus } from './order.types.js';
-import { createOrderSchema, updateOrderStatusSchema, updateOrderSchema, calendarRangeSchema, calendarAggregatesSchema, calendarDaySchema } from './order.schema.js';
+import { createOrderSchema, createRecurringOrderSchema, updateOrderStatusSchema, updateOrderSchema, calendarRangeSchema, calendarAggregatesSchema, calendarDaySchema } from './order.schema.js';
 import { parsePaginationParams } from '../../core/types/pagination.js';
 
 export class OrderController {
@@ -41,6 +41,14 @@ export class OrderController {
     return reply.status(201).send({ success: true, data: order });
   }
 
+  async createRecurring(request: FastifyRequest, reply: FastifyReply) {
+    const storeId = request.currentUser!.storeId!;
+    const { recurrence, ...orderData } = createRecurringOrderSchema.parse(request.body);
+    const dueDate = new Date(orderData.dueDate);
+    const orders = await this.orderService.createBatch(storeId, { ...orderData, dueDate }, recurrence, request.id);
+    return reply.status(201).send({ success: true, data: { generatedCount: orders.length, orders } });
+  }
+
   async updateStatus(request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) {
     const storeId = request.currentUser!.storeId!;
     const { status } = updateOrderStatusSchema.parse(request.body);
@@ -53,6 +61,13 @@ export class OrderController {
     const data = updateOrderSchema.parse(request.body);
     const order = await this.orderService.update(storeId, request.params.id, data);
     return reply.send({ success: true, data: order });
+  }
+
+  async updateRecurring(request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) {
+    const storeId = request.currentUser!.storeId!;
+    const data = updateOrderSchema.parse(request.body);
+    const { updated, futureUpdated } = await this.orderService.updateFutureRecurring(storeId, request.params.id, data);
+    return reply.send({ success: true, data: { order: updated, futureUpdated } });
   }
 
   async delete(request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) {
