@@ -6,7 +6,8 @@ export type { DateFormat, Language, WeekStartDay };
 
 type OrdersViewMode = 'pipeline' | 'list' | 'calendar';
 type RecipesViewMode = 'grid' | 'list';
-type SettingsTab = 'account' | 'team' | 'units' | 'groups' | 'notifications';
+type SettingsTab = 'account' | 'team' | 'units' | 'groups' | 'notifications' | 'loyalty';
+type ProductionTab = 'board' | 'timeline' | 'prepList';
 type AdminDashboardRange = 'week' | 'month' | 'year';
 
 interface AppState {
@@ -19,6 +20,7 @@ interface AppState {
   adminDarkMode: boolean;
   ordersViewMode: OrdersViewMode;
   recipesViewMode: RecipesViewMode;
+  productionTab: ProductionTab;
   settingsTab: SettingsTab;
   adminDashboardRange: AdminDashboardRange;
   setLanguage: (lang: Language) => void;
@@ -31,6 +33,7 @@ interface AppState {
   toggleAdminDarkMode: () => void;
   setOrdersViewMode: (mode: OrdersViewMode) => void;
   setRecipesViewMode: (mode: RecipesViewMode) => void;
+  setProductionTab: (tab: ProductionTab) => void;
   setSettingsTab: (tab: SettingsTab) => void;
   setAdminDashboardRange: (range: AdminDashboardRange) => void;
 }
@@ -49,8 +52,9 @@ export const useAppStore = create<AppState>((set) => ({
   showSaturday: boolFromStorage('showSaturday', DEFAULT_SHOW_SATURDAY),
   sidebarCollapsed: false,
   adminDarkMode: localStorage.getItem('adminDarkMode') === 'true',
-  ordersViewMode: (localStorage.getItem('ordersViewMode') as OrdersViewMode) || 'pipeline',
+  ordersViewMode: (localStorage.getItem('ordersViewMode') as OrdersViewMode) || 'calendar',
   recipesViewMode: (localStorage.getItem('recipesViewMode') as RecipesViewMode) || 'grid',
+  productionTab: (localStorage.getItem('productionTab') as ProductionTab) || 'board',
   settingsTab: (localStorage.getItem('settingsTab') as SettingsTab) || 'account',
   adminDashboardRange: (localStorage.getItem('adminDashboardRange') as AdminDashboardRange) || 'month',
   setLanguage: (language) => {
@@ -88,6 +92,10 @@ export const useAppStore = create<AppState>((set) => ({
   setRecipesViewMode: (recipesViewMode) => {
     localStorage.setItem('recipesViewMode', recipesViewMode);
     set({ recipesViewMode });
+  },
+  setProductionTab: (productionTab) => {
+    localStorage.setItem('productionTab', productionTab);
+    set({ productionTab });
   },
   setSettingsTab: (settingsTab) => {
     localStorage.setItem('settingsTab', settingsTab);

@@ -8,9 +8,11 @@ import { Button } from '@/components/Button';
 import { StatusBadge } from '@/components/DataDisplay';
 import { PageSkeleton } from '@/components/Feedback';
 import { ConfirmModal } from '@/components/Modal';
-import { useCustomer, useCustomerOrders, useCustomerPayments, useDeleteCustomer } from '@/api/hooks';
+import { useCustomer, useCustomerOrders, useCustomerPayments, useDeleteCustomer, useCustomerLoyalty, useCustomerLoyaltyTransactions, useLoyaltyConfig } from '@/api/hooks';
 import { getStatusLabel, STATUS_LABELS } from '@/utils/orderStatus';
 import { useFormatDate } from '@/utils/dateFormat';
+import AdjustPointsModal from '@/components/loyalty/AdjustPointsModal';
+import RedeemPointsModal from '@/components/loyalty/RedeemPointsModal';
 
 export default function CustomerDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -45,8 +47,15 @@ export default function CustomerDetailPage() {
   const { data: customerPayments } = useCustomerPayments(id!, paymentsPage, 10, Object.keys(paymentFilters).length ? paymentFilters : undefined);
   const deleteCustomer = useDeleteCustomer();
   const formatDate = useFormatDate();
+  const [loyaltyPage, setLoyaltyPage] = useState(1);
+  const { data: loyaltySummary } = useCustomerLoyalty(id!);
+  const { data: loyaltyTxData } = useCustomerLoyaltyTransactions(id!, loyaltyPage, 10);
+  const { data: rawLoyaltyConfig } = useLoyaltyConfig();
+  const loyaltyConfig = rawLoyaltyConfig as { isActive: boolean; pointValue: number } | undefined;
   const [showDelete, setShowDelete] = useState(false);
-  const [activeTab, setActiveTab] = useState<'orders' | 'payments'>('orders');
+  const [showAdjust, setShowAdjust] = useState(false);
+  const [showRedeem, setShowRedeem] = useState(false);
+  const [activeTab, setActiveTab] = useState<'orders' | 'payments' | 'loyalty'>('orders');
 
   const c = customer as any;
   const ordersData = customerOrders as any;
@@ -114,6 +123,14 @@ export default function CustomerDetailPage() {
           >
             {t('nav.payments')}
           </button>
+          {loyaltyConfig?.isActive && (
+            <button
+              onClick={() => setActiveTab('loyalty')}
+              className={`px-4 py-2.5 text-body-sm font-medium ${activeTab === 'loyalty' ? 'border-b-2 border-primary-500 text-primary-700' : 'text-neutral-500'}`}
+            >
+              {t('customers.loyalty', 'Loyalty')}
+            </button>
+          )}
         </div>
 
         {activeTab === 'orders' && (
@@ -329,7 +346,125 @@ export default function CustomerDetailPage() {
             )}
           </div>
         )}
+
+        {activeTab === 'loyalty' && (
+          <div>
+            {/* Summary cards */}
+            <div className="mb-4 grid grid-cols-3 gap-3">
+              <div className="rounded-lg bg-primary-50 p-3 text-center">
+                <div className="text-h2 font-bold text-primary-700">{(loyaltySummary as any)?.balance ?? 0}</div>
+                <div className="text-body-sm text-primary-600">{t('loyalty.balance')}</div>
+                {loyaltyConfig?.pointValue && (
+                  <div className="text-body-sm text-primary-400">
+                    {t('loyalty.shekelEquivalent', { value: (((loyaltySummary as any)?.balance ?? 0) * loyaltyConfig.pointValue).toFixed(2) })}
+                  </div>
+                )}
+              </div>
+              <div className="rounded-lg bg-neutral-50 p-3 text-center">
+                <div className="text-h2 font-bold text-neutral-700">{(loyaltySummary as any)?.lifetimeEarned ?? 0}</div>
+                <div className="text-body-sm text-neutral-500">{t('loyalty.lifetimeEarned')}</div>
+              </div>
+              <div className="rounded-lg bg-neutral-50 p-3 text-center">
+                <div className="text-h2 font-bold text-neutral-700">{(loyaltySummary as any)?.lifetimeRedeemed ?? 0}</div>
+                <div className="text-body-sm text-neutral-500">{t('loyalty.lifetimeRedeemed')}</div>
+              </div>
+            </div>
+
+            {/* Action buttons */}
+            <div className="mb-4 flex gap-2">
+              <Button size="sm" variant="secondary" onClick={() => setShowAdjust(true)}>
+                {t('loyalty.adjustPoints')}
+              </Button>
+              <Button size="sm" variant="primary" onClick={() => setShowRedeem(true)} disabled={!((loyaltySummary as any)?.balance > 0)}>
+                {t('loyalty.redeemPoints')}
+              </Button>
+            </div>
+
+            {/* Transaction history */}
+            <table className="w-full text-body-sm">
+              <thead>
+                <tr className="border-b bg-neutral-50">
+                  <th className="px-3 py-2 text-start font-semibold">{t('payments.date', 'Date')}</th>
+                  <th className="px-3 py-2 text-start font-semibold">{t('loyalty.type')}</th>
+                  <th className="px-3 py-2 text-end font-semibold">{t('loyalty.points')}</th>
+                  <th className="px-3 py-2 text-end font-semibold">{t('loyalty.balanceAfter')}</th>
+                  <th className="px-3 py-2 text-start font-semibold">{t('loyalty.description')}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {((loyaltyTxData as any)?.transactions ?? []).map((tx: any) => (
+                  <tr key={tx.id} className="border-b border-neutral-100">
+                    <td className="px-3 py-2">{formatDate(tx.createdAt)}</td>
+                    <td className="px-3 py-2">
+                      <StatusBadge
+                        variant={tx.type === 'earned' ? 'ready' : tx.type === 'redeemed' ? 'delivered' : 'info'}
+                        label={t(`loyalty.types.${tx.type}`, tx.type)}
+                      />
+                    </td>
+                    <td className={`px-3 py-2 text-end font-mono ${tx.points > 0 ? 'text-success-dark' : 'text-error'}`}>
+                      {tx.points > 0 ? `+${tx.points}` : tx.points}
+                    </td>
+                    <td className="px-3 py-2 text-end font-mono">{tx.balanceAfter}</td>
+                    <td className="px-3 py-2 text-neutral-500">{formatLoyaltyDescription(tx.description, t) || '—'}</td>
+                  </tr>
+                ))}
+                {((loyaltyTxData as any)?.transactions ?? []).length === 0 && (
+                  <tr>
+                    <td colSpan={5} className="px-3 py-8 text-center text-neutral-400">
+                      {t('loyalty.noTransactions')}
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+            {(loyaltyTxData as any)?.pagination && (loyaltyTxData as any).pagination.totalPages > 1 && (
+              <div className="flex items-center justify-between border-t border-neutral-200 px-4 py-3">
+                <span className="text-body-sm text-neutral-500">
+                  {t('common.showingOf', '{{from}}-{{to}} of {{total}}', {
+                    from: ((loyaltyTxData as any).pagination.page - 1) * (loyaltyTxData as any).pagination.limit + 1,
+                    to: Math.min((loyaltyTxData as any).pagination.page * (loyaltyTxData as any).pagination.limit, (loyaltyTxData as any).pagination.total),
+                    total: (loyaltyTxData as any).pagination.total,
+                  })}
+                </span>
+                <div className="flex items-center gap-2">
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    onClick={() => setLoyaltyPage((p) => p - 1)}
+                    disabled={(loyaltyTxData as any).pagination.page <= 1}
+                  >
+                    <ChevronLeft className="h-4 w-4 rtl:scale-x-[-1]" />
+                  </Button>
+                  <span className="text-body-sm text-neutral-700">
+                    {(loyaltyTxData as any).pagination.page} / {(loyaltyTxData as any).pagination.totalPages}
+                  </span>
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    onClick={() => setLoyaltyPage((p) => p + 1)}
+                    disabled={(loyaltyTxData as any).pagination.page >= (loyaltyTxData as any).pagination.totalPages}
+                  >
+                    <ChevronRight className="h-4 w-4 rtl:scale-x-[-1]" />
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
       </Card>
+
+      <AdjustPointsModal
+        open={showAdjust}
+        onClose={() => setShowAdjust(false)}
+        customerId={c.id}
+        currentBalance={(loyaltySummary as any)?.balance ?? 0}
+      />
+      <RedeemPointsModal
+        open={showRedeem}
+        onClose={() => setShowRedeem(false)}
+        customerId={c.id}
+        currentBalance={(loyaltySummary as any)?.balance ?? 0}
+      />
 
       <ConfirmModal
         open={showDelete}
@@ -343,6 +478,17 @@ export default function CustomerDetailPage() {
       />
     </Page>
   );
+}
+
+function formatLoyaltyDescription(desc: string | null, t: (key: string, opts?: Record<string, unknown>) => string): string {
+  if (!desc) return '';
+  if (desc.startsWith('redeemed:')) {
+    const [, points, value] = desc.split(':');
+    return t('loyalty.descriptions.redeemed', { points, value });
+  }
+  const key = `loyalty.descriptions.${desc}`;
+  const translated = t(key);
+  return translated !== key ? translated : desc;
 }
 
 const InfoRow = React.memo(function InfoRow({ label, value, dir }: { label: string; value: string; dir?: string }) {

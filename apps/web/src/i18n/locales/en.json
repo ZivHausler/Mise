@@ -47,7 +47,8 @@
     "payments": "Payments",
     "settings": "Settings",
     "more": "More",
-    "admin": "Admin Panel"
+    "admin": "Admin Panel",
+    "production": "Production"
   },
   "auth": {
     "login": "Log In",
@@ -127,6 +128,8 @@
     "recurringEditMessage": "This order is part of a recurring series. Would you like to update only this order, or this and all future orders in the series?",
     "recurringEditThisOnly": "This order only",
     "recurringEditAllFuture": "This & future orders",
+    "downloadPdf": "PDF",
+    "print": "Print",
     "status": {
       "received": "Received",
       "in_progress": "In Progress",
@@ -250,13 +253,14 @@
     "address": "Address",
     "notes": "Notes",
     "orders": "Orders",
-    "totalSpent": "Total Spent",
+    "totalSpent": "Total Order Price",
     "create": "New Customer",
     "contactInfo": "Contact Info",
     "preferences": "Preferences & Notes",
     "allergies": "Allergies",
     "orderHistory": "Order History",
     "noOrders": "No orders yet.",
+    "loyalty": "Loyalty",
     "noPayments": "Payment history will appear here.",
     "noNotes": "No notes or preferences.",
     "empty": "No customers yet",
@@ -298,6 +302,111 @@
     "refundMsg": "This will mark the payment of {{amount}} {{currency}} for order #{{order}} as refunded. This action cannot be undone.",
     "allMethods": "All methods"
   },
+  "loyalty": {
+    "balance": "Points Balance",
+    "lifetimeEarned": "Lifetime Earned",
+    "lifetimeRedeemed": "Lifetime Redeemed",
+    "adjustPoints": "Adjust Points",
+    "redeemPoints": "Redeem Points",
+    "type": "Type",
+    "points": "Points",
+    "balanceAfter": "Balance After",
+    "description": "Description",
+    "noTransactions": "No loyalty transactions yet.",
+    "shekelEquivalent": "≈ ₪{{value}}",
+    "types": {
+      "earned": "Earned",
+      "redeemed": "Redeemed",
+      "adjusted": "Adjusted"
+    },
+    "descriptions": {
+      "payment_earned": "Earned from payment",
+      "refund_deducted": "Deducted for refund",
+      "redeemed": "Redeemed {{points}} points for ₪{{value}}"
+    },
+    "adjustModal": {
+      "title": "Adjust Loyalty Points",
+      "points": "Points",
+      "pointsHint": "Positive to add, negative to deduct",
+      "description": "Description",
+      "descriptionPlaceholder": "Reason for adjustment...",
+      "currentBalance": "Current Balance"
+    },
+    "redeemModal": {
+      "title": "Redeem Loyalty Points",
+      "points": "Points to Redeem",
+      "discount": "Discount Value",
+      "minPoints": "Minimum {{min}} points required",
+      "currentBalance": "Current Balance"
+    }
+  },
+  "production": {
+    "title": "Production",
+    "board": "Board",
+    "timeline": "Timeline",
+    "prepList": "Prep List",
+    "date": "Date",
+    "today": "Today",
+    "generate": "Generate Batches",
+    "generateConfirm": "Generate production batches from orders due on {{date}}?",
+    "createBatch": "New Batch",
+    "noBatches": "No production batches",
+    "noBatchesDesc": "Generate batches from orders or create one manually.",
+    "batch": "Batch",
+    "recipe": "Recipe",
+    "quantity": "Quantity",
+    "stage": "Stage",
+    "priority": "Priority",
+    "assignedTo": "Assigned To",
+    "notes": "Notes",
+    "source": "Source",
+    "sourceAuto": "Auto-generated",
+    "sourceManual": "Manual",
+    "orderSources": "Source Orders",
+    "noOrderSources": "No linked orders",
+    "split": "Split Batch",
+    "splitQuantity": "Split Quantity",
+    "merge": "Merge Batches",
+    "mergeConfirm": "Merge {{count}} batches into one?",
+    "deleteTitle": "Delete Batch?",
+    "deleteMsg": "This batch will be permanently removed.",
+    "advance": "Advance",
+    "priorities": {
+      "none": "None",
+      "low": "Low",
+      "medium": "Medium",
+      "high": "High",
+      "urgent": "Urgent"
+    },
+    "stages": {
+      "toPrep": "To Prep",
+      "mixing": "Mixing",
+      "proofing": "Proofing",
+      "baking": "Baking",
+      "cooling": "Cooling",
+      "ready": "Ready",
+      "packaged": "Packaged"
+    },
+    "prep": {
+      "title": "Ingredient prep list progress",
+      "progress": "{{done}} of {{total}} prepped",
+      "ingredient": "Ingredient",
+      "required": "Required",
+      "currentStock": "Current Stock",
+      "allPrepped": "All ingredients prepped!",
+      "noItems": "No prep items for this date."
+    },
+    "kiosk": {
+      "title": "Kitchen Display",
+      "fullscreen": "Fullscreen",
+      "exitFullscreen": "Exit Fullscreen",
+      "autoRefresh": "Auto-refresh: {{seconds}}s"
+    },
+    "timelineView": {
+      "noData": "No timeline data for this date.",
+      "hours": "Hours"
+    }
+  },
   "settings": {
     "profile": "Profile",
     "preferences": "Preferences",
@@ -319,7 +428,8 @@
       "team": "Team",
       "units": "Units",
       "groups": "Groups",
-      "notifications": "Notifications"
+      "notifications": "Notifications",
+      "loyalty": "Loyalty"
     },
     "team": {
       "title": "Team Members",
@@ -370,6 +480,14 @@
       "title": "Account",
       "phone": "Phone",
       "phoneError": "Invalid phone number — e.g. 0541234567"
+    },
+    "loyalty": {
+      "title": "Loyalty Program",
+      "isActive": "Enable Program",
+      "pointsPerShekel": "Points per ₪",
+      "pointValue": "Point Value (₪)",
+      "minRedeemPoints": "Min. Redeem Points",
+      "preview": "₪{{purchase}} purchase = {{points}} points = ₪{{value}} on redemption"
     },
     "notifications": {
       "title": "Notification Preferences",
@@ -455,7 +573,26 @@
     "inviteCreated": "Invitation created",
     "inviteCreateFailed": "Failed to create invitation",
     "inviteRevoked": "Invitation revoked",
-    "inviteRevokeFailed": "Failed to revoke invitation"
+    "inviteRevokeFailed": "Failed to revoke invitation",
+    "tourRestarted": "Tour restarted — navigate to the dashboard to begin",
+    "loyaltyConfigUpdated": "Loyalty settings updated",
+    "loyaltyConfigUpdateFailed": "Failed to update loyalty settings",
+    "loyaltyAdjusted": "Points adjusted",
+    "loyaltyAdjustFailed": "Failed to adjust points",
+    "loyaltyRedeemed": "Points redeemed",
+    "loyaltyRedeemFailed": "Failed to redeem points",
+    "batchesGenerated": "Batches generated",
+    "batchesGenerateFailed": "Failed to generate batches",
+    "batchCreated": "Batch created",
+    "batchCreateFailed": "Failed to create batch",
+    "batchUpdated": "Batch updated",
+    "batchUpdateFailed": "Failed to update batch",
+    "batchDeleted": "Batch deleted",
+    "batchDeleteFailed": "Failed to delete batch",
+    "batchSplit": "Batch split",
+    "batchSplitFailed": "Failed to split batch",
+    "batchesMerged": "Batches merged",
+    "batchesMergeFailed": "Failed to merge batches"
   },
   "store": {
     "setupTitle": "Set up your bakery",
@@ -471,6 +608,57 @@
     "setupStore": "Set Up Store",
     "invalidInvite": "This invite link is invalid or has expired.",
     "joinStore": "Join Store"
+  },
+  "tour": {
+    "back": "Back",
+    "next": "Next",
+    "skip": "Skip",
+    "close": "Close",
+    "finish": "Finish",
+    "steps": {
+      "dashboard": {
+        "title": "Dashboard",
+        "content": "Your home base — see today's orders, revenue, and low-stock alerts at a glance."
+      },
+      "orders": {
+        "title": "Orders",
+        "content": "Create and manage customer orders. Track status from received to delivered."
+      },
+      "recipes": {
+        "title": "Recipes",
+        "content": "Build your recipe book with ingredients, costs, and preparation steps."
+      },
+      "inventory": {
+        "title": "Inventory",
+        "content": "Track ingredient stock levels, adjust quantities, and get low-stock warnings."
+      },
+      "customers": {
+        "title": "Customers",
+        "content": "Manage your customer list with contact info, preferences, and order history."
+      },
+      "payments": {
+        "title": "Payments",
+        "content": "Log and track payments for orders. Support for cash, card, and bank transfers."
+      },
+      "settings": {
+        "title": "Settings",
+        "content": "Configure your profile, team, units, groups, and notification preferences."
+      },
+      "language": {
+        "title": "Language",
+        "content": "Switch between English and Hebrew."
+      },
+      "avatar": {
+        "title": "Your Profile",
+        "content": "This is your user avatar. You're all set to start managing your bakery!"
+      },
+      "more": {
+        "title": "More",
+        "content": "Access customers, payments, settings, and other features from here."
+      }
+    },
+    "restartTour": "Restart Tour",
+    "restartTourDesc": "Walk through the product tour again to discover features."
   },
   "admin": {
     "nav": {

@@ -3,6 +3,20 @@ import { useTranslation } from 'react-i18next';
 import { apiClient } from './client';
 import { useToastStore } from '@/store/toast';
 
+// PDF download helper
+export async function downloadPdf(url: string, filename: string) {
+  const { data } = await apiClient.get(url, { responseType: 'blob' });
+  const blob = new Blob([data], { type: 'application/pdf' });
+  const blobUrl = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = blobUrl;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(blobUrl);
+}
+
 // Generic fetch helper
 async function fetchApi<T>(url: string): Promise<T> {
   const { data } = await apiClient.get(url);
@@ -805,6 +819,215 @@ export function useAdminAnalytics(range: 'week' | 'month' | 'year' = 'month') {
   return useQuery({
     queryKey: ['admin', 'analytics', range],
     queryFn: () => fetchApi<{ totalUsers: number; totalStores: number; activeInvitations: number; signupsPerDay: { date: string; count: number }[] }>(`/admin/analytics?range=${range}`),
+  });
+}
+
+// Settings — Onboarding
+export function useOnboardingStatus() {
+  return useQuery({
+    queryKey: ['onboarding'],
+    queryFn: () => fetchApi<{ completedAt: string | null }>('/settings/onboarding'),
+  });
+}
+
+export function useCompleteOnboarding() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () => patchApi('/settings/onboarding/complete', {}),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['onboarding'] }); },
+  });
+}
+
+export function useResetOnboarding() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () => patchApi('/settings/onboarding/reset', {}),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['onboarding'] }); },
+  });
+}
+
+// Settings — Loyalty
+export function useLoyaltyConfig() {
+  return useQuery({ queryKey: ['loyaltyConfig'], queryFn: () => fetchApi<unknown>('/settings/loyalty') });
+}
+
+export function useUpdateLoyaltyConfig() {
+  const qc = useQueryClient();
+  const addToast = useToastStore((s) => s.addToast);
+  const { t } = useTranslation();
+  return useMutation({
+    mutationFn: (body: unknown) => patchApi('/settings/loyalty', body),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['loyaltyConfig'] }); addToast('success', t('toasts.loyaltyConfigUpdated')); },
+    onError: () => addToast('error', t('toasts.loyaltyConfigUpdateFailed')),
+  });
+}
+
+// Loyalty — Customer
+export function useCustomerLoyalty(customerId: string) {
+  return useQuery({
+    queryKey: ['loyalty', customerId],
+    queryFn: () => fetchApi<{ balance: number; lifetimeEarned: number; lifetimeRedeemed: number }>(`/loyalty/customer/${customerId}`),
+    enabled: !!customerId,
+  });
+}
+
+export function useCustomerLoyaltyTransactions(customerId: string, page = 1, limit = 10) {
+  return useQuery({
+    queryKey: ['loyalty', customerId, 'transactions', page, limit],
+    queryFn: async () => {
+      const params = new URLSearchParams({ page: String(page), limit: String(limit) });
+      const { data } = await apiClient.get(`/loyalty/customer/${customerId}/transactions?${params}`);
+      return { transactions: data.data, pagination: data.pagination };
+    },
+    enabled: !!customerId,
+    placeholderData: keepPreviousData,
+  });
+}
+
+export function useAdjustLoyalty() {
+  const qc = useQueryClient();
+  const addToast = useToastStore((s) => s.addToast);
+  const { t } = useTranslation();
+  return useMutation({
+    mutationFn: (body: { customerId: string; points: number; description?: string }) => postApi('/loyalty/adjust', body),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['loyalty'] });
+      qc.invalidateQueries({ queryKey: ['customers'] });
+      addToast('success', t('toasts.loyaltyAdjusted'));
+    },
+    onError: () => addToast('error', t('toasts.loyaltyAdjustFailed')),
+  });
+}
+
+export function useRedeemLoyalty() {
+  const qc = useQueryClient();
+  const addToast = useToastStore((s) => s.addToast);
+  const { t } = useTranslation();
+  return useMutation({
+    mutationFn: (body: { customerId: string; points: number }) => postApi('/loyalty/redeem', body),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['loyalty'] });
+      qc.invalidateQueries({ queryKey: ['customers'] });
+      addToast('success', t('toasts.loyaltyRedeemed'));
+    },
+    onError: () => addToast('error', t('toasts.loyaltyRedeemFailed')),
+  });
+}
+
+// Production
+export function useProductionBatches(date: string) {
+  return useQuery({
+    queryKey: ['production', 'batches', date],
+    queryFn: () => fetchApi<unknown[]>(`/production/batches?date=${date}`),
+    enabled: !!date,
+  });
+}
+
+export function useProductionBatch(id: string) {
+  return useQuery({
+    queryKey: ['production', 'batch', id],
+    queryFn: () => fetchApi<unknown>(`/production/batches/${id}`),
+    enabled: !!id,
+  });
+}
+
+export function useGenerateBatches() {
+  const qc = useQueryClient();
+  const addToast = useToastStore((s) => s.addToast);
+  const { t } = useTranslation();
+  return useMutation({
+    mutationFn: (body: { date: string }) => postApi('/production/batches/generate', body),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['production'] }); addToast('success', t('toasts.batchesGenerated')); },
+    onError: () => addToast('error', t('toasts.batchesGenerateFailed')),
+  });
+}
+
+export function useCreateBatch() {
+  const qc = useQueryClient();
+  const addToast = useToastStore((s) => s.addToast);
+  const { t } = useTranslation();
+  return useMutation({
+    mutationFn: (body: unknown) => postApi('/production/batches', body),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['production'] }); addToast('success', t('toasts.batchCreated')); },
+    onError: () => addToast('error', t('toasts.batchCreateFailed')),
+  });
+}
+
+export function useUpdateBatchStage() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, stage }: { id: string; stage: number }) => patchApi(`/production/batches/${id}/stage`, { stage }),
+    onSettled: () => {
+      qc.invalidateQueries({ queryKey: ['production'] });
+    },
+  });
+}
+
+export function useUpdateBatch() {
+  const qc = useQueryClient();
+  const addToast = useToastStore((s) => s.addToast);
+  const { t } = useTranslation();
+  return useMutation({
+    mutationFn: ({ id, ...body }: { id: string } & Record<string, unknown>) => putApi(`/production/batches/${id}`, body),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['production'] }); addToast('success', t('toasts.batchUpdated')); },
+    onError: () => addToast('error', t('toasts.batchUpdateFailed')),
+  });
+}
+
+export function useDeleteBatch() {
+  const qc = useQueryClient();
+  const addToast = useToastStore((s) => s.addToast);
+  const { t } = useTranslation();
+  return useMutation({
+    mutationFn: (id: string) => deleteApi(`/production/batches/${id}`),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['production'] }); addToast('success', t('toasts.batchDeleted')); },
+    onError: () => addToast('error', t('toasts.batchDeleteFailed')),
+  });
+}
+
+export function useSplitBatch() {
+  const qc = useQueryClient();
+  const addToast = useToastStore((s) => s.addToast);
+  const { t } = useTranslation();
+  return useMutation({
+    mutationFn: ({ id, splitQuantity }: { id: string; splitQuantity: number }) => postApi(`/production/batches/${id}/split`, { splitQuantity }),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['production'] }); addToast('success', t('toasts.batchSplit')); },
+    onError: () => addToast('error', t('toasts.batchSplitFailed')),
+  });
+}
+
+export function useMergeBatches() {
+  const qc = useQueryClient();
+  const addToast = useToastStore((s) => s.addToast);
+  const { t } = useTranslation();
+  return useMutation({
+    mutationFn: (body: { batchIds: string[] }) => postApi('/production/batches/merge', body),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['production'] }); addToast('success', t('toasts.batchesMerged')); },
+    onError: () => addToast('error', t('toasts.batchesMergeFailed')),
+  });
+}
+
+export function usePrepList(date: string) {
+  return useQuery({
+    queryKey: ['production', 'prep-list', date],
+    queryFn: () => fetchApi<unknown[]>(`/production/prep-list?date=${date}`),
+    enabled: !!date,
+  });
+}
+
+export function useTogglePrepItem() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, isPrepped }: { id: string; isPrepped: boolean }) => patchApi(`/production/prep-list/${id}`, { isPrepped }),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['production'] }); },
+  });
+}
+
+export function useProductionTimeline(date: string) {
+  return useQuery({
+    queryKey: ['production', 'timeline', date],
+    queryFn: () => fetchApi<unknown[]>(`/production/timeline?date=${date}`),
+    enabled: !!date,
   });
 }
 

@@ -13,6 +13,9 @@ import { ProfileController } from './profile/profile.controller.js';
 import { NotificationsService } from './notifications/notifications.service.js';
 import { NotificationsController } from './notifications/notifications.controller.js';
 
+import { LoyaltyService } from '../loyalty/loyalty.service.js';
+import { LoyaltyController } from '../loyalty/loyalty.controller.js';
+
 export default async function settingsRoutes(app: FastifyInstance) {
   app.addHook('preHandler', authMiddleware);
   app.addHook('preHandler', requireStoreMiddleware);
@@ -43,10 +46,22 @@ export default async function settingsRoutes(app: FastifyInstance) {
   app.get('/profile', (req, reply) => profileController.get(req, reply));
   app.patch('/profile', (req, reply) => profileController.update(req, reply));
 
+  // Onboarding
+  app.get('/onboarding', (req, reply) => profileController.getOnboarding(req, reply));
+  app.patch('/onboarding/complete', (req, reply) => profileController.completeOnboarding(req, reply));
+  app.patch('/onboarding/reset', (req, reply) => profileController.resetOnboarding(req, reply));
+
   // Notifications
   const notificationsService = new NotificationsService();
   const notificationsController = new NotificationsController(notificationsService);
 
   app.get('/notifications', (req, reply) => notificationsController.get(req, reply));
   app.put('/notifications', (req, reply) => notificationsController.update(req, reply));
+
+  // Loyalty
+  const loyaltyService = new LoyaltyService();
+  const loyaltyController = new LoyaltyController(loyaltyService);
+
+  app.get('/loyalty', (req, reply) => loyaltyController.getConfig(req, reply));
+  app.patch('/loyalty', (req, reply) => loyaltyController.updateConfig(req, reply));
 }

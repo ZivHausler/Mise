@@ -12,6 +12,7 @@ export default async function inventoryRoutes(app: FastifyInstance) {
 
   app.get<{ Querystring: { search?: string; page?: string; limit?: string; groupIds?: string; status?: string } }>('/', (req, reply) => controller.getAll(req, reply));
   app.get('/low-stock', (req, reply) => controller.getLowStock(req, reply));
+  app.get<{ Querystring: { lang?: string; dateFormat?: string } }>('/shopping-list/pdf', (req, reply) => controller.getShoppingListPdf(req, reply));
   app.get<{ Params: { id: string } }>('/:id', (req, reply) => controller.getById(req, reply));
   app.get<{ Params: { id: string } }>('/:id/log', (req, reply) => controller.getLog(req, reply));
   app.post('/', (req, reply) => controller.create(req, reply));

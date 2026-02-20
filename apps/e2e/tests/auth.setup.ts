@@ -57,7 +57,8 @@ setup('authenticate', async ({ page, request }) => {
     headers: { Authorization: `Bearer ${authToken}` },
     data: { name: TEST_USER.storeName, inviteToken },
   });
-  expect(storeResponse.ok(), `Store creation failed: ${storeResponse.status()} ${await storeResponse.text()}`).toBeTruthy();
+  const storeBody = await storeResponse!.json();
+  expect(storeResponse!.ok(), `Store creation failed: ${storeResponse!.status()}`).toBeTruthy();
 
   // Step 4: Login via UI to capture browser auth state
   await page.goto('/login');
@@ -66,6 +67,26 @@ setup('authenticate', async ({ page, request }) => {
   await page.getByRole('button', { name: 'Log In' }).click();
 
   // Step 5: Wait for redirect to dashboard (authenticated state)
+  await page.waitForURL('/', { timeout: 15_000 });
+
+  // Step 6: Complete onboarding using the browser's own auth token
+  // This ensures the token has the correct storeId from the auto-selected store
+  await page.evaluate(async () => {
+    const authState = localStorage.getItem('auth-storage');
+    if (authState) {
+      const parsed = JSON.parse(authState);
+      const token = parsed?.state?.token;
+      if (token) {
+        await fetch('/api/settings/onboarding/complete', {
+          method: 'PATCH',
+          headers: { Authorization: `Bearer ${token}` },
+        });
+      }
+    }
+  });
+
+  // Step 7: Reload so the tour state is refreshed
+  await page.reload();
   await page.waitForURL('/', { timeout: 15_000 });
 
   // Save storage state

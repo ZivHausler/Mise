@@ -47,7 +47,8 @@
     "payments": "תשלומים",
     "settings": "הגדרות",
     "more": "עוד",
-    "admin": "פאנל ניהול"
+    "admin": "פאנל ניהול",
+    "production": "ייצור"
   },
   "auth": {
     "login": "התחברות",
@@ -127,6 +128,8 @@
     "recurringEditMessage": "הזמנה זו היא חלק מסדרה חוזרת. האם לעדכן רק את ההזמנה הזו, או גם את כל ההזמנות העתידיות בסדרה?",
     "recurringEditThisOnly": "הזמנה זו בלבד",
     "recurringEditAllFuture": "הזמנה זו והעתידיות",
+    "downloadPdf": "PDF",
+    "print": "הדפסה",
     "status": {
       "received": "התקבלה",
       "in_progress": "בהכנה",
@@ -257,6 +260,7 @@
     "allergies": "אלרגיות",
     "orderHistory": "היסטוריית הזמנות",
     "noOrders": "אין הזמנות עדיין.",
+    "loyalty": "נאמנות",
     "noPayments": "היסטוריית תשלומים תופיע כאן.",
     "noNotes": "אין הערות או העדפות.",
     "empty": "אין לקוחות עדיין",
@@ -298,6 +302,111 @@
     "refundMsg": "פעולה זו תסמן את התשלום בסך {{amount}} {{currency}} עבור הזמנה #{{order}} כהוחזר. לא ניתן לבטל פעולה זו.",
     "allMethods": "כל האמצעים"
   },
+  "loyalty": {
+    "balance": "יתרת נקודות",
+    "lifetimeEarned": "סה\"כ נצבר",
+    "lifetimeRedeemed": "סה\"כ מומש",
+    "adjustPoints": "עדכון נקודות",
+    "redeemPoints": "מימוש נקודות",
+    "type": "סוג",
+    "points": "נקודות",
+    "balanceAfter": "יתרה אחרי",
+    "description": "תיאור",
+    "noTransactions": "אין עסקאות נאמנות עדיין.",
+    "shekelEquivalent": "≈ ₪{{value}}",
+    "types": {
+      "earned": "נצבר",
+      "redeemed": "מומש",
+      "adjusted": "עודכן"
+    },
+    "descriptions": {
+      "payment_earned": "נצבר מתשלום",
+      "refund_deducted": "נוכה בגלל החזר",
+      "redeemed": "מומשו {{points}} נקודות תמורת ₪{{value}}"
+    },
+    "adjustModal": {
+      "title": "עדכון נקודות נאמנות",
+      "points": "נקודות",
+      "pointsHint": "חיובי להוספה, שלילי לניכוי",
+      "description": "תיאור",
+      "descriptionPlaceholder": "סיבת העדכון...",
+      "currentBalance": "יתרה נוכחית"
+    },
+    "redeemModal": {
+      "title": "מימוש נקודות נאמנות",
+      "points": "נקודות למימוש",
+      "discount": "ערך הנחה",
+      "minPoints": "מינימום {{min}} נקודות נדרש",
+      "currentBalance": "יתרה נוכחית"
+    }
+  },
+  "production": {
+    "title": "ייצור",
+    "board": "לוח",
+    "timeline": "ציר זמן",
+    "prepList": "רשימת הכנה",
+    "date": "תאריך",
+    "today": "היום",
+    "generate": "צור מקבצים",
+    "generateConfirm": "ליצור מקבצי ייצור מהזמנות ליום {{date}}?",
+    "createBatch": "מקבץ חדש",
+    "noBatches": "אין מקבצי ייצור",
+    "noBatchesDesc": "צור מקבצים מהזמנות או צור אחד ידנית.",
+    "batch": "מקבץ",
+    "recipe": "מתכון",
+    "quantity": "כמות",
+    "stage": "שלב",
+    "priority": "עדיפות",
+    "assignedTo": "הוקצה ל",
+    "notes": "הערות",
+    "source": "מקור",
+    "sourceAuto": "נוצר אוטומטית",
+    "sourceManual": "ידני",
+    "orderSources": "הזמנות מקור",
+    "noOrderSources": "אין הזמנות מקושרות",
+    "split": "פצל מקבץ",
+    "splitQuantity": "כמות לפיצול",
+    "merge": "מזג מקבצים",
+    "mergeConfirm": "למזג {{count}} מקבצים לאחד?",
+    "deleteTitle": "למחוק מקבץ?",
+    "deleteMsg": "המקבץ יימחק לצמיתות.",
+    "advance": "קדם",
+    "priorities": {
+      "none": "ללא",
+      "low": "נמוכה",
+      "medium": "בינונית",
+      "high": "גבוהה",
+      "urgent": "דחוף"
+    },
+    "stages": {
+      "toPrep": "להכנה",
+      "mixing": "ערבוב",
+      "proofing": "תפיחה",
+      "baking": "אפייה",
+      "cooling": "קירור",
+      "ready": "מוכן",
+      "packaged": "ארוז"
+    },
+    "prep": {
+      "title": "התקדמות רשימת הכנת מרכיבים",
+      "progress": "{{done}} מתוך {{total}} הוכנו",
+      "ingredient": "מרכיב",
+      "required": "נדרש",
+      "currentStock": "מלאי נוכחי",
+      "allPrepped": "כל המרכיבים הוכנו!",
+      "noItems": "אין פריטי הכנה לתאריך זה."
+    },
+    "kiosk": {
+      "title": "תצוגת מטבח",
+      "fullscreen": "מסך מלא",
+      "exitFullscreen": "צא ממסך מלא",
+      "autoRefresh": "רענון אוטומטי: {{seconds}} שנ׳"
+    },
+    "timelineView": {
+      "noData": "אין נתוני ציר זמן לתאריך זה.",
+      "hours": "שעות"
+    }
+  },
   "settings": {
     "profile": "פרופיל",
     "preferences": "העדפות",
@@ -319,7 +428,8 @@
       "team": "צוות",
       "units": "יחידות",
       "groups": "קבוצות",
-      "notifications": "התראות"
+      "notifications": "התראות",
+      "loyalty": "נאמנות"
     },
     "team": {
       "title": "חברי צוות",
@@ -370,6 +480,14 @@
       "title": "חשבון",
       "phone": "טלפון",
       "phoneError": "מספר טלפון לא תקין — לדוגמה 0541234567"
+    },
+    "loyalty": {
+      "title": "תוכנית נאמנות",
+      "isActive": "הפעל תוכנית",
+      "pointsPerShekel": "נקודות ל-₪",
+      "pointValue": "ערך נקודה (₪)",
+      "minRedeemPoints": "מינימום נקודות למימוש",
+      "preview": "רכישה של ₪{{purchase}} = {{points}} נקודות = ₪{{value}} בעת מימוש"
     },
     "notifications": {
       "title": "העדפות התראות",
@@ -455,7 +573,26 @@
     "inviteCreated": "ההזמנה נוצרה",
     "inviteCreateFailed": "יצירת ההזמנה נכשלה",
     "inviteRevoked": "ההזמנה בוטלה",
-    "inviteRevokeFailed": "ביטול ההזמנה נכשל"
+    "inviteRevokeFailed": "ביטול ההזמנה נכשל",
+    "tourRestarted": "הסיור הופעל מחדש — נווט ללוח הבקרה כדי להתחיל",
+    "loyaltyConfigUpdated": "הגדרות נאמנות עודכנו",
+    "loyaltyConfigUpdateFailed": "עדכון הגדרות נאמנות נכשל",
+    "loyaltyAdjusted": "הנקודות עודכנו",
+    "loyaltyAdjustFailed": "עדכון נקודות נכשל",
+    "loyaltyRedeemed": "הנקודות מומשו",
+    "loyaltyRedeemFailed": "מימוש נקודות נכשל",
+    "batchesGenerated": "מקבצים נוצרו",
+    "batchesGenerateFailed": "יצירת מקבצים נכשלה",
+    "batchCreated": "מקבץ נוצר",
+    "batchCreateFailed": "יצירת מקבץ נכשלה",
+    "batchUpdated": "מקבץ עודכן",
+    "batchUpdateFailed": "עדכון מקבץ נכשל",
+    "batchDeleted": "מקבץ נמחק",
+    "batchDeleteFailed": "מחיקת מקבץ נכשלה",
+    "batchSplit": "מקבץ פוצל",
+    "batchSplitFailed": "פיצול מקבץ נכשל",
+    "batchesMerged": "מקבצים מוזגו",
+    "batchesMergeFailed": "מיזוג מקבצים נכשל"
   },
   "store": {
     "setupTitle": "הקם את המאפייה שלך",
@@ -471,6 +608,57 @@
     "setupStore": "הקמת חנות",
     "invalidInvite": "קישור ההזמנה אינו תקף או שפג תוקפו.",
     "joinStore": "הצטרף לחנות"
+  },
+  "tour": {
+    "back": "חזרה",
+    "next": "הבא",
+    "skip": "דלג",
+    "close": "סגור",
+    "finish": "סיום",
+    "steps": {
+      "dashboard": {
+        "title": "לוח בקרה",
+        "content": "הבית שלך — צפה בהזמנות היום, הכנסות והתראות מלאי נמוך במבט אחד."
+      },
+      "orders": {
+        "title": "הזמנות",
+        "content": "צור ונהל הזמנות לקוחות. עקוב אחרי סטטוס מקבלה ועד משלוח."
+      },
+      "recipes": {
+        "title": "מתכונים",
+        "content": "בנה את ספר המתכונים שלך עם מרכיבים, עלויות ושלבי הכנה."
+      },
+      "inventory": {
+        "title": "מלאי",
+        "content": "עקוב אחרי רמות מלאי מרכיבים, עדכן כמויות וקבל התראות מלאי נמוך."
+      },
+      "customers": {
+        "title": "לקוחות",
+        "content": "נהל את רשימת הלקוחות שלך עם פרטי קשר, העדפות והיסטוריית הזמנות."
+      },
+      "payments": {
+        "title": "תשלומים",
+        "content": "רשום ועקוב אחרי תשלומים עבור הזמנות. תמיכה במזומן, כרטיס והעברה בנקאית."
+      },
+      "settings": {
+        "title": "הגדרות",
+        "content": "הגדר את הפרופיל, הצוות, היחידות, הקבוצות והעדפות ההתראות שלך."
+      },
+      "language": {
+        "title": "שפה",
+        "content": "עבור בין אנגלית לעברית."
+      },
+      "avatar": {
+        "title": "הפרופיל שלך",
+        "content": "זהו הסמל שלך. אתה מוכן להתחיל לנהל את המאפייה שלך!"
+      },
+      "more": {
+        "title": "עוד",
+        "content": "גש ללקוחות, תשלומים, הגדרות ותכונות נוספות מכאן."
+      }
+    },
+    "restartTour": "הפעל סיור מחדש",
+    "restartTourDesc": "עבור שוב על סיור המוצר כדי לגלות תכונות."
   },
   "admin": {
     "nav": {

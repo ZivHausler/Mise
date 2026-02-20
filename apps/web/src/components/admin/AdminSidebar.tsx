@@ -2,6 +2,7 @@ import { useLocation, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { LayoutDashboard, Users, Store, Mail, FileText, ArrowLeft, X } from 'lucide-react';
 import { cn } from '@/utils/cn';
+import { Logo } from '@/components/Logo';
 
 const navItems = [
   { path: '/admin', icon: LayoutDashboard, labelKey: 'admin.nav.dashboard', exact: true },
@@ -33,7 +34,7 @@ export function AdminSidebar({ mobile, onNavigate }: AdminSidebarProps) {
       )}
     >
       <div className={cn('flex items-center border-b border-neutral-200 dark:border-neutral-700 px-4 h-14', mobile ? 'justify-between' : 'justify-start')}>
-        <h2 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">{t('admin.nav.title')}</h2>
+        <Logo className="h-10 text-[#1a1a18] dark:text-[#c8a96e]" />
         {mobile && (
           <button
             onClick={onNavigate}

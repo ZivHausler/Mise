@@ -3,6 +3,10 @@ import type { OrderService } from './order.service.js';
 import type { OrderStatus } from './order.types.js';
 import { createOrderSchema, createRecurringOrderSchema, updateOrderStatusSchema, updateOrderSchema, calendarRangeSchema, calendarAggregatesSchema, calendarDaySchema } from './order.schema.js';
 import { parsePaginationParams } from '../../core/types/pagination.js';
+import { pdfQuerySchema } from '../shared/pdf/pdfSchema.js';
+import { generateOrderPdf } from '../shared/pdf/orderPdf.js';
+import { t } from '../shared/pdf/i18n.js';
+import { PgStoreRepository } from '../stores/store.repository.js';
 
 export class OrderController {
   constructor(private orderService: OrderService) {}
@@ -21,6 +25,23 @@ export class OrderController {
     const storeId = request.currentUser!.storeId!;
     const order = await this.orderService.getById(storeId, request.params.id);
     return reply.send({ success: true, data: order });
+  }
+
+  async getPdf(request: FastifyRequest<{ Params: { id: string }; Querystring: { lang?: string; dateFormat?: string } }>, reply: FastifyReply) {
+    const storeId = request.currentUser!.storeId!;
+    const userId = request.currentUser!.userId!;
+    const { lang, dateFormat } = pdfQuerySchema.parse(request.query);
+
+    const order = await this.orderService.getById(storeId, request.params.id);
+    const stores = await PgStoreRepository.getUserStores(userId);
+    const storeName = stores.find((s) => s.storeId === storeId)?.storeName ?? '';
+    const currency = t(lang, 'common.currency', '\u20AA');
+
+    const pdf = generateOrderPdf(order, { lang, dateFormat, currency, storeName });
+    return reply
+      .header('Content-Type', 'application/pdf')
+      .header('Content-Disposition', 'attachment; filename="order.pdf"')
+      .send(pdf);
   }
 
   async getByCustomerId(request: FastifyRequest<{ Params: { customerId: string }; Querystring: { page?: string; limit?: string; status?: string; dateFrom?: string; dateTo?: string } }>, reply: FastifyReply) {

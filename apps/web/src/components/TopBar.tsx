@@ -37,6 +37,7 @@ export const TopBar = React.memo(function TopBar({ onMenuClick }: TopBarProps) {
       <div className="flex items-center gap-3">
         <button
           onClick={toggleLanguage}
+          data-tour="topbar-language"
           className="flex items-center gap-1.5 rounded-md px-3 py-1.5 text-body-sm text-neutral-600 hover:bg-neutral-100"
         >
           <Globe className="h-4 w-4" />
@@ -44,7 +45,7 @@ export const TopBar = React.memo(function TopBar({ onMenuClick }: TopBarProps) {
         </button>
 
         {user && (
-          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary-500 text-body-sm font-medium text-white">
+          <div data-tour="topbar-avatar" className="flex h-8 w-8 items-center justify-center rounded-full bg-primary-500 text-body-sm font-medium text-white">
             {user.name.charAt(0).toUpperCase()}
           </div>
         )}

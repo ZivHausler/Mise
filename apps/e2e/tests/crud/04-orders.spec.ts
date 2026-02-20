@@ -7,8 +7,8 @@ test.describe('Orders CRUD', () => {
     await page.goto('/');
     await page.getByRole('link', { name: 'Orders' }).click();
     await expect(page).toHaveURL(/\/orders/);
-    // Pipeline view shows "No results found" in empty columns
-    await expect(page.getByText('No results found').first()).toBeVisible();
+    // Calendar view shows status filter badges with zero counts
+    await expect(page.getByText('All (0)')).toBeVisible();
   });
 
   test('create order', async ({ page }) => {
@@ -17,8 +17,10 @@ test.describe('Orders CRUD', () => {
 
     await expect(page).toHaveURL(/\/orders\/new/);
 
-    // Select customer
-    await page.getByLabel('Customer').selectOption({ label: 'E2E Baker' });
+    // Wait for customer options to load from API, then select
+    const customerSelect = page.getByLabel('Customer');
+    await expect(customerSelect.locator('option', { hasText: 'E2E Baker' })).toBeAttached({ timeout: 10_000 });
+    await customerSelect.selectOption({ label: 'E2E Baker' });
 
     // Set due date to tomorrow
     const tomorrow = new Date();
@@ -26,8 +28,9 @@ test.describe('Orders CRUD', () => {
     const dueDateStr = tomorrow.toISOString().split('T')[0];
     await page.getByLabel('Due Date').fill(dueDateStr!);
 
-    // Select recipe in the first item row
+    // Wait for recipe options to load, then select
     const recipeSelect = page.locator('select').filter({ hasText: 'Recipe...' });
+    await expect(recipeSelect.locator('option', { hasText: 'Sourdough Bread' })).toBeAttached({ timeout: 10_000 });
     await recipeSelect.selectOption({ label: 'Sourdough Bread' });
 
     // Set quantity
@@ -100,13 +103,16 @@ test.describe('Orders CRUD', () => {
   test('re-create order for payments tests', async ({ page }) => {
     await page.goto('/orders/new');
 
-    await page.getByLabel('Customer').selectOption({ label: 'E2E Baker' });
+    const customerSelect = page.getByLabel('Customer');
+    await expect(customerSelect.locator('option', { hasText: 'E2E Baker' })).toBeAttached({ timeout: 10_000 });
+    await customerSelect.selectOption({ label: 'E2E Baker' });
 
     const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);
     await page.getByLabel('Due Date').fill(tomorrow.toISOString().split('T')[0]!);
 
     const recipeSelect = page.locator('select').filter({ hasText: 'Recipe...' });
+    await expect(recipeSelect.locator('option', { hasText: 'Sourdough Bread' })).toBeAttached({ timeout: 10_000 });
     await recipeSelect.selectOption({ label: 'Sourdough Bread' });
     await page.getByLabel('Qty').fill('2');
 

@@ -6,6 +6,7 @@ import { Spinner } from '@/components/Feedback';
 import { Stack } from '@/components/Layout';
 import { useValidateInvite, useAcceptInvite } from '@/api/hooks';
 import { useAuthStore } from '@/store/auth';
+import { Logo } from '@/components/Logo';
 
 export default function InvitePage() {
   const { token } = useParams<{ token: string }>();
@@ -53,7 +54,7 @@ export default function InvitePage() {
     return (
       <div className="flex min-h-screen items-center justify-center bg-primary-50 p-4">
         <div className="w-full max-w-md rounded-lg bg-white p-8 shadow-md text-center">
-          <h1 className="font-heading text-display text-primary-700 mb-4">Mise</h1>
+          <Logo className="h-20 mx-auto mb-4 text-[#c8a96e]" />
           <p className="text-body-sm text-neutral-600">{t('store.invalidInvite', 'This invite link is invalid or has expired.')}</p>
           <Link to="/login" className="mt-4 inline-block text-primary-500 hover:underline text-body-sm">
             {t('auth.login')}
@@ -67,7 +68,7 @@ export default function InvitePage() {
     <div className="flex min-h-screen items-center justify-center bg-primary-50 p-4">
       <div className="w-full max-w-md rounded-lg bg-white p-8 shadow-md">
         <div className="mb-8 text-center">
-          <h1 className="font-heading text-display text-primary-700">Mise</h1>
+          <Logo className="h-20 mx-auto text-[#c8a96e]" />
         </div>
 
         <div className="mb-6 rounded-md bg-primary-50 border border-primary-200 p-4 text-center">

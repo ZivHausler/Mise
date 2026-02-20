@@ -1,16 +1,19 @@
 import React, { useCallback } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { ChevronLeft, ChevronRight, Trash2, Edit, BadgeDollarSign } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Trash2, Edit, BadgeDollarSign, Download, Printer } from 'lucide-react';
 import { Page, Card, Section, Stack, Row } from '@/components/Layout';
 import { Breadcrumbs } from '@/components/Breadcrumbs';
 import { StatusBadge } from '@/components/DataDisplay';
 import { Button } from '@/components/Button';
 import { PageSkeleton } from '@/components/Feedback';
 import { ConfirmModal } from '@/components/Modal';
-import { useOrder, useUpdateOrderStatus, useDeleteOrder, usePaymentStatuses } from '@/api/hooks';
+import { useOrder, useUpdateOrderStatus, useDeleteOrder, usePaymentStatuses, downloadPdf } from '@/api/hooks';
 import { ORDER_STATUS, getStatusLabel } from '@/utils/orderStatus';
 import { useFormatDate } from '@/utils/dateFormat';
+import { useAuthStore } from '@/store/auth';
+import { useAppStore } from '@/store/app';
+import { printOrder } from '@/utils/orderPrint';
 
 export default function OrderDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -23,6 +26,10 @@ export default function OrderDetailPage() {
   const [showDelete, setShowDelete] = React.useState(false);
 
   const formatDate = useFormatDate();
+  const storeName = useAuthStore((s) => s.stores[0]?.storeName ?? '');
+  const language = useAppStore((s) => s.language);
+  const isRtl = language === 'he';
+  const currency = String(t('common.currency'));
   const o = order as any;
 
   const handleAdvance = useCallback(() => {
@@ -39,6 +46,17 @@ export default function OrderDetailPage() {
     if (!o) return;
     deleteOrder.mutate(o.id, { onSuccess: () => navigate('/orders') });
   }, [o, deleteOrder, navigate]);
+
+  const dateFormat = useAppStore((s) => s.dateFormat);
+  const handlePdf = useCallback(() => {
+    if (!o) return;
+    downloadPdf(`/orders/${o.id}/pdf?lang=${language}&dateFormat=${dateFormat}`, `order-${o.orderNumber}.pdf`);
+  }, [o, language, dateFormat]);
+
+  const handlePrint = useCallback(() => {
+    if (!o) return;
+    printOrder(o, storeName, t, currency, isRtl, formatDate);
+  }, [o, storeName, t, currency, isRtl, formatDate]);
 
   if (isLoading) return <PageSkeleton />;
   if (!o) return null;
@@ -119,7 +137,7 @@ export default function OrderDetailPage() {
         <Card>
           <Section title={t('orders.items', 'Items')}>
             {o.items?.length ? (
-              <div className="rounded-md border border-neutral-200">
+              <div className="overflow-hidden rounded-md border border-neutral-200">
                 <table className="w-full text-body-sm">
                   <thead>
                     <tr className="border-b bg-neutral-100">
@@ -153,6 +171,15 @@ export default function OrderDetailPage() {
           </Section>
         </Card>
       )}
+
+      <Row gap={2} className="mt-6">
+        <Button variant="secondary" icon={<Download className="h-4 w-4" />} onClick={handlePdf}>
+          {t('orders.downloadPdf', 'PDF')}
+        </Button>
+        <Button variant="secondary" icon={<Printer className="h-4 w-4" />} onClick={handlePrint}>
+          {t('orders.print', 'Print')}
+        </Button>
+      </Row>
 
       <ConfirmModal
         open={showDelete}

@@ -210,6 +210,19 @@ export class PgOrderRepository {
     return result.rows.map((r: Record<string, unknown>) => this.mapRow(r));
   }
 
+  static async findByIdInternal(id: string): Promise<{ storeId: string; customerId: string } | null> {
+    const pool = getPool();
+    const result = await pool.query(
+      'SELECT store_id, customer_id FROM orders WHERE id = $1',
+      [id],
+    );
+    if (!result.rows[0]) return null;
+    return {
+      storeId: result.rows[0]['store_id'] as string,
+      customerId: result.rows[0]['customer_id'] as string,
+    };
+  }
+
   private static mapRow(row: Record<string, unknown>): Order {
     let items: OrderItem[] = [];
     const rawItems = row['items'];

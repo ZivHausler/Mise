@@ -1,8 +1,10 @@
 import React, { useCallback } from 'react';
+import { Logo } from './Logo';
 import { NavLink } from 'react-router-dom';
 import {
   LayoutDashboard,
   ClipboardList,
+  Factory,
   BookOpen,
   Package,
   Users,
@@ -21,16 +23,17 @@ import { useAuthStore } from '@/store/auth';
 import { useSelectStore, useAllStores } from '@/api/hooks';
 
 const navItems = [
-  { path: '/', icon: LayoutDashboard, labelKey: 'nav.dashboard' },
-  { path: '/orders', icon: ClipboardList, labelKey: 'nav.orders' },
-  { path: '/recipes', icon: BookOpen, labelKey: 'nav.recipes' },
-  { path: '/inventory', icon: Package, labelKey: 'nav.inventory' },
-  { path: '/customers', icon: Users, labelKey: 'nav.customers' },
-  { path: '/payments', icon: CreditCard, labelKey: 'nav.payments' },
+  { path: '/', icon: LayoutDashboard, labelKey: 'nav.dashboard', tourId: 'sidebar-dashboard' },
+  { path: '/orders', icon: ClipboardList, labelKey: 'nav.orders', tourId: 'sidebar-orders' },
+  { path: '/production', icon: Factory, labelKey: 'nav.production', tourId: 'sidebar-production' },
+  { path: '/recipes', icon: BookOpen, labelKey: 'nav.recipes', tourId: 'sidebar-recipes' },
+  { path: '/inventory', icon: Package, labelKey: 'nav.inventory', tourId: 'sidebar-inventory' },
+  { path: '/customers', icon: Users, labelKey: 'nav.customers', tourId: 'sidebar-customers' },
+  { path: '/payments', icon: CreditCard, labelKey: 'nav.payments', tourId: 'sidebar-payments' },
 ];
 
 const bottomItems = [
-  { path: '/settings', icon: Settings, labelKey: 'nav.settings' },
+  { path: '/settings', icon: Settings, labelKey: 'nav.settings', tourId: 'sidebar-settings' },
 ];
 
 export function Sidebar() {
@@ -75,7 +78,7 @@ export function Sidebar() {
       )}
     >
       <div className={cn('flex items-center border-b border-primary-800 px-4 h-16', collapsed ? 'justify-center' : 'justify-between')}>
-        {!collapsed && <span className="font-heading text-h3 text-white">Mise</span>}
+        {!collapsed && <Logo className="h-10 text-[#c8a96e]" />}
         <button
           onClick={handleToggle}
           className="rounded p-1.5 text-primary-400 hover:bg-primary-800 hover:text-white"
@@ -109,6 +112,7 @@ export function Sidebar() {
               <NavLink
                 to={item.path}
                 end={item.path === '/'}
+                data-tour={item.tourId}
                 className={({ isActive }) =>
                   cn(
                     'flex items-center gap-3 rounded-md px-3 py-2.5 text-body-sm transition-colors',
@@ -147,6 +151,7 @@ export function Sidebar() {
           <NavLink
             key={item.path}
             to={item.path}
+            data-tour={item.tourId}
             className={({ isActive }) =>
               cn(
                 'flex items-center gap-3 rounded-md px-3 py-2.5 text-body-sm transition-colors',
