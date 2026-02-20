@@ -1,5 +1,5 @@
 ---
-name: run-project
+name: run:project
 description: Run the Mise project (backend API and frontend web servers)
 user-invocable: true
 allowed-tools: Bash

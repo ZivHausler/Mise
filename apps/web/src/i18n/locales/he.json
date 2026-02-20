@@ -35,7 +35,8 @@
     "allStatuses": "כל הסטטוסים",
     "clearFilters": "נקה",
     "previous": "הקודם",
-    "next": "הבא"
+    "next": "הבא",
+    "all": "הכל"
   },
   "nav": {
     "dashboard": "לוח בקרה",
@@ -94,11 +95,15 @@
     "selectCustomer": "בחר לקוח...",
     "dueDate": "תאריך יעד",
     "dueDateHint": "תאריך מוקדם ביותר לפי זמן הכנה: {{date}}",
+    "prepWarningTitle": "תאריך היעד עשוי להיות מוקדם מדי",
+    "prepWarningMessage": "הפריטים בהזמנה זו דורשים זמן הכנה וייתכן שלא יהיו מוכנים עד {{date}}. התאריך המומלץ המוקדם ביותר הוא {{minDate}}.",
+    "prepWarningConfirm": "המשך בכל זאת",
     "items": "פריטים",
     "addItem": "הוסף פריט",
     "selectRecipe": "מתכון...",
     "qty": "כמות",
     "price": "מחיר",
+    "perUnit": "(ליחידה)",
     "total": "סה\"כ",
     "notes": "הערות",
     "noItems": "אין פריטים",
@@ -119,6 +124,22 @@
       "in_progress": "בהכנה",
       "ready": "מוכנה",
       "delivered": "נמסרה"
+    }
+  },
+  "calendar": {
+    "today": "היום",
+    "more": "עוד",
+    "orders": "הזמנות",
+    "noOrders": "אין הזמנות ליום זה",
+    "legend": "מקרא",
+    "weekdays": {
+      "mon": "שני",
+      "tue": "שלישי",
+      "wed": "רביעי",
+      "thu": "חמישי",
+      "fri": "שישי",
+      "sat": "שבת",
+      "sun": "ראשון"
     }
   },
   "recipes": {
@@ -229,6 +250,13 @@
     "existingFound": "לקוח כבר קיים",
     "existingFoundDesc": "לקוח עם פרטי קשר אלה כבר קיים. האם תרצה להשתמש בו?",
     "existingFoundInfoDesc": "לקוח עם פרטי קשר אלה כבר קיים.",
+    "multiConflictDesc": "מצאנו לקוחות קיימים עם פרטי קשר תואמים. בחר באיזה להשתמש:",
+    "multiConflictInfoDesc": "מצאנו לקוחות קיימים עם פרטי קשר תואמים:",
+    "conflictField": {
+      "phone": "טלפון",
+      "email": "אימייל"
+    },
+    "conflictMatch": "התאמה",
     "useExisting": "השתמש בלקוח הזה"
   },
   "payments": {
@@ -258,6 +286,13 @@
     "preferences": "העדפות",
     "language": "שפה",
     "dateFormat": "תבנית תאריך",
+    "weekStartDay": "השבוע מתחיל ב",
+    "weekStartDays": {
+      "sunday": "יום ראשון",
+      "monday": "יום שני"
+    },
+    "showFriday": "הצג יום שישי",
+    "showSaturday": "הצג יום שבת",
     "languages": {
       "en": "אנגלית",
       "he": "עברית"
@@ -329,7 +364,6 @@
       "addPhone": "הוסף מספר טלפון בלשונית חשבון",
       "smsHint": "הוסף מספר טלפון בלשונית חשבון כדי לאפשר התראות SMS.",
       "orderCreated": "הזמנה נוצרה",
-      "orderStatusChanged": "סטטוס הזמנה השתנה",
       "lowStock": "התראת מלאי נמוך",
       "paymentReceived": "תשלום התקבל"
     }

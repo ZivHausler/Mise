@@ -3,6 +3,22 @@ import { UnauthorizedError, ForbiddenError } from '../errors/app-error.js';
 import type { AuthTokenPayload } from '../../modules/auth/auth.types.js';
 import { StoreRole } from '../../modules/stores/store.types.js';
 import { getPool } from '../database/postgres.js';
+import { isTokenBlacklisted } from '../auth/token-blacklist.js';
+
+// In-memory cache for user status lookups (30s TTL)
+const USER_STATUS_TTL_MS = 30_000;
+
+interface CachedUserStatus {
+  exists: boolean;
+  disabled: boolean;
+  cachedAt: number;
+}
+
+const userStatusCache = new Map<string, CachedUserStatus>();
+
+export function clearUserStatusCache(): void {
+  userStatusCache.clear();
+}
 
 declare module 'fastify' {
   interface FastifyRequest {
@@ -26,12 +42,28 @@ export async function authMiddleware(request: FastifyRequest, _reply: FastifyRep
   try {
     const payload = await request.jwtVerify<AuthTokenPayload>();
 
-    const pool = getPool();
-    const result = await pool.query('SELECT id, disabled_at FROM users WHERE id = $1', [payload.userId]);
-    if (!result.rows[0]) {
+    if (payload.jti && await isTokenBlacklisted(payload.jti)) {
+      throw new UnauthorizedError('Token has been revoked');
+    }
+
+    const now = Date.now();
+    let cached = userStatusCache.get(payload.userId);
+
+    if (!cached || (now - cached.cachedAt) > USER_STATUS_TTL_MS) {
+      const pool = getPool();
+      const result = await pool.query('SELECT id, disabled_at FROM users WHERE id = $1', [payload.userId]);
+      cached = {
+        exists: !!result.rows[0],
+        disabled: !!result.rows[0]?.disabled_at,
+        cachedAt: now,
+      };
+      userStatusCache.set(payload.userId, cached);
+    }
+
+    if (!cached.exists) {
       throw new UnauthorizedError('User no longer exists');
     }
-    if (result.rows[0].disabled_at) {
+    if (cached.disabled) {
       throw new UnauthorizedError('Account has been disabled');
     }
 

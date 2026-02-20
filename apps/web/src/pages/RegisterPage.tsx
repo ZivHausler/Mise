@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useRef, useEffect, useMemo } from 'react';
-import { useNavigate, Link, useSearchParams } from 'react-router-dom';
+import { useNavigate, Link, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Check, X } from 'lucide-react';
 import { Button } from '@/components/Button';
@@ -13,8 +13,7 @@ import { useGoogleAuth } from '@/hooks/useGoogleAuth';
 export default function RegisterPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
-  const inviteToken = searchParams.get('invite') || undefined;
+  const { inviteToken } = useParams<{ inviteToken: string }>();
 
   const setAuth = useAuthStore((s) => s.setAuth);
   const setStores = useAuthStore((s) => s.setStores);
@@ -193,7 +192,7 @@ export default function RegisterPage() {
 
         <p className="mt-6 text-center text-body-sm text-neutral-500">
           {t('auth.hasAccount', 'Already have an account?')}{' '}
-          <Link to={inviteToken ? `/login?invite=${inviteToken}` : '/login'} className="text-primary-500 hover:underline">
+          <Link to={inviteToken ? `/login/${inviteToken}` : '/login'} className="text-primary-500 hover:underline">
             {t('auth.login')}
           </Link>
         </p>

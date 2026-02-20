@@ -1,7 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { InventoryCrud } from '../../../src/modules/inventory/crud/inventoryCrud.js';
+import { InventoryCrud } from '../../../src/modules/inventory/inventoryCrud.js';
 import { createIngredient } from '../helpers/mock-factories.js';
-import { ValidationError } from '../../../src/core/errors/app-error.js';
 
 vi.mock('../../../src/modules/inventory/inventory.repository.js', () => ({
   PgInventoryRepository: {
@@ -40,27 +39,6 @@ describe('InventoryCrud.create', () => {
 
     expect(result).toEqual(ingredient);
     expect(PgInventoryRepository.create).toHaveBeenCalledOnce();
-  });
-
-  it('should throw ValidationError when name is empty', async () => {
-    await expect(
-      InventoryCrud.create(STORE_ID, { name: '', unit: 'kg', quantity: 10, costPerUnit: 1, lowStockThreshold: 5 }),
-    ).rejects.toThrow(ValidationError);
-    await expect(
-      InventoryCrud.create(STORE_ID, { name: '   ', unit: 'kg', quantity: 10, costPerUnit: 1, lowStockThreshold: 5 }),
-    ).rejects.toThrow('Ingredient name is required');
-  });
-
-  it('should throw ValidationError when quantity is negative', async () => {
-    await expect(
-      InventoryCrud.create(STORE_ID, { name: 'Sugar', unit: 'kg', quantity: -5, costPerUnit: 2, lowStockThreshold: 5 }),
-    ).rejects.toThrow('Quantity must be non-negative');
-  });
-
-  it('should throw ValidationError when costPerUnit is negative', async () => {
-    await expect(
-      InventoryCrud.create(STORE_ID, { name: 'Sugar', unit: 'kg', quantity: 10, costPerUnit: -1, lowStockThreshold: 5 }),
-    ).rejects.toThrow('Cost per unit must be non-negative');
   });
 
   it('should allow zero quantity', async () => {

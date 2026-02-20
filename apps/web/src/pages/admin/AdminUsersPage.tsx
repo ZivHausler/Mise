@@ -33,7 +33,7 @@ export default function AdminUsersPage() {
     <div className="space-y-6">
       <h1 className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">{t('admin.users.title')}</h1>
 
-      <div className="overflow-visible rounded-lg border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800">
+      <div className="overflow-hidden rounded-lg border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800">
         <div className="flex items-center gap-4 border-b border-neutral-200 dark:border-neutral-700 p-4">
           <div className="relative max-w-xs">
             <Search className="absolute inset-y-0 start-0 my-auto ms-3 h-4 w-4 text-neutral-400" />

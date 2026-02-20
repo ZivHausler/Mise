@@ -35,7 +35,8 @@
     "allStatuses": "All statuses",
     "clearFilters": "Clear",
     "previous": "Previous",
-    "next": "Next"
+    "next": "Next",
+    "all": "All"
   },
   "nav": {
     "dashboard": "Dashboard",
@@ -94,11 +95,15 @@
     "selectCustomer": "Select customer...",
     "dueDate": "Due Date",
     "dueDateHint": "Earliest possible date based on preparation time: {{date}}",
+    "prepWarningTitle": "Due date may be too early",
+    "prepWarningMessage": "The items in this order require preparation time and may not be ready by {{date}}. The earliest recommended date is {{minDate}}.",
+    "prepWarningConfirm": "Continue anyway",
     "items": "Items",
     "addItem": "Add Item",
     "selectRecipe": "Recipe...",
     "qty": "Qty",
     "price": "Price",
+    "perUnit": "(per unit)",
     "total": "Total",
     "notes": "Notes",
     "noItems": "No items",
@@ -119,6 +124,22 @@
       "in_progress": "In Progress",
       "ready": "Ready",
       "delivered": "Delivered"
+    }
+  },
+  "calendar": {
+    "today": "Today",
+    "more": "more",
+    "orders": "orders",
+    "noOrders": "No orders for this day",
+    "legend": "Legend",
+    "weekdays": {
+      "mon": "Mon",
+      "tue": "Tue",
+      "wed": "Wed",
+      "thu": "Thu",
+      "fri": "Fri",
+      "sat": "Sat",
+      "sun": "Sun"
     }
   },
   "recipes": {
@@ -229,6 +250,13 @@
     "existingFound": "Customer Already Exists",
     "existingFoundDesc": "A customer with this contact info already exists. Would you like to use them instead?",
     "existingFoundInfoDesc": "A customer with this contact info already exists.",
+    "multiConflictDesc": "We found existing customers matching your contact info. Choose which one to use:",
+    "multiConflictInfoDesc": "We found existing customers matching your contact info:",
+    "conflictField": {
+      "phone": "Phone",
+      "email": "Email"
+    },
+    "conflictMatch": "match",
     "useExisting": "Use This Customer"
   },
   "payments": {
@@ -258,6 +286,13 @@
     "preferences": "Preferences",
     "language": "Language",
     "dateFormat": "Date Format",
+    "weekStartDay": "Week starts on",
+    "weekStartDays": {
+      "sunday": "Sunday",
+      "monday": "Monday"
+    },
+    "showFriday": "Show Friday",
+    "showSaturday": "Show Saturday",
     "languages": {
       "en": "English",
       "he": "Hebrew"
@@ -329,7 +364,6 @@
       "addPhone": "Add phone number in Account tab",
       "smsHint": "Add a phone number in the Account tab to enable SMS notifications.",
       "orderCreated": "Order Created",
-      "orderStatusChanged": "Order Status Changed",
       "lowStock": "Low Stock Alert",
       "paymentReceived": "Payment Received"
     }

@@ -96,6 +96,12 @@ export class AdminController {
     return reply.send({ success: true, data: body });
   }
 
+  async cleanupTestUsers(request: FastifyRequest, reply: FastifyReply) {
+    const { emailPattern } = request.body as { emailPattern: string };
+    const deleted = await this.service.cleanupTestUsers(emailPattern);
+    return reply.send({ success: true, data: { deleted } });
+  }
+
   async getAnalytics(request: FastifyRequest, reply: FastifyReply) {
     const { range = 'month' } = request.query as { range?: string };
     const analytics = await this.service.getAnalytics(range);

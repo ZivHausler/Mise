@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { Page, PageHeader } from '@/components/Layout';
 import Tabs from '@/components/Tabs';
@@ -7,12 +7,12 @@ import GroupsTab from '@/components/settings/GroupsTab';
 import AccountTab from '@/components/settings/AccountTab';
 import NotificationsTab from '@/components/settings/NotificationsTab';
 import TeamTab from '@/components/settings/TeamTab';
-
-type SettingsTabKey = 'account' | 'team' | 'units' | 'groups' | 'notifications';
+import { useAppStore } from '@/store/app';
 
 export default function SettingsPage() {
   const { t } = useTranslation();
-  const [activeTab, setActiveTab] = useState<SettingsTabKey>('account');
+  const activeTab = useAppStore((s) => s.settingsTab);
+  const setActiveTab = useAppStore((s) => s.setSettingsTab);
 
   const tabs = [
     { key: 'account' as const, label: t('settings.tabs.account', 'Account') },

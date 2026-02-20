@@ -3,7 +3,7 @@ import { CalculateRecipeCostUseCase } from '../../../src/modules/recipes/use-cas
 import { createRecipe } from '../helpers/mock-factories.js';
 import { NotFoundError } from '../../../src/core/errors/app-error.js';
 
-vi.mock('../../../src/modules/recipes/crud/recipeCrud.js', () => ({
+vi.mock('../../../src/modules/recipes/recipeCrud.js', () => ({
   RecipeCrud: {
     getById: vi.fn(),
   },
@@ -13,7 +13,7 @@ vi.mock('../../../src/modules/shared/unitConversion.js', () => ({
   unitConversionFactor: vi.fn().mockReturnValue(1),
 }));
 
-import { RecipeCrud } from '../../../src/modules/recipes/crud/recipeCrud.js';
+import { RecipeCrud } from '../../../src/modules/recipes/recipeCrud.js';
 
 const STORE_ID = 'store-1';
 

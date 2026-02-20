@@ -3,9 +3,10 @@ import type { AdjustStockDTO, Ingredient } from '../inventory.types.js';
 import { InventoryCrud } from '../inventoryCrud.js';
 import { NotFoundError, ValidationError } from '../../../core/errors/app-error.js';
 import { getEventBus } from '../../../core/events/event-bus.js';
+import { EventNames } from '../../../core/events/event-names.js';
 
 export class AdjustStockUseCase implements UseCase<Ingredient, [string, AdjustStockDTO]> {
-  async execute(storeId: string, data: AdjustStockDTO): Promise<Ingredient> {
+  async execute(storeId: string, data: AdjustStockDTO, correlationId?: string): Promise<Ingredient> {
     const existing = await InventoryCrud.getById(storeId, data.ingredientId);
     if (!existing) {
       throw new NotFoundError('Ingredient not found');
@@ -18,7 +19,7 @@ export class AdjustStockUseCase implements UseCase<Ingredient, [string, AdjustSt
 
     if (ingredient.quantity <= ingredient.lowStockThreshold) {
       await getEventBus().publish({
-        eventName: 'inventory.lowStock',
+        eventName: EventNames.INVENTORY_LOW_STOCK,
         payload: {
           ingredientId: ingredient.id,
           name: ingredient.name,
@@ -26,6 +27,7 @@ export class AdjustStockUseCase implements UseCase<Ingredient, [string, AdjustSt
           threshold: ingredient.lowStockThreshold,
         },
         timestamp: new Date(),
+        correlationId,
       });
     }
 

@@ -1,13 +1,13 @@
 import type { DomainEvent } from '../../core/events/event-bus.js';
+import { EventNames } from '../../core/events/event-names.js';
 import { PgNotifPrefsRepository } from '../settings/notifications/notifications.repository.js';
 import type { NotificationChannel } from './channels/channel.js';
 import type { FastifyBaseLogger } from 'fastify';
 
 const EVENT_NAME_MAP: Record<string, string> = {
-  'order.created': 'order_created',
-  'order.statusChanged': 'order_status_changed',
-  'inventory.lowStock': 'low_stock',
-  'payment.received': 'payment_received',
+  [EventNames.ORDER_CREATED]: 'order_created',
+  [EventNames.INVENTORY_LOW_STOCK]: 'low_stock',
+  [EventNames.PAYMENT_RECEIVED]: 'payment_received',
 };
 
 export class NotificationDispatcher {

@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Users, Store, Mail, TrendingUp } from 'lucide-react';
 import { useAdminAnalytics } from '@/api/hooks';
@@ -49,7 +49,8 @@ function GrafanaPanel({ panelId, range, height = 300, className = '' }: { panelI
 
 export default function AdminDashboardPage() {
   const { t } = useTranslation();
-  const [range, setRange] = useState<Range>('month');
+  const range = useAppStore((s) => s.adminDashboardRange);
+  const setRange = useAppStore((s) => s.setAdminDashboardRange);
   const { data: analytics, isLoading } = useAdminAnalytics(range);
 
   const stats = [

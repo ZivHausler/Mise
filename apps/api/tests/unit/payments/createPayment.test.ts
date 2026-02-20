@@ -1,7 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { PaymentCrud } from '../../../src/modules/payments/crud/paymentCrud.js';
+import { PaymentCrud } from '../../../src/modules/payments/paymentCrud.js';
 import { createPayment } from '../helpers/mock-factories.js';
-import { ValidationError } from '../../../src/core/errors/app-error.js';
 
 vi.mock('../../../src/modules/payments/payment.repository.js', () => ({
   PgPaymentRepository: {
@@ -49,24 +48,6 @@ describe('PaymentCrud.create', () => {
     });
 
     expect(result.method).toBe('credit_card');
-  });
-
-  it('should throw ValidationError when amount is zero', async () => {
-    await expect(
-      PaymentCrud.create(STORE_ID, { orderId: 'order-1', amount: 0, method: 'cash' }),
-    ).rejects.toThrow('Payment amount must be positive');
-  });
-
-  it('should throw ValidationError when amount is negative', async () => {
-    await expect(
-      PaymentCrud.create(STORE_ID, { orderId: 'order-1', amount: -50, method: 'cash' }),
-    ).rejects.toThrow(ValidationError);
-  });
-
-  it('should throw ValidationError when orderId is missing', async () => {
-    await expect(
-      PaymentCrud.create(STORE_ID, { orderId: '', amount: 50, method: 'cash' }),
-    ).rejects.toThrow('Order ID is required');
   });
 
   it('should create payment with notes', async () => {

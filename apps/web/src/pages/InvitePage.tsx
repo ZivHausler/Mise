@@ -95,12 +95,12 @@ export default function InvitePage() {
           </Stack>
         ) : (
           <Stack gap={3}>
-            <Link to={`/login?invite=${token}`}>
+            <Link to={`/login/${token}`}>
               <Button variant="primary" fullWidth>
                 {t('auth.login')}
               </Button>
             </Link>
-            <Link to={`/register?invite=${token}`}>
+            <Link to={`/register/${token}`}>
               <Button variant="secondary" fullWidth>
                 {t('auth.register')}
               </Button>

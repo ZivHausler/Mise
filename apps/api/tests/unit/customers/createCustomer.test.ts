@@ -1,13 +1,14 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { CustomerCrud } from '../../../src/modules/customers/crud/customerCrud.js';
+import { CustomerCrud } from '../../../src/modules/customers/customerCrud.js';
 import { createCustomer } from '../helpers/mock-factories.js';
-import { ValidationError } from '../../../src/core/errors/app-error.js';
 
 vi.mock('../../../src/modules/customers/customer.repository.js', () => ({
   PgCustomerRepository: {
     create: vi.fn(),
     findById: vi.fn(),
     findAll: vi.fn(),
+    findByPhone: vi.fn(),
+    findByEmail: vi.fn(),
     update: vi.fn(),
     delete: vi.fn(),
   },
@@ -58,23 +59,6 @@ describe('CustomerCrud.create', () => {
 
     expect(result.preferences?.allergies).toEqual(['gluten', 'nuts']);
     expect(result.preferences?.favorites).toEqual(['croissant']);
-  });
-
-  it('should throw ValidationError when name is empty', async () => {
-    await expect(CustomerCrud.create(STORE_ID, { name: '' })).rejects.toThrow(ValidationError);
-    await expect(CustomerCrud.create(STORE_ID, { name: '   ' })).rejects.toThrow('Customer name is required');
-  });
-
-  it('should throw ValidationError for invalid email', async () => {
-    await expect(
-      CustomerCrud.create(STORE_ID, { name: 'Test', email: 'not-an-email' }),
-    ).rejects.toThrow('Invalid email address');
-  });
-
-  it('should throw ValidationError for email without domain', async () => {
-    await expect(
-      CustomerCrud.create(STORE_ID, { name: 'Test', email: 'user@' }),
-    ).rejects.toThrow(ValidationError);
   });
 
   it('should accept valid email formats', async () => {

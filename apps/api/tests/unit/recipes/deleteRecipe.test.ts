@@ -1,7 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { RecipeCrud } from '../../../src/modules/recipes/crud/recipeCrud.js';
+import { RecipeCrud } from '../../../src/modules/recipes/recipeCrud.js';
 import { createRecipe } from '../helpers/mock-factories.js';
-import { NotFoundError } from '../../../src/core/errors/app-error.js';
 
 vi.mock('../../../src/modules/recipes/recipe.repository.js', () => ({
   MongoRecipeRepository: {
@@ -22,17 +21,10 @@ describe('RecipeCrud.delete', () => {
     vi.clearAllMocks();
   });
 
-  it('should delete an existing recipe', async () => {
-    vi.mocked(MongoRecipeRepository.findById).mockResolvedValue(createRecipe());
+  it('should delete a recipe by delegating to repository', async () => {
     vi.mocked(MongoRecipeRepository.delete).mockResolvedValue(undefined);
 
     await expect(RecipeCrud.delete(STORE_ID, 'recipe-1')).resolves.toBeUndefined();
     expect(MongoRecipeRepository.delete).toHaveBeenCalledWith(STORE_ID, 'recipe-1');
-  });
-
-  it('should throw NotFoundError when recipe does not exist', async () => {
-    vi.mocked(MongoRecipeRepository.findById).mockResolvedValue(null);
-
-    await expect(RecipeCrud.delete(STORE_ID, 'nonexistent')).rejects.toThrow(NotFoundError);
   });
 });

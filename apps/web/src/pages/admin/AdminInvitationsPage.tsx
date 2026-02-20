@@ -151,7 +151,7 @@ export default function AdminInvitationsPage() {
         </Button>
       </div>
 
-      <div className="overflow-visible rounded-lg border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800">
+      <div className="overflow-hidden rounded-lg border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800">
         <div className="flex flex-col gap-3 border-b border-neutral-200 dark:border-neutral-700 p-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="relative w-72">
             <Search className="absolute inset-y-0 start-0 my-auto ms-3 h-4 w-4 text-neutral-400" />

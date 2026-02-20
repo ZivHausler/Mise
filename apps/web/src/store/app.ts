@@ -1,26 +1,58 @@
 import { create } from 'zustand';
-import { DEFAULT_DATE_FORMAT, DEFAULT_LANGUAGE } from '@/constants/defaults';
-import type { DateFormat, Language } from '@/constants/defaults';
+import { DEFAULT_DATE_FORMAT, DEFAULT_LANGUAGE, DEFAULT_WEEK_START_DAY, DEFAULT_SHOW_FRIDAY, DEFAULT_SHOW_SATURDAY } from '@/constants/defaults';
+import type { DateFormat, Language, WeekStartDay } from '@/constants/defaults';
 
-export type { DateFormat, Language };
+export type { DateFormat, Language, WeekStartDay };
+
+type OrdersViewMode = 'pipeline' | 'list' | 'calendar';
+type RecipesViewMode = 'grid' | 'list';
+type SettingsTab = 'account' | 'team' | 'units' | 'groups' | 'notifications';
+type AdminDashboardRange = 'week' | 'month' | 'year';
 
 interface AppState {
   language: Language;
   dateFormat: DateFormat;
+  weekStartDay: WeekStartDay;
+  showFriday: boolean;
+  showSaturday: boolean;
   sidebarCollapsed: boolean;
   adminDarkMode: boolean;
+  ordersViewMode: OrdersViewMode;
+  recipesViewMode: RecipesViewMode;
+  settingsTab: SettingsTab;
+  adminDashboardRange: AdminDashboardRange;
   setLanguage: (lang: Language) => void;
   setDateFormat: (format: DateFormat) => void;
+  setWeekStartDay: (day: WeekStartDay) => void;
+  setShowFriday: (show: boolean) => void;
+  setShowSaturday: (show: boolean) => void;
   toggleSidebar: () => void;
   setSidebarCollapsed: (collapsed: boolean) => void;
   toggleAdminDarkMode: () => void;
+  setOrdersViewMode: (mode: OrdersViewMode) => void;
+  setRecipesViewMode: (mode: RecipesViewMode) => void;
+  setSettingsTab: (tab: SettingsTab) => void;
+  setAdminDashboardRange: (range: AdminDashboardRange) => void;
+}
+
+function boolFromStorage(key: string, fallback: boolean): boolean {
+  const v = localStorage.getItem(key);
+  if (v === null) return fallback;
+  return v === 'true';
 }
 
 export const useAppStore = create<AppState>((set) => ({
   language: (localStorage.getItem('i18nextLng') as Language) || DEFAULT_LANGUAGE,
   dateFormat: (localStorage.getItem('dateFormat') as DateFormat) || DEFAULT_DATE_FORMAT,
+  weekStartDay: (localStorage.getItem('weekStartDay') as WeekStartDay) || DEFAULT_WEEK_START_DAY,
+  showFriday: boolFromStorage('showFriday', DEFAULT_SHOW_FRIDAY),
+  showSaturday: boolFromStorage('showSaturday', DEFAULT_SHOW_SATURDAY),
   sidebarCollapsed: false,
   adminDarkMode: localStorage.getItem('adminDarkMode') === 'true',
+  ordersViewMode: (localStorage.getItem('ordersViewMode') as OrdersViewMode) || 'pipeline',
+  recipesViewMode: (localStorage.getItem('recipesViewMode') as RecipesViewMode) || 'grid',
+  settingsTab: (localStorage.getItem('settingsTab') as SettingsTab) || 'account',
+  adminDashboardRange: (localStorage.getItem('adminDashboardRange') as AdminDashboardRange) || 'month',
   setLanguage: (language) => {
     localStorage.setItem('i18nextLng', language);
     set({ language });
@@ -28,6 +60,18 @@ export const useAppStore = create<AppState>((set) => ({
   setDateFormat: (dateFormat) => {
     localStorage.setItem('dateFormat', dateFormat);
     set({ dateFormat });
+  },
+  setWeekStartDay: (weekStartDay) => {
+    localStorage.setItem('weekStartDay', weekStartDay);
+    set({ weekStartDay });
+  },
+  setShowFriday: (showFriday) => {
+    localStorage.setItem('showFriday', String(showFriday));
+    set({ showFriday });
+  },
+  setShowSaturday: (showSaturday) => {
+    localStorage.setItem('showSaturday', String(showSaturday));
+    set({ showSaturday });
   },
   toggleSidebar: () => set((s) => ({ sidebarCollapsed: !s.sidebarCollapsed })),
   setSidebarCollapsed: (collapsed) => set({ sidebarCollapsed: collapsed }),
@@ -37,4 +81,20 @@ export const useAppStore = create<AppState>((set) => ({
     document.documentElement.classList.toggle('dark', next);
     return { adminDarkMode: next };
   }),
+  setOrdersViewMode: (ordersViewMode) => {
+    localStorage.setItem('ordersViewMode', ordersViewMode);
+    set({ ordersViewMode });
+  },
+  setRecipesViewMode: (recipesViewMode) => {
+    localStorage.setItem('recipesViewMode', recipesViewMode);
+    set({ recipesViewMode });
+  },
+  setSettingsTab: (settingsTab) => {
+    localStorage.setItem('settingsTab', settingsTab);
+    set({ settingsTab });
+  },
+  setAdminDashboardRange: (adminDashboardRange) => {
+    localStorage.setItem('adminDashboardRange', adminDashboardRange);
+    set({ adminDashboardRange });
+  },
 }));

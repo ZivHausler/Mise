@@ -84,6 +84,35 @@ export function useOrder(id: string) {
   return useQuery({ queryKey: ['orders', id], queryFn: () => fetchApi<unknown>(`/orders/${id}`), enabled: !!id });
 }
 
+export interface CalendarAggregate {
+  day: string;
+  total: number;
+  received: number;
+  inProgress: number;
+  ready: number;
+  delivered: number;
+}
+
+export function useCalendarAggregates(from: string, to: string) {
+  return useQuery({
+    queryKey: ['orders', 'calendar', 'aggregates', from, to],
+    queryFn: () => fetchApi<CalendarAggregate[]>(`/orders/calendar/aggregates?from=${from}&to=${to}`),
+    enabled: !!from && !!to,
+    placeholderData: keepPreviousData,
+  });
+}
+
+export function useCalendarRange(from: string, to: string, status?: number) {
+  const params = new URLSearchParams({ from, to });
+  if (status !== undefined) params.set('status', String(status));
+  return useQuery({
+    queryKey: ['orders', 'calendar', 'range', from, to, status],
+    queryFn: () => fetchApi<unknown[]>(`/orders/calendar/range?${params}`),
+    enabled: !!from && !!to,
+    placeholderData: keepPreviousData,
+  });
+}
+
 export function useCreateOrder() {
   const qc = useQueryClient();
   const addToast = useToastStore((s) => s.addToast);
@@ -286,7 +315,7 @@ export function useCreateCustomer() {
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['customers'] }); addToast('success', t('toasts.customerCreated')); },
     onError: (error: any) => {
       const code = error?.response?.data?.error?.code;
-      if (code === 'CUSTOMER_PHONE_EXISTS' || code === 'CUSTOMER_EMAIL_EXISTS') return;
+      if (code === 'CUSTOMER_CONFLICT' || code === 'CUSTOMER_PHONE_EXISTS' || code === 'CUSTOMER_EMAIL_EXISTS') return;
       addToast('error', t('toasts.customerCreateFailed'));
     },
   });
@@ -685,7 +714,11 @@ export function useAdminAuditLog(page = 1, limit = 20, filters?: { userId?: stri
       if (filters?.dateTo) params.set('dateTo', new Date(filters.dateTo).toISOString());
       if (filters?.search) params.set('search', filters.search);
       const { data } = await apiClient.get(`/admin/audit-log?${params}`);
-      return data.data as PaginatedResponse<{ id: string; userId: string; userEmail: string; storeId: string | null; method: string; path: string; statusCode: number; ip: string; createdAt: string }>;
+      const result = data.data;
+      return {
+        items: result.items,
+        pagination: { total: result.total, page: result.page, limit: result.limit, totalPages: result.totalPages },
+      } as PaginatedResponse<{ id: string; userId: string; userEmail: string; storeId: string | null; method: string; path: string; statusCode: number; ip: string; createdAt: string }>;
     },
     staleTime: 0,
     placeholderData: keepPreviousData,
@@ -703,7 +736,9 @@ export function useAuditLogUpdates(
     queryKey: ['admin', 'auditLog', 'updates', since, filters],
     queryFn: async () => {
       const params = new URLSearchParams({ page: '1', limit: '100', since: since! });
-      if (excludeIds.length) params.set('excludeIds', excludeIds.join(','));
+      // Only send a small number of excludeIds to avoid URL length issues
+      const idsToExclude = excludeIds.slice(0, 5);
+      if (idsToExclude.length) params.set('excludeIds', idsToExclude.join(','));
       if (filters?.userId) params.set('userId', filters.userId);
       if (filters?.method) params.set('method', filters.method);
       if (filters?.statusCode) params.set('statusCode', filters.statusCode);

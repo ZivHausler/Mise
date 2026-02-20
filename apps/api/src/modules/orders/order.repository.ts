@@ -93,8 +93,11 @@ export class PgOrderRepository {
 
     if (data.notes !== undefined) { fields.push(`notes = $${idx++}`); values.push(data.notes); }
     if (data.dueDate !== undefined) { fields.push(`due_date = $${idx++}`); values.push(data.dueDate); }
-    if (data.items !== undefined) { fields.push(`items = $${idx++}`); values.push(JSON.stringify(data.items)); }
-    if (data.totalAmount !== undefined) { fields.push(`total_amount = $${idx++}`); values.push(data.totalAmount); }
+    if (data.items !== undefined) {
+      fields.push(`items = $${idx++}`); values.push(JSON.stringify(data.items));
+      // totalAmount must always accompany items (computed by service layer)
+      fields.push(`total_amount = $${idx++}`); values.push(data.totalAmount);
+    }
 
     fields.push(`updated_at = NOW()`);
     values.push(id, storeId);
@@ -118,6 +121,82 @@ export class PgOrderRepository {
   static async delete(storeId: string, id: string): Promise<void> {
     const pool = getPool();
     await pool.query('DELETE FROM orders WHERE id = $1 AND store_id = $2', [id, storeId]);
+  }
+
+  static async findByDateRange(
+    storeId: string,
+    filters: { from: string; to: string; status?: number },
+  ): Promise<Order[]> {
+    const pool = getPool();
+    let query = `SELECT o.*, c.name as customer_name FROM orders o LEFT JOIN customers c ON o.customer_id = c.id WHERE o.store_id = $1 AND o.due_date IS NOT NULL AND o.due_date >= $2::date AND o.due_date < ($3::date + interval '1 day')`;
+    const params: unknown[] = [storeId, filters.from, filters.to];
+    let idx = 4;
+    if (filters.status !== undefined) {
+      query += ` AND o.status = $${idx++}`;
+      params.push(filters.status);
+    }
+    query += ' ORDER BY o.due_date ASC, o.created_at DESC';
+    const result = await pool.query(query, params);
+    return result.rows.map((r: Record<string, unknown>) => this.mapRow(r));
+  }
+
+  static async getCalendarAggregates(
+    storeId: string,
+    filters: { from: string; to: string },
+  ): Promise<Array<{ day: string; total: number; received: number; inProgress: number; ready: number; delivered: number }>> {
+    const pool = getPool();
+    const result = await pool.query(
+      `SELECT
+        DATE(o.due_date) as day,
+        COUNT(*)::int as total,
+        COUNT(CASE WHEN o.status = 0 THEN 1 END)::int as received,
+        COUNT(CASE WHEN o.status = 1 THEN 1 END)::int as in_progress,
+        COUNT(CASE WHEN o.status = 2 THEN 1 END)::int as ready,
+        COUNT(CASE WHEN o.status = 3 THEN 1 END)::int as delivered
+      FROM orders o
+      WHERE o.store_id = $1
+        AND o.due_date IS NOT NULL
+        AND o.due_date >= $2::date
+        AND o.due_date < ($3::date + interval '1 day')
+      GROUP BY DATE(o.due_date)
+      ORDER BY DATE(o.due_date) ASC`,
+      [storeId, filters.from, filters.to],
+    );
+    return result.rows.map((r: Record<string, unknown>) => ({
+      day: (r['day'] as Date).toISOString().split('T')[0],
+      total: Number(r['total']),
+      received: Number(r['received']),
+      inProgress: Number(r['in_progress']),
+      ready: Number(r['ready']),
+      delivered: Number(r['delivered']),
+    }));
+  }
+
+  static async findByDay(
+    storeId: string,
+    filters: { date: string; status?: number; limit: number; offset: number },
+  ): Promise<{ orders: Order[]; total: number }> {
+    const pool = getPool();
+    let whereClause = `WHERE o.store_id = $1 AND o.due_date IS NOT NULL AND DATE(o.due_date) = $2::date`;
+    const baseParams: unknown[] = [storeId, filters.date];
+    let idx = 3;
+
+    if (filters.status !== undefined) {
+      whereClause += ` AND o.status = $${idx++}`;
+      baseParams.push(filters.status);
+    }
+
+    const countResult = await pool.query(
+      `SELECT COUNT(*) FROM orders o ${whereClause}`,
+      baseParams,
+    );
+    const total = Number(countResult.rows[0].count);
+
+    const params = [...baseParams];
+    const query = `SELECT o.*, c.name as customer_name FROM orders o LEFT JOIN customers c ON o.customer_id = c.id ${whereClause} ORDER BY o.due_date ASC, o.created_at DESC LIMIT $${idx++} OFFSET $${idx++}`;
+    params.push(filters.limit, filters.offset);
+    const result = await pool.query(query, params);
+    return { orders: result.rows.map((r: Record<string, unknown>) => this.mapRow(r)), total };
   }
 
   private static mapRow(row: Record<string, unknown>): Order {

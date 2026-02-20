@@ -43,7 +43,6 @@ export const INVITE_ROLE_OPTIONS = [
 // --- Notification events ---------------------------------------------------
 export const NOTIFICATION_EVENTS = [
   'order_created',
-  'order_status_changed',
   'low_stock',
   'payment_received',
 ] as const;
@@ -67,6 +66,15 @@ export type StockStatus = (typeof STOCK_STATUSES)[number];
 // --- Inventory adjust types ------------------------------------------------
 export const ADJUST_TYPES = ['add', 'use', 'set'] as const;
 export type AdjustType = (typeof ADJUST_TYPES)[number];
+
+// --- Week start day --------------------------------------------------------
+export const WEEK_START_DAYS = ['sunday', 'monday'] as const;
+export type WeekStartDay = (typeof WEEK_START_DAYS)[number];
+export const DEFAULT_WEEK_START_DAY: WeekStartDay = 'sunday';
+
+// --- Calendar day visibility -----------------------------------------------
+export const DEFAULT_SHOW_FRIDAY = true;
+export const DEFAULT_SHOW_SATURDAY = false;
 
 // --- Unit categories -------------------------------------------------------
 export const UNIT_CATEGORIES = ['weight', 'volume', 'count'] as const;

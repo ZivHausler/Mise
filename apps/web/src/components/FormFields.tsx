@@ -9,7 +9,7 @@ export const FieldInfo = React.memo(function FieldInfo({ children, className }: 
 interface FieldWrapperProps {
   label?: React.ReactNode;
   error?: string;
-  hint?: string;
+  hint?: React.ReactNode;
   info?: string;
   required?: boolean;
   children: React.ReactNode;
@@ -52,7 +52,7 @@ const inputDefault = 'border-neutral-200 hover:border-neutral-300';
 interface TextInputProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'size'> {
   label?: string;
   error?: string;
-  hint?: string;
+  hint?: React.ReactNode;
   size?: 'sm' | 'md' | 'lg';
   icon?: React.ReactNode;
 }
@@ -91,7 +91,7 @@ export const TextInput = React.memo(function TextInput({
 interface TextAreaProps extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {
   label?: string;
   error?: string;
-  hint?: string;
+  hint?: React.ReactNode;
 }
 
 export const TextArea = React.memo(function TextArea({
@@ -122,7 +122,7 @@ interface SelectOption {
 interface SelectProps extends Omit<React.SelectHTMLAttributes<HTMLSelectElement>, 'size'> {
   label?: string;
   error?: string;
-  hint?: string;
+  hint?: React.ReactNode;
   options: SelectOption[];
   placeholder?: string;
   size?: 'sm' | 'md' | 'lg';
@@ -218,7 +218,7 @@ export const Toggle = React.memo(function Toggle({ label, checked, onChange, dis
 interface NumberInputProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'type' | 'onChange' | 'size'> {
   label?: React.ReactNode;
   error?: string;
-  hint?: string;
+  hint?: React.ReactNode;
   info?: string;
   value: number | '';
   onChange: (value: number | '') => void;
@@ -286,7 +286,7 @@ export const NumberInput = React.memo(function NumberInput({
 interface DatePickerProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'type' | 'size'> {
   label?: string;
   error?: string;
-  hint?: string;
+  hint?: React.ReactNode;
   size?: 'sm' | 'md' | 'lg';
 }
 

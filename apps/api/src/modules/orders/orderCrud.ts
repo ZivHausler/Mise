@@ -1,22 +1,9 @@
 import { PgOrderRepository } from './order.repository.js';
 import type { CustomerOrderFilters } from './order.repository.js';
 import type { CreateOrderDTO, Order, OrderStatus } from './order.types.js';
-import { ORDER_STATUS } from './order.types.js';
-import { NotFoundError, ValidationError } from '../../core/errors/app-error.js';
 
 export class OrderCrud {
   static async create(storeId: string, data: CreateOrderDTO & { totalAmount: number }): Promise<Order> {
-    if (!data.customerId) {
-      throw new ValidationError('Customer ID is required');
-    }
-    if (!data.items || data.items.length === 0) {
-      throw new ValidationError('At least one item is required');
-    }
-    for (const item of data.items) {
-      if (item.quantity <= 0) {
-        throw new ValidationError('Item quantity must be positive');
-      }
-    }
     return PgOrderRepository.create(storeId, data);
   }
 
@@ -37,17 +24,22 @@ export class OrderCrud {
   }
 
   static async delete(storeId: string, id: string): Promise<void> {
-    const existing = await PgOrderRepository.findById(storeId, id);
-    if (!existing) {
-      throw new NotFoundError('Order not found');
-    }
-    if (existing.status !== ORDER_STATUS.RECEIVED) {
-      throw new ValidationError('Can only delete orders with "received" status');
-    }
     return PgOrderRepository.delete(storeId, id);
   }
 
   static async findByCustomerId(storeId: string, customerId: string, options?: { limit: number; offset: number }, filters?: CustomerOrderFilters): Promise<{ orders: Order[]; total: number }> {
     return PgOrderRepository.findByCustomerId(storeId, customerId, options, filters);
+  }
+
+  static async findByDateRange(storeId: string, filters: { from: string; to: string; status?: number }): Promise<Order[]> {
+    return PgOrderRepository.findByDateRange(storeId, filters);
+  }
+
+  static async getCalendarAggregates(storeId: string, filters: { from: string; to: string }): Promise<Array<{ day: string; total: number; received: number; inProgress: number; ready: number; delivered: number }>> {
+    return PgOrderRepository.getCalendarAggregates(storeId, filters);
+  }
+
+  static async findByDay(storeId: string, filters: { date: string; status?: number; limit: number; offset: number }): Promise<{ orders: Order[]; total: number }> {
+    return PgOrderRepository.findByDay(storeId, filters);
   }
 }

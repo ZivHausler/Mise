@@ -207,7 +207,7 @@ export default function InventoryPage() {
     } else {
       if (!newItem.unit) return;
       createItem.mutate(
-        { name: newItem.name, category: newItem.category, unit: newItem.unit, quantity: 0, lowStockThreshold: newItem.threshold, costPerUnit: newItem.costPerUnit, packageSize: newItem.packageSize, groupIds: newItem.groupIds },
+        { name: newItem.name, category: newItem.category, unit: newItem.unit, quantity: 0, lowStockThreshold: newItem.threshold === '' ? 0 : newItem.threshold, costPerUnit: newItem.costPerUnit, packageSize: newItem.packageSize, groupIds: newItem.groupIds },
         { onSuccess: closeModal },
       );
     }

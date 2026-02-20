@@ -1,6 +1,7 @@
 import type { Payment, CreatePaymentDTO } from './payment.types.js';
 import { PAYMENT_RECORD_STATUS } from './payment.types.js';
 import { getPool } from '../../core/database/postgres.js';
+import { QueryBuilder } from '../../core/database/query-builder.js';
 
 let ensuredStatusColumn = false;
 
@@ -45,18 +46,17 @@ export class PgPaymentRepository {
   static async findAll(storeId: string, options?: PaginationOptions, filters?: PaymentFilters): Promise<PaginatedResult<Payment>> {
     await ensureStatusColumn();
     const pool = getPool();
-    let whereClause = 'WHERE o2.store_id = $1';
-    const baseParams: unknown[] = [storeId];
-    let idx = 2;
+    const qb = new QueryBuilder(storeId);
 
     if (filters?.status) {
-      whereClause += ` AND p.status = $${idx++}`;
-      baseParams.push(filters.status);
+      qb.addCondition('p.status', '=', filters.status);
     }
     if (filters?.method) {
-      whereClause += ` AND p.method = $${idx++}`;
-      baseParams.push(filters.method);
+      qb.addCondition('p.method', '=', filters.method);
     }
+
+    const whereClause = `WHERE o2.store_id = $1${qb.getWhereClause()}`;
+    const baseParams = qb.getParams();
 
     const countResult = await pool.query(
       `SELECT COUNT(*) FROM payments p
@@ -66,6 +66,7 @@ export class PgPaymentRepository {
     );
     const total = Number(countResult.rows[0].count);
 
+    let idx = qb.getNextParamIndex();
     let query = `SELECT p.*, o.order_number, c.name as customer_name
        FROM payments p
        LEFT JOIN orders o ON p.order_id = o.id

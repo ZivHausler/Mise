@@ -1,6 +1,7 @@
 import type { FastifyRequest, FastifyReply } from 'fastify';
 import type { InventoryService } from './inventory.service.js';
 import { createIngredientSchema, updateIngredientSchema, adjustStockSchema } from './inventory.schema.js';
+import { parsePaginationParams } from '../../core/types/pagination.js';
 
 export class InventoryController {
   constructor(private inventoryService: InventoryService) {}
@@ -9,8 +10,7 @@ export class InventoryController {
     const storeId = request.currentUser!.storeId!;
     const { search, page, limit, groupIds: groupIdsParam, status: statusParam } = request.query;
     if (page || limit) {
-      const pageNum = Math.max(1, parseInt(page || '1', 10) || 1);
-      const limitNum = Math.min(100, Math.max(1, parseInt(limit || '10', 10) || 10));
+      const { page: pageNum, limit: limitNum } = parsePaginationParams(page, limit);
       const groupIds = groupIdsParam ? groupIdsParam.split(',').filter(Boolean) : undefined;
       const statuses = statusParam ? statusParam.split(',').filter(Boolean) : undefined;
       const result = await this.inventoryService.getAllPaginated(storeId, pageNum, limitNum, search, groupIds, statuses);
@@ -49,7 +49,7 @@ export class InventoryController {
   async adjustStock(request: FastifyRequest, reply: FastifyReply) {
     const storeId = request.currentUser!.storeId!;
     const data = adjustStockSchema.parse(request.body);
-    const ingredient = await this.inventoryService.adjustStock(storeId, data);
+    const ingredient = await this.inventoryService.adjustStock(storeId, data, request.id);
     return reply.send({ success: true, data: ingredient });
   }
 

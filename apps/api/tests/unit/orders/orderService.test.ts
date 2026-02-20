@@ -19,7 +19,7 @@ vi.mock('@mise/shared/src/constants/index.js', () => ({
   },
 }));
 
-vi.mock('../../../src/modules/orders/crud/orderCrud.js', () => ({
+vi.mock('../../../src/modules/orders/orderCrud.js', () => ({
   OrderCrud: {
     create: vi.fn(),
     getById: vi.fn(),
@@ -28,6 +28,9 @@ vi.mock('../../../src/modules/orders/crud/orderCrud.js', () => ({
     updateStatus: vi.fn(),
     delete: vi.fn(),
     findByCustomerId: vi.fn(),
+    findByDateRange: vi.fn(),
+    getCalendarAggregates: vi.fn(),
+    findByDay: vi.fn(),
   },
 }));
 
@@ -37,17 +40,11 @@ vi.mock('../../../src/modules/orders/use-cases/updateOrderStatus.js', () => ({
   })),
 }));
 
-vi.mock('../../../src/modules/orders/use-cases/getOrdersByCustomer.js', () => ({
-  GetOrdersByCustomerUseCase: vi.fn().mockImplementation(() => ({
-    execute: vi.fn(),
-  })),
-}));
-
 vi.mock('../../../src/modules/shared/unitConversion.js', () => ({
   unitConversionFactor: vi.fn().mockReturnValue(1),
 }));
 
-import { OrderCrud } from '../../../src/modules/orders/crud/orderCrud.js';
+import { OrderCrud } from '../../../src/modules/orders/orderCrud.js';
 import { UpdateOrderStatusUseCase } from '../../../src/modules/orders/use-cases/updateOrderStatus.js';
 import { getEventBus } from '../../../src/core/events/event-bus.js';
 
@@ -87,7 +84,7 @@ describe('OrderService', () => {
   });
 
   describe('updateStatus', () => {
-    it('should publish order.statusChanged event after status update', async () => {
+    it('should update status without publishing event', async () => {
       const mockExecute = vi.fn().mockResolvedValue({
         order: createOrder({ status: ORDER_STATUS.IN_PROGRESS }),
         previousStatus: ORDER_STATUS.RECEIVED,
@@ -97,18 +94,10 @@ describe('OrderService', () => {
       // Recreate service to pick up the new mock
       service = new OrderService();
 
-      await service.updateStatus(STORE_ID, 'order-1', ORDER_STATUS.IN_PROGRESS);
+      const result = await service.updateStatus(STORE_ID, 'order-1', ORDER_STATUS.IN_PROGRESS);
 
-      expect(eventBus.publish).toHaveBeenCalledWith(
-        expect.objectContaining({
-          eventName: 'order.statusChanged',
-          payload: expect.objectContaining({
-            orderId: 'order-1',
-            previousStatus: ORDER_STATUS.RECEIVED,
-            newStatus: ORDER_STATUS.IN_PROGRESS,
-          }),
-        }),
-      );
+      expect(result.status).toBe(ORDER_STATUS.IN_PROGRESS);
+      expect(eventBus.publish).not.toHaveBeenCalled();
     });
   });
 

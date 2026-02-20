@@ -48,7 +48,6 @@ export type UpdateProfileDTO = z.infer<typeof updateProfileSchema>;
 
 export const NOTIFICATION_EVENT_TYPES = [
   'order_created',
-  'order_status_changed',
   'low_stock',
   'payment_received',
 ] as const;

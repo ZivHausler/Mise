@@ -13,11 +13,11 @@ export class PgGroupsRepository {
     return result.rows.map(this.mapRow);
   }
 
-  static async findById(id: string): Promise<Group | null> {
+  static async findById(id: string, storeId: string): Promise<Group | null> {
     const pool = getPool();
     const result = await pool.query(
-      `SELECT ${SELECT_COLS} FROM groups WHERE id = $1`,
-      [id],
+      `SELECT ${SELECT_COLS} FROM groups WHERE id = $1 AND (store_id = $2 OR is_default = true)`,
+      [id, storeId],
     );
     return result.rows[0] ? this.mapRow(result.rows[0]) : null;
   }
@@ -33,7 +33,7 @@ export class PgGroupsRepository {
     return this.mapRow(result.rows[0]);
   }
 
-  static async update(id: string, data: UpdateGroupDTO): Promise<Group> {
+  static async update(id: string, storeId: string, data: UpdateGroupDTO): Promise<Group> {
     const pool = getPool();
     const fields: string[] = [];
     const values: unknown[] = [];
@@ -44,18 +44,20 @@ export class PgGroupsRepository {
 
     fields.push('updated_at = NOW()');
     values.push(id);
+    const idIdx = idx++;
+    values.push(storeId);
 
     const result = await pool.query(
-      `UPDATE groups SET ${fields.join(', ')} WHERE id = $${idx}
+      `UPDATE groups SET ${fields.join(', ')} WHERE id = $${idIdx} AND store_id = $${idx}
        RETURNING ${SELECT_COLS}`,
       values,
     );
     return this.mapRow(result.rows[0]);
   }
 
-  static async delete(id: string): Promise<void> {
+  static async delete(id: string, storeId: string): Promise<void> {
     const pool = getPool();
-    await pool.query('DELETE FROM groups WHERE id = $1', [id]);
+    await pool.query('DELETE FROM groups WHERE id = $1 AND store_id = $2', [id, storeId]);
   }
 
   private static mapRow(row: Record<string, unknown>): Group {

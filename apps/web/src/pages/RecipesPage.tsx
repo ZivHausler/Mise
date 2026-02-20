@@ -10,14 +10,14 @@ import { PageSkeleton } from '@/components/Feedback';
 import { Caption } from '@/components/Typography';
 import { useRecipes } from '@/api/hooks';
 import { GroupIcon } from '@/components/settings/GroupsTab';
-
-type ViewMode = 'grid' | 'list';
+import { useAppStore } from '@/store/app';
 
 export default function RecipesPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { data: recipes, isLoading } = useRecipes();
-  const [viewMode, setViewMode] = useState<ViewMode>('grid');
+  const viewMode = useAppStore((s) => s.recipesViewMode);
+  const setViewMode = useAppStore((s) => s.setRecipesViewMode);
   const [categoryFilter, setCategoryFilter] = useState<string>('');
   const [groupFilter, setGroupFilter] = useState<string>('');
 

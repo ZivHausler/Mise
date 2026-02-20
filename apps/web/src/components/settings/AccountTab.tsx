@@ -3,14 +3,14 @@ import { useTranslation } from 'react-i18next';
 import { LogOut, Save } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Card, Section, Stack } from '@/components/Layout';
-import { TextInput, Select } from '@/components/FormFields';
+import { TextInput, Select, Toggle } from '@/components/FormFields';
 import { Button } from '@/components/Button';
 import { Spinner } from '@/components/Feedback';
 import { useAuthStore } from '@/store/auth';
 import { useAppStore } from '@/store/app';
 import { useProfile, useUpdateProfile } from '@/api/hooks';
-import { DATE_FORMATS, LANGUAGES } from '@/constants/defaults';
-import type { DateFormat } from '@/constants/defaults';
+import { DATE_FORMATS, LANGUAGES, WEEK_START_DAYS } from '@/constants/defaults';
+import type { DateFormat, WeekStartDay } from '@/constants/defaults';
 
 export default function AccountTab() {
   const { t, i18n } = useTranslation();
@@ -19,6 +19,12 @@ export default function AccountTab() {
   const setLanguage = useAppStore((s) => s.setLanguage);
   const dateFormat = useAppStore((s) => s.dateFormat);
   const setDateFormat = useAppStore((s) => s.setDateFormat);
+  const weekStartDay = useAppStore((s) => s.weekStartDay);
+  const setWeekStartDay = useAppStore((s) => s.setWeekStartDay);
+  const showFriday = useAppStore((s) => s.showFriday);
+  const setShowFriday = useAppStore((s) => s.setShowFriday);
+  const showSaturday = useAppStore((s) => s.showSaturday);
+  const setShowSaturday = useAppStore((s) => s.setShowSaturday);
 
   const authUser = useAuthStore((s) => s.user);
   const { data: profile, isLoading } = useProfile();
@@ -120,6 +126,25 @@ export default function AccountTab() {
               options={DATE_FORMATS.map((f) => ({ value: f, label: f }))}
               value={dateFormat}
               onChange={(e) => setDateFormat(e.target.value as DateFormat)}
+            />
+            <Select
+              label={t('settings.weekStartDay', 'Week starts on')}
+              options={WEEK_START_DAYS.map((d) => ({
+                value: d,
+                label: t(`settings.weekStartDays.${d}`, d),
+              }))}
+              value={weekStartDay}
+              onChange={(e) => setWeekStartDay(e.target.value as WeekStartDay)}
+            />
+            <Toggle
+              label={t('settings.showFriday', 'Show Friday')}
+              checked={showFriday}
+              onChange={setShowFriday}
+            />
+            <Toggle
+              label={t('settings.showSaturday', 'Show Saturday')}
+              checked={showSaturday}
+              onChange={setShowSaturday}
             />
           </Stack>
         </Section>

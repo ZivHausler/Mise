@@ -14,11 +14,14 @@ export default async function orderRoutes(app: FastifyInstance) {
   app.addHook('preHandler', authMiddleware);
   app.addHook('preHandler', requireStoreMiddleware);
 
-  app.get('/', (req, reply) => controller.getAll(req as any, reply));
-  app.get('/:id', (req, reply) => controller.getById(req as any, reply));
-  app.get('/customer/:customerId', (req, reply) => controller.getByCustomerId(req as any, reply));
+  app.get<{ Querystring: { status?: string; excludePaid?: string } }>('/', (req, reply) => controller.getAll(req, reply));
+  app.get<{ Querystring: { from: string; to: string; status?: string } }>('/calendar/range', (req, reply) => controller.getCalendarRange(req, reply));
+  app.get<{ Querystring: { from: string; to: string } }>('/calendar/aggregates', (req, reply) => controller.getCalendarAggregates(req, reply));
+  app.get<{ Querystring: { date: string; status?: string; page?: string; limit?: string } }>('/calendar/day', (req, reply) => controller.getCalendarDay(req, reply));
+  app.get<{ Params: { id: string } }>('/:id', (req, reply) => controller.getById(req, reply));
+  app.get<{ Params: { customerId: string }; Querystring: { page?: string; limit?: string; status?: string; dateFrom?: string; dateTo?: string } }>('/customer/:customerId', (req, reply) => controller.getByCustomerId(req, reply));
   app.post('/', (req, reply) => controller.create(req, reply));
-  app.patch('/:id/status', (req, reply) => controller.updateStatus(req as any, reply));
-  app.put('/:id', (req, reply) => controller.update(req as any, reply));
-  app.delete('/:id', (req, reply) => controller.delete(req as any, reply));
+  app.patch<{ Params: { id: string } }>('/:id/status', (req, reply) => controller.updateStatus(req, reply));
+  app.put<{ Params: { id: string } }>('/:id', (req, reply) => controller.update(req, reply));
+  app.delete<{ Params: { id: string } }>('/:id', (req, reply) => controller.delete(req, reply));
 }

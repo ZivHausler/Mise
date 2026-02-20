@@ -4,5 +4,6 @@ export const mongoConfig = {
     maxPoolSize: 10,
     minPoolSize: 2,
     serverSelectionTimeoutMS: 5000,
+    ...(process.env['NODE_ENV'] === 'production' ? { tls: true } : {}),
   },
 };

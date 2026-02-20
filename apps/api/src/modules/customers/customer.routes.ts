@@ -10,9 +10,9 @@ export default async function customerRoutes(app: FastifyInstance) {
   app.addHook('preHandler', authMiddleware);
   app.addHook('preHandler', requireStoreMiddleware);
 
-  app.get('/', (req, reply) => controller.getAll(req as any, reply));
-  app.get('/:id', (req, reply) => controller.getById(req as any, reply));
+  app.get<{ Querystring: { search?: string } }>('/', (req, reply) => controller.getAll(req, reply));
+  app.get<{ Params: { id: string } }>('/:id', (req, reply) => controller.getById(req, reply));
   app.post('/', (req, reply) => controller.create(req, reply));
-  app.put('/:id', (req, reply) => controller.update(req as any, reply));
-  app.delete('/:id', (req, reply) => controller.delete(req as any, reply));
+  app.put<{ Params: { id: string } }>('/:id', (req, reply) => controller.update(req, reply));
+  app.delete<{ Params: { id: string } }>('/:id', (req, reply) => controller.delete(req, reply));
 }

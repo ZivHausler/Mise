@@ -53,7 +53,6 @@ export default function NotificationsTab() {
   const eventLabel = (et: string) => {
     const labels: Record<string, string> = {
       order_created: t('settings.notifications.orderCreated', 'Order Created'),
-      order_status_changed: t('settings.notifications.orderStatusChanged', 'Order Status Changed'),
       low_stock: t('settings.notifications.lowStock', 'Low Stock Alert'),
       payment_received: t('settings.notifications.paymentReceived', 'Payment Received'),
     };

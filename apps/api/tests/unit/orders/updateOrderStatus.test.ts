@@ -13,14 +13,14 @@ vi.mock('@mise/shared/src/constants/index.js', () => ({
   },
 }));
 
-vi.mock('../../../src/modules/orders/crud/orderCrud.js', () => ({
+vi.mock('../../../src/modules/orders/orderCrud.js', () => ({
   OrderCrud: {
     getById: vi.fn(),
     updateStatus: vi.fn(),
   },
 }));
 
-import { OrderCrud } from '../../../src/modules/orders/crud/orderCrud.js';
+import { OrderCrud } from '../../../src/modules/orders/orderCrud.js';
 
 const STORE_ID = 'store-1';
 

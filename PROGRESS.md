@@ -324,13 +324,13 @@
 4. **App push notifications** — UI shows "Coming Soon" badge, no backend implementation
 
 ### Configuration Gaps
-5. **Rate limiting values** are hardcoded (1000 req/min global, 10 req/15min auth) — should be env vars for production tuning
+5. ~~**Rate limiting values** are hardcoded~~ — **Fixed**: now configurable via `RATE_LIMIT_MAX`, `RATE_LIMIT_WINDOW`, `AUTH_RATE_LIMIT_MAX`, `AUTH_RATE_LIMIT_WINDOW` env vars
 6. **RabbitMQ retry config** hardcoded (5s TTL, 3 retries) — should be configurable
-7. **No frontend `.env.example`** — only `VITE_GOOGLE_CLIENT_ID` is used but undocumented
-8. **`FRONTEND_URL`** has inline fallback to `localhost:5173` — should fail explicitly in production
+7. ~~**No frontend `.env.example`**~~ — **Fixed**: added `VITE_API_URL` and `VITE_GOOGLE_CLIENT_ID`
+8. ~~**`FRONTEND_URL`** has inline fallback to `localhost:5173`~~ — **Fixed**: now fails explicitly in production, dead `??` fallbacks removed
 
 ### Code Quality
-9. **Console.log in production code** — notification channels and RabbitMQ event bus use `console.log`/`console.error` instead of the Pino logger
+9. ~~**Console.log in production code**~~ — **Fixed**: all replaced with standalone Pino logger (`appLogger`)
 10. **MongoDB only used for recipes** — configured in docker-compose but could be documented as optional
 
 ### Missing
@@ -345,6 +345,32 @@
 - **136 unit tests** across 27 test files (Vitest) — all passing
 - Covers: Auth, Recipes, Inventory, Customers, Orders, Payments, Core infrastructure
 - E2E test plan drafted but not yet executed
+
+---
+
+## Future Plans
+
+### High Impact
+- [ ] **Reports & Export** — PDF/Excel export for orders, payments, inventory (bakers need printable summaries for end-of-day/week/month)
+- [ ] **Order calendar view** — see orders by due date on a calendar, critical for bakery production planning
+- [ ] **Production planning** — aggregate ingredient needs across upcoming orders ("I need 5kg flour for tomorrow's orders")
+- [ ] **Recurring orders** — many bakeries have weekly standing orders from cafes/restaurants
+- [ ] **Customer-facing order portal** — let customers place orders directly via a link (right now it's baker-only)
+
+### Medium Impact
+- [ ] **Image uploads** — recipe photos, store logo (currently no file upload support)
+- [ ] **Batch operations** — bulk status changes on orders, bulk stock adjustments
+- [ ] **Inventory alerts** — actual notifications when stock is low (currently events fire but nothing reaches the user besides an in-app count)
+- [ ] **Order printing** — print order slips / production sheets for the kitchen
+- [ ] **Profit margins** — recipe cost vs selling price analytics, margin trends over time
+- [ ] **Search across modules** — global search bar (find a customer, order, or recipe from one input)
+
+### Polish & DevEx
+- [ ] **Dark mode** — the admin panel already has `adminDarkMode` in the store, extend to the main app
+- [ ] **Onboarding wizard** — guide new store owners through adding their first recipe, ingredient, customer
+- [ ] **Offline support** — service worker + local cache for flaky connections (bakeries aren't always in great WiFi zones)
+- [ ] **Mobile PWA** — add manifest + install prompt, bakeries often use tablets/phones
+- [ ] **Webhook integrations** — let stores connect to external services (accounting software, delivery apps)
 
 ---
 

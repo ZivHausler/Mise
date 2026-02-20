@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
-import { useNavigate, Link, useSearchParams } from 'react-router-dom';
+import { useNavigate, Link, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/Button';
 import { TextInput } from '@/components/FormFields';
@@ -13,8 +13,7 @@ import { MergeAccountDialog } from '@/components/MergeAccountDialog';
 export default function LoginPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
-  const inviteToken = searchParams.get('invite') || undefined;
+  const { inviteToken } = useParams<{ inviteToken: string }>();
   const setAuth = useAuthStore((s) => s.setAuth);
   const setStores = useAuthStore((s) => s.setStores);
   const updateToken = useAuthStore((s) => s.updateToken);
@@ -187,7 +186,7 @@ export default function LoginPage() {
 
         <p className="mt-6 text-center text-body-sm text-neutral-500">
           {t('auth.noAccount', "Don't have an account?")}{' '}
-          <Link to={inviteToken ? `/register?invite=${inviteToken}` : '/register'} className="text-primary-500 hover:underline">
+          <Link to={inviteToken ? `/register/${inviteToken}` : '/register'} className="text-primary-500 hover:underline">
             {t('auth.register')}
           </Link>
         </p>

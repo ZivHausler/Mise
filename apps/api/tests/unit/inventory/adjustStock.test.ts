@@ -4,14 +4,27 @@ import { createIngredient } from '../helpers/mock-factories.js';
 import { NotFoundError, ValidationError } from '../../../src/core/errors/app-error.js';
 import { InventoryLogType } from '@mise/shared';
 
-vi.mock('../../../src/modules/inventory/crud/inventoryCrud.js', () => ({
+vi.mock('../../../src/modules/inventory/inventoryCrud.js', () => ({
   InventoryCrud: {
     getById: vi.fn(),
     adjustStock: vi.fn(),
   },
 }));
 
-import { InventoryCrud } from '../../../src/modules/inventory/crud/inventoryCrud.js';
+const mockPublish = vi.fn();
+vi.mock('../../../src/core/events/event-bus.js', () => ({
+  getEventBus: () => ({
+    publish: mockPublish,
+  }),
+}));
+
+vi.mock('../../../src/core/events/event-names.js', () => ({
+  EventNames: {
+    INVENTORY_LOW_STOCK: 'inventory.low_stock',
+  },
+}));
+
+import { InventoryCrud } from '../../../src/modules/inventory/inventoryCrud.js';
 
 const STORE_ID = 'store-1';
 
@@ -91,5 +104,45 @@ describe('AdjustStockUseCase', () => {
     });
 
     expect(result.quantity).toBe(55);
+  });
+
+  it('should publish low stock event when quantity drops below threshold', async () => {
+    const ingredient = createIngredient({ quantity: 50 });
+    const updated = createIngredient({ quantity: 3, lowStockThreshold: 10, id: 'ing-1', name: 'Flour' });
+    vi.mocked(InventoryCrud.getById).mockResolvedValue(ingredient);
+    vi.mocked(InventoryCrud.adjustStock).mockResolvedValue(updated);
+
+    await useCase.execute(STORE_ID, {
+      ingredientId: 'ing-1',
+      type: InventoryLogType.USAGE,
+      quantity: 47,
+    });
+
+    expect(mockPublish).toHaveBeenCalledWith(
+      expect.objectContaining({
+        eventName: 'inventory.low_stock',
+        payload: expect.objectContaining({
+          ingredientId: updated.id,
+          name: updated.name,
+          currentQuantity: 3,
+          threshold: 10,
+        }),
+      }),
+    );
+  });
+
+  it('should not publish low stock event when quantity is above threshold', async () => {
+    const ingredient = createIngredient({ quantity: 50 });
+    const updated = createIngredient({ quantity: 30, lowStockThreshold: 10 });
+    vi.mocked(InventoryCrud.getById).mockResolvedValue(ingredient);
+    vi.mocked(InventoryCrud.adjustStock).mockResolvedValue(updated);
+
+    await useCase.execute(STORE_ID, {
+      ingredientId: 'ing-1',
+      type: InventoryLogType.USAGE,
+      quantity: 20,
+    });
+
+    expect(mockPublish).not.toHaveBeenCalled();
   });
 });

@@ -35,6 +35,7 @@ export interface AuthTokenPayload {
   storeId?: string;
   storeRole?: number;
   isAdmin?: boolean;
+  jti?: string;
 }
 
 export interface AuthResponse {

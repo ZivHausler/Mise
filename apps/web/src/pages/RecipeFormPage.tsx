@@ -252,7 +252,7 @@ export default function RecipeFormPage() {
         addToast('error', t('recipes.stepsRequired', 'At least one step is required'));
         return;
       }
-      const body = { name, category, description, yield: yieldAmount, sellingPrice: price === '' ? undefined : Number(price), ingredients, steps: formattedSteps };
+      const body = { name, category, description: description || undefined, yield: yieldAmount === '' ? undefined : yieldAmount, sellingPrice: price === '' ? undefined : Number(price), ingredients, steps: formattedSteps };
       if (isEdit) {
         updateRecipe.mutate({ id: id!, ...body }, { onSuccess: () => navigate(`/recipes/${id}`) });
       } else {

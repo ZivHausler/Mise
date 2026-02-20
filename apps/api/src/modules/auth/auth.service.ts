@@ -12,6 +12,7 @@ import { PgStoreRepository } from '../stores/store.repository.js';
 import { StoreRole } from '../stores/store.types.js';
 import { ForbiddenError } from '../../core/errors/app-error.js';
 import { env } from '../../config/env.js';
+import { blacklistToken } from '../../core/auth/token-blacklist.js';
 
 export class AuthService {
   private registerUseCase: RegisterUserUseCase;
@@ -138,6 +139,15 @@ export class AuthService {
     };
   }
 
+  async logout(jti: string | undefined, expiresAt: number): Promise<void> {
+    if (!jti) return;
+    const now = Math.floor(Date.now() / 1000);
+    const ttl = expiresAt - now;
+    if (ttl > 0) {
+      await blacklistToken(jti, ttl);
+    }
+  }
+
   async refreshToken(userId: string): Promise<AuthResponse> {
     const user = await this.getUserProfileUseCase.execute(userId);
     const token = await this.generateTokenWithStoreInfo(user);
@@ -165,7 +175,7 @@ export class AuthService {
   }
 
   private generateToken(user: User, storeId?: string, storeRole?: StoreRole): string {
-    const payload: AuthTokenPayload = { userId: user.id, email: user.email };
+    const payload: AuthTokenPayload = { userId: user.id, email: user.email, jti: crypto.randomUUID() };
     if (user.isAdmin) {
       payload.isAdmin = true;
     }

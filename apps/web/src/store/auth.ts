@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { apiClient } from '@/api/client';
 
 interface User {
   id: string;
@@ -95,6 +96,8 @@ export const useAuthStore = create<AuthState>((set) => ({
     set({ pendingCreateStoreToken: token });
   },
   logout: () => {
+    // Fire-and-forget API call to blacklist the token server-side
+    apiClient.post('/auth/logout').catch(() => {});
     localStorage.removeItem('auth_token');
     localStorage.removeItem('auth_user');
     localStorage.removeItem('auth_has_store');

@@ -127,6 +127,9 @@ export class RecipeService {
   }
 
   async update(storeId: string, id: string, data: UpdateRecipeDTO): Promise<Recipe> {
+    const existing = await RecipeCrud.getById(storeId, id);
+    if (!existing) throw new NotFoundError('Recipe not found');
+
     if (this.inventoryService && data.ingredients) {
       for (const ing of data.ingredients) {
         try {
@@ -179,6 +182,8 @@ export class RecipeService {
   }
 
   async delete(storeId: string, id: string): Promise<void> {
+    const existing = await RecipeCrud.getById(storeId, id);
+    if (!existing) throw new NotFoundError('Recipe not found');
     return RecipeCrud.delete(storeId, id);
   }
 }

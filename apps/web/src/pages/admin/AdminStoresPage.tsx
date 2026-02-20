@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Search, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Pencil, Check, X, Filter } from 'lucide-react';
 import { useAdminStores, useAdminStoreMembers, useAdminUpdateStore } from '@/api/hooks';
@@ -92,7 +92,7 @@ export default function AdminStoresPage() {
     <div className="space-y-6">
       <h1 className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">{t('admin.stores.title')}</h1>
 
-      <div className="overflow-visible rounded-lg border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800">
+      <div className="overflow-hidden rounded-lg border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800">
         <div className="flex flex-col gap-3 border-b border-neutral-200 dark:border-neutral-700 p-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="relative w-72">
             <Search className="absolute inset-y-0 start-0 my-auto ms-3 h-4 w-4 text-neutral-400" />
@@ -150,8 +150,8 @@ export default function AdminStoresPage() {
                 <tr><td colSpan={6} className="px-3 py-8 text-center text-body-sm text-neutral-400">{t('admin.stores.noStores')}</td></tr>
               ) : (
                 data?.items?.map((store, i) => (
-                  <>
-                    <tr key={store.id} className={`border-b border-neutral-100 dark:border-neutral-700 transition-colors hover:bg-primary-50 dark:hover:bg-neutral-700 ${i % 2 === 1 ? 'bg-neutral-50 dark:bg-neutral-800/50' : ''}`}>
+                  <React.Fragment key={store.id}>
+                    <tr className={`border-b border-neutral-100 dark:border-neutral-700 transition-colors hover:bg-primary-50 dark:hover:bg-neutral-700 ${i % 2 === 1 ? 'bg-neutral-50 dark:bg-neutral-800/50' : ''}`}>
                       <td className="px-2">
                         <button
                           onClick={() => setExpandedStore(expandedStore === store.id ? null : store.id)}
@@ -205,7 +205,7 @@ export default function AdminStoresPage() {
                         </td>
                       </tr>
                     )}
-                  </>
+                  </React.Fragment>
                 ))
               )}
             </tbody>

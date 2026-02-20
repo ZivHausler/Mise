@@ -1,7 +1,16 @@
-import type { FastifyInstance } from 'fastify';
+import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { AdminController } from './admin.controller.js';
 import { AdminService } from './admin.service.js';
 import { authMiddleware, requireAdminMiddleware } from '../../core/middleware/auth.js';
+import { UnauthorizedError } from '../../core/errors/app-error.js';
+import { env } from '../../config/env.js';
+
+async function adminSecretMiddleware(request: FastifyRequest, _reply: FastifyReply) {
+  const authHeader = request.headers.authorization;
+  if (!authHeader?.startsWith('Bearer ') || authHeader.slice(7) !== env.ADMIN_SECRET) {
+    throw new UnauthorizedError('Invalid admin credentials');
+  }
+}
 
 export default async function adminRoutes(app: FastifyInstance) {
   const service = new AdminService(app);
@@ -34,4 +43,7 @@ export default async function adminRoutes(app: FastifyInstance) {
 
   // Lightweight gate check used by frontend on admin panel entry
   app.get('/access', adminPreHandler, (_req, reply) => reply.send({ success: true }));
+
+  // Test cleanup - secured by admin secret (used by E2E teardown)
+  app.post('/cleanup-test-users', { preHandler: [adminSecretMiddleware] }, (req, reply) => controller.cleanupTestUsers(req, reply));
 }

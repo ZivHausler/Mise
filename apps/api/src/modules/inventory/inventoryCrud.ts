@@ -1,19 +1,9 @@
 import { PgInventoryRepository } from './inventory.repository.js';
 import type { AdjustStockDTO, CreateIngredientDTO, Ingredient, InventoryLog, UpdateIngredientDTO } from './inventory.types.js';
-import type { PaginatedResult } from './inventory.types.js';
-import { NotFoundError, ValidationError } from '../../core/errors/app-error.js';
+import type { PaginatedResult } from '../../core/types/pagination.js';
 
 export class InventoryCrud {
   static async create(storeId: string, data: CreateIngredientDTO): Promise<Ingredient> {
-    if (!data.name.trim()) {
-      throw new ValidationError('Ingredient name is required');
-    }
-    if (data.quantity < 0) {
-      throw new ValidationError('Quantity must be non-negative');
-    }
-    if (data.costPerUnit < 0) {
-      throw new ValidationError('Cost per unit must be non-negative');
-    }
     return PgInventoryRepository.create(storeId, data);
   }
 
@@ -34,18 +24,10 @@ export class InventoryCrud {
   }
 
   static async update(storeId: string, id: string, data: UpdateIngredientDTO): Promise<Ingredient> {
-    const existing = await PgInventoryRepository.findById(storeId, id);
-    if (!existing) {
-      throw new NotFoundError('Ingredient not found');
-    }
     return PgInventoryRepository.update(storeId, id, data);
   }
 
   static async delete(storeId: string, id: string): Promise<void> {
-    const existing = await PgInventoryRepository.findById(storeId, id);
-    if (!existing) {
-      throw new NotFoundError('Ingredient not found');
-    }
     return PgInventoryRepository.delete(storeId, id);
   }
 

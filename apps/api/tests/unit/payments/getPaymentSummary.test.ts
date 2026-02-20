@@ -2,13 +2,13 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { GetPaymentSummaryUseCase } from '../../../src/modules/payments/use-cases/getPaymentSummary.js';
 import { createPayment } from '../helpers/mock-factories.js';
 
-vi.mock('../../../src/modules/payments/crud/paymentCrud.js', () => ({
+vi.mock('../../../src/modules/payments/paymentCrud.js', () => ({
   PaymentCrud: {
     getByOrderId: vi.fn(),
   },
 }));
 
-import { PaymentCrud } from '../../../src/modules/payments/crud/paymentCrud.js';
+import { PaymentCrud } from '../../../src/modules/payments/paymentCrud.js';
 
 const STORE_ID = 'store-1';
 
