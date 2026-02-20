@@ -70,17 +70,17 @@ export class PgOrderRepository {
     return result.rows.map((r: Record<string, unknown>) => this.mapRow(r));
   }
 
-  static async create(storeId: string, data: CreateOrderDTO & { totalAmount: number }): Promise<Order> {
+  static async create(storeId: string, data: CreateOrderDTO & { totalAmount: number; recurringGroupId?: string }): Promise<Order> {
     const pool = getPool();
     const items = JSON.stringify(data.items);
     const result = await pool.query(
       `WITH new_order AS (
-        INSERT INTO orders (id, store_id, customer_id, items, status, total_amount, notes, due_date, created_at, updated_at)
-        VALUES (gen_random_uuid(), $1, $2, $3, $4, $5, $6, $7, NOW(), NOW())
+        INSERT INTO orders (id, store_id, customer_id, items, status, total_amount, notes, due_date, recurring_group_id, created_at, updated_at)
+        VALUES (gen_random_uuid(), $1, $2, $3, $4, $5, $6, $7, $8, NOW(), NOW())
         RETURNING *
       )
       SELECT o.*, c.name as customer_name FROM new_order o LEFT JOIN customers c ON o.customer_id = c.id`,
-      [storeId, data.customerId, items, ORDER_STATUS.RECEIVED, data.totalAmount, data.notes ?? null, data.dueDate ?? null],
+      [storeId, data.customerId, items, ORDER_STATUS.RECEIVED, data.totalAmount, data.notes ?? null, data.dueDate ?? null, data.recurringGroupId ?? null],
     );
     return this.mapRow(result.rows[0]);
   }
@@ -199,6 +199,17 @@ export class PgOrderRepository {
     return { orders: result.rows.map((r: Record<string, unknown>) => this.mapRow(r)), total };
   }
 
+  static async findFutureByRecurringGroup(storeId: string, recurringGroupId: string, afterDate: Date): Promise<Order[]> {
+    const pool = getPool();
+    const result = await pool.query(
+      `SELECT o.*, c.name as customer_name FROM orders o LEFT JOIN customers c ON o.customer_id = c.id
+       WHERE o.store_id = $1 AND o.recurring_group_id = $2 AND o.due_date > $3 AND o.status = $4
+       ORDER BY o.due_date ASC`,
+      [storeId, recurringGroupId, afterDate, ORDER_STATUS.RECEIVED],
+    );
+    return result.rows.map((r: Record<string, unknown>) => this.mapRow(r));
+  }
+
   private static mapRow(row: Record<string, unknown>): Order {
     let items: OrderItem[] = [];
     const rawItems = row['items'];
@@ -218,6 +229,7 @@ export class PgOrderRepository {
       totalAmount: Number(row['total_amount']),
       notes: row['notes'] as string | undefined,
       dueDate: row['due_date'] ? new Date(row['due_date'] as string) : undefined,
+      recurringGroupId: (row['recurring_group_id'] as string) || undefined,
       createdAt: new Date(row['created_at'] as string),
       updatedAt: new Date(row['updated_at'] as string),
     };
