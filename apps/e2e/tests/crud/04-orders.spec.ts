@@ -85,9 +85,8 @@ test.describe('Orders CRUD', () => {
     await page.getByText('E2E Baker').click();
     await expect(page).toHaveURL(/\/orders\/.+/);
 
-    // Move order back to Received before deleting (only received orders can be deleted)
-    await page.getByRole('button', { name: 'Back' }).click();
-    await expect(page.getByText('Received')).toBeVisible();
+    // Order should still be In Progress from the previous test (non-received orders can be deleted)
+    await expect(page.getByText('In Progress')).toBeVisible();
 
     await page.getByRole('button', { name: 'Delete' }).click();
 
