@@ -7,6 +7,7 @@ export async function registerModules(app: FastifyInstance) {
   await app.register(import('./inventory/inventory.routes.js'), { prefix: '/api/inventory' });
   await app.register(import('./recipes/recipe.routes.js'), { prefix: '/api/recipes' });
   await app.register(import('./orders/order.routes.js'), { prefix: '/api/orders' });
+  await app.register(import('./orders/order-sse.routes.js'), { prefix: '/api/orders' });
   await app.register(import('./payments/payment.routes.js'), { prefix: '/api/payments' });
   await app.register(import('./notifications/notification.routes.js'), { prefix: '/api/notifications' });
   await app.register(import('./analytics/analytics.routes.js'), { prefix: '/api/analytics' });
