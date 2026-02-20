@@ -6,7 +6,7 @@ on:
     branches: [main]
 
 jobs:
-  test:
+  unit-tests:
     runs-on: ubuntu-latest
 
     steps:
@@ -22,3 +22,91 @@ jobs:
       - run: pnpm install --frozen-lockfile
 
       - run: pnpm --filter @mise/api test
+
+  e2e-tests:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: mise
+          POSTGRES_PASSWORD: mise
+          POSTGRES_DB: mise
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U mise"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      mongo:
+        image: mongo:7
+        ports:
+          - 27017:27017
+
+      redis:
+        image: redis:7
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      rabbitmq:
+        image: rabbitmq:3
+        ports:
+          - 5672:5672
+        options: >-
+          --health-cmd "rabbitmq-diagnostics -q ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Install Playwright browsers
+        run: pnpm --filter @mise/e2e exec playwright install --with-deps chromium
+
+      - name: Run database migrations
+        run: cat packages/db/src/migrations/*.sql | psql "$DATABASE_URL"
+        env:
+          DATABASE_URL: postgresql://mise:mise@localhost:5432/mise
+
+      - name: Run e2e tests
+        run: pnpm --filter @mise/e2e test
+        env:
+          DATABASE_URL: postgresql://mise:mise@localhost:5432/mise
+          MONGODB_URI: mongodb://localhost:27017/mise
+          REDIS_URL: redis://localhost:6379
+          RABBITMQ_URL: amqp://localhost:5672
+          JWT_SECRET: ci-test-secret
+          ADMIN_SECRET: dev-admin-secret-change-in-production
+          FRONTEND_URL: http://localhost:5173
+          CORS_ORIGIN: http://localhost:5173
+          NODE_ENV: development
+          PORT: 3001
+          HOST: 0.0.0.0
+          VITE_API_URL: http://localhost:3001
+          CI: true
+
+      - name: Upload Playwright report
+        uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with:
+          name: playwright-report
+          path: apps/e2e/playwright-report/
+          retention-days: 14
