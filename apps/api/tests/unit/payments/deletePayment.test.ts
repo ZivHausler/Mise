@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { PaymentCrud } from '../../../src/modules/payments/crud/paymentCrud.js';
+import { PaymentCrud } from '../../../src/modules/payments/paymentCrud.js';
 
 vi.mock('../../../src/modules/payments/payment.repository.js', () => ({
   PgPaymentRepository: {

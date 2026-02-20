@@ -9,7 +9,7 @@ vi.mock('../../../src/core/events/event-bus.js', async (importOriginal) => {
   return { ...original, getEventBus: vi.fn() };
 });
 
-vi.mock('../../../src/modules/payments/crud/paymentCrud.js', () => ({
+vi.mock('../../../src/modules/payments/paymentCrud.js', () => ({
   PaymentCrud: {
     create: vi.fn(),
     getById: vi.fn(),
@@ -26,7 +26,7 @@ vi.mock('../../../src/modules/payments/use-cases/getPaymentSummary.js', () => ({
   })),
 }));
 
-import { PaymentCrud } from '../../../src/modules/payments/crud/paymentCrud.js';
+import { PaymentCrud } from '../../../src/modules/payments/paymentCrud.js';
 import { getEventBus } from '../../../src/core/events/event-bus.js';
 
 const STORE_ID = 'store-1';

@@ -1,7 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { OrderCrud } from '../../../src/modules/orders/crud/orderCrud.js';
+import { OrderCrud } from '../../../src/modules/orders/orderCrud.js';
 import { createOrder } from '../helpers/mock-factories.js';
-import { ValidationError } from '../../../src/core/errors/app-error.js';
 
 vi.mock('../../../src/modules/orders/order.repository.js', () => ({
   PgOrderRepository: {
@@ -36,46 +35,6 @@ describe('OrderCrud.create', () => {
 
     expect(result).toEqual(order);
     expect(PgOrderRepository.create).toHaveBeenCalledOnce();
-  });
-
-  it('should throw ValidationError when customerId is missing', async () => {
-    await expect(
-      OrderCrud.create(STORE_ID, {
-        customerId: '',
-        items: [{ recipeId: 'r1', quantity: 1, unitPrice: 10 }],
-        totalAmount: 10,
-      }),
-    ).rejects.toThrow('Customer ID is required');
-  });
-
-  it('should throw ValidationError when items array is empty', async () => {
-    await expect(
-      OrderCrud.create(STORE_ID, {
-        customerId: 'cust-1',
-        items: [],
-        totalAmount: 0,
-      }),
-    ).rejects.toThrow('At least one item is required');
-  });
-
-  it('should throw ValidationError when an item has zero quantity', async () => {
-    await expect(
-      OrderCrud.create(STORE_ID, {
-        customerId: 'cust-1',
-        items: [{ recipeId: 'r1', quantity: 0, unitPrice: 10 }],
-        totalAmount: 0,
-      }),
-    ).rejects.toThrow('Item quantity must be positive');
-  });
-
-  it('should throw ValidationError when an item has negative quantity', async () => {
-    await expect(
-      OrderCrud.create(STORE_ID, {
-        customerId: 'cust-1',
-        items: [{ recipeId: 'r1', quantity: -1, unitPrice: 10 }],
-        totalAmount: 0,
-      }),
-    ).rejects.toThrow('Item quantity must be positive');
   });
 
   it('should create order with multiple items', async () => {

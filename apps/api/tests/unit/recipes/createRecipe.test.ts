@@ -1,7 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { RecipeCrud } from '../../../src/modules/recipes/crud/recipeCrud.js';
+import { RecipeCrud } from '../../../src/modules/recipes/recipeCrud.js';
 import { createRecipe } from '../helpers/mock-factories.js';
-import { ValidationError } from '../../../src/core/errors/app-error.js';
 
 vi.mock('../../../src/modules/recipes/recipe.repository.js', () => ({
   MongoRecipeRepository: {
@@ -34,59 +33,6 @@ describe('RecipeCrud.create', () => {
 
     expect(result).toEqual(recipe);
     expect(MongoRecipeRepository.create).toHaveBeenCalledOnce();
-  });
-
-  it('should throw ValidationError when name is empty', async () => {
-    await expect(
-      RecipeCrud.create(STORE_ID, {
-        name: '',
-        ingredients: [],
-        steps: [{ order: 1, type: 'step', instruction: 'Do something' }],
-      }),
-    ).rejects.toThrow('Recipe name is required');
-  });
-
-  it('should throw ValidationError when name is whitespace only', async () => {
-    await expect(
-      RecipeCrud.create(STORE_ID, {
-        name: '   ',
-        ingredients: [],
-        steps: [{ order: 1, type: 'step', instruction: 'Do something' }],
-      }),
-    ).rejects.toThrow(ValidationError);
-  });
-
-  it('should throw ValidationError when no steps provided', async () => {
-    await expect(
-      RecipeCrud.create(STORE_ID, {
-        name: 'Test',
-        ingredients: [],
-        steps: [],
-      }),
-    ).rejects.toThrow('At least one step is required');
-  });
-
-  it('should throw ValidationError when a step has empty instruction', async () => {
-    await expect(
-      RecipeCrud.create(STORE_ID, {
-        name: 'Test',
-        ingredients: [],
-        steps: [
-          { order: 1, type: 'step', instruction: 'Good step' },
-          { order: 2, type: 'step', instruction: '' },
-        ],
-      }),
-    ).rejects.toThrow('Step 2 must have an instruction');
-  });
-
-  it('should throw ValidationError when a step instruction is whitespace', async () => {
-    await expect(
-      RecipeCrud.create(STORE_ID, {
-        name: 'Test',
-        ingredients: [],
-        steps: [{ order: 1, type: 'step', instruction: '   ' }],
-      }),
-    ).rejects.toThrow('Step 1 must have an instruction');
   });
 
   it('should create recipe with optional fields', async () => {

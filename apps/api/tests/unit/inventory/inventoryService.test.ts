@@ -4,7 +4,7 @@ import { createIngredient } from '../helpers/mock-factories.js';
 import { NotFoundError } from '../../../src/core/errors/app-error.js';
 import { InventoryLogType } from '@mise/shared';
 
-vi.mock('../../../src/modules/inventory/crud/inventoryCrud.js', () => ({
+vi.mock('../../../src/modules/inventory/inventoryCrud.js', () => ({
   InventoryCrud: {
     create: vi.fn(),
     getById: vi.fn(),
@@ -26,7 +26,7 @@ vi.mock('../../../src/modules/inventory/use-cases/adjustStock.js', () => ({
   },
 }));
 
-import { InventoryCrud } from '../../../src/modules/inventory/crud/inventoryCrud.js';
+import { InventoryCrud } from '../../../src/modules/inventory/inventoryCrud.js';
 
 const STORE_ID = 'store-1';
 
