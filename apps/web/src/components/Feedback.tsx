@@ -115,10 +115,10 @@ const toastIcons = {
 };
 
 const toastStyles = {
-  success: 'border-success bg-success-light',
-  error: 'border-error bg-error-light',
-  warning: 'border-warning bg-warning-light',
-  info: 'border-info bg-info-light',
+  success: 'border-success bg-success-light dark:bg-slate-800 dark:border-success',
+  error: 'border-error bg-error-light dark:bg-slate-800 dark:border-error',
+  warning: 'border-warning bg-warning-light dark:bg-slate-800 dark:border-warning',
+  info: 'border-info bg-info-light dark:bg-slate-800 dark:border-info',
 };
 
 const ToastItem = React.memo(function ToastItem({ toast }: { toast: ToastType }) {
@@ -127,16 +127,18 @@ const ToastItem = React.memo(function ToastItem({ toast }: { toast: ToastType })
 
   return (
     <div
+      onClick={toast.onClick ? () => { toast.onClick!(); removeToast(toast.id); } : undefined}
       className={cn(
         'flex items-start gap-3 rounded-lg border-s-4 p-4 shadow-md animate-slide-in',
-        toastStyles[toast.variant]
+        toastStyles[toast.variant],
+        toast.onClick && 'cursor-pointer hover:brightness-95 transition-[filter]',
       )}
     >
-      <Icon className="h-5 w-5 shrink-0 mt-0.5" />
-      <p className="flex-1 text-body-sm text-neutral-800">{toast.message}</p>
+      <Icon className="h-5 w-5 shrink-0 mt-0.5 dark:text-neutral-300" />
+      <p className="flex-1 text-body-sm text-neutral-800 dark:text-neutral-200 whitespace-pre-line">{toast.message}</p>
       <button
-        onClick={() => removeToast(toast.id)}
-        className="shrink-0 rounded p-0.5 text-neutral-400 hover:text-neutral-600"
+        onClick={(e) => { e.stopPropagation(); removeToast(toast.id); }}
+        className="shrink-0 rounded p-0.5 text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-200"
       >
         <X className="h-4 w-4" />
       </button>

@@ -119,12 +119,29 @@
     "statusLabel": "סטטוס",
     "deleteTitle": "למחוק הזמנה?",
     "deleteMsg": "לא ניתן לבטל פעולה זו. ההזמנה ורשומות התשלום יימחקו לצמיתות.",
+    "recurring": "הזמנה חוזרת",
+    "recurringDays": "חזרה בימים",
+    "recurringEnd": "עד תאריך",
+    "recurringCreated": "נוצרו {{count}} הזמנות",
+    "recurringEditTitle": "עדכון הזמנה חוזרת",
+    "recurringEditMessage": "הזמנה זו היא חלק מסדרה חוזרת. האם לעדכן רק את ההזמנה הזו, או גם את כל ההזמנות העתידיות בסדרה?",
+    "recurringEditThisOnly": "הזמנה זו בלבד",
+    "recurringEditAllFuture": "הזמנה זו והעתידיות",
     "status": {
       "received": "התקבלה",
       "in_progress": "בהכנה",
       "ready": "מוכנה",
       "delivered": "נמסרה"
     }
+  },
+  "weekdays": {
+    "sun": "א׳",
+    "mon": "ב׳",
+    "tue": "ג׳",
+    "wed": "ד׳",
+    "thu": "ה׳",
+    "fri": "ו׳",
+    "sat": "ש׳"
   },
   "calendar": {
     "today": "היום",
@@ -233,7 +250,7 @@
     "address": "כתובת",
     "notes": "הערות",
     "orders": "הזמנות",
-    "totalSpent": "סה\"כ הוצאות",
+    "totalSpent": "סה\"כ תשלומים צפויים",
     "create": "לקוח חדש",
     "contactInfo": "פרטי קשר",
     "preferences": "העדפות והערות",
@@ -374,9 +391,12 @@
     "goHome": "חזרה ללוח הבקרה"
   },
   "toasts": {
+    "newOrderReceived": "הזמנה חדשה: {{orderNum}}\nמאת: {{customer}}",
     "loginFailed": "ההתחברות נכשלה",
     "registrationFailed": "ההרשמה נכשלה",
     "orderCreated": "ההזמנה נוצרה",
+    "recurringOrderCreated": "נוצרו {{count}} הזמנות",
+    "recurringOrdersUpdated": "עודכנו {{count}} הזמנות",
     "orderCreateFailed": "יצירת ההזמנה נכשלה",
     "orderUpdated": "ההזמנה עודכנה",
     "orderUpdateFailed": "עדכון ההזמנה נכשל",

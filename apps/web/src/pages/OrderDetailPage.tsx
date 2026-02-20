@@ -60,7 +60,7 @@ export default function OrderDetailPage() {
           <StatusBadge variant={getStatusLabel(o.status)} label={t(`orders.status.${getStatusLabel(o.status)}`, getStatusLabel(o.status))} />
           {paymentStatuses?.[o.id] === 'paid' && <BadgeDollarSign className="h-6 w-6 text-green-600" />}
         </div>
-        <Row gap={2}>
+        <Row gap={2} className="flex-wrap">
           {o.status > ORDER_STATUS.RECEIVED && (
             <Button
               variant="secondary"
@@ -87,9 +87,11 @@ export default function OrderDetailPage() {
               {t('common.edit')}
             </Button>
           )}
-          <Button variant="danger" icon={<Trash2 className="h-4 w-4" />} onClick={() => setShowDelete(true)}>
-            {t('common.delete')}
-          </Button>
+          {o.status < ORDER_STATUS.DELIVERED && (
+            <Button variant="danger" icon={<Trash2 className="h-4 w-4" />} onClick={() => setShowDelete(true)}>
+              {t('common.delete')}
+            </Button>
+          )}
         </Row>
       </div>
 
