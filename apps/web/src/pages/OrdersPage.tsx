@@ -1,7 +1,8 @@
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Plus, LayoutGrid, List, ChevronRight, BadgeDollarSign } from 'lucide-react';
+import { Plus, LayoutGrid, List, Calendar, ChevronRight, BadgeDollarSign } from 'lucide-react';
+import OrderCalendar from '@/components/OrderCalendar';
 import { Page, PageHeader } from '@/components/Layout';
 import { Button } from '@/components/Button';
 import { DataTable, StatusBadge, EmptyState, type Column } from '@/components/DataDisplay';
@@ -9,6 +10,7 @@ import { PageSkeleton } from '@/components/Feedback';
 import { useOrders, useUpdateOrderStatus, usePaymentStatuses } from '@/api/hooks';
 import { ORDER_STATUS, STATUS_LABELS, getStatusLabel } from '@/utils/orderStatus';
 import { useFormatDate } from '@/utils/dateFormat';
+import { useAppStore } from '@/store/app';
 
 const STATUS_DISPLAY: Record<string, string> = {
   received: 'Received',
@@ -17,8 +19,6 @@ const STATUS_DISPLAY: Record<string, string> = {
   delivered: 'Delivered',
 };
 
-type ViewMode = 'pipeline' | 'list';
-
 export default function OrdersPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -26,7 +26,8 @@ export default function OrdersPage() {
   const updateOrderStatus = useUpdateOrderStatus();
   const { data: paymentStatuses } = usePaymentStatuses();
   const formatDate = useFormatDate();
-  const [viewMode, setViewMode] = useState<ViewMode>('pipeline');
+  const viewMode = useAppStore((s) => s.ordersViewMode);
+  const setViewMode = useAppStore((s) => s.setOrdersViewMode);
 
   const handleAdvance = useCallback(
     (order: any) => {
@@ -103,9 +104,15 @@ export default function OrdersPage() {
               </button>
               <button
                 onClick={() => setViewMode('list')}
-                className={`rounded-e-md p-2 ${viewMode === 'list' ? 'bg-primary-100 text-primary-700' : 'text-neutral-400 hover:text-neutral-600'}`}
+                className={`p-2 ${viewMode === 'list' ? 'bg-primary-100 text-primary-700' : 'text-neutral-400 hover:text-neutral-600'}`}
               >
                 <List className="h-4 w-4" />
+              </button>
+              <button
+                onClick={() => setViewMode('calendar')}
+                className={`rounded-e-md p-2 ${viewMode === 'calendar' ? 'bg-primary-100 text-primary-700' : 'text-neutral-400 hover:text-neutral-600'}`}
+              >
+                <Calendar className="h-4 w-4" />
               </button>
             </div>
             <Button variant="primary" icon={<Plus className="h-4 w-4" />} onClick={() => navigate('/orders/new')}>
@@ -115,7 +122,9 @@ export default function OrdersPage() {
         }
       />
 
-      {viewMode === 'pipeline' ? (
+      {viewMode === 'calendar' ? (
+        <OrderCalendar />
+      ) : viewMode === 'pipeline' ? (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {([ORDER_STATUS.RECEIVED, ORDER_STATUS.IN_PROGRESS, ORDER_STATUS.READY, ORDER_STATUS.DELIVERED] as const).map((status) => {
             const label = STATUS_LABELS[status];

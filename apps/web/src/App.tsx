@@ -123,7 +123,9 @@ export function App() {
             <Routes>
               {/* Public routes */}
               <Route path="/login" element={<LoginPage />} />
+              <Route path="/login/:inviteToken" element={<LoginPage />} />
               <Route path="/register" element={<RegisterPage />} />
+              <Route path="/register/:inviteToken" element={<RegisterPage />} />
               <Route path="/invite/:token" element={<InvitePage />} />
 
               {/* Store setup route */}

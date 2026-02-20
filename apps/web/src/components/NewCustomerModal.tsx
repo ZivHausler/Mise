@@ -6,6 +6,11 @@ import { Modal } from '@/components/Modal';
 import { TextInput, TextArea } from '@/components/FormFields';
 import { useCreateCustomer, useCustomer } from '@/api/hooks';
 
+interface Conflict {
+  field: 'phone' | 'email';
+  customerId: string;
+}
+
 interface NewCustomerModalProps {
   open: boolean;
   onClose: () => void;
@@ -17,12 +22,18 @@ export function NewCustomerModal({ open, onClose, onCreated, allowUseExisting = 
   const { t } = useTranslation();
   const createCustomer = useCreateCustomer();
   const [form, setForm] = useState({ name: '', phone: '', email: '', address: '', notes: '' });
-  const [existingCustomerId, setExistingCustomerId] = useState<string | null>(null);
-  const { data: existingCustomer } = useCustomer(existingCustomerId ?? '');
+  const [conflicts, setConflicts] = useState<Conflict[]>([]);
+  const [selectedConflictIdx, setSelectedConflictIdx] = useState<number | null>(null);
+
+  // Fetch customer data for each conflict
+  const { data: conflictCustomer0 } = useCustomer(conflicts[0]?.customerId ?? '');
+  const { data: conflictCustomer1 } = useCustomer(conflicts[1]?.customerId ?? '');
+  const conflictCustomers = [conflictCustomer0, conflictCustomer1].filter(Boolean);
 
   const resetAndClose = useCallback(() => {
     setForm({ name: '', phone: '', email: '', address: '', notes: '' });
-    setExistingCustomerId(null);
+    setConflicts([]);
+    setSelectedConflictIdx(null);
     onClose();
   }, [onClose]);
 
@@ -30,30 +41,45 @@ export function NewCustomerModal({ open, onClose, onCreated, allowUseExisting = 
     createCustomer.mutate(form, {
       onSuccess: (data: any) => {
         setForm({ name: '', phone: '', email: '', address: '', notes: '' });
-        setExistingCustomerId(null);
+        setConflicts([]);
+        setSelectedConflictIdx(0);
         onClose();
         onCreated?.(data);
       },
       onError: (error: any) => {
         const code = error?.response?.data?.error?.code;
-        const id = error?.response?.data?.error?.data?.existingCustomerId;
+        const data = error?.response?.data?.error?.data;
+
+        if (code === 'CUSTOMER_CONFLICT' && data?.conflicts?.length) {
+          setConflicts(data.conflicts);
+          setSelectedConflictIdx(null);
+          return;
+        }
+
+        // Backwards compat with old single-conflict codes
+        const id = data?.existingCustomerId;
         if ((code === 'CUSTOMER_PHONE_EXISTS' || code === 'CUSTOMER_EMAIL_EXISTS') && id) {
-          setExistingCustomerId(id);
+          const field = code === 'CUSTOMER_PHONE_EXISTS' ? 'phone' : 'email';
+          setConflicts([{ field, customerId: id }]);
+          setSelectedConflictIdx(0);
         }
       },
     });
   }, [form, createCustomer, onClose, onCreated]);
 
   const handleUseExisting = useCallback(() => {
-    if (existingCustomer) {
+    const customer = selectedConflictIdx !== null ? conflictCustomers[selectedConflictIdx] : conflictCustomers[0];
+    if (customer) {
       setForm({ name: '', phone: '', email: '', address: '', notes: '' });
-      setExistingCustomerId(null);
+      setConflicts([]);
+      setSelectedConflictIdx(0);
       onClose();
-      onCreated?.(existingCustomer);
+      onCreated?.(customer);
     }
-  }, [existingCustomer, onClose, onCreated]);
+  }, [conflicts, conflictCustomers, selectedConflictIdx, onClose, onCreated]);
 
-  const ec = existingCustomer as any;
+  const showConflictModal = conflicts.length > 0 && conflictCustomers.length > 0;
+  const hasMultipleConflicts = conflicts.length > 1 && conflictCustomers.length > 1;
 
   return (
     <>
@@ -75,54 +101,104 @@ export function NewCustomerModal({ open, onClose, onCreated, allowUseExisting = 
       </Modal>
 
       <Modal
-        open={!!existingCustomerId && !!ec}
-        onClose={() => setExistingCustomerId(null)}
+        open={showConflictModal}
+        onClose={() => setConflicts([])}
         title={t('customers.existingFound', 'Customer Already Exists')}
-        size="sm"
+        size={hasMultipleConflicts ? 'md' : 'sm'}
         footer={
           <>
-            <Button variant="secondary" onClick={() => setExistingCustomerId(null)}>{t('common.back', 'Back')}</Button>
+            <Button variant="secondary" onClick={() => setConflicts([])}>{t('common.back', 'Back')}</Button>
             {allowUseExisting && (
-              <Button variant="primary" onClick={handleUseExisting}>{t('customers.useExisting', 'Use This Customer')}</Button>
+              <Button variant="primary" onClick={handleUseExisting} disabled={hasMultipleConflicts && selectedConflictIdx === null}>{t('customers.useExisting', 'Use This Customer')}</Button>
             )}
           </>
         }
       >
-        {ec && (
-          <Stack gap={3}>
-            <p className="text-body text-neutral-600">
-              {allowUseExisting
-                ? t('customers.existingFoundDesc', 'A customer with this contact info already exists. Would you like to use them instead?')
-                : t('customers.existingFoundInfoDesc', 'A customer with this contact info already exists.')
-              }
-            </p>
-            <div className="rounded-lg border border-neutral-200 bg-neutral-50 p-4">
+        <Stack gap={3}>
+          {hasMultipleConflicts ? (
+            <>
+              <p className="text-body text-neutral-600">
+                {allowUseExisting
+                  ? t('customers.multiConflictDesc', 'We found existing customers matching your contact info. Choose which one to use:')
+                  : t('customers.multiConflictInfoDesc', 'We found existing customers matching your contact info:')}
+              </p>
               <Stack gap={2}>
-                <div className="flex justify-between text-body-sm">
-                  <span className="text-neutral-500">{t('customers.name', 'Name')}</span>
-                  <span className="font-medium text-neutral-800">{ec.name}</span>
-                </div>
-                <div className="flex justify-between text-body-sm">
-                  <span className="text-neutral-500">{t('customers.phone', 'Phone')}</span>
-                  <span className="font-medium text-neutral-800" dir="ltr">{ec.phone}</span>
-                </div>
-                {ec.email && (
-                  <div className="flex justify-between text-body-sm">
-                    <span className="text-neutral-500">{t('customers.email', 'Email')}</span>
-                    <span className="font-medium text-neutral-800" dir="ltr">{ec.email}</span>
-                  </div>
-                )}
-                {ec.address && (
-                  <div className="flex justify-between text-body-sm">
-                    <span className="text-neutral-500">{t('customers.address', 'Address')}</span>
-                    <span className="font-medium text-neutral-800">{ec.address}</span>
-                  </div>
-                )}
+                {conflicts.map((conflict, idx) => {
+                  const ec = conflictCustomers[idx] as any;
+                  if (!ec) return null;
+                  const isSelected = selectedConflictIdx === idx;
+                  return (
+                    <button
+                      key={conflict.customerId}
+                      type="button"
+                      onClick={() => setSelectedConflictIdx(idx)}
+                      className={`w-full rounded-lg border p-4 text-start transition-colors ${
+                        isSelected
+                          ? 'border-primary-400 bg-primary-50 ring-1 ring-primary-400'
+                          : 'border-neutral-200 bg-neutral-50 hover:border-neutral-300'
+                      }`}
+                    >
+                      <div className="mb-2 flex items-center gap-2">
+                        <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold uppercase ${
+                          conflict.field === 'phone'
+                            ? 'bg-blue-100 text-blue-700'
+                            : 'bg-amber-100 text-amber-700'
+                        }`}>
+                          {t(`customers.conflictField.${conflict.field}`, conflict.field)}
+                        </span>
+                        <span className="text-caption text-neutral-400">
+                          {t('customers.conflictMatch', 'match')}
+                        </span>
+                      </div>
+                      <CustomerDetails customer={ec} t={t} />
+                    </button>
+                  );
+                })}
               </Stack>
-            </div>
-          </Stack>
-        )}
+            </>
+          ) : (
+            <>
+              <p className="text-body text-neutral-600">
+                {allowUseExisting
+                  ? t('customers.existingFoundDesc', 'A customer with this contact info already exists. Would you like to use them instead?')
+                  : t('customers.existingFoundInfoDesc', 'A customer with this contact info already exists.')}
+              </p>
+              {conflictCustomers[0] && (
+                <div className="rounded-lg border border-neutral-200 bg-neutral-50 p-4">
+                  <CustomerDetails customer={conflictCustomers[0] as any} t={t} />
+                </div>
+              )}
+            </>
+          )}
+        </Stack>
       </Modal>
     </>
+  );
+}
+
+function CustomerDetails({ customer, t }: { customer: any; t: any }) {
+  return (
+    <Stack gap={2}>
+      <div className="flex justify-between text-body-sm">
+        <span className="text-neutral-500">{t('customers.name', 'Name')}</span>
+        <span className="font-medium text-neutral-800">{customer.name}</span>
+      </div>
+      <div className="flex justify-between text-body-sm">
+        <span className="text-neutral-500">{t('customers.phone', 'Phone')}</span>
+        <span className="font-medium text-neutral-800" dir="ltr">{customer.phone}</span>
+      </div>
+      {customer.email && (
+        <div className="flex justify-between text-body-sm">
+          <span className="text-neutral-500">{t('customers.email', 'Email')}</span>
+          <span className="font-medium text-neutral-800" dir="ltr">{customer.email}</span>
+        </div>
+      )}
+      {customer.address && (
+        <div className="flex justify-between text-body-sm">
+          <span className="text-neutral-500">{t('customers.address', 'Address')}</span>
+          <span className="font-medium text-neutral-800">{customer.address}</span>
+        </div>
+      )}
+    </Stack>
   );
 }
