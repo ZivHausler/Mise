@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback, useEffect } from 'react';
+import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { ChevronLeft, ChevronRight, Plus } from 'lucide-react';
@@ -362,6 +362,8 @@ export default function OrderCalendar() {
   const [showMonthPicker, setShowMonthPicker] = useState(false);
   const [newOrderDate, setNewOrderDate] = useState<string | null>(null);
 
+  const scrollRef = useRef<HTMLDivElement>(null);
+
   const { from, to } = useMemo(() => getMonthRange(year, month), [year, month]);
   const { data: aggregates, isLoading: aggsLoading, isFetching: aggsFetching } = useCalendarAggregates(from, to);
   const { data: orders, isLoading: ordersLoading, isFetching: ordersFetching } = useCalendarRange(from, to, statusFilter);
@@ -417,10 +419,24 @@ export default function OrderCalendar() {
     else setMonth((m) => m + 1);
   }, [month]);
 
+  const todayCellRef = useRef<HTMLDivElement>(null);
+
+  const scrollToToday = useCallback(() => {
+    if (!isSmall || !todayCellRef.current) return;
+    todayCellRef.current.scrollIntoView({ behavior: 'smooth', inline: 'start', block: 'nearest' });
+  }, [isSmall]);
+
   const goToToday = useCallback(() => {
+    const alreadyOnMonth = year === today.getFullYear() && month === today.getMonth();
     setYear(today.getFullYear());
     setMonth(today.getMonth());
-  }, [today]);
+    if (alreadyOnMonth) {
+      scrollToToday();
+    } else {
+      // Month will change, scroll after render
+      requestAnimationFrame(() => scrollToToday());
+    }
+  }, [today, year, month, scrollToToday]);
 
   const handleOrderClick = useCallback(
     (id: string) => navigate(`/orders/${id}`),
@@ -528,7 +544,7 @@ export default function OrderCalendar() {
 
       {/* Calendar Grid */}
       <div className="overflow-hidden rounded-lg border border-neutral-200 bg-white">
-      <div className="overflow-x-auto sm:overflow-x-visible">
+      <div ref={scrollRef} className="overflow-x-auto sm:overflow-x-visible">
         <div className="min-w-max sm:min-w-0">
         {/* Weekday headers */}
         <div className="grid border-b border-neutral-100 bg-neutral-50" style={{ gridTemplateColumns: gridColStyle }}>
@@ -549,17 +565,19 @@ export default function OrderCalendar() {
             {calendarDays.map((date, i) => {
               const key = toDateString(date);
               const dayOrders = ordersByDay[key] ?? [];
+              const isToday = isSameDay(date, today);
               return (
-                <DayCell
-                  key={i}
-                  date={date}
-                  isCurrentMonth={date.getMonth() === month}
-                  isToday={isSameDay(date, today)}
-                  orders={dayOrders}
-                  onOrderClick={handleOrderClick}
-                  onDayClick={handleDayClick}
-                  t={t}
-                />
+                <div key={i} ref={isToday ? todayCellRef : undefined}>
+                  <DayCell
+                    date={date}
+                    isCurrentMonth={date.getMonth() === month}
+                    isToday={isToday}
+                    orders={dayOrders}
+                    onOrderClick={handleOrderClick}
+                    onDayClick={handleDayClick}
+                    t={t}
+                  />
+                </div>
               );
             })}
           </div>
