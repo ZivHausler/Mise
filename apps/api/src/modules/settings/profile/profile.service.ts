@@ -11,6 +11,8 @@ export class ProfileService {
   }
 
   async updateProfile(userId: string, data: UpdateProfileDTO): Promise<UserPublic> {
+    const existing = await ProfileCrud.getById(userId);
+    if (!existing) throw new NotFoundError('User not found');
     return ProfileCrud.update(userId, data);
   }
 }

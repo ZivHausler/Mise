@@ -2,6 +2,7 @@ import type { FastifyRequest, FastifyReply } from 'fastify';
 import type { StoreService } from './store.service.js';
 import { StoreRole } from './store.types.js';
 import { createStoreSchema, inviteSchema } from './store.schema.js';
+import { ValidationError } from '../../core/errors/app-error.js';
 
 export class StoreController {
   constructor(private storeService: StoreService) {}
@@ -9,15 +10,15 @@ export class StoreController {
   async createStore(request: FastifyRequest, reply: FastifyReply) {
     const userId = request.currentUser!.userId;
     const email = request.currentUser!.email;
-    const { inviteToken, ...storeData } = request.body as any;
+    const { inviteToken, ...storeData } = request.body as Record<string, unknown>;
     const data = createStoreSchema.parse(storeData);
-    const result = await this.storeService.createStore(userId, email, data, inviteToken);
+    const result = await this.storeService.createStore(userId, email, data, inviteToken as string | undefined);
     return reply.status(201).send({ success: true, data: result });
   }
 
   async adminCreateStoreInvite(request: FastifyRequest, reply: FastifyReply) {
     const { email } = request.body as { email: string };
-    if (!email) return reply.status(400).send({ success: false, error: { message: 'Email is required' } });
+    if (!email) throw new ValidationError('Email is required');
     const result = await this.storeService.createCreateStoreInvitation(email);
     return reply.status(201).send({ success: true, data: { token: result.token, inviteLink: result.inviteLink } });
   }
@@ -44,14 +45,12 @@ export class StoreController {
 
   async getMembers(request: FastifyRequest, reply: FastifyReply) {
     const storeId = request.currentUser!.storeId!;
-    if (!storeId) return reply.status(400).send({ success: false, error: { message: 'No store selected' } });
     const members = await this.storeService.getStoreMembers(storeId);
     return reply.send({ success: true, data: members });
   }
 
   async getPendingInvitations(request: FastifyRequest, reply: FastifyReply) {
     const storeId = request.currentUser!.storeId!;
-    if (!storeId) return reply.status(400).send({ success: false, error: { message: 'No store selected' } });
     const invitations = await this.storeService.getPendingInvitations(storeId);
     return reply.send({ success: true, data: invitations });
   }
@@ -59,7 +58,7 @@ export class StoreController {
   async sendInvite(request: FastifyRequest, reply: FastifyReply) {
     const storeId = request.currentUser!.storeId!;
     const storeRole = request.currentUser!.storeRole;
-    if (!storeId || !storeRole) return reply.status(400).send({ success: false, error: { message: 'No store selected' } });
+    if (!storeRole) throw new ValidationError('No store role assigned');
 
     const data = inviteSchema.parse(request.body);
     const isAdmin = request.currentUser!.isAdmin;

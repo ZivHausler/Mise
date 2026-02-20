@@ -71,4 +71,13 @@ export class AuthController {
     const result = await this.authService.refreshToken(userId);
     return reply.send({ success: true, data: result });
   }
+
+  async logout(request: FastifyRequest, reply: FastifyReply) {
+    const payload = request.currentUser!;
+    // Decode the full token to get `exp`
+    const decoded = request.server.jwt.decode(request.headers.authorization!.slice(7)) as { exp?: number } | null;
+    const exp = decoded?.exp ?? Math.floor(Date.now() / 1000) + 86400;
+    await this.authService.logout(payload.jti, exp);
+    return reply.send({ success: true, data: { message: 'Logged out' } });
+  }
 }

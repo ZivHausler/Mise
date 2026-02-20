@@ -1,7 +1,6 @@
 import { PgAuthRepository } from '../../auth/auth.repository.js';
 import type { UserPublic } from '../../auth/auth.types.js';
 import type { UpdateProfileDTO } from '../settings.types.js';
-import { NotFoundError } from '../../../core/errors/app-error.js';
 
 export class ProfileCrud {
   static async getById(userId: string): Promise<UserPublic | null> {
@@ -17,9 +16,6 @@ export class ProfileCrud {
   }
 
   static async update(userId: string, data: UpdateProfileDTO): Promise<UserPublic> {
-    const user = await PgAuthRepository.findById(userId);
-    if (!user) throw new NotFoundError('User not found');
-
     const updated = await PgAuthRepository.updateProfile(userId, {
       name: data.name,
       phone: data.phone === null ? '' : data.phone,

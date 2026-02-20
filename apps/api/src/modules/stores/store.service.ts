@@ -4,6 +4,8 @@ import { StoreRole } from './store.types.js';
 import { PgStoreRepository } from './store.repository.js';
 import { ForbiddenError, NotFoundError, ValidationError } from '../../core/errors/app-error.js';
 import { env } from '../../config/env.js';
+import { appLogger } from '../../core/logger/logger.js';
+import type { AuthTokenPayload } from '../auth/auth.types.js';
 
 export class StoreService {
   constructor(
@@ -73,7 +75,7 @@ export class StoreService {
     return invitations.map((inv) => ({
       email: inv.email,
       role: inv.role,
-      inviteLink: `${env.FRONTEND_URL ?? 'http://localhost:5173'}/invite/${inv.token}`,
+      inviteLink: `${env.FRONTEND_URL}/invite/${inv.token}`,
       createdAt: inv.createdAt,
       expiresAt: inv.expiresAt,
     }));
@@ -86,8 +88,8 @@ export class StoreService {
 
     const invitation = await PgStoreRepository.createInvitation(storeId, email, inviteRole);
 
-    const inviteLink = `${env.FRONTEND_URL ?? 'http://localhost:5173'}/invite/${invitation.token}`;
-    console.log(`\n📧 INVITE LINK for ${email}: ${inviteLink}\n`);
+    const inviteLink = `${env.FRONTEND_URL}/invite/${invitation.token}`;
+    appLogger.info({ email }, 'Store invite link generated');
 
     return { ...invitation, inviteLink };
   }
@@ -124,20 +126,20 @@ export class StoreService {
 
   async createCreateStoreInvitation(email: string): Promise<StoreInvitation & { inviteLink: string }> {
     const invitation = await PgStoreRepository.createCreateStoreInvitation(email);
-    const inviteLink = `${env.FRONTEND_URL ?? 'http://localhost:5173'}/invite/${invitation.token}`;
-    console.log(`\n📧 CREATE-STORE INVITE LINK for ${email}: ${inviteLink}\n`);
+    const inviteLink = `${env.FRONTEND_URL}/invite/${invitation.token}`;
+    appLogger.info({ email }, 'Create-store invite link generated');
     return { ...invitation, inviteLink };
   }
 
   generateTokenWithStore(userId: string, email: string, storeId: string, storeRole: StoreRole, isAdmin?: boolean): string {
-    const payload: Record<string, unknown> = { userId, email, storeId, storeRole };
-    if (isAdmin) payload.isAdmin = true;
+    const payload: AuthTokenPayload = { userId, email, storeId, storeRole, jti: crypto.randomUUID() };
+    if (isAdmin) payload['isAdmin'] = true;
     return this.app.jwt.sign(payload, { expiresIn: env.JWT_EXPIRES_IN });
   }
 
   generateTokenWithoutStore(userId: string, email: string): string {
     return this.app.jwt.sign(
-      { userId, email },
+      { userId, email, jti: crypto.randomUUID() },
       { expiresIn: env.JWT_EXPIRES_IN },
     );
   }

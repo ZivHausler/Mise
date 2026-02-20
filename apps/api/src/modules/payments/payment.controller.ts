@@ -1,15 +1,14 @@
 import type { FastifyRequest, FastifyReply } from 'fastify';
 import type { PaymentService } from './payment.service.js';
 import { createPaymentSchema } from './payment.schema.js';
+import { parsePaginationParams } from '../../core/types/pagination.js';
 
 export class PaymentController {
   constructor(private paymentService: PaymentService) {}
 
   async getAll(request: FastifyRequest<{ Querystring: { page?: string; limit?: string; status?: string; method?: string } }>, reply: FastifyReply) {
     const storeId = request.currentUser!.storeId!;
-    const page = Math.max(1, Number(request.query.page) || 1);
-    const limit = Math.min(100, Math.max(1, Number(request.query.limit) || 10));
-    const offset = (page - 1) * limit;
+    const { page, limit, offset } = parsePaginationParams(request.query.page, request.query.limit);
     const filters: { status?: string; method?: string } = {};
     if (request.query.status) filters.status = request.query.status;
     if (request.query.method) filters.method = request.query.method;
@@ -19,9 +18,7 @@ export class PaymentController {
 
   async getByCustomerId(request: FastifyRequest<{ Params: { customerId: string }; Querystring: { page?: string; limit?: string; method?: string; dateFrom?: string; dateTo?: string } }>, reply: FastifyReply) {
     const storeId = request.currentUser!.storeId!;
-    const page = Math.max(1, Number(request.query.page) || 1);
-    const limit = Math.min(100, Math.max(1, Number(request.query.limit) || 10));
-    const offset = (page - 1) * limit;
+    const { page, limit, offset } = parsePaginationParams(request.query.page, request.query.limit);
     const filters: { method?: string; dateFrom?: string; dateTo?: string } = {};
     if (request.query.method) filters.method = request.query.method;
     if (request.query.dateFrom) filters.dateFrom = request.query.dateFrom;
@@ -51,13 +48,13 @@ export class PaymentController {
   async create(request: FastifyRequest, reply: FastifyReply) {
     const storeId = request.currentUser!.storeId!;
     const data = createPaymentSchema.parse(request.body);
-    const payment = await this.paymentService.create(storeId, data);
+    const payment = await this.paymentService.create(storeId, data, request.id);
     return reply.status(201).send({ success: true, data: payment });
   }
 
   async refund(request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) {
     const storeId = request.currentUser!.storeId!;
-    const payment = await this.paymentService.refund(storeId, request.params.id);
+    const payment = await this.paymentService.refund(storeId, request.params.id, request.id);
     return reply.send({ success: true, data: payment });
   }
 

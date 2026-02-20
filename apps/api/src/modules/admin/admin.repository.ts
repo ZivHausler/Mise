@@ -6,8 +6,8 @@ import type {
   AdminInvitation,
   AdminAuditEntry,
   SignupDataPoint,
-  PaginatedResult,
 } from './admin.types.js';
+import type { PaginatedResult } from '../../core/types/pagination.js';
 
 export class PgAdminRepository {
   static async getUsers(page: number, limit: number, search?: string, includeAdmins = false): Promise<PaginatedResult<AdminUser>> {
@@ -47,7 +47,10 @@ export class PgAdminRepository {
 
     return {
       items: result.rows.map(this.mapUserRow),
-      pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
     };
   }
 
@@ -93,7 +96,10 @@ export class PgAdminRepository {
 
     return {
       items: result.rows.map(this.mapStoreRow),
-      pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
     };
   }
 
@@ -212,7 +218,10 @@ export class PgAdminRepository {
 
     return {
       items: result.rows.map(this.mapInvitationRow),
-      pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
     };
   }
 
@@ -314,7 +323,10 @@ export class PgAdminRepository {
 
     return {
       items: result.rows.map(this.mapAuditEntryRow),
-      pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
     };
   }
 
@@ -430,6 +442,32 @@ export class PgAdminRepository {
       revokedAt,
       createdAt: new Date(row.created_at as string),
     };
+  }
+
+  static async cleanupTestUsers(emailPattern: string): Promise<number> {
+    const pool = getPool();
+
+    // Delete stores owned exclusively by test users
+    await pool.query(
+      `DELETE FROM stores WHERE id IN (
+        SELECT us.store_id FROM users_stores us
+        JOIN users u ON u.id = us.user_id
+        WHERE u.email LIKE $1
+        AND NOT EXISTS (
+          SELECT 1 FROM users_stores us2
+          JOIN users u2 ON u2.id = us2.user_id
+          WHERE us2.store_id = us.store_id AND u2.email NOT LIKE $1
+        )
+      )`,
+      [emailPattern],
+    );
+
+    // Delete test invitations
+    await pool.query('DELETE FROM store_invitations WHERE email LIKE $1', [emailPattern]);
+
+    // Delete test users (audit logs cascade via FK)
+    const result = await pool.query('DELETE FROM users WHERE email LIKE $1', [emailPattern]);
+    return result.rowCount ?? 0;
   }
 
   static async getAuditLogRequestBody(auditLogId: string): Promise<unknown | null> {

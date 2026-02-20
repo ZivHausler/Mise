@@ -1,7 +1,8 @@
 import type { FastifyInstance } from 'fastify';
 import { PgAdminRepository } from './admin.repository.js';
 import { ForbiddenError, NotFoundError, ValidationError } from '../../core/errors/app-error.js';
-import type { PaginatedResult, AdminUser, AdminStore, AdminInvitation, AdminAuditEntry, AdminAnalytics } from './admin.types.js';
+import type { AdminUser, AdminStore, AdminInvitation, AdminAuditEntry, AdminAnalytics } from './admin.types.js';
+import type { PaginatedResult } from '../../core/types/pagination.js';
 
 export class AdminService {
   constructor(private app: FastifyInstance) {}
@@ -89,6 +90,10 @@ export class AdminService {
 
   async getAuditLogResponseBody(auditLogId: string): Promise<unknown | null> {
     return PgAdminRepository.getAuditLogResponseBody(auditLogId);
+  }
+
+  async cleanupTestUsers(emailPattern: string): Promise<number> {
+    return PgAdminRepository.cleanupTestUsers(emailPattern);
   }
 
   async getAnalytics(range: string): Promise<AdminAnalytics> {

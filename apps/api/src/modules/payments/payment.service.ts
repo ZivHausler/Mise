@@ -1,4 +1,5 @@
 import { getEventBus } from '../../core/events/event-bus.js';
+import { EventNames } from '../../core/events/event-names.js';
 import type { PaginationOptions, PaginatedResult, CustomerPaymentFilters, PaymentFilters } from './payment.repository.js';
 import type { CreatePaymentDTO, Payment, OrderPaymentSummary, PaymentStatus } from './payment.types.js';
 import { PAYMENT_STATUS } from './payment.types.js';
@@ -48,7 +49,7 @@ export class PaymentService {
     return statuses;
   }
 
-  async create(storeId: string, data: CreatePaymentDTO): Promise<Payment> {
+  async create(storeId: string, data: CreatePaymentDTO, correlationId?: string): Promise<Payment> {
     if (this.orderService) {
       await this.orderService.getById(storeId, data.orderId);
     }
@@ -56,15 +57,16 @@ export class PaymentService {
     const payment = await PaymentCrud.create(storeId, data);
 
     await getEventBus().publish({
-      eventName: 'payment.received',
+      eventName: EventNames.PAYMENT_RECEIVED,
       payload: { paymentId: payment.id, orderId: payment.orderId, amount: payment.amount },
       timestamp: new Date(),
+      correlationId,
     });
 
     return payment;
   }
 
-  async refund(storeId: string, id: string): Promise<Payment> {
+  async refund(storeId: string, id: string, correlationId?: string): Promise<Payment> {
     const payment = await PaymentCrud.getById(storeId, id);
     if (!payment) throw new NotFoundError('Payment not found');
     if (payment.status === 'refunded') throw new NotFoundError('Payment already refunded');
@@ -72,9 +74,10 @@ export class PaymentService {
     const refunded = await PaymentCrud.refund(storeId, id);
 
     await getEventBus().publish({
-      eventName: 'payment.refunded',
+      eventName: EventNames.PAYMENT_REFUNDED,
       payload: { paymentId: refunded.id, orderId: refunded.orderId, amount: refunded.amount },
       timestamp: new Date(),
+      correlationId,
     });
 
     return refunded;

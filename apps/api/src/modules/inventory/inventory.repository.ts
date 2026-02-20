@@ -5,9 +5,10 @@ import type {
   UpdateIngredientDTO,
   InventoryLog,
   AdjustStockDTO,
-  PaginatedResult,
 } from './inventory.types.js';
+import type { PaginatedResult } from '../../core/types/pagination.js';
 import { getPool } from '../../core/database/postgres.js';
+import { QueryBuilder } from '../../core/database/query-builder.js';
 
 export class PgInventoryRepository {
   private static async attachGroups(ingredients: Ingredient[]): Promise<Ingredient[]> {
@@ -53,15 +54,12 @@ export class PgInventoryRepository {
 
   static async findAll(storeId: string, search?: string): Promise<Ingredient[]> {
     const pool = getPool();
-    let query = 'SELECT * FROM ingredients WHERE store_id = $1';
-    const params: unknown[] = [storeId];
+    const qb = new QueryBuilder(storeId);
     if (search) {
-      const escaped = search.replace(/[%_\\]/g, '\\$&');
-      query += ` AND name ILIKE $2 ESCAPE '\\'`;
-      params.push(`%${escaped}%`);
+      qb.addSearchCondition(['name'], search);
     }
-    query += ' ORDER BY name ASC';
-    const result = await pool.query(query, params);
+    const query = `SELECT * FROM ingredients WHERE store_id = $1${qb.getWhereClause()} ORDER BY name ASC`;
+    const result = await pool.query(query, qb.getParams());
     const ingredients = result.rows.map((r: Record<string, unknown>) => this.mapRow(r));
     return this.attachGroups(ingredients);
   }

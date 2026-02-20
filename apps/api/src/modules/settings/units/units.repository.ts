@@ -21,14 +21,14 @@ export class PgUnitsRepository {
     return result.rows.map(this.mapRow);
   }
 
-  static async findById(id: string): Promise<Unit | null> {
+  static async findById(id: string, storeId: string): Promise<Unit | null> {
     const pool = getPool();
     const result = await pool.query(
       `SELECT u.id, u.store_id, u.category_id, uc.name as category_name, u.name, u.abbreviation, u.conversion_factor, u.is_default, u.created_at, u.updated_at
        FROM units u
        JOIN unit_categories uc ON uc.id = u.category_id
-       WHERE u.id = $1`,
-      [id],
+       WHERE u.id = $1 AND (u.store_id = $2 OR u.is_default = true)`,
+      [id, storeId],
     );
     return result.rows[0] ? this.mapRow(result.rows[0]) : null;
   }
@@ -42,10 +42,10 @@ export class PgUnitsRepository {
       [storeId, data.categoryId, data.name, data.abbreviation, data.conversionFactor],
     );
     // Re-fetch with category name
-    return (await this.findById(result.rows[0]['id'] as string))!;
+    return (await this.findById(result.rows[0]['id'] as string, storeId))!;
   }
 
-  static async update(id: string, data: UpdateUnitDTO): Promise<Unit> {
+  static async update(id: string, storeId: string, data: UpdateUnitDTO): Promise<Unit> {
     const pool = getPool();
     const fields: string[] = [];
     const values: unknown[] = [];
@@ -57,17 +57,19 @@ export class PgUnitsRepository {
 
     fields.push('updated_at = NOW()');
     values.push(id);
+    const idIdx = idx++;
+    values.push(storeId);
 
     await pool.query(
-      `UPDATE units SET ${fields.join(', ')} WHERE id = $${idx}`,
+      `UPDATE units SET ${fields.join(', ')} WHERE id = $${idIdx} AND store_id = $${idx}`,
       values,
     );
-    return (await this.findById(id))!;
+    return (await this.findById(id, storeId))!;
   }
 
-  static async delete(id: string): Promise<void> {
+  static async delete(id: string, storeId: string): Promise<void> {
     const pool = getPool();
-    await pool.query('DELETE FROM units WHERE id = $1', [id]);
+    await pool.query('DELETE FROM units WHERE id = $1 AND store_id = $2', [id, storeId]);
   }
 
   private static mapRow(row: Record<string, unknown>): Unit {

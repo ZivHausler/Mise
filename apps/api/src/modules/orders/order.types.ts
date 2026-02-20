@@ -36,6 +36,18 @@ export interface CreateOrderDTO {
   dueDate?: Date;
 }
 
+export interface UpdateOrderDTO {
+  notes?: string;
+  dueDate?: Date;
+  items?: {
+    recipeId: string;
+    recipeName?: string;
+    quantity: number;
+    price?: number;
+    notes?: string;
+  }[];
+}
+
 export interface UpdateOrderStatusDTO {
   status: OrderStatus;
 }
