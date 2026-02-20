@@ -7,10 +7,19 @@ import jwt from '@fastify/jwt';
 import { env } from '../config/env.js';
 import { requestContextPlugin } from './middleware/request-context.js';
 import { adminAuditPlugin } from './middleware/admin-audit.js';
+import { appLogger } from './logger/logger.js';
 
 export async function registerCorePlugins(app: FastifyInstance) {
   // CORS — restrict to configured origins, never wildcard in production
-  const origins = env.CORS_ORIGIN.split(',').map((o) => o.trim()).filter(Boolean);
+  const origins = env.CORS_ORIGIN.split(',').map((o) => o.trim()).filter(Boolean).filter((origin) => {
+    try {
+      new URL(origin);
+      return true;
+    } catch {
+      appLogger.warn({ origin }, 'Invalid CORS origin URL, skipping');
+      return false;
+    }
+  });
   await app.register(cors, {
     origin: origins,
     credentials: true,
@@ -25,7 +34,7 @@ export async function registerCorePlugins(app: FastifyInstance) {
       directives: {
         defaultSrc: ["'self'"],
         scriptSrc: ["'self'"],
-        styleSrc: ["'self'", "'unsafe-inline'"],
+        styleSrc: ["'self'"],
         imgSrc: ["'self'", 'data:', 'blob:'],
         connectSrc: ["'self'"],
         fontSrc: ["'self'"],
@@ -49,8 +58,8 @@ export async function registerCorePlugins(app: FastifyInstance) {
 
   // Global rate limiting
   await app.register(rateLimit, {
-    max: 1000,
-    timeWindow: '1 minute',
+    max: env.RATE_LIMIT_MAX,
+    timeWindow: env.RATE_LIMIT_WINDOW,
   });
 
   // JWT
@@ -68,8 +77,8 @@ export async function registerCorePlugins(app: FastifyInstance) {
  */
 export async function authRateLimitPlugin(app: FastifyInstance) {
   await app.register(rateLimit, {
-    max: 10,
-    timeWindow: '15 minutes',
+    max: env.AUTH_RATE_LIMIT_MAX,
+    timeWindow: env.AUTH_RATE_LIMIT_WINDOW,
     keyGenerator: (request) => {
       return request.ip;
     },

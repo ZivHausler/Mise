@@ -11,6 +11,7 @@ import { mongoClient } from './core/database/mongodb.js';
 import { sanitizeMiddleware } from './core/middleware/sanitize.js';
 import { RabbitMQEventBus } from './core/events/rabbitmq-event-bus.js';
 import { RedisCacheClient } from './core/cache/redis-client.js';
+import { setTokenBlacklistClient } from './core/auth/token-blacklist.js';
 
 async function bootstrap() {
   const app = Fastify({
@@ -35,7 +36,8 @@ async function bootstrap() {
     await postgresClient.connect();
     app.log.info('PostgreSQL connected');
   } catch (err) {
-    app.log.warn({ err }, 'PostgreSQL connection failed — running without PG');
+    app.log.fatal({ err }, 'PostgreSQL connection failed — cannot start without PG');
+    process.exit(1);
   }
 
   try {
@@ -49,21 +51,64 @@ async function bootstrap() {
   const container = await createContainer();
   app.decorate('container', container);
 
+  // Initialize token blacklist with Redis cache client
+  const cacheClient = container.resolve('cacheClient');
+  setTokenBlacklistClient(cacheClient);
+
   // Register all feature modules (this sets up event subscribers)
   await registerModules(app);
 
   // If using RabbitMQ, bind queues for all subscribers registered during module init
   const eventBus = container.resolve('eventBus');
   if (eventBus instanceof RabbitMQEventBus) {
-    await eventBus.setupSubscribers();
-    app.log.info('RabbitMQ subscribers bound');
+    try {
+      await eventBus.setupSubscribers();
+      app.log.info('RabbitMQ subscribers bound');
+    } catch (err) {
+      app.log.error({ err }, 'Failed to set up RabbitMQ subscribers — events may not be processed');
+    }
   }
 
-  // Health check — minimal info, no internal details
-  app.get('/health', async () => ({
-    status: 'ok',
-    timestamp: new Date().toISOString(),
-  }));
+  // Health check — dependency-aware, returns 503 if PostgreSQL is down
+  app.get('/health', async (_request, reply) => {
+    const checks: Record<string, string> = {};
+
+    try {
+      await postgresClient.query('SELECT 1');
+      checks['postgres'] = 'ok';
+    } catch {
+      checks['postgres'] = 'down';
+    }
+
+    try {
+      const mongoHealthy = await mongoClient.isHealthy();
+      checks['mongo'] = mongoHealthy ? 'ok' : 'down';
+    } catch {
+      checks['mongo'] = 'down';
+    }
+
+    const cacheClient = container.resolve('cacheClient');
+    if (cacheClient) {
+      try {
+        await cacheClient.get('health:ping');
+        checks['redis'] = 'ok';
+      } catch {
+        checks['redis'] = 'down';
+      }
+    } else {
+      checks['redis'] = 'not configured';
+    }
+
+    const isHealthy = checks['postgres'] === 'ok';
+    const status = isHealthy ? 'ok' : 'degraded';
+
+    reply.code(isHealthy ? 200 : 503);
+    return {
+      status,
+      timestamp: new Date().toISOString(),
+      checks,
+    };
+  });
 
   // Graceful shutdown
   const signals: NodeJS.Signals[] = ['SIGINT', 'SIGTERM'];

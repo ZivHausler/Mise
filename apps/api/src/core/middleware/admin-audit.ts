@@ -1,6 +1,7 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import fp from 'fastify-plugin';
 import { getPool } from '../database/postgres.js';
+import { appLogger } from '../logger/logger.js';
 
 const MAX_BODY_SIZE = 10 * 1024; // 10KB cap
 
@@ -74,8 +75,8 @@ export const adminAuditPlugin = fp(async function adminAuditPlugin(app: FastifyI
       }
 
       return Promise.all(promises);
-    }).catch(() => {
-      // Swallow errors — audit logging must never break requests
+    }).catch((err: unknown) => {
+      appLogger.error({ err, method: request.method, url: request.url }, 'Audit log insert failed');
     });
 
     return payload;

@@ -6,6 +6,7 @@ import { RabbitMQEventBus } from '../events/rabbitmq-event-bus.js';
 import type { CacheClient } from '../cache/redis.js';
 import { RedisCacheClient } from '../cache/redis-client.js';
 import { env } from '../../config/env.js';
+import { appLogger } from '../logger/logger.js';
 
 export interface AppContainer extends AwilixContainer {
   resolve(name: 'eventBus'): EventBus;
@@ -19,26 +20,36 @@ export async function createContainer(): Promise<AppContainer> {
   });
 
   let eventBus: EventBus;
+  const rabbitBus = new RabbitMQEventBus(env.RABBITMQ_URL);
 
   try {
-    const rabbitBus = new RabbitMQEventBus(env.RABBITMQ_URL);
     await rabbitBus.connect();
     eventBus = rabbitBus;
-    console.log('RabbitMQ event bus connected');
+    appLogger.info('RabbitMQ event bus connected');
   } catch (err) {
-    console.warn('RabbitMQ connection failed, falling back to InMemoryEventBus:', err);
+    appLogger.warn({ err }, 'RabbitMQ connection failed, falling back to InMemoryEventBus');
+    try {
+      await rabbitBus.close();
+    } catch {
+      // Ignore cleanup errors
+    }
     eventBus = new InMemoryEventBus();
   }
 
   let cacheClient: CacheClient | null = null;
+  const redis = new RedisCacheClient();
 
   try {
-    const redis = new RedisCacheClient();
     await redis.connect();
     cacheClient = redis;
-    console.log('Redis connected');
+    appLogger.info('Redis connected');
   } catch (err) {
-    console.warn('Redis connection failed, running without cache:', err);
+    appLogger.warn({ err }, 'Redis connection failed, running without cache');
+    try {
+      await redis.disconnect();
+    } catch {
+      // Ignore cleanup errors
+    }
   }
 
   setEventBus(eventBus);

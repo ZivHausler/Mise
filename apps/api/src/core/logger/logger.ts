@@ -1,3 +1,4 @@
+import pino from 'pino';
 import { env } from '../../config/env.js';
 
 export const logger = {
@@ -24,3 +25,6 @@ export const logger = {
     },
   },
 };
+
+/** Standalone Pino instance for use outside Fastify (DI container, event bus, etc.) */
+export const appLogger = pino(logger);

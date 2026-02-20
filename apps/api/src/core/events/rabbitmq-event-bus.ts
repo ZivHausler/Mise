@@ -1,6 +1,7 @@
 import amqplib from 'amqplib';
 import type { ChannelModel, Channel, ConsumeMessage } from 'amqplib';
 import type { DomainEvent, EventHandler, EventBus } from './event-bus.js';
+import { appLogger } from '../logger/logger.js';
 
 const EXCHANGE = 'mise.events';
 const DLX_EXCHANGE = 'mise.events.dlx';
@@ -81,9 +82,9 @@ export class RabbitMQEventBus implements EventBus {
 
       const retryCount = this.getRetryCount(msg);
       if (retryCount >= MAX_RETRIES) {
-        console.error(
-          `Message on ${eventName} exceeded ${MAX_RETRIES} retries, dropping:`,
-          msg.content.toString(),
+        appLogger.error(
+          { eventName, message: msg.content.toString() },
+          `Message exceeded ${MAX_RETRIES} retries, dropping`,
         );
         this.channel.ack(msg);
         return;
@@ -98,7 +99,7 @@ export class RabbitMQEventBus implements EventBus {
 
         this.channel!.ack(msg);
       } catch (err) {
-        console.error(`Error processing ${eventName} message:`, err);
+        appLogger.error({ err, eventName }, 'Error processing message');
         // nack without requeue — sends to DLX, which routes to retry queue
         this.channel.nack(msg, false, false);
       }
