@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { LogOut, Save } from 'lucide-react';
+import { LogOut, Save, RotateCcw } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Card, Section, Stack } from '@/components/Layout';
 import { TextInput, Select, Toggle } from '@/components/FormFields';
@@ -8,7 +8,7 @@ import { Button } from '@/components/Button';
 import { Spinner } from '@/components/Feedback';
 import { useAuthStore } from '@/store/auth';
 import { useAppStore } from '@/store/app';
-import { useProfile, useUpdateProfile } from '@/api/hooks';
+import { useProfile, useUpdateProfile, useResetOnboarding } from '@/api/hooks';
 import { DATE_FORMATS, LANGUAGES, WEEK_START_DAYS } from '@/constants/defaults';
 import type { DateFormat, WeekStartDay } from '@/constants/defaults';
 
@@ -151,6 +151,13 @@ export default function AccountTab() {
       </Card>
 
       <Card>
+        <Section title={t('tour.restartTour', 'Restart Tour')}>
+          <p className="text-body-sm text-neutral-500 mb-3">{t('tour.restartTourDesc')}</p>
+          <RestartTourButton />
+        </Section>
+      </Card>
+
+      <Card>
         <Section title={t('settings.account.title', 'Account')}>
           <Button variant="danger" icon={<LogOut className="h-4 w-4" />} onClick={handleLogout}>
             {t('auth.logout')}
@@ -158,5 +165,21 @@ export default function AccountTab() {
         </Section>
       </Card>
     </Stack>
+  );
+}
+
+function RestartTourButton() {
+  const { t } = useTranslation();
+  const resetOnboarding = useResetOnboarding();
+  return (
+    <Button
+      variant="secondary"
+      size="sm"
+      icon={<RotateCcw className="h-4 w-4" />}
+      onClick={() => resetOnboarding.mutate()}
+      loading={resetOnboarding.isPending}
+    >
+      {t('tour.restartTour')}
+    </Button>
   );
 }

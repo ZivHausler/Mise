@@ -1,6 +1,7 @@
-import React, { useState, useCallback, useRef, useEffect } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { DragDropContext, Droppable, Draggable, type DropResult } from '@hello-pangea/dnd';
 import { Plus, Trash2, GripVertical, Clock, ChefHat } from 'lucide-react';
 import { Page, Card, Stack, Row } from '@/components/Layout';
 import { Breadcrumbs } from '@/components/Breadcrumbs';
@@ -53,9 +54,12 @@ const categoryOptions = [
   { value: 'other', label: 'Other' },
 ];
 
+let stepIdCounter = 0;
+const nextStepId = () => `step-${++stepIdCounter}`;
+
 type StepEntry =
-  | { type: 'step'; instruction: string; duration: number | '' }
-  | { type: 'sub_recipe'; recipeId: string; quantity: number | '' };
+  | { _id: string; type: 'step'; instruction: string; duration: number | '' }
+  | { _id: string; type: 'sub_recipe'; recipeId: string; quantity: number | '' };
 
 export default function RecipeFormPage() {
   const { id } = useParams<{ id: string }>();
@@ -84,12 +88,13 @@ export default function RecipeFormPage() {
   const [price, setPrice] = useState<number | ''>(r?.sellingPrice ?? '');
   const [ingredients, setIngredients] = useState<any[]>(r?.ingredients?.length ? r.ingredients : [{ ingredientId: '', name: '', quantity: '', unit: '' }]);
   const [steps, setSteps] = useState<StepEntry[]>(() => {
-    if (!r?.steps?.length) return [{ type: 'step' as const, instruction: '', duration: '' as const }];
+    if (!r?.steps?.length) return [{ _id: nextStepId(), type: 'step' as const, instruction: '', duration: '' as const }];
     return r.steps.map((s: any) => {
       if (s.type === 'sub_recipe') {
-        return { type: 'sub_recipe' as const, recipeId: s.recipeId ?? '', quantity: s.quantity ?? '' };
+        return { _id: nextStepId(), type: 'sub_recipe' as const, recipeId: s.recipeId ?? '', quantity: s.quantity ?? '' };
       }
       return {
+        _id: nextStepId(),
         type: 'step' as const,
         instruction: typeof s === 'string' ? s : s.instruction ?? '',
         duration: s.duration ?? '',
@@ -109,15 +114,16 @@ export default function RecipeFormPage() {
       r.steps?.length
         ? r.steps.map((s: any) => {
             if (s.type === 'sub_recipe') {
-              return { type: 'sub_recipe' as const, recipeId: s.recipeId ?? '', quantity: s.quantity ?? '' };
+              return { _id: nextStepId(), type: 'sub_recipe' as const, recipeId: s.recipeId ?? '', quantity: s.quantity ?? '' };
             }
             return {
+              _id: nextStepId(),
               type: 'step' as const,
               instruction: typeof s === 'string' ? s : s.instruction ?? '',
               duration: s.duration ?? '',
             };
           })
-        : [{ type: 'step' as const, instruction: '', duration: '' as const }]
+        : [{ _id: nextStepId(), type: 'step' as const, instruction: '', duration: '' as const }]
     );
   }, [r]);
 
@@ -129,113 +135,20 @@ export default function RecipeFormPage() {
     setIngredients((prev) => prev.filter((_, idx) => idx !== i));
   }, []);
 
-  const addStep = useCallback(() => setSteps((prev) => [...prev, { type: 'step', instruction: '', duration: '' }]), []);
-  const addSubRecipeStep = useCallback(() => setSteps((prev) => [...prev, { type: 'sub_recipe', recipeId: '', quantity: '' }]), []);
+  const addStep = useCallback(() => setSteps((prev) => [...prev, { _id: nextStepId(), type: 'step', instruction: '', duration: '' }]), []);
+  const addSubRecipeStep = useCallback(() => setSteps((prev) => [...prev, { _id: nextStepId(), type: 'sub_recipe', recipeId: '', quantity: '' }]), []);
   const removeStep = useCallback((i: number) => setSteps((prev) => prev.filter((_, idx) => idx !== i)), []);
 
-  const [dragIndex, setDragIndex] = useState<number | null>(null);
-  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
-  const [dropPosition, setDropPosition] = useState<'before' | 'after'>('before');
-  const stepRefs = useRef<(HTMLDivElement | null)[]>([]);
-  const touchDragIndex = useRef<number | null>(null);
-  const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const isTouchDragging = useRef(false);
-  const gripRefs = useRef<(HTMLDivElement | null)[]>([]);
-
-  const reorderSteps = useCallback((from: number, to: number) => {
-    if (from === to) return;
+  const handleStepDragEnd = useCallback((result: DropResult) => {
+    const { source, destination } = result;
+    if (!destination || source.index === destination.index) return;
     setSteps((prev) => {
       const updated = [...prev];
-      const [moved] = updated.splice(from, 1);
-      updated.splice(to, 0, moved);
+      const [moved] = updated.splice(source.index, 1);
+      updated.splice(destination.index, 0, moved!);
       return updated;
     });
   }, []);
-
-  // Desktop drag — only the grip handle has draggable, so these fire from there
-  const dragState = useRef<{ from: number | null; over: number | null; pos: 'before' | 'after' }>({ from: null, over: null, pos: 'before' });
-  const handleDragStart = useCallback((e: React.DragEvent, i: number) => {
-    dragState.current.from = i;
-    setDragIndex(i);
-    e.dataTransfer.effectAllowed = 'move';
-    e.dataTransfer.setData('text/plain', '');
-  }, []);
-  const handleDragOver = useCallback((e: React.DragEvent, i: number) => {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = 'move';
-    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
-    const midY = rect.top + rect.height / 2;
-    const pos = e.clientY < midY ? 'before' : 'after';
-    dragState.current.over = i;
-    dragState.current.pos = pos;
-    setDropPosition(pos);
-    setDragOverIndex(i);
-  }, []);
-  const handleDrop = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-  }, []);
-  const handleDragEnd = useCallback(() => {
-    const { from, over, pos } = dragState.current;
-    if (from !== null && over !== null && from !== over) {
-      let to = over;
-      if (pos === 'after') to += 1;
-      if (to > from) to -= 1;
-      reorderSteps(from, to);
-    }
-    dragState.current = { from: null, over: null, pos: 'before' };
-    setDragIndex(null);
-    setDragOverIndex(null);
-  }, [reorderSteps]);
-
-  // Touch drag — only triggered via long-press on the grip handle
-  const handleGripTouchStart = useCallback((i: number) => {
-    longPressTimer.current = setTimeout(() => {
-      isTouchDragging.current = true;
-      touchDragIndex.current = i;
-      setDragIndex(i);
-      // Haptic feedback if available
-      if (navigator.vibrate) navigator.vibrate(50);
-    }, 200);
-  }, []);
-  const handleGripTouchMove = useCallback((e: React.TouchEvent) => {
-    if (!isTouchDragging.current) {
-      // Cancel long-press if finger moves before it triggers
-      if (longPressTimer.current) { clearTimeout(longPressTimer.current); longPressTimer.current = null; }
-      return;
-    }
-    e.preventDefault(); // prevent scroll only when actively dragging
-    const touch = e.touches[0];
-    if (!touch) return;
-    const target = stepRefs.current.findIndex((ref) => {
-      if (!ref) return false;
-      const rect = ref.getBoundingClientRect();
-      return touch.clientY >= rect.top && touch.clientY <= rect.bottom;
-    });
-    if (target !== -1) {
-      const ref = stepRefs.current[target];
-      if (ref) {
-        const rect = ref.getBoundingClientRect();
-        setDropPosition(touch.clientY < rect.top + rect.height / 2 ? 'before' : 'after');
-      }
-      setDragOverIndex(target);
-    }
-  }, []);
-  const handleGripTouchEnd = useCallback(() => {
-    if (longPressTimer.current) { clearTimeout(longPressTimer.current); longPressTimer.current = null; }
-    if (isTouchDragging.current) {
-      const from = touchDragIndex.current;
-      if (from !== null && dragOverIndex !== null) {
-        let to = dragOverIndex;
-        if (dropPosition === 'after') to += 1;
-        if (to > from) to -= 1;
-        reorderSteps(from, to);
-      }
-      isTouchDragging.current = false;
-      touchDragIndex.current = null;
-      setDragIndex(null);
-      setDragOverIndex(null);
-    }
-  }, [dragOverIndex, dropPosition, reorderSteps]);
 
   const handleSubmit = useCallback(
     (e: React.FormEvent) => {
@@ -342,107 +255,95 @@ export default function RecipeFormPage() {
 
           <Card>
             <h3 className="mb-3 font-heading text-h4 text-neutral-800">{t('recipes.steps', 'Steps')}</h3>
-            <Stack gap={2}>
-              {steps.map((step, i) => (
-                <div key={i} className="relative">
-                  {/* Drop indicator line — before */}
-                  {dragOverIndex === i && dragIndex !== null && dragIndex !== i && dropPosition === 'before' && (
-                    <div className="pointer-events-none absolute -top-1 left-0 right-0 z-10 flex items-center">
-                      <div className="h-2.5 w-2.5 shrink-0 rounded-full bg-primary-500" />
-                      <div className="h-0.5 flex-1 bg-primary-500" />
-                    </div>
-                  )}
-                  <div
-                    ref={(el) => { stepRefs.current[i] = el; }}
-                    onDragOver={(e: React.DragEvent) => handleDragOver(e, i)}
-                    onDrop={handleDrop}
-                    className={cn(
-                      'flex gap-2 rounded-md border border-neutral-100 p-2 transition-colors sm:items-center sm:border-0 sm:p-0',
-                      dragIndex === i && 'opacity-40 scale-[0.98]'
-                    )}
-                  >
-                  <div
-                    ref={(el) => { gripRefs.current[i] = el; }}
-                    draggable
-                    onDragStart={(e) => handleDragStart(e, i)}
-                    onDragEnd={handleDragEnd}
-                    onTouchStart={() => handleGripTouchStart(i)}
-                    onTouchMove={handleGripTouchMove}
-                    onTouchEnd={handleGripTouchEnd}
-                    className="flex shrink-0 touch-none items-center gap-2"
-                  >
-                    <GripVertical className="h-4 w-4 shrink-0 cursor-grab text-neutral-300 active:cursor-grabbing" />
-                    <span className="text-body-sm font-semibold text-neutral-500">{i + 1}.</span>
+            <DragDropContext onDragEnd={handleStepDragEnd}>
+              <Droppable droppableId="recipe-steps">
+                {(droppableProvided) => (
+                  <div ref={droppableProvided.innerRef} {...droppableProvided.droppableProps} className="flex flex-col gap-2">
+                    {steps.map((step, i) => (
+                      <Draggable key={step._id} draggableId={step._id} index={i}>
+                        {(provided, snapshot) => (
+                          <div
+                            ref={provided.innerRef}
+                            {...provided.draggableProps}
+                            className={cn(
+                              'flex gap-2 rounded-md border border-neutral-100 bg-white p-2 transition-shadow sm:items-center dark:bg-neutral-800 dark:border-neutral-700',
+                              snapshot.isDragging && 'shadow-lg ring-2 ring-primary-400',
+                            )}
+                          >
+                            <div
+                              {...provided.dragHandleProps}
+                              className="flex shrink-0 items-center gap-2"
+                            >
+                              <GripVertical className="h-4 w-4 shrink-0 cursor-grab text-neutral-300 active:cursor-grabbing" />
+                              <span className="text-body-sm font-semibold text-neutral-500">{i + 1}.</span>
+                            </div>
+                            {step.type === 'step' ? (
+                              <div className="flex min-w-0 flex-1 flex-col gap-2 sm:flex-row sm:items-center">
+                                <TextArea
+                                  value={step.instruction}
+                                  onChange={(e) => setSteps((prev) => prev.map((s, idx) => (idx === i ? { ...s, instruction: e.target.value } : s)))}
+                                  className="min-w-0 flex-1"
+                                  dir="auto"
+                                  rows={2}
+                                />
+                                <div className="flex items-center justify-center gap-2">
+                                  <div className="flex w-14 flex-col items-center gap-1">
+                                    <Clock className="h-3.5 w-3.5 text-neutral-400" />
+                                    <NumberInput
+                                      placeholder={t('recipes.minutes', 'min')}
+                                      value={step.duration}
+                                      onChange={(v) => setSteps((prev) => prev.map((s, idx) => (idx === i ? { ...s, duration: v } : s)))}
+                                      min={0}
+                                    />
+                                  </div>
+                                  <Button type="button" variant="ghost" size="sm" onClick={() => removeStep(i)}>
+                                    <Trash2 className="h-4 w-4 text-neutral-400" />
+                                  </Button>
+                                </div>
+                              </div>
+                            ) : (
+                              <div className="flex min-w-0 flex-1 flex-col gap-2 sm:flex-row sm:items-center">
+                                <div className="flex items-center gap-1.5 text-primary-600">
+                                  <ChefHat className="h-4 w-4 shrink-0" />
+                                </div>
+                                <Select
+                                  placeholder={t('recipes.selectSubRecipe', 'Select recipe...')}
+                                  options={recipeOptions}
+                                  value={step.recipeId}
+                                  onChange={(e) => setSteps((prev) => prev.map((s, idx) => (idx === i ? { ...s, recipeId: e.target.value } : s)))}
+                                  className="min-w-0 flex-1"
+                                />
+                                <div className="flex items-center gap-2">
+                                  <NumberInput
+                                    placeholder={t('common.qty', 'Qty')}
+                                    value={step.quantity}
+                                    onChange={(v) => setSteps((prev) => prev.map((s, idx) => (idx === i ? { ...s, quantity: v } : s)))}
+                                    min={0}
+                                    className="w-20"
+                                  />
+                                  <Button type="button" variant="ghost" size="sm" onClick={() => removeStep(i)}>
+                                    <Trash2 className="h-4 w-4 text-neutral-400" />
+                                  </Button>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </Draggable>
+                    ))}
+                    {droppableProvided.placeholder}
                   </div>
-                  {step.type === 'step' ? (
-                    <div className="flex min-w-0 flex-1 flex-col gap-2 sm:flex-row sm:items-center">
-                      <TextArea
-                        value={step.instruction}
-                        onChange={(e) => setSteps((prev) => prev.map((s, idx) => (idx === i ? { ...s, instruction: e.target.value } : s)))}
-                        className="min-w-0 flex-1"
-                        dir="auto"
-                        rows={2}
-                      />
-                      <div className="flex items-center justify-center gap-2">
-                        <div className="flex w-14 flex-col items-center gap-1">
-                          <Clock className="h-3.5 w-3.5 text-neutral-400" />
-                          <NumberInput
-                            placeholder={t('recipes.minutes', 'min')}
-                            value={step.duration}
-                            onChange={(v) => setSteps((prev) => prev.map((s, idx) => (idx === i ? { ...s, duration: v } : s)))}
-                            min={0}
-                          />
-                        </div>
-                        <Button type="button" variant="ghost" size="sm" onClick={() => removeStep(i)}>
-                          <Trash2 className="h-4 w-4 text-neutral-400" />
-                        </Button>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="flex min-w-0 flex-1 flex-col gap-2 sm:flex-row sm:items-center">
-                      <div className="flex items-center gap-1.5 text-primary-600">
-                        <ChefHat className="h-4 w-4 shrink-0" />
-                      </div>
-                      <Select
-                        placeholder={t('recipes.selectSubRecipe', 'Select recipe...')}
-                        options={recipeOptions}
-                        value={step.recipeId}
-                        onChange={(e) => setSteps((prev) => prev.map((s, idx) => (idx === i ? { ...s, recipeId: e.target.value } : s)))}
-                        className="min-w-0 flex-1"
-                      />
-                      <div className="flex items-center gap-2">
-                        <NumberInput
-                          placeholder={t('common.qty', 'Qty')}
-                          value={step.quantity}
-                          onChange={(v) => setSteps((prev) => prev.map((s, idx) => (idx === i ? { ...s, quantity: v } : s)))}
-                          min={0}
-                          className="w-20"
-                        />
-                        <Button type="button" variant="ghost" size="sm" onClick={() => removeStep(i)}>
-                          <Trash2 className="h-4 w-4 text-neutral-400" />
-                        </Button>
-                      </div>
-                    </div>
-                  )}
-                  </div>
-                  {/* Drop indicator line — after */}
-                  {dragOverIndex === i && dragIndex !== null && dragIndex !== i && dropPosition === 'after' && (
-                    <div className="pointer-events-none absolute -bottom-1 left-0 right-0 z-10 flex items-center">
-                      <div className="h-2.5 w-2.5 shrink-0 rounded-full bg-primary-500" />
-                      <div className="h-0.5 flex-1 bg-primary-500" />
-                    </div>
-                  )}
-                </div>
-              ))}
-              <Row gap={2} className="justify-center">
-                <Button type="button" variant="primary" size="sm" icon={<Plus className="h-4 w-4" />} onClick={addStep}>
-                  {t('recipes.addStep', 'Add Step')}
-                </Button>
-                <Button type="button" variant="ghost" size="sm" icon={<ChefHat className="h-4 w-4" />} onClick={addSubRecipeStep}>
-                  {t('recipes.addSubRecipe', 'Add Sub-Recipe')}
-                </Button>
-              </Row>
-            </Stack>
+                )}
+              </Droppable>
+            </DragDropContext>
+            <Row gap={2} className="justify-center mt-2">
+              <Button type="button" variant="primary" size="sm" icon={<Plus className="h-4 w-4" />} onClick={addStep}>
+                {t('recipes.addStep', 'Add Step')}
+              </Button>
+              <Button type="button" variant="ghost" size="sm" icon={<ChefHat className="h-4 w-4" />} onClick={addSubRecipeStep}>
+                {t('recipes.addSubRecipe', 'Add Sub-Recipe')}
+              </Button>
+            </Row>
           </Card>
 
           <Row gap={2} className="justify-end">

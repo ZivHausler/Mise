@@ -5,11 +5,11 @@ import { useTranslation } from 'react-i18next';
 import { cn } from '@/utils/cn';
 
 const tabs = [
-  { path: '/', icon: LayoutDashboard, labelKey: 'nav.dashboard' },
-  { path: '/orders', icon: ClipboardList, labelKey: 'nav.orders' },
-  { path: '/recipes', icon: BookOpen, labelKey: 'nav.recipes' },
-  { path: '/inventory', icon: Package, labelKey: 'nav.inventory' },
-  { path: '/more', icon: MoreHorizontal, labelKey: 'nav.more' },
+  { path: '/', icon: LayoutDashboard, labelKey: 'nav.dashboard', tourId: 'bottomtab-dashboard' },
+  { path: '/orders', icon: ClipboardList, labelKey: 'nav.orders', tourId: 'bottomtab-orders' },
+  { path: '/recipes', icon: BookOpen, labelKey: 'nav.recipes', tourId: 'bottomtab-recipes' },
+  { path: '/inventory', icon: Package, labelKey: 'nav.inventory', tourId: 'bottomtab-inventory' },
+  { path: '/more', icon: MoreHorizontal, labelKey: 'nav.more', tourId: 'bottomtab-more' },
 ];
 
 export const BottomTabs = React.memo(function BottomTabs() {
@@ -22,6 +22,7 @@ export const BottomTabs = React.memo(function BottomTabs() {
           key={tab.path}
           to={tab.path}
           end={tab.path === '/'}
+          data-tour={tab.tourId}
           className={({ isActive }) =>
             cn(
               'flex flex-col items-center gap-0.5 px-3 py-3 text-[11px]',

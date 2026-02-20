@@ -2,6 +2,9 @@ import type { FastifyRequest, FastifyReply } from 'fastify';
 import type { InventoryService } from './inventory.service.js';
 import { createIngredientSchema, updateIngredientSchema, adjustStockSchema } from './inventory.schema.js';
 import { parsePaginationParams } from '../../core/types/pagination.js';
+import { pdfQuerySchema } from '../shared/pdf/pdfSchema.js';
+import { generateShoppingListPdf } from '../shared/pdf/shoppingListPdf.js';
+import { t } from '../shared/pdf/i18n.js';
 
 export class InventoryController {
   constructor(private inventoryService: InventoryService) {}
@@ -30,6 +33,20 @@ export class InventoryController {
     const storeId = request.currentUser!.storeId!;
     const ingredients = await this.inventoryService.getLowStock(storeId);
     return reply.send({ success: true, data: ingredients });
+  }
+
+  async getShoppingListPdf(request: FastifyRequest<{ Querystring: { lang?: string; dateFormat?: string } }>, reply: FastifyReply) {
+    const storeId = request.currentUser!.storeId!;
+    const { lang, dateFormat } = pdfQuerySchema.parse(request.query);
+
+    const items = await this.inventoryService.getLowStock(storeId);
+    const currency = t(lang, 'common.currency', '\u20AA');
+
+    const pdf = generateShoppingListPdf(items, { lang, dateFormat, currency });
+    return reply
+      .header('Content-Type', 'application/pdf')
+      .header('Content-Disposition', 'attachment; filename="shopping-list.pdf"')
+      .send(pdf);
   }
 
   async create(request: FastifyRequest, reply: FastifyReply) {

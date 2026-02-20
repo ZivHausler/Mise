@@ -9,10 +9,9 @@ import { DataTable, StatusBadge, EmptyState, type Column } from '@/components/Da
 import { PageSkeleton } from '@/components/Feedback';
 import { Modal } from '@/components/Modal';
 import { TextInput, NumberInput, Select } from '@/components/FormFields';
-import { useInventory, useLowStock, useCreateInventoryItem, useUpdateInventoryItem, useDeleteInventoryItem, useAdjustStock, useGroups, type PaginationInfo } from '@/api/hooks';
+import { useInventory, useCreateInventoryItem, useUpdateInventoryItem, useDeleteInventoryItem, useAdjustStock, useGroups, downloadPdf, type PaginationInfo } from '@/api/hooks';
 import { useAppStore } from '@/store/app';
 import { useDebouncedValue } from '@/hooks/useDebouncedValue';
-import { generateShoppingListPdf } from '@/utils/shoppingListPdf';
 import { InventoryLogType } from '@mise/shared';
 
 function getStockStatus(stock: number, threshold: number): 'good' | 'ok' | 'low' | 'out' {
@@ -83,7 +82,6 @@ export default function InventoryPage() {
   const deleteItem = useDeleteInventoryItem();
   const adjustStock = useAdjustStock();
   const { data: groups } = useGroups();
-  const { data: lowStockItems } = useLowStock();
   const { dateFormat, language } = useAppStore();
   const [editingItem, setEditingItem] = useState<any>(null); // null = closed, 'new' = add, object = edit
   const [showAdjust, setShowAdjust] = useState<any>(null);
@@ -233,16 +231,9 @@ export default function InventoryPage() {
     );
   }, [showAdjust, adjustAmount, adjustPrice, adjustType, adjustInputMode, adjustStock]);
 
-  const handleExportPdf = useCallback(async () => {
-    const items = ((lowStockItems ?? []) as any[]).map((item: any) => ({
-      name: item.name,
-      quantity: item.quantity,
-      unit: item.unit,
-      lowStockThreshold: item.lowStockThreshold,
-      costPerUnit: item.costPerUnit ?? null,
-    }));
-    await generateShoppingListPdf(items, dateFormat, t, t('common.currency', '₪'), language === 'he');
-  }, [lowStockItems, dateFormat, t, language]);
+  const handleExportPdf = useCallback(() => {
+    downloadPdf(`/inventory/shopping-list/pdf?lang=${language}&dateFormat=${dateFormat}`, 'shopping-list.pdf');
+  }, [language, dateFormat]);
 
   if (isLoading) return <PageSkeleton />;
 

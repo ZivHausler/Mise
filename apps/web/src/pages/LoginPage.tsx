@@ -8,6 +8,7 @@ import { useLogin, useGoogleLogin, useAcceptInvite, useValidateInvite } from '@/
 import { useAuthStore } from '@/store/auth';
 import { useToastStore } from '@/store/toast';
 import { useGoogleAuth } from '@/hooks/useGoogleAuth';
+import { Logo } from '@/components/Logo';
 import { MergeAccountDialog } from '@/components/MergeAccountDialog';
 
 export default function LoginPage() {
@@ -142,7 +143,7 @@ export default function LoginPage() {
     <div className="flex min-h-screen items-center justify-center bg-primary-50 p-4">
       <div className="w-full max-w-md rounded-lg bg-white p-8 shadow-md">
         <div className="mb-8 text-center">
-          <h1 className="font-heading text-display text-primary-700">Mise</h1>
+          <Logo className="h-20 mx-auto text-[#c8a96e]" />
           <p className="mt-2 text-body-sm text-neutral-500">{t('app.tagline')}</p>
         </div>
 

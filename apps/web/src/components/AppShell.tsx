@@ -4,10 +4,12 @@ import { Outlet } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { ChevronDown, Shield, LayoutDashboard, ClipboardList, BookOpen, Package, Users, CreditCard, Settings } from 'lucide-react';
 import { useOrderSSE } from '@/api/useOrderSSE';
+import { Logo } from './Logo';
 import { Sidebar } from './Sidebar';
 import { TopBar } from './TopBar';
 import { BottomTabs } from './BottomTabs';
 import { NavigationProgress, PageSkeleton } from './Feedback';
+import { TourProvider } from './tour/TourProvider';
 import { useAuthStore } from '@/store/auth';
 import { useSelectStore, useAllStores } from '@/api/hooks';
 
@@ -19,31 +21,33 @@ export const AppShell = React.memo(function AppShell() {
   const handleCloseDrawer = useCallback(() => setDrawerOpen(false), []);
 
   return (
-    <div className="flex h-[100dvh] overflow-hidden">
-      <NavigationProgress />
-      <Sidebar />
+    <TourProvider>
+      <div className="flex h-[100dvh] overflow-hidden">
+        <NavigationProgress />
+        <Sidebar />
 
-      {/* Mobile drawer overlay */}
-      {drawerOpen && (
-        <div className="fixed inset-0 z-drawer lg:hidden">
-          <div className="fixed inset-0 bg-black/50" onClick={handleCloseDrawer} />
-          <aside className="fixed inset-y-0 start-0 z-10 w-[260px] bg-primary-900 animate-slide-in">
-            <MobileNav onClose={handleCloseDrawer} />
-          </aside>
-        </div>
-      )}
+        {/* Mobile drawer overlay */}
+        {drawerOpen && (
+          <div className="fixed inset-0 z-drawer lg:hidden">
+            <div className="fixed inset-0 bg-black/50" onClick={handleCloseDrawer} />
+            <aside className="fixed inset-y-0 start-0 z-10 w-[260px] bg-primary-900 animate-slide-in">
+              <MobileNav onClose={handleCloseDrawer} />
+            </aside>
+          </div>
+        )}
 
-      <div className="flex min-w-0 flex-1 flex-col">
-        <TopBar onMenuClick={handleMenuClick} />
-        <div className="flex-1 overflow-y-auto pb-20 lg:pb-0">
-          <Suspense fallback={<PageSkeleton />}>
-            <Outlet />
-          </Suspense>
+        <div className="flex min-w-0 flex-1 flex-col">
+          <TopBar onMenuClick={handleMenuClick} />
+          <div className="flex-1 overflow-y-auto pb-20 lg:pb-0">
+            <Suspense fallback={<PageSkeleton />}>
+              <Outlet />
+            </Suspense>
+          </div>
+          <BottomTabs />
         </div>
-        <BottomTabs />
+
       </div>
-
-    </div>
+    </TourProvider>
   );
 });
 
@@ -89,7 +93,7 @@ const MobileNav = React.memo(function MobileNav({ onClose }: { onClose: () => vo
   return (
     <div className="flex h-full flex-col p-4">
       <div className="mb-6 flex items-center justify-between">
-        <span className="font-heading text-h3 text-white">Mise</span>
+        <Logo className="h-10 text-[#c8a96e]" />
         <button onClick={onClose} className="rounded p-1 text-primary-400 hover:text-white">
           ✕
         </button>

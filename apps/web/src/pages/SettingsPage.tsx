@@ -7,6 +7,7 @@ import GroupsTab from '@/components/settings/GroupsTab';
 import AccountTab from '@/components/settings/AccountTab';
 import NotificationsTab from '@/components/settings/NotificationsTab';
 import TeamTab from '@/components/settings/TeamTab';
+import LoyaltyTab from '@/components/settings/LoyaltyTab';
 import { useAppStore } from '@/store/app';
 
 export default function SettingsPage() {
@@ -20,6 +21,7 @@ export default function SettingsPage() {
     { key: 'units' as const, label: t('settings.tabs.units', 'Units') },
     { key: 'groups' as const, label: t('settings.tabs.groups', 'Groups') },
     { key: 'notifications' as const, label: t('settings.tabs.notifications', 'Notifications') },
+    { key: 'loyalty' as const, label: t('settings.tabs.loyalty', 'Loyalty') },
   ];
 
   return (
@@ -34,6 +36,7 @@ export default function SettingsPage() {
         {activeTab === 'units' && <UnitsTab />}
         {activeTab === 'groups' && <GroupsTab />}
         {activeTab === 'notifications' && <NotificationsTab />}
+        {activeTab === 'loyalty' && <LoyaltyTab />}
       </div>
     </Page>
   );

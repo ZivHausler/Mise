@@ -42,6 +42,8 @@ const pageImports = {
   adminStores: () => import('@/pages/admin/AdminStoresPage'),
   adminInvitations: () => import('@/pages/admin/AdminInvitationsPage'),
   adminAuditLog: () => import('@/pages/admin/AdminAuditLogPage'),
+  production: () => import('@/pages/ProductionPage'),
+  productionKiosk: () => import('@/pages/ProductionKioskPage'),
 };
 
 const LoginPage = lazy(pageImports.login);
@@ -62,6 +64,8 @@ const SettingsPage = lazy(pageImports.settings);
 const MorePage = lazy(pageImports.more);
 const InvitePage = lazy(pageImports.invite);
 const NotFoundPage = lazy(pageImports.notFound);
+const ProductionPage = lazy(pageImports.production);
+const ProductionKioskPage = lazy(pageImports.productionKiosk);
 
 // Admin pages
 const AdminRoute = lazy(pageImports.adminRoute);
@@ -153,6 +157,16 @@ export function App() {
                 <Route path="admin/audit-log" element={<AdminAuditLogPage />} />
               </Route>
 
+              {/* Kiosk mode — outside AppShell (no sidebar/tabs) */}
+              <Route
+                path="/production/kiosk"
+                element={
+                  <ProtectedRoute>
+                    <ProductionKioskPage />
+                  </ProtectedRoute>
+                }
+              />
+
               {/* Protected routes with app shell */}
               <Route
                 element={
@@ -170,6 +184,7 @@ export function App() {
                 <Route path="recipes/new" element={<RecipeFormPage />} />
                 <Route path="recipes/:id" element={<RecipeDetailPage />} />
                 <Route path="recipes/:id/edit" element={<RecipeFormPage />} />
+                <Route path="production" element={<ProductionPage />} />
                 <Route path="inventory" element={<InventoryPage />} />
                 <Route path="inventory/:id" element={<InventoryPage />} />
                 <Route path="customers" element={<CustomersPage />} />

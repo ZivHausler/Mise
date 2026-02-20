@@ -156,6 +156,7 @@
 - [x] Notification dispatcher with channel routing (email, SMS, in-app)
 - [x] Event-driven: order.created, order.statusChanged, inventory.lowStock, payment.received
 - [x] Notification preferences UI (per-channel toggles)
+- [x] SSE endpoint — real-time server-sent events for pushing notifications to connected clients
 - [ ] Actual email delivery (currently logs to console)
 - [ ] Actual SMS delivery (currently logs to console)
 - [ ] App push notifications (UI shows "Coming Soon")
@@ -182,6 +183,7 @@
 - [x] Notification preferences (per-channel toggles)
 - [x] Language toggle (Hebrew/English)
 - [x] Team settings tab (UI)
+- [x] Loyalty settings tab (enable/disable program, earning rate, redemption value, min redeem threshold, live preview)
 
 ### Store Management (Multi-Tenancy)
 - [x] Store setup page for new users
@@ -194,6 +196,38 @@
 - [x] Store roles: Owner, Manager, Employee
 - [x] Invitation-only registration system-wide (no open signups)
 - [x] Invitation landing page (validates token, routes to register or store setup)
+
+### Loyalty System (Points-Based Rewards)
+- [x] Per-store loyalty configuration (enable/disable, earning rate, redemption value, minimum threshold)
+- [x] Automatic point earning on payment received (configurable points per shekel)
+- [x] Automatic point deduction on payment refund (capped at current balance)
+- [x] Manual point adjustments with description (admin feature)
+- [x] Point redemption for discounts with shekel value calculation
+- [x] Append-only transaction ledger (earned, redeemed, adjusted)
+- [x] Customer balance summary with lifetime earned/redeemed stats
+- [x] Paginated transaction history per customer
+- [x] Event-driven integration with payment system (PAYMENT_RECEIVED, PAYMENT_REFUNDED)
+- [x] Loyalty settings tab in Settings page with live preview
+- [x] Adjust Points modal and Redeem Points modal on customer detail
+- [x] Full i18n support (English + Hebrew)
+- [x] 11 unit tests covering all service methods
+
+### Production Module (Batch Production Planning)
+- [x] Production batches CRUD (create, list, detail, update, delete)
+- [x] 7-stage production pipeline (To Prep → Mixing → Proofing → Baking → Cooling → Ready → Packaged)
+- [x] Auto-generate batches from upcoming orders
+- [x] Manual batch creation with recipe, quantity, date, priority, assignee
+- [x] Batch-to-order linking (track which orders a batch fulfills)
+- [x] Prep list with per-batch ingredient requirements and prep status tracking
+- [x] Aggregated prep view (total ingredients needed across all batches)
+- [x] Stage transitions with event publishing
+- [x] Kanban board view (drag batches across stages)
+- [x] Timeline view (visual production schedule)
+- [x] Prep list view (aggregated ingredient checklist)
+- [x] Kiosk mode (tablet-friendly production floor view)
+- [x] Batch detail modal with order sources and prep items
+- [x] Database migration (`017_production_batches.sql`)
+- [x] Full i18n support (English + Hebrew)
 
 ### Architecture Refactoring
 - [x] Generic CRUD base class with Zod schema validation
@@ -266,6 +300,10 @@
 | 11 | `011_admin_module.sql` | Adds `disabled_at` to users, `revoked_at` to store_invitations |
 | 12 | `012_audit_log_bodies.sql` | (Superseded) Added request/response body columns to audit log |
 | 13 | `013_split_audit_log_bodies.sql` | Splits bodies into separate tables, migrates existing data |
+| 14 | `014_audit_log_cascade.sql` | Cascade deletes for audit log body tables |
+| 15 | `015_user_onboarding.sql` | Adds `onboarding_completed_at` to users for product tour tracking |
+| 16 | `016_loyalty.sql` | Loyalty system: `loyalty_config` (per-store settings), `loyalty_transactions` (append-only ledger), `loyalty_points` column on customers |
+| 17 | `017_production_batches.sql` | Production batches, batch-order links, batch prep items for production planning |
 
 ---
 
@@ -288,6 +326,8 @@
 | Admin Panel (users, stores, invitations, audit) | Done | Done | Complete |
 | Admin Analytics + Grafana Dashboards | Done | Done | Complete |
 | Admin Audit Log (with body capture) | Done | Done | Complete |
+| Loyalty System (points rewards) | Done | Done | Complete |
+| Production (batch planning, kanban, prep list) | Done | Done | Complete |
 | Server-Side Pagination | Done | Done | Complete |
 | i18n (Hebrew RTL + English LTR) | — | Done | Complete |
 | Security Hardening | Done | — | Complete |
@@ -338,7 +378,7 @@
 10. **MongoDB only used for recipes** — configured in docker-compose but could be documented as optional
 
 ### Missing
-11. **No README.md** — no project README or setup instructions
+11. ~~**No README.md**~~ — **Done**: added comprehensive README
 12. ~~**E2E tests**~~ — **Done**: E2E test suite implemented
 13. **No CONTRIBUTING.md or SETUP.md** for onboarding new developers
 
@@ -346,8 +386,8 @@
 
 ## Test Coverage
 
-- **136 unit tests** across 27 test files (Vitest) — all passing
-- Covers: Auth, Recipes, Inventory, Customers, Orders, Payments, Core infrastructure
+- **147 unit tests** across 28 test files (Vitest) — all passing
+- Covers: Auth, Recipes, Inventory, Customers, Orders, Payments, Loyalty, Core infrastructure
 - E2E test suite implemented
 
 ---
@@ -357,7 +397,7 @@
 ### High Impact
 - [ ] **Reports & Export** — PDF/Excel export for orders, payments, inventory (bakers need printable summaries for end-of-day/week/month)
 - [x] **Order calendar view** — see orders by due date on a calendar, critical for bakery production planning
-- [ ] **Production planning** — aggregate ingredient needs across upcoming orders ("I need 5kg flour for tomorrow's orders")
+- [x] **Production planning** — batch production with 7-stage pipeline, auto-generate from orders, aggregated prep list, kanban + timeline + kiosk views
 - [x] **Recurring orders** — many bakeries have weekly standing orders from cafes/restaurants
 - [ ] **Customer-facing order portal** — let customers place orders directly via a link (right now it's baker-only)
 
@@ -365,12 +405,12 @@
 - [ ] **Image uploads** — recipe photos, store logo (currently no file upload support)
 - [ ] **Batch operations** — bulk status changes on orders, bulk stock adjustments
 - [ ] **Inventory alerts** — actual notifications when stock is low (currently events fire but nothing reaches the user besides an in-app count)
-- [ ] **Order printing** — print order slips / production sheets for the kitchen
+- [x] **Order printing** — PDF download + browser print for order slips / production sheets
 - [ ] **Profit margins** — recipe cost vs selling price analytics, margin trends over time
 - [ ] **Search across modules** — global search bar (find a customer, order, or recipe from one input)
 
 ### Polish & DevEx
-- [ ] **Onboarding wizard** — guide new store owners through adding their first recipe, ingredient, customer
+- [x] **Onboarding product tour** — interactive React Joyride tour overlaying the real app UI, highlights sidebar/bottom-tab nav items and key actions, tracked per-user with restart from settings, responsive (desktop 8 steps / mobile 7 steps with navigation)
 - [ ] **Offline support** — service worker + local cache for flaky connections (bakeries aren't always in great WiFi zones)
 - [x] **Mobile PWA** — add manifest + install prompt, bakeries often use tablets/phones
 - [ ] **Webhook integrations** — let stores connect to external services (accounting software, delivery apps)

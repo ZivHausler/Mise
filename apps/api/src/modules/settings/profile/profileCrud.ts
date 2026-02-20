@@ -1,3 +1,4 @@
+import { getPool } from '../../../core/database/postgres.js';
 import { PgAuthRepository } from '../../auth/auth.repository.js';
 import type { UserPublic } from '../../auth/auth.types.js';
 import type { UpdateProfileDTO } from '../settings.types.js';
@@ -28,5 +29,30 @@ export class ProfileCrud {
       phone: updated.phone,
       isAdmin: updated.isAdmin,
     };
+  }
+
+  static async getOnboardingStatus(userId: string): Promise<{ completedAt: string | null }> {
+    const pool = getPool();
+    const result = await pool.query(
+      'SELECT onboarding_completed_at FROM users WHERE id = $1',
+      [userId],
+    );
+    return { completedAt: result.rows[0]?.onboarding_completed_at ?? null };
+  }
+
+  static async completeOnboarding(userId: string): Promise<void> {
+    const pool = getPool();
+    await pool.query(
+      'UPDATE users SET onboarding_completed_at = NOW() WHERE id = $1',
+      [userId],
+    );
+  }
+
+  static async resetOnboarding(userId: string): Promise<void> {
+    const pool = getPool();
+    await pool.query(
+      'UPDATE users SET onboarding_completed_at = NULL WHERE id = $1',
+      [userId],
+    );
   }
 }

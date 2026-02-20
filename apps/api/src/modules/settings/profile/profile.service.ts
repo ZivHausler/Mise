@@ -15,4 +15,16 @@ export class ProfileService {
     if (!existing) throw new NotFoundError('User not found');
     return ProfileCrud.update(userId, data);
   }
+
+  async getOnboardingStatus(userId: string) {
+    return ProfileCrud.getOnboardingStatus(userId);
+  }
+
+  async completeOnboarding(userId: string) {
+    return ProfileCrud.completeOnboarding(userId);
+  }
+
+  async resetOnboarding(userId: string) {
+    return ProfileCrud.resetOnboarding(userId);
+  }
 }
