@@ -16,6 +16,13 @@
         }
       },
       {
+        "source": "/uploads/**",
+        "run": {
+          "serviceId": "mise-api",
+          "region": "me-west1"
+        }
+      },
+      {
         "source": "/health",
         "run": {
           "serviceId": "mise-api",
