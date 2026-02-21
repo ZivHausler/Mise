@@ -36,7 +36,7 @@ export default function MorePage() {
                 <div className="flex items-center gap-1.5">
                   <Sparkles className="h-3.5 w-3.5 text-purple-400" />
                   <span className="text-xs font-medium text-purple-400">
-                    {t('nav.comingSoon', 'Coming soon')}
+                    {t('nav.comingSoon')}
                   </span>
                 </div>
               </div>
