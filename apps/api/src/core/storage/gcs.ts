@@ -37,14 +37,15 @@ export async function generateSignedUploadUrl(
   const bucket = storage.bucket(env.GCS_BUCKET_NAME);
   const file = bucket.file(filePath);
 
-  const [url] = await file.generateSignedPostPolicyV4({
+  const [url] = await file.generateSignedUrl({
+    version: 'v4',
+    action: 'write',
     expires: Date.now() + 60 * 60 * 1000,
-    conditions: [['content-length-range', 0, 5 * 1024 * 1024]],
-    fields: { 'Content-Type': mimeType },
+    contentType: mimeType,
   });
 
   const publicUrl = `https://storage.googleapis.com/${env.GCS_BUCKET_NAME}/${filePath}`;
-  return { uploadUrl: url.url, publicUrl, filePath };
+  return { uploadUrl: url, publicUrl, filePath };
 }
 
 export function isTempUrl(url: string): boolean {
