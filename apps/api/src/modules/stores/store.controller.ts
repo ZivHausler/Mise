@@ -79,7 +79,8 @@ export class StoreController {
 
     const { storeId, role } = await this.storeService.acceptInvite(userId, token);
     const jwt = this.storeService.generateTokenWithStore(userId, email, storeId, role);
+    const stores = await this.storeService.getMyStores(userId);
 
-    return reply.send({ success: true, data: { token: jwt, storeId, role } });
+    return reply.send({ success: true, data: { token: jwt, storeId, role, stores } });
   }
 }

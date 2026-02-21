@@ -20,12 +20,14 @@ interface AuthState {
   hasStore: boolean;
   isAdmin: boolean;
   stores: StoreInfo[];
+  activeStoreId: string | null;
   isAuthenticated: boolean;
   pendingCreateStoreToken: string | null;
   setAuth: (user: User, token: string, hasStore?: boolean, isAdmin?: boolean) => void;
   setStores: (stores: StoreInfo[]) => void;
   setHasStore: (hasStore: boolean) => void;
   updateToken: (token: string) => void;
+  setActiveStore: (storeId: string) => void;
   setPendingCreateStoreToken: (token: string | null) => void;
   logout: () => void;
 }
@@ -56,12 +58,17 @@ function getStoredStores(): StoreInfo[] {
   }
 }
 
+function getStoredActiveStoreId(): string | null {
+  return localStorage.getItem('auth_active_store_id');
+}
+
 export const useAuthStore = create<AuthState>((set) => ({
   user: getStoredUser(),
   token: localStorage.getItem('auth_token'),
   hasStore: getStoredHasStore(),
   isAdmin: getStoredIsAdmin(),
   stores: getStoredStores(),
+  activeStoreId: getStoredActiveStoreId(),
   isAuthenticated: !!localStorage.getItem('auth_token'),
   pendingCreateStoreToken: localStorage.getItem('pending_create_store_token'),
   setAuth: (user, token, hasStore, isAdmin) => {
@@ -87,6 +94,10 @@ export const useAuthStore = create<AuthState>((set) => ({
     localStorage.setItem('auth_token', token);
     set({ token });
   },
+  setActiveStore: (storeId) => {
+    localStorage.setItem('auth_active_store_id', storeId);
+    set({ activeStoreId: storeId });
+  },
   setPendingCreateStoreToken: (token) => {
     if (token) {
       localStorage.setItem('pending_create_store_token', token);
@@ -103,7 +114,8 @@ export const useAuthStore = create<AuthState>((set) => ({
     localStorage.removeItem('auth_has_store');
     localStorage.removeItem('auth_is_admin');
     localStorage.removeItem('auth_stores');
+    localStorage.removeItem('auth_active_store_id');
     localStorage.removeItem('pending_create_store_token');
-    set({ user: null, token: null, isAuthenticated: false, hasStore: false, isAdmin: false, stores: [], pendingCreateStoreToken: null });
+    set({ user: null, token: null, isAuthenticated: false, hasStore: false, isAdmin: false, stores: [], activeStoreId: null, pendingCreateStoreToken: null });
   },
 }));

@@ -14,13 +14,14 @@ import {
   ChevronLeft,
   ChevronRight,
   ChevronDown,
+  Sparkles,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useQueryClient } from '@tanstack/react-query';
 import { cn } from '@/utils/cn';
 import { useAppStore } from '@/store/app';
 import { useAuthStore } from '@/store/auth';
-import { useSelectStore, useAllStores } from '@/api/hooks';
+import { useSelectStore, useAllStores, useFeatureFlags } from '@/api/hooks';
 
 const navItems = [
   { path: '/', icon: LayoutDashboard, labelKey: 'nav.dashboard', tourId: 'sidebar-dashboard' },
@@ -43,6 +44,8 @@ export function Sidebar() {
   const stores = useAuthStore((s) => s.stores);
   const isAdmin = useAuthStore((s) => s.isAdmin);
   const updateToken = useAuthStore((s) => s.updateToken);
+  const activeStoreId = useAuthStore((s) => s.activeStoreId);
+  const setActiveStore = useAuthStore((s) => s.setActiveStore);
   const selectStore = useSelectStore();
   const allStoresQuery = useAllStores(isAdmin);
   const qc = useQueryClient();
@@ -62,12 +65,13 @@ export function Sidebar() {
         {
           onSuccess: (data: any) => {
             updateToken(data.token);
+            setActiveStore(storeId);
             qc.invalidateQueries();
           },
         },
       );
     },
-    [selectStore, updateToken, qc],
+    [selectStore, updateToken, setActiveStore, qc],
   );
 
   return (
@@ -86,24 +90,6 @@ export function Sidebar() {
           {collapsed ? <ChevronRight className="h-4 w-4 rtl:scale-x-[-1]" /> : <ChevronLeft className="h-4 w-4 rtl:scale-x-[-1]" />}
         </button>
       </div>
-
-      {!collapsed && (isAdmin ? displayStores.length > 0 : displayStores.length > 1) && (
-        <div className="border-b border-primary-800 px-3 py-3">
-          <div className="relative">
-            <select
-              onChange={handleStoreSwitch}
-              defaultValue={displayStores[0]?.storeId}
-              className="w-full appearance-none rounded-md bg-primary-800 px-3 py-2 pe-8 text-body-sm text-white outline-none focus:ring-2 focus:ring-primary-500"
-            >
-              {isAdmin && <option value="" disabled>{t('nav.selectStore', 'Select a store')}</option>}
-              {displayStores.map((s) => (
-                <option key={s.storeId} value={s.storeId}>{s.storeName}</option>
-              ))}
-            </select>
-            <ChevronDown className="pointer-events-none absolute end-2 top-1/2 h-4 w-4 -translate-y-1/2 text-primary-400" />
-          </div>
-        </div>
-      )}
 
       <nav className="flex-1 overflow-y-auto py-4">
         <ul className="flex flex-col gap-1 px-2">
@@ -131,6 +117,21 @@ export function Sidebar() {
       </nav>
 
       <div className="border-t border-primary-800 py-4 px-2">
+        {!collapsed && (isAdmin ? displayStores.length > 0 : displayStores.length > 1) && (
+          <div className="relative mb-2 px-1">
+            <select
+              onChange={handleStoreSwitch}
+              value={activeStoreId || displayStores[0]?.storeId || ''}
+              className="w-full appearance-none rounded-md bg-primary-800 px-3 py-2 pe-8 text-body-sm text-white outline-none focus:ring-2 focus:ring-primary-500"
+            >
+              {isAdmin && <option value="" disabled>{t('nav.selectStore', 'Select a store')}</option>}
+              {displayStores.map((s) => (
+                <option key={s.storeId} value={s.storeId}>{s.storeName}</option>
+              ))}
+            </select>
+            <ChevronDown className="pointer-events-none absolute end-3 top-1/2 h-4 w-4 -translate-y-1/2 text-primary-400" />
+          </div>
+        )}
         {isAdmin && (
           <NavLink
             to="/admin"
