@@ -2,10 +2,21 @@
   "hosting": {
     "site": "mise-prod-app",
     "public": "apps/web/dist",
-    "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ],
     "rewrites": [
       {
         "source": "/api/**",
+        "run": {
+          "serviceId": "mise-api",
+          "region": "me-west1"
+        }
+      },
+      {
+        "source": "/health",
         "run": {
           "serviceId": "mise-api",
           "region": "me-west1"

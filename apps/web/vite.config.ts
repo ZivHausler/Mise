@@ -78,6 +78,10 @@ export default defineConfig({
         target: 'http://localhost:3001',
         changeOrigin: true,
       },
+      '/health': {
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+      },
       '/grafana': {
         target: 'http://localhost:3002',
         changeOrigin: true,

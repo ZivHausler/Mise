@@ -12,6 +12,9 @@ env:
   PROJECT_ID: mise-prod-app
   REGION: me-west1
   IMAGE: gcr.io/mise-prod-app/mise-api
+  CLOUD_SQL_INSTANCE: mise-prod-app:me-west1:mise-pg
+  DB_USER: mise
+  DB_NAME: mise
 
 jobs:
   deploy:
@@ -41,6 +44,19 @@ jobs:
             -f apps/api/Dockerfile .
           docker push ${{ env.IMAGE }}:${{ github.sha }}
           docker push ${{ env.IMAGE }}:latest
+
+      - name: Run database migrations
+        run: |
+          curl -sL https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.14.1/cloud-sql-proxy.linux.amd64 -o cloud-sql-proxy
+          chmod +x cloud-sql-proxy
+          ./cloud-sql-proxy --port 5432 ${{ env.CLOUD_SQL_INSTANCE }} &
+          PROXY_PID=$!
+          sleep 5
+          for f in $(ls packages/db/src/migrations/*.sql | sort); do
+            echo "Applying $f..."
+            PGPASSWORD=${{ secrets.PROD_DB_PASSWORD }} psql -h 127.0.0.1 -U ${{ env.DB_USER }} -d ${{ env.DB_NAME }} -f "$f"
+          done
+          kill $PROXY_PID
 
       - name: Deploy to Cloud Run
         uses: google-github-actions/deploy-cloudrun@v2
