@@ -16,7 +16,7 @@ vi.mock('../../../src/modules/customers/customer.repository.js', () => ({
 
 import { PgCustomerRepository } from '../../../src/modules/customers/customer.repository.js';
 
-const STORE_ID = 'store-1';
+const STORE_ID = 1;
 
 describe('CustomerCrud.update', () => {
   beforeEach(() => {
@@ -27,10 +27,10 @@ describe('CustomerCrud.update', () => {
     const updated = createCustomer({ name: 'Jane Smith' });
     vi.mocked(PgCustomerRepository.update).mockResolvedValue(updated);
 
-    const result = await CustomerCrud.update('cust-1', STORE_ID, { name: 'Jane Smith' });
+    const result = await CustomerCrud.update(1, STORE_ID, { name: 'Jane Smith' });
 
     expect(result.name).toBe('Jane Smith');
-    expect(PgCustomerRepository.update).toHaveBeenCalledWith('cust-1', STORE_ID, { name: 'Jane Smith' });
+    expect(PgCustomerRepository.update).toHaveBeenCalledWith(1, STORE_ID, { name: 'Jane Smith' });
   });
 
   it('should update preferences with JSONB data', async () => {
@@ -39,7 +39,7 @@ describe('CustomerCrud.update', () => {
     });
     vi.mocked(PgCustomerRepository.update).mockResolvedValue(updated);
 
-    const result = await CustomerCrud.update('cust-1', STORE_ID, {
+    const result = await CustomerCrud.update(1, STORE_ID, {
       preferences: { allergies: ['dairy'], favorites: ['baguette'] },
     });
 

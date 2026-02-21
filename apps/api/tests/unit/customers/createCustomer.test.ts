@@ -16,7 +16,7 @@ vi.mock('../../../src/modules/customers/customer.repository.js', () => ({
 
 import { PgCustomerRepository } from '../../../src/modules/customers/customer.repository.js';
 
-const STORE_ID = 'store-1';
+const STORE_ID = 1;
 
 describe('CustomerCrud.create', () => {
   beforeEach(() => {

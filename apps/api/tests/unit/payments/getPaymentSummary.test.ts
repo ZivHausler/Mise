@@ -10,7 +10,7 @@ vi.mock('../../../src/modules/payments/paymentCrud.js', () => ({
 
 import { PaymentCrud } from '../../../src/modules/payments/paymentCrud.js';
 
-const STORE_ID = 'store-1';
+const STORE_ID = 1;
 
 describe('GetPaymentSummaryUseCase', () => {
   let useCase: GetPaymentSummaryUseCase;
@@ -23,7 +23,7 @@ describe('GetPaymentSummaryUseCase', () => {
   it('should return unpaid status when no payments exist', async () => {
     vi.mocked(PaymentCrud.getByOrderId).mockResolvedValue([]);
 
-    const result = await useCase.execute(STORE_ID, 'order-1', 100);
+    const result = await useCase.execute(STORE_ID, 1, 100);
 
     expect(result.status).toBe('unpaid');
     expect(result.paidAmount).toBe(0);
@@ -36,7 +36,7 @@ describe('GetPaymentSummaryUseCase', () => {
       createPayment({ amount: 30 }),
     ]);
 
-    const result = await useCase.execute(STORE_ID, 'order-1', 100);
+    const result = await useCase.execute(STORE_ID, 1, 100);
 
     expect(result.status).toBe('partial');
     expect(result.paidAmount).toBe(30);
@@ -44,11 +44,11 @@ describe('GetPaymentSummaryUseCase', () => {
 
   it('should return paid status when fully paid', async () => {
     vi.mocked(PaymentCrud.getByOrderId).mockResolvedValue([
-      createPayment({ id: 'p1', amount: 60 }),
-      createPayment({ id: 'p2', amount: 40 }),
+      createPayment({ id: 1, amount: 60 }),
+      createPayment({ id: 2, amount: 40 }),
     ]);
 
-    const result = await useCase.execute(STORE_ID, 'order-1', 100);
+    const result = await useCase.execute(STORE_ID, 1, 100);
 
     expect(result.status).toBe('paid');
     expect(result.paidAmount).toBe(100);
@@ -59,7 +59,7 @@ describe('GetPaymentSummaryUseCase', () => {
       createPayment({ amount: 120 }),
     ]);
 
-    const result = await useCase.execute(STORE_ID, 'order-1', 100);
+    const result = await useCase.execute(STORE_ID, 1, 100);
 
     expect(result.status).toBe('paid');
     expect(result.paidAmount).toBe(120);
@@ -67,12 +67,12 @@ describe('GetPaymentSummaryUseCase', () => {
 
   it('should sum multiple payments correctly', async () => {
     vi.mocked(PaymentCrud.getByOrderId).mockResolvedValue([
-      createPayment({ id: 'p1', amount: 25 }),
-      createPayment({ id: 'p2', amount: 25 }),
-      createPayment({ id: 'p3', amount: 25 }),
+      createPayment({ id: 1, amount: 25 }),
+      createPayment({ id: 2, amount: 25 }),
+      createPayment({ id: 3, amount: 25 }),
     ]);
 
-    const result = await useCase.execute(STORE_ID, 'order-1', 100);
+    const result = await useCase.execute(STORE_ID, 1, 100);
 
     expect(result.paidAmount).toBe(75);
     expect(result.status).toBe('partial');
@@ -81,21 +81,21 @@ describe('GetPaymentSummaryUseCase', () => {
 
   it('should include payment details in summary', async () => {
     const payments = [
-      createPayment({ id: 'p1', amount: 50, method: 'cash' }),
-      createPayment({ id: 'p2', amount: 50, method: 'credit_card' }),
+      createPayment({ id: 1, amount: 50, method: 'cash' }),
+      createPayment({ id: 2, amount: 50, method: 'credit_card' }),
     ];
     vi.mocked(PaymentCrud.getByOrderId).mockResolvedValue(payments);
 
-    const result = await useCase.execute(STORE_ID, 'order-1', 100);
+    const result = await useCase.execute(STORE_ID, 1, 100);
 
     expect(result.payments).toHaveLength(2);
-    expect(result.orderId).toBe('order-1');
+    expect(result.orderId).toBe(1);
   });
 
   it('should handle zero total amount (free order)', async () => {
     vi.mocked(PaymentCrud.getByOrderId).mockResolvedValue([]);
 
-    const result = await useCase.execute(STORE_ID, 'order-1', 0);
+    const result = await useCase.execute(STORE_ID, 1, 0);
 
     expect(result.status).toBe('unpaid');
     expect(result.totalAmount).toBe(0);
@@ -106,7 +106,7 @@ describe('GetPaymentSummaryUseCase', () => {
       createPayment({ amount: 100 }),
     ]);
 
-    const result = await useCase.execute(STORE_ID, 'order-1', 100);
+    const result = await useCase.execute(STORE_ID, 1, 100);
 
     expect(result.status).toBe('paid');
     expect(result.paidAmount).toBe(100);

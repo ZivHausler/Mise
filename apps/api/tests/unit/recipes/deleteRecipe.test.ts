@@ -14,7 +14,7 @@ vi.mock('../../../src/modules/recipes/recipe.repository.js', () => ({
 
 import { MongoRecipeRepository } from '../../../src/modules/recipes/recipe.repository.js';
 
-const STORE_ID = 'store-1';
+const STORE_ID = 1;
 
 describe('RecipeCrud.delete', () => {
   beforeEach(() => {

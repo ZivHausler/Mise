@@ -16,7 +16,7 @@ vi.mock('../../../src/modules/orders/order.repository.js', () => ({
 
 import { PgOrderRepository } from '../../../src/modules/orders/order.repository.js';
 
-const STORE_ID = 'store-1';
+const STORE_ID = 1;
 
 describe('OrderCrud.create', () => {
   beforeEach(() => {
@@ -28,7 +28,7 @@ describe('OrderCrud.create', () => {
     vi.mocked(PgOrderRepository.create).mockResolvedValue(order);
 
     const result = await OrderCrud.create(STORE_ID, {
-      customerId: 'cust-1',
+      customerId: 1,
       items: [{ recipeId: 'recipe-1', quantity: 2, unitPrice: 50 }],
       totalAmount: 100,
     });
@@ -48,7 +48,7 @@ describe('OrderCrud.create', () => {
     vi.mocked(PgOrderRepository.create).mockResolvedValue(order);
 
     const result = await OrderCrud.create(STORE_ID, {
-      customerId: 'cust-1',
+      customerId: 1,
       items: [
         { recipeId: 'r1', quantity: 2, unitPrice: 50 },
         { recipeId: 'r2', quantity: 1, unitPrice: 30 },
@@ -66,7 +66,7 @@ describe('OrderCrud.create', () => {
     vi.mocked(PgOrderRepository.create).mockResolvedValue(order);
 
     const result = await OrderCrud.create(STORE_ID, {
-      customerId: 'cust-1',
+      customerId: 1,
       items: [{ recipeId: 'r1', quantity: 1, unitPrice: 50 }],
       notes: 'Rush order',
       dueDate,

@@ -34,7 +34,7 @@ import { OrderCrud } from '../../../src/modules/orders/orderCrud.js';
 import { getEventBus } from '../../../src/core/events/event-bus.js';
 import { unitConversionFactor } from '../../../src/modules/shared/unitConversion.js';
 
-const STORE_ID = 1;
+const STORE_ID = 'store-1';
 
 describe('OrderService – inventory deduction on status change', () => {
   let service: OrderService;
@@ -44,8 +44,8 @@ describe('OrderService – inventory deduction on status change', () => {
   const recipe = createRecipe({
     id: 'recipe-1',
     ingredients: [
-      { ingredientId: '1', name: 'Flour', quantity: 2, unit: 'kg', costPerUnit: 3.5 },
-      { ingredientId: '2', name: 'Sugar', quantity: 1, unit: 'kg', costPerUnit: 5 },
+      { ingredientId: 'ing-1', name: 'Flour', quantity: 2, unit: 'kg', costPerUnit: 3.5 },
+      { ingredientId: 'ing-2', name: 'Sugar', quantity: 1, unit: 'kg', costPerUnit: 5 },
     ],
   });
 
@@ -60,9 +60,9 @@ describe('OrderService – inventory deduction on status change', () => {
 
     mockRecipeService = { getById: vi.fn().mockResolvedValue(recipe) };
     mockInventoryService = {
-      getById: vi.fn().mockImplementation((_storeId: number, id: number) => {
-        if (id === 1) return Promise.resolve(createIngredient({ id: 1, unit: 'kg' }));
-        if (id === 2) return Promise.resolve(createIngredient({ id: 2, name: 'Sugar', unit: 'kg' }));
+      getById: vi.fn().mockImplementation((_storeId: string, id: string) => {
+        if (id === 'ing-1') return Promise.resolve(createIngredient({ id: 'ing-1', unit: 'kg' }));
+        if (id === 'ing-2') return Promise.resolve(createIngredient({ id: 'ing-2', name: 'Sugar', unit: 'kg' }));
         throw new Error('Not found');
       }),
       adjustStock: vi.fn().mockResolvedValue(undefined),
@@ -75,21 +75,21 @@ describe('OrderService – inventory deduction on status change', () => {
     vi.mocked(OrderCrud.getById).mockResolvedValue(order);
     vi.mocked(OrderCrud.updateStatus).mockResolvedValue(createOrder({ status: ORDER_STATUS.READY, items: order.items }));
 
-    await service.updateStatus(STORE_ID, 1, ORDER_STATUS.READY);
+    await service.updateStatus(STORE_ID, 'order-1', ORDER_STATUS.READY);
 
     // Recipe has 2kg flour + 1kg sugar, order has 3 units → 6kg flour, 3kg sugar
     expect(mockInventoryService.adjustStock).toHaveBeenCalledTimes(2);
     expect(mockInventoryService.adjustStock).toHaveBeenCalledWith(STORE_ID, {
-      ingredientId: 1,
+      ingredientId: 'ing-1',
       type: InventoryLogType.USAGE,
       quantity: 6, // 2kg * 3 units
-      reason: expect.stringContaining('Order'),
+      reason: expect.stringContaining('order'),
     });
     expect(mockInventoryService.adjustStock).toHaveBeenCalledWith(STORE_ID, {
-      ingredientId: 2,
+      ingredientId: 'ing-2',
       type: InventoryLogType.USAGE,
       quantity: 3, // 1kg * 3 units
-      reason: expect.stringContaining('Order'),
+      reason: expect.stringContaining('order'),
     });
   });
 
@@ -101,20 +101,20 @@ describe('OrderService – inventory deduction on status change', () => {
     vi.mocked(OrderCrud.getById).mockResolvedValue(readyOrder);
     vi.mocked(OrderCrud.updateStatus).mockResolvedValue(createOrder({ status: ORDER_STATUS.IN_PROGRESS, items: readyOrder.items }));
 
-    await service.updateStatus(STORE_ID, 1, ORDER_STATUS.IN_PROGRESS);
+    await service.updateStatus(STORE_ID, 'order-1', ORDER_STATUS.IN_PROGRESS);
 
     expect(mockInventoryService.adjustStock).toHaveBeenCalledTimes(2);
     expect(mockInventoryService.adjustStock).toHaveBeenCalledWith(STORE_ID, {
-      ingredientId: 1,
+      ingredientId: 'ing-1',
       type: InventoryLogType.ADDITION,
       quantity: 6,
-      reason: expect.stringContaining('Order'),
+      reason: expect.stringContaining('order'),
     });
     expect(mockInventoryService.adjustStock).toHaveBeenCalledWith(STORE_ID, {
-      ingredientId: 2,
+      ingredientId: 'ing-2',
       type: InventoryLogType.ADDITION,
       quantity: 3,
-      reason: expect.stringContaining('Order'),
+      reason: expect.stringContaining('order'),
     });
   });
 
@@ -123,7 +123,7 @@ describe('OrderService – inventory deduction on status change', () => {
     vi.mocked(OrderCrud.getById).mockResolvedValue(receivedOrder);
     vi.mocked(OrderCrud.updateStatus).mockResolvedValue(createOrder({ status: ORDER_STATUS.IN_PROGRESS }));
 
-    await service.updateStatus(STORE_ID, 1, ORDER_STATUS.IN_PROGRESS);
+    await service.updateStatus(STORE_ID, 'order-1', ORDER_STATUS.IN_PROGRESS);
 
     expect(mockInventoryService.adjustStock).not.toHaveBeenCalled();
   });
@@ -133,30 +133,30 @@ describe('OrderService – inventory deduction on status change', () => {
     vi.mocked(OrderCrud.getById).mockResolvedValue(order);
     vi.mocked(OrderCrud.updateStatus).mockResolvedValue(createOrder({ status: ORDER_STATUS.READY, items: order.items }));
 
-    await service.updateStatus(STORE_ID, 1, ORDER_STATUS.READY);
+    await service.updateStatus(STORE_ID, 'order-1', ORDER_STATUS.READY);
 
     // 2 (recipe qty) * 1000 (factor) * 3 (order qty) = 6000
     expect(mockInventoryService.adjustStock).toHaveBeenCalledWith(STORE_ID, expect.objectContaining({
-      ingredientId: 1,
+      ingredientId: 'ing-1',
       quantity: 6000,
     }));
   });
 
   it('should skip ingredients not found in inventory', async () => {
-    mockInventoryService.getById.mockImplementation((_storeId: number, id: number) => {
-      if (id === 1) return Promise.resolve(createIngredient({ id: 1, unit: 'kg' }));
+    mockInventoryService.getById.mockImplementation((_storeId: string, id: string) => {
+      if (id === 'ing-1') return Promise.resolve(createIngredient({ id: 'ing-1', unit: 'kg' }));
       throw new Error('Not found');
     });
 
     vi.mocked(OrderCrud.getById).mockResolvedValue(order);
     vi.mocked(OrderCrud.updateStatus).mockResolvedValue(createOrder({ status: ORDER_STATUS.READY, items: order.items }));
 
-    await service.updateStatus(STORE_ID, 1, ORDER_STATUS.READY);
+    await service.updateStatus(STORE_ID, 'order-1', ORDER_STATUS.READY);
 
     // Only flour should be deducted, sugar skipped
     expect(mockInventoryService.adjustStock).toHaveBeenCalledTimes(1);
     expect(mockInventoryService.adjustStock).toHaveBeenCalledWith(STORE_ID, expect.objectContaining({
-      ingredientId: 1,
+      ingredientId: 'ing-1',
     }));
   });
 
@@ -166,7 +166,7 @@ describe('OrderService – inventory deduction on status change', () => {
     vi.mocked(OrderCrud.getById).mockResolvedValue(order);
     vi.mocked(OrderCrud.updateStatus).mockResolvedValue(createOrder({ status: ORDER_STATUS.READY, items: order.items }));
 
-    await service.updateStatus(STORE_ID, 1, ORDER_STATUS.READY);
+    await service.updateStatus(STORE_ID, 'order-1', ORDER_STATUS.READY);
 
     expect(mockInventoryService.adjustStock).not.toHaveBeenCalled();
   });

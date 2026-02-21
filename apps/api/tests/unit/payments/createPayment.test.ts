@@ -15,7 +15,7 @@ vi.mock('../../../src/modules/payments/payment.repository.js', () => ({
 
 import { PgPaymentRepository } from '../../../src/modules/payments/payment.repository.js';
 
-const STORE_ID = 'store-1';
+const STORE_ID = 1;
 
 describe('PaymentCrud.create', () => {
   beforeEach(() => {
@@ -27,7 +27,7 @@ describe('PaymentCrud.create', () => {
     vi.mocked(PgPaymentRepository.create).mockResolvedValue(payment);
 
     const result = await PaymentCrud.create(STORE_ID, {
-      orderId: 'order-1',
+      orderId: 1,
       amount: 50,
       method: 'cash',
     });
@@ -42,7 +42,7 @@ describe('PaymentCrud.create', () => {
     vi.mocked(PgPaymentRepository.create).mockResolvedValue(payment);
 
     const result = await PaymentCrud.create(STORE_ID, {
-      orderId: 'order-1',
+      orderId: 1,
       amount: 100,
       method: 'credit_card',
     });
@@ -55,7 +55,7 @@ describe('PaymentCrud.create', () => {
     vi.mocked(PgPaymentRepository.create).mockResolvedValue(payment);
 
     const result = await PaymentCrud.create(STORE_ID, {
-      orderId: 'order-1',
+      orderId: 1,
       amount: 30,
       method: 'cash',
       notes: 'Partial payment',

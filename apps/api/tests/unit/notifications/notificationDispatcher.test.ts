@@ -37,7 +37,7 @@ describe('NotificationDispatcher', () => {
       { userId: 'u1', name: 'User', email: 'u@test.com', phone: null, channelEmail: true, channelSms: false },
     ]);
 
-    const event: DomainEvent = { eventName: 'order.created', payload: { orderId: 'o1' }, timestamp: new Date() };
+    const event: DomainEvent = { eventName: 'order.created', payload: { orderId: 1 }, timestamp: new Date() };
     await dispatcher.dispatch(event);
 
     expect(mockEmailNotifier.send).toHaveBeenCalledOnce();
@@ -49,7 +49,7 @@ describe('NotificationDispatcher', () => {
       { userId: 'u1', name: 'User', email: 'u@test.com', phone: '054-1234567', channelEmail: false, channelSms: true },
     ]);
 
-    const event: DomainEvent = { eventName: 'order.created', payload: { orderId: 'o1' }, timestamp: new Date() };
+    const event: DomainEvent = { eventName: 'order.created', payload: { orderId: 1 }, timestamp: new Date() };
     await dispatcher.dispatch(event);
 
     expect(mockSmsNotifier.send).toHaveBeenCalledOnce();

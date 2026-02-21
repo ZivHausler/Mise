@@ -48,7 +48,7 @@ import { OrderCrud } from '../../../src/modules/orders/orderCrud.js';
 import { UpdateOrderStatusUseCase } from '../../../src/modules/orders/use-cases/updateOrderStatus.js';
 import { getEventBus } from '../../../src/core/events/event-bus.js';
 
-const STORE_ID = 'store-1';
+const STORE_ID = 1;
 
 describe('OrderService', () => {
   let service: OrderService;
@@ -67,7 +67,7 @@ describe('OrderService', () => {
       vi.mocked(OrderCrud.create).mockResolvedValue(order);
 
       await service.create(STORE_ID, {
-        customerId: 'cust-1',
+        customerId: 1,
         items: [{ recipeId: 'r1', quantity: 2 }],
       });
 
@@ -94,7 +94,7 @@ describe('OrderService', () => {
       // Recreate service to pick up the new mock
       service = new OrderService();
 
-      const result = await service.updateStatus(STORE_ID, 'order-1', ORDER_STATUS.IN_PROGRESS);
+      const result = await service.updateStatus(STORE_ID, 1, ORDER_STATUS.IN_PROGRESS);
 
       expect(result.status).toBe(ORDER_STATUS.IN_PROGRESS);
       expect(eventBus.publish).not.toHaveBeenCalled();
@@ -106,14 +106,14 @@ describe('OrderService', () => {
       const order = createOrder();
       vi.mocked(OrderCrud.getById).mockResolvedValue(order);
 
-      const result = await service.getById(STORE_ID, 'order-1');
+      const result = await service.getById(STORE_ID, 1);
       expect(result).toEqual(order);
     });
 
     it('should throw NotFoundError when order not found', async () => {
       vi.mocked(OrderCrud.getById).mockResolvedValue(null);
 
-      await expect(service.getById(STORE_ID, 'nonexistent')).rejects.toThrow(NotFoundError);
+      await expect(service.getById(STORE_ID, 999)).rejects.toThrow(NotFoundError);
     });
   });
 });

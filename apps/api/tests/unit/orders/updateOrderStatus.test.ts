@@ -22,7 +22,7 @@ vi.mock('../../../src/modules/orders/orderCrud.js', () => ({
 
 import { OrderCrud } from '../../../src/modules/orders/orderCrud.js';
 
-const STORE_ID = 'store-1';
+const STORE_ID = 1;
 
 describe('UpdateOrderStatusUseCase', () => {
   let useCase: UpdateOrderStatusUseCase;
@@ -38,18 +38,18 @@ describe('UpdateOrderStatusUseCase', () => {
     vi.mocked(OrderCrud.getById).mockResolvedValue(existing);
     vi.mocked(OrderCrud.updateStatus).mockResolvedValue(updated);
 
-    const result = await useCase.execute(STORE_ID, 'order-1', ORDER_STATUS.IN_PROGRESS);
+    const result = await useCase.execute(STORE_ID, 1, ORDER_STATUS.IN_PROGRESS);
 
     expect(result.order.status).toBe(ORDER_STATUS.IN_PROGRESS);
     expect(result.previousStatus).toBe(ORDER_STATUS.RECEIVED);
-    expect(OrderCrud.updateStatus).toHaveBeenCalledWith(STORE_ID, 'order-1', ORDER_STATUS.IN_PROGRESS);
+    expect(OrderCrud.updateStatus).toHaveBeenCalledWith(STORE_ID, 1, ORDER_STATUS.IN_PROGRESS);
   });
 
   it('should transition from in_progress to ready', async () => {
     vi.mocked(OrderCrud.getById).mockResolvedValue(createOrder({ status: ORDER_STATUS.IN_PROGRESS }));
     vi.mocked(OrderCrud.updateStatus).mockResolvedValue(createOrder({ status: ORDER_STATUS.READY }));
 
-    const result = await useCase.execute(STORE_ID, 'order-1', ORDER_STATUS.READY);
+    const result = await useCase.execute(STORE_ID, 1, ORDER_STATUS.READY);
     expect(result.order.status).toBe(ORDER_STATUS.READY);
     expect(result.previousStatus).toBe(ORDER_STATUS.IN_PROGRESS);
   });
@@ -58,7 +58,7 @@ describe('UpdateOrderStatusUseCase', () => {
     vi.mocked(OrderCrud.getById).mockResolvedValue(createOrder({ status: ORDER_STATUS.READY }));
     vi.mocked(OrderCrud.updateStatus).mockResolvedValue(createOrder({ status: ORDER_STATUS.DELIVERED }));
 
-    const result = await useCase.execute(STORE_ID, 'order-1', ORDER_STATUS.DELIVERED);
+    const result = await useCase.execute(STORE_ID, 1, ORDER_STATUS.DELIVERED);
     expect(result.order.status).toBe(ORDER_STATUS.DELIVERED);
     expect(result.previousStatus).toBe(ORDER_STATUS.READY);
   });
@@ -67,7 +67,7 @@ describe('UpdateOrderStatusUseCase', () => {
     vi.mocked(OrderCrud.getById).mockResolvedValue(createOrder({ status: ORDER_STATUS.RECEIVED }));
 
     await expect(
-      useCase.execute(STORE_ID, 'order-1', ORDER_STATUS.READY),
+      useCase.execute(STORE_ID, 1, ORDER_STATUS.READY),
     ).rejects.toThrow(ValidationError);
   });
 
@@ -75,7 +75,7 @@ describe('UpdateOrderStatusUseCase', () => {
     vi.mocked(OrderCrud.getById).mockResolvedValue(createOrder({ status: ORDER_STATUS.RECEIVED }));
 
     await expect(
-      useCase.execute(STORE_ID, 'order-1', ORDER_STATUS.DELIVERED),
+      useCase.execute(STORE_ID, 1, ORDER_STATUS.DELIVERED),
     ).rejects.toThrow(ValidationError);
   });
 
@@ -83,7 +83,7 @@ describe('UpdateOrderStatusUseCase', () => {
     vi.mocked(OrderCrud.getById).mockResolvedValue(null);
 
     await expect(
-      useCase.execute(STORE_ID, 'nonexistent', ORDER_STATUS.IN_PROGRESS),
+      useCase.execute(STORE_ID, 999, ORDER_STATUS.IN_PROGRESS),
     ).rejects.toThrow(NotFoundError);
   });
 });

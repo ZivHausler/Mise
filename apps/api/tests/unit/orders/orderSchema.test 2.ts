@@ -3,7 +3,7 @@ import { createRecurringOrderSchema, updateOrderSchema } from '../../../src/modu
 
 describe('createRecurringOrderSchema', () => {
   const validInput = {
-    customerId: 1,
+    customerId: '550e8400-e29b-41d4-a716-446655440000',
     items: [{ recipeId: 'r1', quantity: 2 }],
     dueDate: '2025-03-01',
     recurrence: {

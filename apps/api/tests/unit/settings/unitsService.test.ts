@@ -15,7 +15,7 @@ vi.mock('../../../src/modules/settings/units/unitsCrud.js', () => ({
 
 import { UnitsCrud } from '../../../src/modules/settings/units/unitsCrud.js';
 
-const STORE_ID = 'store-1';
+const STORE_ID = 1;
 
 const createUnit = (overrides?: any) => ({
   id: 'unit-1',
@@ -86,7 +86,7 @@ describe('UnitsService', () => {
 
       await expect(
         service.createUnit(STORE_ID, {
-          categoryId: 'nonexistent',
+          categoryId: 999,
           name: 'Test',
           abbreviation: 'tst',
           conversionFactor: 1,
@@ -108,7 +108,7 @@ describe('UnitsService', () => {
     it('should throw NotFoundError when unit not found', async () => {
       vi.mocked(UnitsCrud.getById).mockResolvedValue(null);
 
-      await expect(service.updateUnit('nonexistent', STORE_ID, { name: 'x' })).rejects.toThrow(NotFoundError);
+      await expect(service.updateUnit(999, STORE_ID, { name: 'x' })).rejects.toThrow(NotFoundError);
     });
 
     it('should throw ForbiddenError when unit is default', async () => {
@@ -118,7 +118,7 @@ describe('UnitsService', () => {
     });
 
     it('should throw ForbiddenError when unit belongs to another store', async () => {
-      vi.mocked(UnitsCrud.getById).mockResolvedValue(createUnit({ storeId: 'other-store' }));
+      vi.mocked(UnitsCrud.getById).mockResolvedValue(createUnit({ storeId: 999 }));
 
       await expect(service.updateUnit('unit-1', STORE_ID, { name: 'x' })).rejects.toThrow(ForbiddenError);
     });
@@ -135,7 +135,7 @@ describe('UnitsService', () => {
     it('should throw NotFoundError when unit not found', async () => {
       vi.mocked(UnitsCrud.getById).mockResolvedValue(null);
 
-      await expect(service.deleteUnit('nonexistent', STORE_ID)).rejects.toThrow(NotFoundError);
+      await expect(service.deleteUnit(999, STORE_ID)).rejects.toThrow(NotFoundError);
     });
 
     it('should throw ForbiddenError when unit is default', async () => {
@@ -145,7 +145,7 @@ describe('UnitsService', () => {
     });
 
     it('should throw ForbiddenError when unit belongs to another store', async () => {
-      vi.mocked(UnitsCrud.getById).mockResolvedValue(createUnit({ storeId: 'other-store' }));
+      vi.mocked(UnitsCrud.getById).mockResolvedValue(createUnit({ storeId: 999 }));
 
       await expect(service.deleteUnit('unit-1', STORE_ID)).rejects.toThrow(ForbiddenError);
     });
