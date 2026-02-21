@@ -24,12 +24,12 @@ import { useSelectStore, useAllStores } from '@/api/hooks';
 
 const navItems = [
   { path: '/', icon: LayoutDashboard, labelKey: 'nav.dashboard', tourId: 'sidebar-dashboard' },
-  { path: '/orders', icon: ClipboardList, labelKey: 'nav.orders', tourId: 'sidebar-orders' },
-  { path: '/production', icon: Factory, labelKey: 'nav.production', tourId: 'sidebar-production' },
-  { path: '/recipes', icon: BookOpen, labelKey: 'nav.recipes', tourId: 'sidebar-recipes' },
   { path: '/inventory', icon: Package, labelKey: 'nav.inventory', tourId: 'sidebar-inventory' },
+  { path: '/recipes', icon: BookOpen, labelKey: 'nav.recipes', tourId: 'sidebar-recipes' },
   { path: '/customers', icon: Users, labelKey: 'nav.customers', tourId: 'sidebar-customers' },
+  { path: '/orders', icon: ClipboardList, labelKey: 'nav.orders', tourId: 'sidebar-orders' },
   { path: '/payments', icon: CreditCard, labelKey: 'nav.payments', tourId: 'sidebar-payments' },
+  { path: '/production', icon: Factory, labelKey: 'nav.production', tourId: 'sidebar-production' },
 ];
 
 const bottomItems = [
