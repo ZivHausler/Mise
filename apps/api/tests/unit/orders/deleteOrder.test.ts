@@ -17,7 +17,7 @@ vi.mock('../../../src/modules/orders/order.repository.js', () => ({
 
 import { PgOrderRepository } from '../../../src/modules/orders/order.repository.js';
 
-const STORE_ID = 'store-1';
+const STORE_ID = 1;
 
 describe('OrderCrud.delete', () => {
   beforeEach(() => {
@@ -27,7 +27,7 @@ describe('OrderCrud.delete', () => {
   it('should delegate delete to PgOrderRepository', async () => {
     vi.mocked(PgOrderRepository.delete).mockResolvedValue(undefined);
 
-    await expect(OrderCrud.delete(STORE_ID, 'order-1')).resolves.toBeUndefined();
-    expect(PgOrderRepository.delete).toHaveBeenCalledWith(STORE_ID, 'order-1');
+    await expect(OrderCrud.delete(STORE_ID, 1)).resolves.toBeUndefined();
+    expect(PgOrderRepository.delete).toHaveBeenCalledWith(STORE_ID, 1);
   });
 });

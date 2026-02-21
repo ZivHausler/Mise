@@ -14,7 +14,7 @@ vi.mock('../../../src/modules/payments/payment.repository.js', () => ({
 
 import { PgPaymentRepository } from '../../../src/modules/payments/payment.repository.js';
 
-const STORE_ID = 'store-1';
+const STORE_ID = 1;
 
 describe('PaymentCrud.delete', () => {
   beforeEach(() => {
@@ -24,7 +24,7 @@ describe('PaymentCrud.delete', () => {
   it('should delete a payment', async () => {
     vi.mocked(PgPaymentRepository.delete).mockResolvedValue(undefined);
 
-    await expect(PaymentCrud.delete(STORE_ID, 'pay-1')).resolves.toBeUndefined();
-    expect(PgPaymentRepository.delete).toHaveBeenCalledWith(STORE_ID, 'pay-1');
+    await expect(PaymentCrud.delete(STORE_ID, 1)).resolves.toBeUndefined();
+    expect(PgPaymentRepository.delete).toHaveBeenCalledWith(STORE_ID, 1);
   });
 });

@@ -43,7 +43,7 @@ vi.mock('@mise/shared/src/constants/index.js', () => ({
 
 import { OrderCrud } from '../../../src/modules/orders/orderCrud.js';
 
-const STORE_ID = 'store-1';
+const STORE_ID = 1;
 
 describe('OrderService.getByCustomerId', () => {
   let service: OrderService;
@@ -55,21 +55,21 @@ describe('OrderService.getByCustomerId', () => {
 
   it('should return orders for a customer', async () => {
     const orders = [
-      createOrder({ id: 'o1', customerId: 'cust-1' }),
-      createOrder({ id: 'o2', customerId: 'cust-1' }),
+      createOrder({ id: 1, customerId: 1 }),
+      createOrder({ id: 2, customerId: 1 }),
     ];
     vi.mocked(OrderCrud.findByCustomerId).mockResolvedValue({ orders, total: 2 });
 
-    const result = await service.getByCustomerId(STORE_ID, 'cust-1');
+    const result = await service.getByCustomerId(STORE_ID, 1);
 
     expect(result.orders).toHaveLength(2);
-    expect(OrderCrud.findByCustomerId).toHaveBeenCalledWith(STORE_ID, 'cust-1', undefined, undefined);
+    expect(OrderCrud.findByCustomerId).toHaveBeenCalledWith(STORE_ID, 1, undefined, undefined);
   });
 
   it('should return empty array when customer has no orders', async () => {
     vi.mocked(OrderCrud.findByCustomerId).mockResolvedValue({ orders: [], total: 0 });
 
-    const result = await service.getByCustomerId(STORE_ID, 'cust-no-orders');
+    const result = await service.getByCustomerId(STORE_ID, 999);
 
     expect(result.orders).toEqual([]);
   });

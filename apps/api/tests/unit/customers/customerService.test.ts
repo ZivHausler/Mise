@@ -17,7 +17,7 @@ vi.mock('../../../src/modules/customers/customerCrud.js', () => ({
 
 import { CustomerCrud } from '../../../src/modules/customers/customerCrud.js';
 
-const STORE_ID = 'store-1';
+const STORE_ID = 1;
 
 describe('CustomerService', () => {
   let service: CustomerService;
@@ -32,21 +32,21 @@ describe('CustomerService', () => {
       const customer = createCustomer();
       vi.mocked(CustomerCrud.getById).mockResolvedValue(customer);
 
-      const result = await service.getById('cust-1', STORE_ID);
+      const result = await service.getById(1, STORE_ID);
       expect(result).toEqual(customer);
-      expect(CustomerCrud.getById).toHaveBeenCalledWith('cust-1', STORE_ID);
+      expect(CustomerCrud.getById).toHaveBeenCalledWith(1, STORE_ID);
     });
 
     it('should throw NotFoundError when customer not found', async () => {
       vi.mocked(CustomerCrud.getById).mockResolvedValue(null);
 
-      await expect(service.getById('nonexistent', STORE_ID)).rejects.toThrow(NotFoundError);
+      await expect(service.getById(999, STORE_ID)).rejects.toThrow(NotFoundError);
     });
   });
 
   describe('getAll', () => {
     it('should return all customers', async () => {
-      const customers = [createCustomer({ id: 'c1' }), createCustomer({ id: 'c2' })];
+      const customers = [createCustomer({ id: 1 }), createCustomer({ id: 2 })];
       vi.mocked(CustomerCrud.getAll).mockResolvedValue(customers);
 
       const result = await service.getAll(STORE_ID);
@@ -110,31 +110,31 @@ describe('CustomerService', () => {
       vi.mocked(CustomerCrud.findByPhone).mockResolvedValue(null);
       vi.mocked(CustomerCrud.update).mockResolvedValue({ ...customer, name: 'Updated' });
 
-      const result = await service.update('cust-1', STORE_ID, { name: 'Updated', phone: '054-9999999' });
+      const result = await service.update(1, STORE_ID, { name: 'Updated', phone: '054-9999999' });
       expect(result.name).toBe('Updated');
     });
 
     it('should throw NotFoundError when customer not found', async () => {
       vi.mocked(CustomerCrud.getById).mockResolvedValue(null);
 
-      await expect(service.update('nonexistent', STORE_ID, { name: 'x' })).rejects.toThrow(NotFoundError);
+      await expect(service.update(999, STORE_ID, { name: 'x' })).rejects.toThrow(NotFoundError);
     });
 
     it('should throw ConflictError when phone conflicts with another customer', async () => {
       vi.mocked(CustomerCrud.getById).mockResolvedValue(createCustomer());
-      vi.mocked(CustomerCrud.findByPhone).mockResolvedValue(createCustomer({ id: 'other' }));
+      vi.mocked(CustomerCrud.findByPhone).mockResolvedValue(createCustomer({ id: 999 }));
 
       await expect(
-        service.update('cust-1', STORE_ID, { phone: '054-9999999' }),
+        service.update(1, STORE_ID, { phone: '054-9999999' }),
       ).rejects.toThrow(ConflictError);
     });
 
     it('should throw ConflictError when email conflicts with another customer', async () => {
       vi.mocked(CustomerCrud.getById).mockResolvedValue(createCustomer());
-      vi.mocked(CustomerCrud.findByEmail).mockResolvedValue(createCustomer({ id: 'other' }));
+      vi.mocked(CustomerCrud.findByEmail).mockResolvedValue(createCustomer({ id: 999 }));
 
       await expect(
-        service.update('cust-1', STORE_ID, { email: 'taken@example.com' }),
+        service.update(1, STORE_ID, { email: 'taken@example.com' }),
       ).rejects.toThrow(ConflictError);
     });
   });
@@ -144,13 +144,13 @@ describe('CustomerService', () => {
       vi.mocked(CustomerCrud.getById).mockResolvedValue(createCustomer());
       vi.mocked(CustomerCrud.delete).mockResolvedValue(undefined);
 
-      await expect(service.delete('cust-1', STORE_ID)).resolves.toBeUndefined();
+      await expect(service.delete(1, STORE_ID)).resolves.toBeUndefined();
     });
 
     it('should throw NotFoundError when customer not found', async () => {
       vi.mocked(CustomerCrud.getById).mockResolvedValue(null);
 
-      await expect(service.delete('nonexistent', STORE_ID)).rejects.toThrow(NotFoundError);
+      await expect(service.delete(999, STORE_ID)).rejects.toThrow(NotFoundError);
     });
   });
 });

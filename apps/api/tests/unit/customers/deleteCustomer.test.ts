@@ -15,7 +15,7 @@ vi.mock('../../../src/modules/customers/customer.repository.js', () => ({
 
 import { PgCustomerRepository } from '../../../src/modules/customers/customer.repository.js';
 
-const STORE_ID = 'store-1';
+const STORE_ID = 1;
 
 describe('CustomerCrud.delete', () => {
   beforeEach(() => {
@@ -25,7 +25,7 @@ describe('CustomerCrud.delete', () => {
   it('should delete a customer', async () => {
     vi.mocked(PgCustomerRepository.delete).mockResolvedValue(undefined);
 
-    await expect(CustomerCrud.delete('cust-1', STORE_ID)).resolves.toBeUndefined();
-    expect(PgCustomerRepository.delete).toHaveBeenCalledWith('cust-1', STORE_ID);
+    await expect(CustomerCrud.delete(1, STORE_ID)).resolves.toBeUndefined();
+    expect(PgCustomerRepository.delete).toHaveBeenCalledWith(1, STORE_ID);
   });
 });

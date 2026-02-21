@@ -23,8 +23,8 @@ vi.mock('../../../src/modules/orders/order.repository.js', () => ({
 import { LoyaltyCrud } from '../../../src/modules/loyalty/loyaltyCrud.js';
 import { PgOrderRepository } from '../../../src/modules/orders/order.repository.js';
 
-const STORE_ID = 1;
-const CUSTOMER_ID = 1;
+const STORE_ID = 'store-1';
+const CUSTOMER_ID = 'cust-1';
 
 describe('LoyaltyService', () => {
   let service: LoyaltyService;
@@ -39,7 +39,7 @@ describe('LoyaltyService', () => {
       vi.mocked(PgOrderRepository.findByIdInternal).mockResolvedValue({ storeId: STORE_ID, customerId: CUSTOMER_ID });
       vi.mocked(LoyaltyCrud.getConfig).mockResolvedValue(null);
 
-      await service.awardPointsForPayment(1, 1, 100);
+      await service.awardPointsForPayment('pay-1', 'order-1', 100);
 
       expect(LoyaltyCrud.updateCustomerBalance).not.toHaveBeenCalled();
     });
@@ -47,13 +47,13 @@ describe('LoyaltyService', () => {
     it('should award correct points when config is active', async () => {
       vi.mocked(PgOrderRepository.findByIdInternal).mockResolvedValue({ storeId: STORE_ID, customerId: CUSTOMER_ID });
       vi.mocked(LoyaltyCrud.getConfig).mockResolvedValue({
-        id: 1, storeId: STORE_ID, isActive: true, pointsPerShekel: 2, pointValue: 0.1, minRedeemPoints: 0,
+        id: 'cfg-1', storeId: STORE_ID, isActive: true, pointsPerShekel: 2, pointValue: 0.1, minRedeemPoints: 0,
         createdAt: new Date(), updatedAt: new Date(),
       });
       vi.mocked(LoyaltyCrud.updateCustomerBalance).mockResolvedValue(200);
       vi.mocked(LoyaltyCrud.createTransaction).mockResolvedValue({} as any);
 
-      await service.awardPointsForPayment(1, 1, 100);
+      await service.awardPointsForPayment('pay-1', 'order-1', 100);
 
       expect(LoyaltyCrud.updateCustomerBalance).toHaveBeenCalledWith(STORE_ID, CUSTOMER_ID, 200);
       expect(LoyaltyCrud.createTransaction).toHaveBeenCalledWith(STORE_ID, expect.objectContaining({
@@ -67,7 +67,7 @@ describe('LoyaltyService', () => {
     it('should do nothing when order not found', async () => {
       vi.mocked(PgOrderRepository.findByIdInternal).mockResolvedValue(null);
 
-      await service.awardPointsForPayment(1, 1, 100);
+      await service.awardPointsForPayment('pay-1', 'order-1', 100);
 
       expect(LoyaltyCrud.getConfig).not.toHaveBeenCalled();
     });
@@ -78,7 +78,7 @@ describe('LoyaltyService', () => {
       vi.mocked(PgOrderRepository.findByIdInternal).mockResolvedValue({ storeId: STORE_ID, customerId: CUSTOMER_ID });
       vi.mocked(LoyaltyCrud.findTransactionByPaymentId).mockResolvedValue(null);
 
-      await service.deductPointsForRefund(1, 1, 100);
+      await service.deductPointsForRefund('pay-1', 'order-1', 100);
 
       expect(LoyaltyCrud.updateCustomerBalance).not.toHaveBeenCalled();
     });
@@ -86,14 +86,14 @@ describe('LoyaltyService', () => {
     it('should cap deduction at current balance', async () => {
       vi.mocked(PgOrderRepository.findByIdInternal).mockResolvedValue({ storeId: STORE_ID, customerId: CUSTOMER_ID });
       vi.mocked(LoyaltyCrud.findTransactionByPaymentId).mockResolvedValue({
-        id: 1, storeId: STORE_ID, customerId: CUSTOMER_ID, paymentId: 1,
+        id: 'tx-1', storeId: STORE_ID, customerId: CUSTOMER_ID, paymentId: 'pay-1',
         type: 'earned', points: 100, balanceAfter: 100, description: null, createdAt: new Date(),
       });
       vi.mocked(LoyaltyCrud.getCustomerBalance).mockResolvedValue({ balance: 30, lifetimeEarned: 100, lifetimeRedeemed: 70 });
       vi.mocked(LoyaltyCrud.updateCustomerBalance).mockResolvedValue(0);
       vi.mocked(LoyaltyCrud.createTransaction).mockResolvedValue({} as any);
 
-      await service.deductPointsForRefund(1, 1, 100);
+      await service.deductPointsForRefund('pay-1', 'order-1', 100);
 
       expect(LoyaltyCrud.updateCustomerBalance).toHaveBeenCalledWith(STORE_ID, CUSTOMER_ID, -30);
     });
@@ -135,7 +135,7 @@ describe('LoyaltyService', () => {
 
     it('should throw when insufficient balance', async () => {
       vi.mocked(LoyaltyCrud.getConfig).mockResolvedValue({
-        id: 1, storeId: STORE_ID, isActive: true, pointsPerShekel: 1, pointValue: 0.1, minRedeemPoints: 0,
+        id: 'cfg-1', storeId: STORE_ID, isActive: true, pointsPerShekel: 1, pointValue: 0.1, minRedeemPoints: 0,
         createdAt: new Date(), updatedAt: new Date(),
       });
       vi.mocked(LoyaltyCrud.getCustomerBalance).mockResolvedValue({ balance: 30, lifetimeEarned: 30, lifetimeRedeemed: 0 });
@@ -145,7 +145,7 @@ describe('LoyaltyService', () => {
 
     it('should throw when below minimum redeem threshold', async () => {
       vi.mocked(LoyaltyCrud.getConfig).mockResolvedValue({
-        id: 1, storeId: STORE_ID, isActive: true, pointsPerShekel: 1, pointValue: 0.1, minRedeemPoints: 100,
+        id: 'cfg-1', storeId: STORE_ID, isActive: true, pointsPerShekel: 1, pointValue: 0.1, minRedeemPoints: 100,
         createdAt: new Date(), updatedAt: new Date(),
       });
       vi.mocked(LoyaltyCrud.getCustomerBalance).mockResolvedValue({ balance: 200, lifetimeEarned: 200, lifetimeRedeemed: 0 });
@@ -155,7 +155,7 @@ describe('LoyaltyService', () => {
 
     it('should redeem successfully and return shekelValue', async () => {
       vi.mocked(LoyaltyCrud.getConfig).mockResolvedValue({
-        id: 1, storeId: STORE_ID, isActive: true, pointsPerShekel: 1, pointValue: 0.1, minRedeemPoints: 0,
+        id: 'cfg-1', storeId: STORE_ID, isActive: true, pointsPerShekel: 1, pointValue: 0.1, minRedeemPoints: 0,
         createdAt: new Date(), updatedAt: new Date(),
       });
       vi.mocked(LoyaltyCrud.getCustomerBalance).mockResolvedValue({ balance: 100, lifetimeEarned: 100, lifetimeRedeemed: 0 });
@@ -180,7 +180,7 @@ describe('LoyaltyService', () => {
 
     it('should return existing config', async () => {
       const config = {
-        id: 1, storeId: STORE_ID, isActive: true, pointsPerShekel: 2, pointValue: 0.5, minRedeemPoints: 10,
+        id: 'cfg-1', storeId: STORE_ID, isActive: true, pointsPerShekel: 2, pointValue: 0.5, minRedeemPoints: 10,
         createdAt: new Date(), updatedAt: new Date(),
       };
       vi.mocked(LoyaltyCrud.getConfig).mockResolvedValue(config);
@@ -194,7 +194,7 @@ describe('LoyaltyService', () => {
   describe('upsertConfig', () => {
     it('should delegate to crud', async () => {
       const config = {
-        id: 1, storeId: STORE_ID, isActive: true, pointsPerShekel: 2, pointValue: 0.5, minRedeemPoints: 10,
+        id: 'cfg-1', storeId: STORE_ID, isActive: true, pointsPerShekel: 2, pointValue: 0.5, minRedeemPoints: 10,
         createdAt: new Date(), updatedAt: new Date(),
       };
       vi.mocked(LoyaltyCrud.upsertConfig).mockResolvedValue(config);

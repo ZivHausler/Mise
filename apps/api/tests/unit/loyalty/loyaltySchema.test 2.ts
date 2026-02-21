@@ -1,48 +1,46 @@
 import { describe, it, expect } from 'vitest';
 import { adjustLoyaltySchema, redeemLoyaltySchema, updateLoyaltyConfigSchema } from '../../../src/modules/loyalty/loyalty.schema.js';
 
-const VALID_CUSTOMER_ID = 1;
+const VALID_UUID = 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11';
 
 describe('adjustLoyaltySchema', () => {
   it('should accept valid positive adjustment', () => {
-    const result = adjustLoyaltySchema.parse({ customerId: VALID_CUSTOMER_ID, points: 50 });
-    expect(result.customerId).toBe(VALID_CUSTOMER_ID);
+    const result = adjustLoyaltySchema.parse({ customerId: VALID_UUID, points: 50 });
+    expect(result.customerId).toBe(VALID_UUID);
     expect(result.points).toBe(50);
     expect(result.description).toBeUndefined();
   });
 
   it('should accept valid negative adjustment', () => {
-    const result = adjustLoyaltySchema.parse({ customerId: VALID_CUSTOMER_ID, points: -30 });
+    const result = adjustLoyaltySchema.parse({ customerId: VALID_UUID, points: -30 });
     expect(result.points).toBe(-30);
   });
 
   it('should accept optional description', () => {
-    const result = adjustLoyaltySchema.parse({ customerId: VALID_CUSTOMER_ID, points: 10, description: 'bonus points' });
+    const result = adjustLoyaltySchema.parse({ customerId: VALID_UUID, points: 10, description: 'bonus points' });
     expect(result.description).toBe('bonus points');
   });
 
   it('should reject zero points', () => {
-    expect(() => adjustLoyaltySchema.parse({ customerId: VALID_CUSTOMER_ID, points: 0 })).toThrow();
+    expect(() => adjustLoyaltySchema.parse({ customerId: VALID_UUID, points: 0 })).toThrow();
   });
 
   it('should reject non-integer points', () => {
-    expect(() => adjustLoyaltySchema.parse({ customerId: VALID_CUSTOMER_ID, points: 3.5 })).toThrow();
+    expect(() => adjustLoyaltySchema.parse({ customerId: VALID_UUID, points: 3.5 })).toThrow();
   });
 
-  it('should reject invalid customerId', () => {
-    expect(() => adjustLoyaltySchema.parse({ customerId: 'not-a-number', points: 10 })).toThrow();
-    expect(() => adjustLoyaltySchema.parse({ customerId: -1, points: 10 })).toThrow();
-    expect(() => adjustLoyaltySchema.parse({ customerId: 0, points: 10 })).toThrow();
+  it('should reject invalid UUID', () => {
+    expect(() => adjustLoyaltySchema.parse({ customerId: 'not-uuid', points: 10 })).toThrow();
   });
 
   it('should reject description longer than 500 characters', () => {
     expect(() =>
-      adjustLoyaltySchema.parse({ customerId: VALID_CUSTOMER_ID, points: 10, description: 'x'.repeat(501) }),
+      adjustLoyaltySchema.parse({ customerId: VALID_UUID, points: 10, description: 'x'.repeat(501) }),
     ).toThrow();
   });
 
   it('should accept description of exactly 500 characters', () => {
-    const result = adjustLoyaltySchema.parse({ customerId: VALID_CUSTOMER_ID, points: 10, description: 'x'.repeat(500) });
+    const result = adjustLoyaltySchema.parse({ customerId: VALID_UUID, points: 10, description: 'x'.repeat(500) });
     expect(result.description).toHaveLength(500);
   });
 
@@ -51,36 +49,35 @@ describe('adjustLoyaltySchema', () => {
   });
 
   it('should reject missing points', () => {
-    expect(() => adjustLoyaltySchema.parse({ customerId: VALID_CUSTOMER_ID })).toThrow();
+    expect(() => adjustLoyaltySchema.parse({ customerId: VALID_UUID })).toThrow();
   });
 });
 
 describe('redeemLoyaltySchema', () => {
   it('should accept valid redemption', () => {
-    const result = redeemLoyaltySchema.parse({ customerId: VALID_CUSTOMER_ID, points: 100 });
-    expect(result.customerId).toBe(VALID_CUSTOMER_ID);
+    const result = redeemLoyaltySchema.parse({ customerId: VALID_UUID, points: 100 });
+    expect(result.customerId).toBe(VALID_UUID);
     expect(result.points).toBe(100);
   });
 
   it('should reject zero points', () => {
-    expect(() => redeemLoyaltySchema.parse({ customerId: VALID_CUSTOMER_ID, points: 0 })).toThrow();
+    expect(() => redeemLoyaltySchema.parse({ customerId: VALID_UUID, points: 0 })).toThrow();
   });
 
   it('should reject negative points', () => {
-    expect(() => redeemLoyaltySchema.parse({ customerId: VALID_CUSTOMER_ID, points: -10 })).toThrow();
+    expect(() => redeemLoyaltySchema.parse({ customerId: VALID_UUID, points: -10 })).toThrow();
   });
 
   it('should reject non-integer points', () => {
-    expect(() => redeemLoyaltySchema.parse({ customerId: VALID_CUSTOMER_ID, points: 5.5 })).toThrow();
+    expect(() => redeemLoyaltySchema.parse({ customerId: VALID_UUID, points: 5.5 })).toThrow();
   });
 
-  it('should reject invalid customerId', () => {
+  it('should reject invalid UUID', () => {
     expect(() => redeemLoyaltySchema.parse({ customerId: 'bad', points: 10 })).toThrow();
-    expect(() => redeemLoyaltySchema.parse({ customerId: -1, points: 10 })).toThrow();
   });
 
   it('should accept large point values', () => {
-    const result = redeemLoyaltySchema.parse({ customerId: VALID_CUSTOMER_ID, points: 999999 });
+    const result = redeemLoyaltySchema.parse({ customerId: VALID_UUID, points: 999999 });
     expect(result.points).toBe(999999);
   });
 });

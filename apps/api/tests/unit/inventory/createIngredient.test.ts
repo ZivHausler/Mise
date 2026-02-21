@@ -18,7 +18,7 @@ vi.mock('../../../src/modules/inventory/inventory.repository.js', () => ({
 
 import { PgInventoryRepository } from '../../../src/modules/inventory/inventory.repository.js';
 
-const STORE_ID = 'store-1';
+const STORE_ID = 1;
 
 describe('InventoryCrud.create', () => {
   beforeEach(() => {

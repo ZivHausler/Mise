@@ -118,7 +118,7 @@ describe('AdminService', () => {
       const members = [{ userId: 'u1', email: 'a@b.com', name: 'A', role: 1, joinedAt: new Date() }];
       vi.mocked(PgAdminRepository.getStoreMembers).mockResolvedValue(members);
 
-      const res = await service.getStoreMembers('store-1');
+      const res = await service.getStoreMembers(1);
       expect(res).toEqual(members);
     });
   });
@@ -127,11 +127,11 @@ describe('AdminService', () => {
     it('should update store when data is provided', async () => {
       vi.mocked(PgAdminRepository.updateStore).mockResolvedValue(undefined);
 
-      await expect(service.updateStore('store-1', { name: 'New Name' })).resolves.toBeUndefined();
+      await expect(service.updateStore(1, { name: 'New Name' })).resolves.toBeUndefined();
     });
 
     it('should throw ValidationError when no fields provided', async () => {
-      await expect(service.updateStore('store-1', {})).rejects.toThrow(ValidationError);
+      await expect(service.updateStore(1, {})).rejects.toThrow(ValidationError);
     });
   });
 

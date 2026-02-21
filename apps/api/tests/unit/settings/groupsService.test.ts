@@ -14,7 +14,7 @@ vi.mock('../../../src/modules/settings/groups/groupsCrud.js', () => ({
 
 import { GroupsCrud } from '../../../src/modules/settings/groups/groupsCrud.js';
 
-const STORE_ID = 'store-1';
+const STORE_ID = 1;
 
 const createGroup = (overrides?: any) => ({
   id: 'group-1',
@@ -70,7 +70,7 @@ describe('GroupsService', () => {
     it('should throw NotFoundError when group not found', async () => {
       vi.mocked(GroupsCrud.getById).mockResolvedValue(null);
 
-      await expect(service.updateGroup('nonexistent', STORE_ID, { name: 'x' })).rejects.toThrow(NotFoundError);
+      await expect(service.updateGroup(999, STORE_ID, { name: 'x' })).rejects.toThrow(NotFoundError);
     });
 
     it('should throw ForbiddenError when group is default', async () => {
@@ -80,7 +80,7 @@ describe('GroupsService', () => {
     });
 
     it('should throw ForbiddenError when group belongs to another store', async () => {
-      vi.mocked(GroupsCrud.getById).mockResolvedValue(createGroup({ storeId: 'other-store' }));
+      vi.mocked(GroupsCrud.getById).mockResolvedValue(createGroup({ storeId: 999 }));
 
       await expect(service.updateGroup('group-1', STORE_ID, { name: 'x' })).rejects.toThrow(ForbiddenError);
     });
@@ -97,7 +97,7 @@ describe('GroupsService', () => {
     it('should throw NotFoundError when group not found', async () => {
       vi.mocked(GroupsCrud.getById).mockResolvedValue(null);
 
-      await expect(service.deleteGroup('nonexistent', STORE_ID)).rejects.toThrow(NotFoundError);
+      await expect(service.deleteGroup(999, STORE_ID)).rejects.toThrow(NotFoundError);
     });
 
     it('should throw ForbiddenError when group is default', async () => {
@@ -107,7 +107,7 @@ describe('GroupsService', () => {
     });
 
     it('should throw ForbiddenError when group belongs to another store', async () => {
-      vi.mocked(GroupsCrud.getById).mockResolvedValue(createGroup({ storeId: 'other-store' }));
+      vi.mocked(GroupsCrud.getById).mockResolvedValue(createGroup({ storeId: 999 }));
 
       await expect(service.deleteGroup('group-1', STORE_ID)).rejects.toThrow(ForbiddenError);
     });

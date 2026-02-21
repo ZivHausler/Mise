@@ -32,7 +32,7 @@ vi.mock('../../../src/modules/shared/unitConversion.js', () => ({
 
 import { RecipeCrud } from '../../../src/modules/recipes/recipeCrud.js';
 
-const STORE_ID = 'store-1';
+const STORE_ID = 1;
 
 describe('RecipeService', () => {
   let service: RecipeService;

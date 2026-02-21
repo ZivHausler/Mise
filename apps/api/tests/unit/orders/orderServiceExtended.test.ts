@@ -47,7 +47,7 @@ vi.mock('../../../src/modules/shared/unitConversion.js', () => ({
 import { OrderCrud } from '../../../src/modules/orders/orderCrud.js';
 import { getEventBus } from '../../../src/core/events/event-bus.js';
 
-const STORE_ID = 'store-1';
+const STORE_ID = 1;
 
 describe('OrderService - extended', () => {
   let service: OrderService;
@@ -62,7 +62,7 @@ describe('OrderService - extended', () => {
 
   describe('getAll', () => {
     it('should return all orders', async () => {
-      const orders = [createOrder({ id: 'o1' }), createOrder({ id: 'o2' })];
+      const orders = [createOrder({ id: 1 }), createOrder({ id: 2 })];
       vi.mocked(OrderCrud.getAll).mockResolvedValue(orders);
 
       const result = await service.getAll(STORE_ID);
@@ -82,7 +82,7 @@ describe('OrderService - extended', () => {
       const result = { orders: [createOrder()], total: 1 };
       vi.mocked(OrderCrud.findByCustomerId).mockResolvedValue(result);
 
-      const res = await service.getByCustomerId(STORE_ID, 'cust-1', { limit: 10, offset: 0 });
+      const res = await service.getByCustomerId(STORE_ID, 1, { limit: 10, offset: 0 });
       expect(res.orders).toHaveLength(1);
       expect(res.total).toBe(1);
     });
@@ -125,14 +125,14 @@ describe('OrderService - extended', () => {
       vi.mocked(OrderCrud.getById).mockResolvedValue(order);
       vi.mocked(OrderCrud.update).mockResolvedValue({ ...order, totalAmount: 200 });
 
-      const result = await service.update(STORE_ID, 'order-1', { totalAmount: 200 } as any);
+      const result = await service.update(STORE_ID, 1, { totalAmount: 200 } as any);
       expect(result.totalAmount).toBe(200);
     });
 
     it('should throw NotFoundError when order not found', async () => {
       vi.mocked(OrderCrud.getById).mockResolvedValue(null);
 
-      await expect(service.update(STORE_ID, 'nonexistent', {})).rejects.toThrow(NotFoundError);
+      await expect(service.update(STORE_ID, 999, {})).rejects.toThrow(NotFoundError);
     });
   });
 
@@ -141,19 +141,19 @@ describe('OrderService - extended', () => {
       vi.mocked(OrderCrud.getById).mockResolvedValue(createOrder({ status: ORDER_STATUS.IN_PROGRESS }));
       vi.mocked(OrderCrud.delete).mockResolvedValue(undefined);
 
-      await expect(service.delete(STORE_ID, 'order-1')).resolves.toBeUndefined();
+      await expect(service.delete(STORE_ID, 1)).resolves.toBeUndefined();
     });
 
     it('should throw NotFoundError when order not found', async () => {
       vi.mocked(OrderCrud.getById).mockResolvedValue(null);
 
-      await expect(service.delete(STORE_ID, 'nonexistent')).rejects.toThrow(NotFoundError);
+      await expect(service.delete(STORE_ID, 999)).rejects.toThrow(NotFoundError);
     });
 
     it('should throw ValidationError when order status is received', async () => {
       vi.mocked(OrderCrud.getById).mockResolvedValue(createOrder({ status: ORDER_STATUS.RECEIVED }));
 
-      await expect(service.delete(STORE_ID, 'order-1')).rejects.toThrow(ValidationError);
+      await expect(service.delete(STORE_ID, 1)).rejects.toThrow(ValidationError);
     });
   });
 });
