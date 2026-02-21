@@ -11,7 +11,7 @@ export class AdminService {
     return PgAdminRepository.getUsers(page, limit, search, includeAdmins);
   }
 
-  async toggleAdmin(currentUserId: string, targetUserId: string, isAdmin: boolean): Promise<void> {
+  async toggleAdmin(currentUserId: number, targetUserId: number, isAdmin: boolean): Promise<void> {
     if (currentUserId === targetUserId) {
       throw new ForbiddenError('Cannot change your own admin status');
     }
@@ -23,7 +23,7 @@ export class AdminService {
     await PgAdminRepository.toggleAdmin(targetUserId, isAdmin);
   }
 
-  async toggleDisabled(currentUserId: string, targetUserId: string, disabled: boolean): Promise<void> {
+  async toggleDisabled(currentUserId: number, targetUserId: number, disabled: boolean): Promise<void> {
     if (currentUserId === targetUserId) {
       throw new ForbiddenError('Cannot disable your own account');
     }
@@ -39,11 +39,11 @@ export class AdminService {
     return PgAdminRepository.getStores(page, limit, search);
   }
 
-  async getStoreMembers(storeId: string) {
+  async getStoreMembers(storeId: number) {
     return PgAdminRepository.getStoreMembers(storeId);
   }
 
-  async updateStore(storeId: string, data: { name?: string; address?: string }): Promise<void> {
+  async updateStore(storeId: number, data: { name?: string; address?: string }): Promise<void> {
     if (!data.name && !data.address) {
       throw new ValidationError('At least one field must be provided');
     }
@@ -53,7 +53,7 @@ export class AdminService {
   async getInvitations(
     page: number,
     limit: number,
-    filters: { status?: string; search?: string; storeId?: string; userId?: string; role?: string; dateFrom?: string; dateTo?: string },
+    filters: { status?: string; search?: string; storeId?: number; userId?: number; role?: string; dateFrom?: string; dateTo?: string },
   ): Promise<PaginatedResult<AdminInvitation>> {
     if (filters.status && !['pending', 'used', 'expired', 'revoked'].includes(filters.status)) {
       throw new ValidationError('Invalid status filter');
@@ -68,7 +68,7 @@ export class AdminService {
     return PgAdminRepository.createCreateStoreInvitation(email);
   }
 
-  async revokeInvitation(invitationId: string): Promise<void> {
+  async revokeInvitation(invitationId: number): Promise<void> {
     const invitation = await PgAdminRepository.findInvitationById(invitationId);
     if (!invitation) throw new NotFoundError('Invitation not found');
     if (invitation.usedAt) throw new ValidationError('Cannot revoke a used invitation');
@@ -79,16 +79,16 @@ export class AdminService {
   async getAuditLog(
     page: number,
     limit: number,
-    filters: { userId?: string; method?: string; statusCode?: string; dateFrom?: string; dateTo?: string; search?: string; since?: string; excludeIds?: string[] },
+    filters: { userId?: number; method?: string; statusCode?: string; dateFrom?: string; dateTo?: string; search?: string; since?: string; excludeIds?: string[] },
   ): Promise<PaginatedResult<AdminAuditEntry>> {
     return PgAdminRepository.getAuditLog(page, limit, filters);
   }
 
-  async getAuditLogRequestBody(auditLogId: string): Promise<unknown | null> {
+  async getAuditLogRequestBody(auditLogId: number): Promise<unknown | null> {
     return PgAdminRepository.getAuditLogRequestBody(auditLogId);
   }
 
-  async getAuditLogResponseBody(auditLogId: string): Promise<unknown | null> {
+  async getAuditLogResponseBody(auditLogId: number): Promise<unknown | null> {
     return PgAdminRepository.getAuditLogResponseBody(auditLogId);
   }
 

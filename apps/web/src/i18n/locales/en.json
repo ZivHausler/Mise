@@ -197,7 +197,14 @@
     "emptyDesc": "Add your first recipe to get started.",
     "deleteTitle": "Delete Recipe?",
     "deleteMsg": "This action cannot be undone.",
-    "qty": "Qty"
+    "qty": "Qty",
+    "photos": "Photos",
+    "addPhoto": "Add Photo",
+    "removePhoto": "Remove Photo",
+    "uploadingPhoto": "Uploading...",
+    "photoLimitReached": "Maximum photos reached",
+    "invalidFileType": "Only JPEG, PNG, and WebP are allowed",
+    "fileTooLarge": "File must be under 5 MB"
   },
   "inventory": {
     "name": "Name",

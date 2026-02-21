@@ -38,5 +38,8 @@ docker-compose.override.yml
 env.yaml
 *-key.json
 
+# Local uploads (dev)
+uploads/
+
 # Misc
 *.tsbuildinfo

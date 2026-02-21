@@ -281,15 +281,15 @@ export default function InventoryPage() {
               />
             </div>
             <div className="flex items-center gap-2">
-              {((groups ?? []) as { id: string; name: string; color?: string | null; icon?: string | null; isDefault?: boolean }[]).length > 0 && (
+              {((groups ?? []) as { id: number; name: string; color?: string | null; icon?: string | null; isDefault?: boolean }[]).length > 0 && (
                 <FilterDropdown
                   label={t('inventory.groups', 'Groups')}
                   count={selectedGroupIds.length}
                 >
-                  {((groups ?? []) as { id: string; name: string; color?: string | null; icon?: string | null; isDefault?: boolean }[]).map((g) => {
-                    const selected = selectedGroupIds.includes(g.id);
+                  {((groups ?? []) as { id: number; name: string; color?: string | null; icon?: string | null; isDefault?: boolean }[]).map((g) => {
+                    const selected = selectedGroupIds.includes(String(g.id));
                     return (
-                      <button key={g.id} type="button" onClick={() => toggleGroup(g.id)}
+                      <button key={String(g.id)} type="button" onClick={() => toggleGroup(String(g.id))}
                         className={`flex w-full items-center gap-2 rounded-md px-3 py-2 text-body-sm transition-colors ${selected ? 'bg-primary-50 text-primary-700' : 'text-neutral-700 hover:bg-neutral-50'}`}>
                         <span className={`flex h-4 w-4 items-center justify-center rounded border ${selected ? 'border-primary-500 bg-primary-500 text-white' : 'border-neutral-300'}`}>
                           {selected && <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>}
@@ -374,14 +374,14 @@ export default function InventoryPage() {
         <Stack gap={4}>
           <TextInput label={t('inventory.name', 'Name')} value={newItem.name} onChange={(e) => setNewItem({ ...newItem, name: e.target.value })} required dir="auto" />
           <TextInput label={t('inventory.category', 'Category')} value={newItem.category} onChange={(e) => setNewItem({ ...newItem, category: e.target.value })} dir="auto" />
-          {((groups ?? []) as { id: string; name: string; color?: string | null; isDefault?: boolean }[]).length > 0 && (
+          {((groups ?? []) as { id: number; name: string; color?: string | null; isDefault?: boolean }[]).length > 0 && (
             <div>
               <label className="mb-1 block text-body-sm font-semibold text-neutral-700">{t('inventory.groups', 'Groups')}</label>
               <div className="flex flex-wrap gap-2">
-                {((groups ?? []) as { id: string; name: string; color?: string | null; icon?: string | null; isDefault?: boolean }[]).map((g) => {
-                  const selected = newItem.groupIds.includes(g.id);
+                {((groups ?? []) as { id: number; name: string; color?: string | null; icon?: string | null; isDefault?: boolean }[]).map((g) => {
+                  const selected = newItem.groupIds.includes(String(g.id));
                   return (
-                    <button key={g.id} type="button" onClick={() => setNewItem((prev) => ({ ...prev, groupIds: selected ? prev.groupIds.filter((id) => id !== g.id) : [...prev.groupIds, g.id] }))}
+                    <button key={String(g.id)} type="button" onClick={() => setNewItem((prev) => ({ ...prev, groupIds: selected ? prev.groupIds.filter((id) => id !== String(g.id)) : [...prev.groupIds, String(g.id)] }))}
                       className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-body-sm transition-colors ${selected ? 'border-primary-300 bg-primary-50 text-primary-700' : 'border-neutral-200 text-neutral-600 hover:bg-neutral-50'}`}>
                       <GroupIcon icon={g.icon ?? null} color={g.color ?? null} size={12} />
                       {getGroupName(g)}

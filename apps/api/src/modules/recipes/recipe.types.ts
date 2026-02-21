@@ -49,6 +49,7 @@ export interface CreateRecipeDTO {
   sellingPrice?: number;
   notes?: string;
   variations?: string[];
+  photos?: string[];
 }
 
 export interface UpdateRecipeDTO extends Partial<CreateRecipeDTO> {}

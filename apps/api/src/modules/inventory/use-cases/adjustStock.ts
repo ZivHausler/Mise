@@ -5,8 +5,8 @@ import { NotFoundError, ValidationError } from '../../../core/errors/app-error.j
 import { getEventBus } from '../../../core/events/event-bus.js';
 import { EventNames } from '../../../core/events/event-names.js';
 
-export class AdjustStockUseCase implements UseCase<Ingredient, [string, AdjustStockDTO]> {
-  async execute(storeId: string, data: AdjustStockDTO, correlationId?: string): Promise<Ingredient> {
+export class AdjustStockUseCase implements UseCase<Ingredient, [number, AdjustStockDTO]> {
+  async execute(storeId: number, data: AdjustStockDTO, correlationId?: string): Promise<Ingredient> {
     const existing = await InventoryCrud.getById(storeId, data.ingredientId);
     if (!existing) {
       throw new NotFoundError('Ingredient not found');

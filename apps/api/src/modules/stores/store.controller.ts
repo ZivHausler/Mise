@@ -33,7 +33,7 @@ export class StoreController {
     const userId = request.currentUser!.userId;
     const email = request.currentUser!.email;
     const isAdmin = request.currentUser!.isAdmin;
-    const { storeId } = request.body as { storeId: string };
+    const { storeId } = request.body as { storeId: number };
     const result = await this.storeService.selectStore(userId, email, storeId, isAdmin);
     return reply.send({ success: true, data: result });
   }

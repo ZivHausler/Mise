@@ -8,7 +8,7 @@ import { useCreateCustomer, useCustomer } from '@/api/hooks';
 
 interface Conflict {
   field: 'phone' | 'email';
-  customerId: string;
+  customerId: number;
 }
 
 interface NewCustomerModalProps {
@@ -26,8 +26,8 @@ export function NewCustomerModal({ open, onClose, onCreated, allowUseExisting = 
   const [selectedConflictIdx, setSelectedConflictIdx] = useState<number | null>(null);
 
   // Fetch customer data for each conflict
-  const { data: conflictCustomer0 } = useCustomer(conflicts[0]?.customerId ?? '');
-  const { data: conflictCustomer1 } = useCustomer(conflicts[1]?.customerId ?? '');
+  const { data: conflictCustomer0 } = useCustomer(conflicts[0]?.customerId ?? 0);
+  const { data: conflictCustomer1 } = useCustomer(conflicts[1]?.customerId ?? 0);
   const conflictCustomers = [conflictCustomer0, conflictCustomer1].filter(Boolean);
 
   const resetAndClose = useCallback(() => {

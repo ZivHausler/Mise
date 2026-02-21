@@ -68,7 +68,7 @@ export default function AdminInvitationsPage() {
   const [page, setPage] = useState(1);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [newEmail, setNewEmail] = useState('');
-  const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [copiedId, setCopiedId] = useState<number | null>(null);
 
   const [search, setSearch] = useState('');
   const [storeIdFilter, setStoreIdFilter] = useState('');
@@ -107,13 +107,14 @@ export default function AdminInvitationsPage() {
     }
   };
 
-  const handleRevoke = (id: string) => {
+  const handleRevoke = (id: number) => {
     if (confirm(t('admin.invitations.revokeConfirm'))) {
       revokeInvite.mutate(id);
     }
   };
 
-  const handleCopyLink = (inv: { id: string; token: string }) => {
+  const handleCopyLink = (inv: { id: number; token?: string }) => {
+    if (!inv.token) return;
     const link = `${window.location.origin}/invite/${inv.token}`;
     navigator.clipboard.writeText(link).then(() => {
       setCopiedId(inv.id);
@@ -167,7 +168,7 @@ export default function AdminInvitationsPage() {
             <InvFilterDropdown label={t('admin.invitations.email')} count={userFilterCount}>
               {[
                 { value: '', label: t('admin.invitations.status.all') },
-                ...(usersData?.items?.map((u) => ({ value: u.id, label: u.email })) ?? []),
+                ...(usersData?.items?.map((u) => ({ value: String(u.id), label: u.email })) ?? []),
               ].map((opt) => (
                 <button key={opt.value} type="button" onClick={() => { setUserIdFilter(opt.value); setPage(1); }}
                   className={`flex w-full items-center gap-2 rounded-md px-3 py-2 text-body-sm transition-colors truncate ${userIdFilter === opt.value ? 'bg-primary-50 text-primary-700 dark:bg-neutral-700 dark:text-primary-300' : 'text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-700'}`}>
@@ -178,7 +179,7 @@ export default function AdminInvitationsPage() {
             <InvFilterDropdown label={t('admin.invitations.store')} count={storeFilterCount}>
               {[
                 { value: '', label: t('admin.invitations.status.all') },
-                ...(storesData?.items?.map((s) => ({ value: s.id, label: s.name })) ?? []),
+                ...(storesData?.items?.map((s) => ({ value: String(s.id), label: s.name })) ?? []),
               ].map((opt) => (
                 <button key={opt.value} type="button" onClick={() => { setStoreIdFilter(opt.value); setPage(1); }}
                   className={`flex w-full items-center gap-2 rounded-md px-3 py-2 text-body-sm transition-colors truncate ${storeIdFilter === opt.value ? 'bg-primary-50 text-primary-700 dark:bg-neutral-700 dark:text-primary-300' : 'text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-700'}`}>
@@ -255,7 +256,7 @@ export default function AdminInvitationsPage() {
                 <tr><td colSpan={6} className="px-3 py-8 text-center text-body-sm text-neutral-400">{t('admin.invitations.noInvitations')}</td></tr>
               ) : (
                 data?.items?.map((inv, i) => (
-                  <tr key={inv.id} className={`border-b border-neutral-100 dark:border-neutral-700 transition-colors hover:bg-primary-50 dark:hover:bg-neutral-700 ${i % 2 === 1 ? 'bg-neutral-50 dark:bg-neutral-800/50' : ''}`}>
+                  <tr key={String(inv.id)} className={`border-b border-neutral-100 dark:border-neutral-700 transition-colors hover:bg-primary-50 dark:hover:bg-neutral-700 ${i % 2 === 1 ? 'bg-neutral-50 dark:bg-neutral-800/50' : ''}`}>
                     <td className="px-3 py-2 text-body-sm text-neutral-900 dark:text-neutral-100">{inv.email}</td>
                     <td className="px-3 py-2 text-body-sm text-neutral-600 dark:text-neutral-400">{inv.storeName ?? t('admin.invitations.createStoreType')}</td>
                     <td className="px-3 py-2 text-body-sm text-neutral-600 dark:text-neutral-400">{ROLE_LABELS[inv.role] ?? 'Unknown'}</td>

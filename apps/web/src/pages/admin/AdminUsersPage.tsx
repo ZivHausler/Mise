@@ -15,14 +15,14 @@ export default function AdminUsersPage() {
   const toggleAdmin = useAdminToggleAdmin();
   const toggleDisabled = useAdminToggleDisabled();
 
-  const handleToggleAdmin = (userId: string, currentIsAdmin: boolean) => {
+  const handleToggleAdmin = (userId: number, currentIsAdmin: boolean) => {
     const action = currentIsAdmin ? t('admin.users.demoteConfirm') : t('admin.users.promoteConfirm');
     if (confirm(action)) {
       toggleAdmin.mutate({ userId, isAdmin: !currentIsAdmin });
     }
   };
 
-  const handleToggleDisabled = (userId: string, currentlyDisabled: boolean) => {
+  const handleToggleDisabled = (userId: number, currentlyDisabled: boolean) => {
     const action = currentlyDisabled ? t('admin.users.enableConfirm') : t('admin.users.disableConfirm');
     if (confirm(action)) {
       toggleDisabled.mutate({ userId, disabled: !currentlyDisabled });

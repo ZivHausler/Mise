@@ -1,13 +1,13 @@
 import { z } from 'zod';
 
 export const adjustLoyaltySchema = z.object({
-  customerId: z.string().uuid(),
+  customerId: z.coerce.number().int().positive(),
   points: z.number().int().refine((v) => v !== 0, { message: 'Points must be nonzero' }),
   description: z.string().max(500).optional(),
 });
 
 export const redeemLoyaltySchema = z.object({
-  customerId: z.string().uuid(),
+  customerId: z.coerce.number().int().positive(),
   points: z.number().int().positive(),
 });
 

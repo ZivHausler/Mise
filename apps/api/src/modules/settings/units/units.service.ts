@@ -7,11 +7,11 @@ export class UnitsService {
     return UnitsCrud.getCategories();
   }
 
-  async listUnits(storeId: string): Promise<Unit[]> {
+  async listUnits(storeId: number): Promise<Unit[]> {
     return UnitsCrud.getAll(storeId);
   }
 
-  async createUnit(storeId: string, data: CreateUnitDTO): Promise<Unit> {
+  async createUnit(storeId: number, data: CreateUnitDTO): Promise<Unit> {
     // Business rule: validate category exists
     const categories = await UnitsCrud.getCategories();
     const categoryExists = categories.some((c) => c.id === data.categoryId);
@@ -21,7 +21,7 @@ export class UnitsService {
     return UnitsCrud.create(storeId, data);
   }
 
-  async updateUnit(unitId: string, storeId: string, data: UpdateUnitDTO): Promise<Unit> {
+  async updateUnit(unitId: number, storeId: number, data: UpdateUnitDTO): Promise<Unit> {
     const unit = await UnitsCrud.getById(unitId, storeId);
     if (!unit) throw new NotFoundError('Unit not found');
     if (unit.isDefault) throw new ForbiddenError('Cannot modify default units');
@@ -29,7 +29,7 @@ export class UnitsService {
     return UnitsCrud.update(unitId, storeId, data);
   }
 
-  async deleteUnit(unitId: string, storeId: string): Promise<void> {
+  async deleteUnit(unitId: number, storeId: number): Promise<void> {
     const unit = await UnitsCrud.getById(unitId, storeId);
     if (!unit) throw new NotFoundError('Unit not found');
     if (unit.isDefault) throw new ForbiddenError('Cannot delete default units');

@@ -13,25 +13,25 @@ const DEFAULT_CONFIG: Omit<LoyaltyConfig, 'id' | 'storeId' | 'createdAt' | 'upda
 };
 
 export class LoyaltyService {
-  async getConfig(storeId: string): Promise<LoyaltyConfig | (typeof DEFAULT_CONFIG & { storeId: string })> {
+  async getConfig(storeId: number): Promise<LoyaltyConfig | (typeof DEFAULT_CONFIG & { storeId: number })> {
     const config = await LoyaltyCrud.getConfig(storeId);
     if (config) return config;
     return { ...DEFAULT_CONFIG, storeId };
   }
 
-  async upsertConfig(storeId: string, data: UpsertLoyaltyConfigDTO): Promise<LoyaltyConfig> {
+  async upsertConfig(storeId: number, data: UpsertLoyaltyConfigDTO): Promise<LoyaltyConfig> {
     return LoyaltyCrud.upsertConfig(storeId, data);
   }
 
-  async getCustomerBalance(storeId: string, customerId: string): Promise<CustomerLoyaltySummary> {
+  async getCustomerBalance(storeId: number, customerId: number): Promise<CustomerLoyaltySummary> {
     return LoyaltyCrud.getCustomerBalance(storeId, customerId);
   }
 
-  async getCustomerTransactions(storeId: string, customerId: string, options?: PaginationOptions): Promise<PaginatedResult<LoyaltyTransaction>> {
+  async getCustomerTransactions(storeId: number, customerId: number, options?: PaginationOptions): Promise<PaginatedResult<LoyaltyTransaction>> {
     return LoyaltyCrud.getTransactionsByCustomer(storeId, customerId, options);
   }
 
-  async awardPointsForPayment(paymentId: string, orderId: string, amount: number): Promise<void> {
+  async awardPointsForPayment(paymentId: number, orderId: number, amount: number): Promise<void> {
     const order = await PgOrderRepository.findByIdInternal(orderId);
     if (!order) return;
 
@@ -52,7 +52,7 @@ export class LoyaltyService {
     });
   }
 
-  async deductPointsForRefund(paymentId: string, orderId: string, amount: number): Promise<void> {
+  async deductPointsForRefund(paymentId: number, orderId: number, amount: number): Promise<void> {
     const order = await PgOrderRepository.findByIdInternal(orderId);
     if (!order) return;
 
@@ -74,7 +74,7 @@ export class LoyaltyService {
     });
   }
 
-  async adjustPoints(storeId: string, customerId: string, points: number, description?: string): Promise<LoyaltyTransaction> {
+  async adjustPoints(storeId: number, customerId: number, points: number, description?: string): Promise<LoyaltyTransaction> {
     if (points < 0) {
       const summary = await LoyaltyCrud.getCustomerBalance(storeId, customerId);
       if (summary.balance + points < 0) {
@@ -92,7 +92,7 @@ export class LoyaltyService {
     });
   }
 
-  async redeemPoints(storeId: string, customerId: string, points: number): Promise<{ pointsRedeemed: number; shekelValue: number }> {
+  async redeemPoints(storeId: number, customerId: number, points: number): Promise<{ pointsRedeemed: number; shekelValue: number }> {
     const config = await LoyaltyCrud.getConfig(storeId);
     if (!config || !config.isActive) {
       throw new ValidationError('Loyalty program is not active');

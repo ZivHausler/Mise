@@ -5,7 +5,7 @@ import { cn } from '@/utils/cn';
 
 interface TimelineBlockProps {
   batch: {
-    id: string;
+    id: number;
     recipeName: string;
     quantity: number;
     stage: number;

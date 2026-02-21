@@ -27,14 +27,14 @@ export class UnitsController {
     const storeId = request.currentUser!.storeId!;
     const { id } = request.params as { id: string };
     const data = updateUnitSchema.parse(request.body);
-    const unit = await this.unitsService.updateUnit(id, storeId, data);
+    const unit = await this.unitsService.updateUnit(Number(id), storeId, data);
     return reply.send({ success: true, data: unit });
   }
 
   async delete(request: FastifyRequest, reply: FastifyReply) {
     const storeId = request.currentUser!.storeId!;
     const { id } = request.params as { id: string };
-    await this.unitsService.deleteUnit(id, storeId);
+    await this.unitsService.deleteUnit(Number(id), storeId);
     return reply.status(204).send();
   }
 }

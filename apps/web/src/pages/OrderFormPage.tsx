@@ -7,10 +7,11 @@ import { useOrder } from '@/api/hooks';
 
 export default function OrderFormPage() {
   const { id } = useParams<{ id: string }>();
+  const numId = id ? Number(id) : 0;
   const isEdit = !!id;
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { data: existingOrder } = useOrder(id ?? '');
+  const { data: existingOrder } = useOrder(numId);
 
   return (
     <Page>

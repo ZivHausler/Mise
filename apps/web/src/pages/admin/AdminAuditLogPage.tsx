@@ -7,10 +7,10 @@ import { Button } from '@/components/Button';
 import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 
 type AuditEntry = {
-  id: string;
-  userId: string;
+  id: number;
+  userId: number;
   userEmail: string;
-  storeId: string | null;
+  storeId: number | null;
   method: string;
   path: string;
   statusCode: number;
@@ -78,7 +78,7 @@ function UserFilterDropdown({
 }: {
   label: string;
   count: number;
-  users: { id: string; email: string }[];
+  users: { id: number; email: string }[];
   userId: string;
   onSelect: (value: string) => void;
   allUsersLabel: string;
@@ -119,10 +119,10 @@ function UserFilterDropdown({
         )}
         {filteredUsers.map((user) => (
           <button
-            key={user.id}
+            key={String(user.id)}
             type="button"
-            onClick={() => { onSelect(user.id); setUserSearch(''); }}
-            className={`flex w-full items-center gap-2 rounded-md px-3 py-2 text-body-sm transition-colors ${userId === user.id ? 'bg-primary-50 text-primary-700 dark:bg-neutral-700 dark:text-primary-300' : 'text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-700'}`}
+            onClick={() => { onSelect(String(user.id)); setUserSearch(''); }}
+            className={`flex w-full items-center gap-2 rounded-md px-3 py-2 text-body-sm transition-colors ${userId === String(user.id) ? 'bg-primary-50 text-primary-700 dark:bg-neutral-700 dark:text-primary-300' : 'text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-700'}`}
           >
             {user.email}
           </button>
@@ -323,12 +323,12 @@ export default function AdminAuditLogPage() {
               ) : (
                 displayItems.map((entry, i) => (
                   <tr
-                    key={entry.id}
+                    key={String(entry.id)}
                     className={`group/row border-b border-neutral-100 dark:border-neutral-700 transition-colors hover:bg-primary-50 dark:hover:bg-neutral-700 cursor-pointer ${i % 2 === 1 ? 'bg-neutral-50 dark:bg-neutral-800/50' : ''}`}
                     onClick={() => setSelectedEntry(entry as AuditEntry)}
                   >
                     <td className={`sticky start-0 z-10 px-3 py-2 text-body-sm text-neutral-900 dark:text-neutral-100 ${i % 2 === 1 ? 'bg-neutral-50 dark:bg-neutral-800' : 'bg-white dark:bg-neutral-800'} group-hover/row:bg-primary-50 dark:group-hover/row:bg-neutral-700 transition-colors`}>{entry.userEmail}</td>
-                    <td className="px-3 py-2 text-body-sm text-neutral-500 dark:text-neutral-400 font-mono">{entry.userId.slice(0, 8)}...</td>
+                    <td className="px-3 py-2 text-body-sm text-neutral-500 dark:text-neutral-400 font-mono">{entry.userId}</td>
                     <td className="px-3 py-2">
                       <span className={`inline-flex px-2 py-0.5 rounded text-caption font-mono font-medium ${methodColor(entry.method)}`}>{entry.method}</span>
                     </td>

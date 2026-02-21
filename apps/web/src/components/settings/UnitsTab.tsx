@@ -9,10 +9,10 @@ import { Spinner } from '@/components/Feedback';
 import { useUnits, useUnitCategories, useCreateUnit, useUpdateUnit, useDeleteUnit } from '@/api/hooks';
 
 interface UnitItem {
-  id: string;
+  id: number;
   name: string;
   abbreviation: string;
-  categoryId: string;
+  categoryId: number;
   categoryName?: string;
   conversionFactor: number;
   isDefault: boolean;
@@ -27,10 +27,10 @@ export default function UnitsTab() {
   const deleteUnit = useDeleteUnit();
   const [showModal, setShowModal] = useState(false);
   const [editingUnit, setEditingUnit] = useState<UnitItem | null>(null);
-  const [form, setForm] = useState({ name: '', abbreviation: '', categoryId: '', conversionFactor: 1 as number | '' });
+  const [form, setForm] = useState({ name: '', abbreviation: '', categoryId: 0 as number, conversionFactor: 1 as number | '' });
 
   const unitList = (units ?? []) as UnitItem[];
-  const categoryList = (categories ?? []) as { id: string; name: string }[];
+  const categoryList = (categories ?? []) as { id: number; name: string }[];
 
   const grouped = categoryList.map((cat) => ({
     ...cat,
@@ -39,7 +39,7 @@ export default function UnitsTab() {
 
   const openCreate = () => {
     setEditingUnit(null);
-    setForm({ name: '', abbreviation: '', categoryId: categoryList[0]?.id ?? '', conversionFactor: 1 });
+    setForm({ name: '', abbreviation: '', categoryId: categoryList[0]?.id ?? 0, conversionFactor: 1 });
     setShowModal(true);
   };
 
@@ -78,7 +78,7 @@ export default function UnitsTab() {
       </div>
 
       {grouped.map((cat) => (
-        <Card key={cat.id}>
+        <Card key={String(cat.id)}>
           <Section title={categoryLabel(cat.name)}>
             {cat.units.length === 0 ? (
               <p className="text-body-sm text-neutral-400">{t('settings.units.noUnits', 'No units in this category.')}</p>
@@ -95,7 +95,7 @@ export default function UnitsTab() {
                   </thead>
                   <tbody>
                     {cat.units.map((unit) => (
-                      <tr key={unit.id} className="border-b border-neutral-100">
+                      <tr key={String(unit.id)} className="border-b border-neutral-100">
                         <td className="px-3 py-2">
                           <span className="flex items-center gap-2">
                             {unit.name}
@@ -148,9 +148,9 @@ export default function UnitsTab() {
           {!editingUnit && (
             <Select
               label={t('settings.units.category', 'Category')}
-              options={categoryList.map((c) => ({ value: c.id, label: categoryLabel(c.name) }))}
-              value={form.categoryId}
-              onChange={(e) => setForm((f) => ({ ...f, categoryId: e.target.value }))}
+              options={categoryList.map((c) => ({ value: String(c.id), label: categoryLabel(c.name) }))}
+              value={String(form.categoryId)}
+              onChange={(e) => setForm((f) => ({ ...f, categoryId: Number(e.target.value) }))}
             />
           )}
           <TextInput label={t('settings.units.name', 'Name')} value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} placeholder="e.g. Ounce" />

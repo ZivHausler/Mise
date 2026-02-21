@@ -21,7 +21,7 @@ export default function ProductionPage() {
   const setActiveTab = useAppStore((s) => s.setProductionTab);
   const [selectedDate, setSelectedDate] = useState(() => new Date().toISOString().split('T')[0]!);
   const [createModalOpen, setCreateModalOpen] = useState(false);
-  const [selectedBatchId, setSelectedBatchId] = useState<string | null>(null);
+  const [selectedBatchId, setSelectedBatchId] = useState<number | null>(null);
 
   const qc = useQueryClient();
   const { data: batches = [], isLoading } = useProductionBatches(selectedDate);
@@ -29,7 +29,7 @@ export default function ProductionPage() {
   const updateStage = useUpdateBatchStage();
   const hasAutoBatches = (batches as any[]).some((b: any) => b.source === 'auto');
 
-  const handleStageChange = useCallback((id: string, newStage: number) => {
+  const handleStageChange = useCallback((id: number, newStage: number) => {
     // Update cache synchronously BEFORE calling mutate so there's no flicker
     qc.setQueriesData<unknown[]>({ queryKey: ['production', 'batches'] }, (old) =>
       old?.map((b: any) => (b.id === id ? { ...b, stage: newStage } : b)),
@@ -37,6 +37,7 @@ export default function ProductionPage() {
     updateStage.mutate({ id, stage: newStage });
   }, [qc, updateStage]);
 
+  type TabId = 'board' | 'timeline' | 'prepList';
   const tabs: { id: TabId; labelKey: string }[] = [
     { id: 'board', labelKey: 'production.board' },
     { id: 'timeline', labelKey: 'production.timeline' },

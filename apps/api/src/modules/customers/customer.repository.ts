@@ -2,13 +2,13 @@ import type { Customer, CreateCustomerDTO, UpdateCustomerDTO } from './customer.
 import { getPool } from '../../core/database/postgres.js';
 
 export class PgCustomerRepository {
-  static async findById(id: string, storeId: string): Promise<Customer | null> {
+  static async findById(id: number, storeId: number): Promise<Customer | null> {
     const pool = getPool();
     const result = await pool.query('SELECT * FROM customers WHERE id = $1 AND store_id = $2', [id, storeId]);
     return result.rows[0] ? this.mapRow(result.rows[0]) : null;
   }
 
-  static async findAll(storeId: string, search?: string): Promise<Customer[]> {
+  static async findAll(storeId: number, search?: string): Promise<Customer[]> {
     const pool = getPool();
     let query = `SELECT c.*, COUNT(o.id) AS order_count, COALESCE(SUM(o.total_amount), 0) AS total_spent
       FROM customers c
@@ -26,7 +26,7 @@ export class PgCustomerRepository {
     return result.rows.map((r: Record<string, unknown>) => this.mapRow(r));
   }
 
-  static async findByPhone(storeId: string, phone: string, excludeId?: string): Promise<Customer | null> {
+  static async findByPhone(storeId: number, phone: string, excludeId?: number): Promise<Customer | null> {
     const pool = getPool();
     let query = 'SELECT * FROM customers WHERE store_id = $1 AND phone = $2';
     const params: unknown[] = [storeId, phone];
@@ -38,7 +38,7 @@ export class PgCustomerRepository {
     return result.rows[0] ? this.mapRow(result.rows[0]) : null;
   }
 
-  static async findByEmail(storeId: string, email: string, excludeId?: string): Promise<Customer | null> {
+  static async findByEmail(storeId: number, email: string, excludeId?: number): Promise<Customer | null> {
     const pool = getPool();
     let query = 'SELECT * FROM customers WHERE store_id = $1 AND email = $2';
     const params: unknown[] = [storeId, email];
@@ -50,19 +50,19 @@ export class PgCustomerRepository {
     return result.rows[0] ? this.mapRow(result.rows[0]) : null;
   }
 
-  static async create(storeId: string, data: CreateCustomerDTO): Promise<Customer> {
+  static async create(storeId: number, data: CreateCustomerDTO): Promise<Customer> {
     const pool = getPool();
     const prefs = data.preferences ? JSON.stringify(data.preferences) : null;
     const result = await pool.query(
-      `INSERT INTO customers (id, store_id, name, phone, email, address, notes, preferences, created_at, updated_at)
-       VALUES (gen_random_uuid(), $1, $2, $3, $4, $5, $6, $7, NOW(), NOW())
+      `INSERT INTO customers (store_id, name, phone, email, address, notes, preferences, created_at, updated_at)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, NOW(), NOW())
        RETURNING *`,
       [storeId, data.name, data.phone ?? null, data.email ?? null, data.address ?? null, data.notes ?? null, prefs],
     );
     return this.mapRow(result.rows[0]);
   }
 
-  static async update(id: string, storeId: string, data: UpdateCustomerDTO): Promise<Customer> {
+  static async update(id: number, storeId: number, data: UpdateCustomerDTO): Promise<Customer> {
     const pool = getPool();
     const fields: string[] = [];
     const values: unknown[] = [];
@@ -87,7 +87,7 @@ export class PgCustomerRepository {
     return this.mapRow(result.rows[0]);
   }
 
-  static async delete(id: string, storeId: string): Promise<void> {
+  static async delete(id: number, storeId: number): Promise<void> {
     const pool = getPool();
     await pool.query('DELETE FROM customers WHERE id = $1 AND store_id = $2', [id, storeId]);
   }
@@ -102,7 +102,7 @@ export class PgCustomerRepository {
     }
 
     return {
-      id: row['id'] as string,
+      id: Number(row['id']),
       name: row['name'] as string,
       phone: row['phone'] as string,
       email: row['email'] as string | undefined,

@@ -9,7 +9,7 @@ import { useRedeemLoyalty, useLoyaltyConfig } from '@/api/hooks';
 interface RedeemPointsModalProps {
   open: boolean;
   onClose: () => void;
-  customerId: string;
+  customerId: number;
   currentBalance: number;
 }
 

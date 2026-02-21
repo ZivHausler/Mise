@@ -6,7 +6,7 @@ import { STAGE_KEYS } from '@/utils/productionStage';
 import { cn } from '@/utils/cn';
 
 interface BatchData {
-  id: string;
+  id: number;
   recipeId: string;
   recipeName: string;
   quantity: number;
@@ -22,8 +22,8 @@ interface KanbanBoardProps {
   batches: BatchData[];
   isLoading: boolean;
   variant: 'default' | 'kiosk';
-  onBatchClick: (id: string) => void;
-  onAdvance?: (id: string, newStage: number) => void;
+  onBatchClick: (id: number) => void;
+  onAdvance?: (id: number, newStage: number) => void;
 }
 
 export function KanbanBoard({ batches, isLoading, variant, onBatchClick, onAdvance }: KanbanBoardProps) {
@@ -39,10 +39,11 @@ export function KanbanBoard({ batches, isLoading, variant, onBatchClick, onAdvan
     if (!destination || !onAdvance) return;
 
     const newStage = Number(destination.droppableId);
-    const batch = batches.find((b) => b.id === draggableId);
+    const batchId = Number(draggableId);
+    const batch = batches.find((b) => b.id === batchId);
     if (!batch || batch.stage === newStage) return;
 
-    onAdvance(draggableId, newStage);
+    onAdvance(batchId, newStage);
   }, [batches, onAdvance]);
 
   if (isLoading) {

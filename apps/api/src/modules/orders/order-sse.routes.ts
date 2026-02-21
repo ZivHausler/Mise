@@ -16,7 +16,7 @@ export default async function orderSSERoutes(app: FastifyInstance) {
 
   // Subscribe to order.created events and broadcast via SSE
   getEventBus().subscribe(EventNames.ORDER_CREATED, async (event) => {
-    const { orderId, storeId } = event.payload as { orderId: string; storeId: string };
+    const { orderId, storeId } = event.payload as { orderId: number; storeId: number };
     if (!storeId) return;
 
     try {

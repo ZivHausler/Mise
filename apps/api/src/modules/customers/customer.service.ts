@@ -3,19 +3,19 @@ import { CustomerCrud } from './customerCrud.js';
 import { ConflictError, NotFoundError } from '../../core/errors/app-error.js';
 
 export class CustomerService {
-  async getById(id: string, storeId: string): Promise<Customer> {
+  async getById(id: number, storeId: number): Promise<Customer> {
     const customer = await CustomerCrud.getById(id, storeId);
     if (!customer) throw new NotFoundError('Customer not found');
     return customer;
   }
 
-  async getAll(storeId: string, search?: string): Promise<Customer[]> {
+  async getAll(storeId: number, search?: string): Promise<Customer[]> {
     return CustomerCrud.getAll(storeId, search);
   }
 
-  async create(storeId: string, data: CreateCustomerDTO): Promise<Customer> {
+  async create(storeId: number, data: CreateCustomerDTO): Promise<Customer> {
     // Uniqueness checks – collect all conflicts before throwing
-    const conflicts: { field: 'phone' | 'email'; customerId: string }[] = [];
+    const conflicts: { field: 'phone' | 'email'; customerId: number }[] = [];
 
     const existingByPhone = await CustomerCrud.findByPhone(storeId, data.phone);
     if (existingByPhone) {
@@ -40,13 +40,13 @@ export class CustomerService {
     return CustomerCrud.create(storeId, data);
   }
 
-  async update(id: string, storeId: string, data: UpdateCustomerDTO): Promise<Customer> {
+  async update(id: number, storeId: number, data: UpdateCustomerDTO): Promise<Customer> {
     const existing = await CustomerCrud.getById(id, storeId);
     if (!existing) {
       throw new NotFoundError('Customer not found');
     }
     // Uniqueness checks – collect all conflicts before throwing
-    const conflicts: { field: 'phone' | 'email'; customerId: string }[] = [];
+    const conflicts: { field: 'phone' | 'email'; customerId: number }[] = [];
 
     const existingByPhone = data.phone !== undefined
       ? await CustomerCrud.findByPhone(storeId, data.phone, id)
@@ -71,7 +71,7 @@ export class CustomerService {
     return CustomerCrud.update(id, storeId, data);
   }
 
-  async delete(id: string, storeId: string): Promise<void> {
+  async delete(id: number, storeId: number): Promise<void> {
     const existing = await CustomerCrud.getById(id, storeId);
     if (!existing) {
       throw new NotFoundError('Customer not found');

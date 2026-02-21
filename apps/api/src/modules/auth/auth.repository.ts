@@ -4,7 +4,7 @@ import { getPool } from '../../core/database/postgres.js';
 const SELECT_COLS = 'id, email, password_hash, google_id, name, phone, is_admin, created_at, updated_at';
 
 export class PgAuthRepository {
-  static async findById(id: string): Promise<User | null> {
+  static async findById(id: number): Promise<User | null> {
     const pool = getPool();
     const result = await pool.query(
       `SELECT ${SELECT_COLS} FROM users WHERE id = $1`,
@@ -34,15 +34,15 @@ export class PgAuthRepository {
   static async create(data: RegisterDTO & { passwordHash: string }): Promise<User> {
     const pool = getPool();
     const result = await pool.query(
-      `INSERT INTO users (id, email, password_hash, name, created_at, updated_at)
-       VALUES (gen_random_uuid(), $1, $2, $3, NOW(), NOW())
+      `INSERT INTO users (email, password_hash, name, created_at, updated_at)
+       VALUES ($1, $2, $3, NOW(), NOW())
        RETURNING ${SELECT_COLS}`,
       [data.email, data.passwordHash, data.name],
     );
     return this.mapRow(result.rows[0]);
   }
 
-  static async updateProfile(userId: string, data: { name?: string; phone?: string }): Promise<User> {
+  static async updateProfile(userId: number, data: { name?: string; phone?: string }): Promise<User> {
     const pool = getPool();
     const fields: string[] = [];
     const values: unknown[] = [];
@@ -77,15 +77,15 @@ export class PgAuthRepository {
   static async createWithGoogle(data: { email: string; name: string; googleId: string }): Promise<User> {
     const pool = getPool();
     const result = await pool.query(
-      `INSERT INTO users (id, email, google_id, name, created_at, updated_at)
-       VALUES (gen_random_uuid(), $1, $2, $3, NOW(), NOW())
+      `INSERT INTO users (email, google_id, name, created_at, updated_at)
+       VALUES ($1, $2, $3, NOW(), NOW())
        RETURNING ${SELECT_COLS}`,
       [data.email, data.googleId, data.name],
     );
     return this.mapRow(result.rows[0]);
   }
 
-  static async linkGoogle(userId: string, googleId: string): Promise<User> {
+  static async linkGoogle(userId: number, googleId: string): Promise<User> {
     const pool = getPool();
     const result = await pool.query(
       `UPDATE users SET google_id = $1, updated_at = NOW() WHERE id = $2
@@ -95,7 +95,7 @@ export class PgAuthRepository {
     return this.mapRow(result.rows[0]);
   }
 
-  static async setPassword(userId: string, passwordHash: string): Promise<User> {
+  static async setPassword(userId: number, passwordHash: string): Promise<User> {
     const pool = getPool();
     const result = await pool.query(
       `UPDATE users SET password_hash = $1, updated_at = NOW() WHERE id = $2
@@ -107,7 +107,7 @@ export class PgAuthRepository {
 
   private static mapRow(row: Record<string, unknown>): User {
     return {
-      id: row['id'] as string,
+      id: Number(row['id']),
       email: row['email'] as string,
       passwordHash: (row['password_hash'] as string) || null,
       googleId: (row['google_id'] as string) || undefined,

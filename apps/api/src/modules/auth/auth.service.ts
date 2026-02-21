@@ -129,7 +129,7 @@ export class AuthService {
     return { user: this.toPublic(user), token, hasStore: user.isAdmin || stores.length > 0, stores: this.formatStores(stores) };
   }
 
-  async getProfile(userId: string): Promise<UserPublic & { stores: { storeId: string; storeName: string; role: number }[]; hasStore: boolean }> {
+  async getProfile(userId: number): Promise<UserPublic & { stores: { storeId: number; storeName: string; role: number }[]; hasStore: boolean }> {
     const user = await this.getUserProfileUseCase.execute(userId);
     const stores = await PgStoreRepository.getUserStores(userId);
     return {
@@ -148,7 +148,7 @@ export class AuthService {
     }
   }
 
-  async refreshToken(userId: string): Promise<AuthResponse> {
+  async refreshToken(userId: number): Promise<AuthResponse> {
     const user = await this.getUserProfileUseCase.execute(userId);
     const token = await this.generateTokenWithStoreInfo(user);
     const stores = await PgStoreRepository.getUserStores(user.id);
@@ -174,7 +174,7 @@ export class AuthService {
     return this.generateToken(user);
   }
 
-  private generateToken(user: User, storeId?: string, storeRole?: StoreRole): string {
+  private generateToken(user: User, storeId?: number, storeRole?: StoreRole): string {
     const payload: AuthTokenPayload = { userId: user.id, email: user.email, jti: crypto.randomUUID() };
     if (user.isAdmin) {
       payload.isAdmin = true;
@@ -186,7 +186,7 @@ export class AuthService {
     return this.app.jwt.sign(payload, { expiresIn: env.JWT_EXPIRES_IN });
   }
 
-  private formatStores(stores: { storeId: string; storeName: string; role: number }[]) {
+  private formatStores(stores: { storeId: number; storeName: string; role: number }[]) {
     return stores.map((s) => ({ storeId: s.storeId, storeName: s.storeName, role: s.role }));
   }
 
