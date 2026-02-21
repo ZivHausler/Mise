@@ -358,9 +358,9 @@ export class PgAdminRepository {
       totalUsers: usersRes.rows[0].count,
       totalStores: storesRes.rows[0].count,
       activeInvitations: invitesRes.rows[0].count,
-      signupsPerDay: signupsRes.rows.map((row) => ({
-        date: (row.date as Date).toISOString().split('T')[0],
-        count: row.count as number,
+      signupsPerDay: signupsRes.rows.map((row: Record<string, unknown>) => ({
+        date: (row['date'] as Date).toISOString().split('T')[0]!,
+        count: row['count'] as number,
       })),
     };
   }
@@ -388,41 +388,41 @@ export class PgAdminRepository {
 
   private static mapUserRow(row: Record<string, unknown>): AdminUser {
     return {
-      id: row.id as string,
-      email: row.email as string,
-      name: row.name as string,
-      isAdmin: row.is_admin as boolean,
-      disabledAt: row.disabled_at ? new Date(row.disabled_at as string) : null,
-      createdAt: new Date(row.created_at as string),
-      storeCount: (row.store_count as number) ?? 0,
+      id: row['id'] as string,
+      email: row['email'] as string,
+      name: row['name'] as string,
+      isAdmin: row['is_admin'] as boolean,
+      disabledAt: row['disabled_at'] ? new Date(row['disabled_at'] as string) : null,
+      createdAt: new Date(row['created_at'] as string),
+      storeCount: (row['store_count'] as number) ?? 0,
     };
   }
 
   private static mapStoreRow(row: Record<string, unknown>): AdminStore {
     return {
-      id: row.id as string,
-      name: row.name as string,
-      code: (row.code as string) ?? null,
-      address: (row.address as string) ?? null,
-      createdAt: new Date(row.created_at as string),
-      memberCount: (row.member_count as number) ?? 0,
+      id: row['id'] as string,
+      name: row['name'] as string,
+      code: (row['code'] as string) ?? null,
+      address: (row['address'] as string) ?? null,
+      createdAt: new Date(row['created_at'] as string),
+      memberCount: (row['member_count'] as number) ?? 0,
     };
   }
 
   private static mapStoreMemberRow(row: Record<string, unknown>): AdminStoreMember {
     return {
-      userId: row.user_id as string,
-      email: row.email as string,
-      name: row.name as string,
-      role: row.role as number,
-      joinedAt: new Date(row.joined_at as string),
+      userId: row['user_id'] as string,
+      email: row['email'] as string,
+      name: row['name'] as string,
+      role: row['role'] as number,
+      joinedAt: new Date(row['joined_at'] as string),
     };
   }
 
   private static mapInvitationRow(row: Record<string, unknown>): AdminInvitation {
-    const usedAt = row.used_at ? new Date(row.used_at as string) : null;
-    const revokedAt = row.revoked_at ? new Date(row.revoked_at as string) : null;
-    const expiresAt = new Date(row.expires_at as string);
+    const usedAt = row['used_at'] ? new Date(row['used_at'] as string) : null;
+    const revokedAt = row['revoked_at'] ? new Date(row['revoked_at'] as string) : null;
+    const expiresAt = new Date(row['expires_at'] as string);
 
     let status: AdminInvitation['status'] = 'pending';
     if (usedAt) status = 'used';
@@ -430,17 +430,17 @@ export class PgAdminRepository {
     else if (expiresAt <= new Date()) status = 'expired';
 
     return {
-      id: row.id as string,
-      email: row.email as string,
-      storeId: (row.store_id as string) ?? null,
-      storeName: (row.store_name as string) ?? null,
-      role: row.role as number,
-      token: row.token as string,
+      id: row['id'] as string,
+      email: row['email'] as string,
+      storeId: (row['store_id'] as string) ?? null,
+      storeName: (row['store_name'] as string) ?? null,
+      role: row['role'] as number,
+      token: row['token'] as string,
       status,
       expiresAt,
       usedAt,
       revokedAt,
-      createdAt: new Date(row.created_at as string),
+      createdAt: new Date(row['created_at'] as string),
     };
   }
 
@@ -490,15 +490,15 @@ export class PgAdminRepository {
 
   private static mapAuditEntryRow(row: Record<string, unknown>): AdminAuditEntry {
     return {
-      id: row.id as string,
-      userId: row.user_id as string,
-      userEmail: row.user_email as string,
-      storeId: (row.store_id as string) ?? null,
-      method: row.method as string,
-      path: row.path as string,
-      statusCode: row.status_code as number,
-      ip: row.ip as string,
-      createdAt: row.created_at as string,
+      id: row['id'] as string,
+      userId: row['user_id'] as string,
+      userEmail: row['user_email'] as string,
+      storeId: (row['store_id'] as string) ?? null,
+      method: row['method'] as string,
+      path: row['path'] as string,
+      statusCode: row['status_code'] as number,
+      ip: row['ip'] as string,
+      createdAt: row['created_at'] as string,
     };
   }
 }

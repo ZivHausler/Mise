@@ -163,7 +163,7 @@ export class PgOrderRepository {
       [storeId, filters.from, filters.to],
     );
     return result.rows.map((r: Record<string, unknown>) => ({
-      day: (r['day'] as Date).toISOString().split('T')[0],
+      day: (r['day'] as Date).toISOString().split('T')[0]!,
       total: Number(r['total']),
       received: Number(r['received']),
       inProgress: Number(r['in_progress']),

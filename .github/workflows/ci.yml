@@ -59,6 +59,12 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Build shared packages
+        run: pnpm --filter @mise/shared build && pnpm --filter @mise/db build
+
+      - name: Type check
+        run: pnpm --filter @mise/api type-check
+
       - name: Lint
         run: pnpm lint
         continue-on-error: true
