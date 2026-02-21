@@ -45,6 +45,12 @@ vi.mock('../../../src/modules/shared/unitConversion.js', () => ({
   unitConversionFactor: vi.fn().mockReturnValue(1),
 }));
 
+vi.mock('../../../src/core/database/postgres.js', () => ({
+  getPool: vi.fn().mockReturnValue({
+    query: vi.fn().mockResolvedValue({ rows: [{ id: 1 }] }),
+  }),
+}));
+
 import { OrderCrud } from '../../../src/modules/orders/orderCrud.js';
 import { getEventBus } from '../../../src/core/events/event-bus.js';
 
