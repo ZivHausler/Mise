@@ -55,15 +55,15 @@ export default function LoginPage() {
                     updateToken(inviteData.token);
                     setHasStore(true);
                     if (inviteData.stores) setStores(inviteData.stores);
-                    navigate('/');
+                    navigate('/loading');
                   },
                   onError: () => {
-                    navigate(data.hasStore ? '/' : '/store-setup');
+                    navigate(data.hasStore ? '/loading' : '/store-setup');
                   },
                 },
               );
             } else {
-              navigate(data.hasStore ? '/' : '/store-setup');
+              navigate(data.hasStore ? '/loading' : '/store-setup');
             }
           },
           onError: (error: any) => {
@@ -112,15 +112,15 @@ export default function LoginPage() {
                   onSuccess: (inviteData) => {
                     updateToken(inviteData.token);
                     setHasStore(true);
-                    navigate('/');
+                    navigate('/loading');
                   },
                   onError: () => {
-                    navigate(data.hasStore ? '/' : '/store-setup');
+                    navigate(data.hasStore ? '/loading' : '/store-setup');
                   },
                 },
               );
             } else {
-              navigate(data.hasStore ? '/' : '/store-setup');
+              navigate(data.hasStore ? '/loading' : '/store-setup');
             }
           },
           onError: (error: any) => {
@@ -211,7 +211,7 @@ export default function LoginPage() {
             setAuth(data.user, data.token, data.hasStore, data.user?.isAdmin);
             if (data.stores) setStores(data.stores);
             setShowMerge(false);
-            navigate(data.hasStore ? '/' : '/store-setup');
+            navigate(data.hasStore ? '/loading' : '/store-setup');
           }}
           onClose={() => setShowMerge(false)}
         />
