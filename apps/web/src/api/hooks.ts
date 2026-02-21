@@ -42,6 +42,15 @@ async function deleteApi(url: string): Promise<void> {
   await apiClient.delete(url);
 }
 
+// Feature flags
+export function useFeatureFlags() {
+  return useQuery({
+    queryKey: ['features'],
+    queryFn: () => fetchApi<{ production: boolean }>('/features'),
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
 // Auth
 export function useLogin() {
   return useMutation({
@@ -623,7 +632,7 @@ export function useSendInvite() {
 
 export function useAcceptInvite() {
   return useMutation({
-    mutationFn: (body: { token: string }) => postApi<{ token: string; storeId: string; role: number }>('/stores/accept-invite', body),
+    mutationFn: (body: { token: string }) => postApi<{ token: string; storeId: string; role: number; stores: { storeId: string; storeName: string; role: number }[] }>('/stores/accept-invite', body),
   });
 }
 
