@@ -88,7 +88,7 @@ const STATUS_DOT_COLORS: Record<string, string> = {
 // ─── Types ─────────────────────────────────────────────
 
 interface OrderForCalendar {
-  id: string;
+  id: number;
   orderNumber: number;
   customerName?: string;
   status: number;
@@ -104,7 +104,7 @@ interface DayCellProps {
   isCurrentMonth: boolean;
   isToday: boolean;
   orders: OrderForCalendar[];
-  onOrderClick: (id: string) => void;
+  onOrderClick: (id: number) => void;
   onDayClick: (date: Date) => void;
   t: ReturnType<typeof useTranslation>['t'];
 }
@@ -155,7 +155,7 @@ const DayCell = React.memo(function DayCell({ date, isCurrentMonth, isToday, ord
           const label = getStatusLabel(order.status);
           return (
             <button
-              key={order.id}
+              key={String(order.id)}
               onClick={(e) => { if (orders.length === 1) { e.stopPropagation(); onOrderClick(order.id); } }}
               className={cn(
                 'flex w-full items-center gap-1 rounded px-1 py-0.5 text-start text-[11px] leading-tight transition-colors hover:bg-white/80',
@@ -184,7 +184,7 @@ interface DayDetailProps {
   date: Date;
   orders: OrderForCalendar[];
   onClose: () => void;
-  onOrderClick: (id: string) => void;
+  onOrderClick: (id: number) => void;
   onCreateOrder: (dateStr: string) => void;
   t: ReturnType<typeof useTranslation>['t'];
   formatDate: (date: string | Date) => string;
@@ -222,7 +222,7 @@ function DayDetail({ date, orders, onClose, onOrderClick, onCreateOrder, t, form
                 const label = getStatusLabel(order.status);
                 return (
                   <button
-                    key={order.id}
+                    key={String(order.id)}
                     onClick={() => onOrderClick(order.id)}
                     className="flex items-center justify-between rounded-lg border border-neutral-100 p-3 text-start transition-colors hover:bg-neutral-50"
                   >
@@ -439,7 +439,7 @@ export default function OrderCalendar() {
   }, [today, year, month, scrollToToday]);
 
   const handleOrderClick = useCallback(
-    (id: string) => navigate(`/orders/${id}`),
+    (id: number) => navigate(`/orders/${id}`),
     [navigate],
   );
 

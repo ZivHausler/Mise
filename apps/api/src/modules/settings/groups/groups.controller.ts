@@ -22,14 +22,14 @@ export class GroupsController {
     const storeId = request.currentUser!.storeId!;
     const { id } = request.params as { id: string };
     const data = updateGroupSchema.parse(request.body);
-    const group = await this.groupsService.updateGroup(id, storeId, data);
+    const group = await this.groupsService.updateGroup(Number(id), storeId, data);
     return reply.send({ success: true, data: group });
   }
 
   async delete(request: FastifyRequest, reply: FastifyReply) {
     const storeId = request.currentUser!.storeId!;
     const { id } = request.params as { id: string };
-    await this.groupsService.deleteGroup(id, storeId);
+    await this.groupsService.deleteGroup(Number(id), storeId);
     return reply.status(204).send();
   }
 }

@@ -29,7 +29,7 @@ function sanitizeValue(value: unknown): unknown {
  * to prevent NoSQL injection via MongoDB operator injection.
  */
 export async function sanitizeMiddleware(request: FastifyRequest, _reply: FastifyReply) {
-  if (request.body && typeof request.body === 'object') {
+  if (request.body && typeof request.body === 'object' && !Buffer.isBuffer(request.body)) {
     request.body = sanitizeValue(request.body);
   }
 }

@@ -9,7 +9,7 @@ import { useAdjustLoyalty } from '@/api/hooks';
 interface AdjustPointsModalProps {
   open: boolean;
   onClose: () => void;
-  customerId: string;
+  customerId: number;
   currentBalance: number;
 }
 

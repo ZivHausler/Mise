@@ -47,7 +47,7 @@ export default function ProductionKioskPage() {
     }
   }, []);
 
-  const handleAdvance = useCallback((batchId: string, newStage: number) => {
+  const handleAdvance = useCallback((batchId: number, newStage: number) => {
     qc.setQueriesData<unknown[]>({ queryKey: ['production', 'batches'] }, (old) =>
       old?.map((b: any) => (b.id === batchId ? { ...b, stage: newStage } : b)),
     );

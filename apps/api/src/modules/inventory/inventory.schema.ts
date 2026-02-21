@@ -10,13 +10,13 @@ export const createIngredientSchema = z.object({
   lowStockThreshold: z.number().min(0).max(1000000),
   supplier: z.string().max(200).optional(),
   notes: z.string().max(2000).optional(),
-  groupIds: z.array(z.string().uuid()).optional(),
+  groupIds: z.array(z.coerce.number().int().positive()).optional(),
 });
 
 export const updateIngredientSchema = createIngredientSchema.partial();
 
 export const adjustStockSchema = z.object({
-  ingredientId: z.string().uuid(),
+  ingredientId: z.coerce.number().int().positive(),
   type: z.nativeEnum(InventoryLogType),
   quantity: z.number().positive().max(1000000),
   reason: z.string().max(500).optional(),

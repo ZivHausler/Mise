@@ -2,7 +2,7 @@ import { getPool } from '../../core/database/postgres.js';
 import type { RevenueData, PopularRecipe, OrderStat, DashboardData, CustomerFrequency } from './analytics.types.js';
 
 export class PgAnalyticsRepository {
-  static async getRevenue(storeId: string): Promise<RevenueData> {
+  static async getRevenue(storeId: number): Promise<RevenueData> {
     const pool = getPool();
 
     const [dailyResult, totalResult] = await Promise.all([
@@ -30,7 +30,7 @@ export class PgAnalyticsRepository {
     };
   }
 
-  static async getPopularRecipes(storeId: string): Promise<PopularRecipe[]> {
+  static async getPopularRecipes(storeId: number): Promise<PopularRecipe[]> {
     const pool = getPool();
     const result = await pool.query(
       `SELECT
@@ -46,7 +46,7 @@ export class PgAnalyticsRepository {
     return result.rows as unknown as PopularRecipe[];
   }
 
-  static async getOrderStats(storeId: string): Promise<OrderStat[]> {
+  static async getOrderStats(storeId: number): Promise<OrderStat[]> {
     const pool = getPool();
     const result = await pool.query(
       `SELECT status, COUNT(*) as count FROM orders WHERE store_id = $1 GROUP BY status`,
@@ -55,7 +55,7 @@ export class PgAnalyticsRepository {
     return result.rows as unknown as OrderStat[];
   }
 
-  static async getDashboard(storeId: string): Promise<DashboardData> {
+  static async getDashboard(storeId: number): Promise<DashboardData> {
     const pool = getPool();
 
     const [ordersToday, pendingOrders, lowStock, revenueToday] = await Promise.all([
@@ -88,7 +88,7 @@ export class PgAnalyticsRepository {
     };
   }
 
-  static async getCustomerFrequency(storeId: string): Promise<CustomerFrequency[]> {
+  static async getCustomerFrequency(storeId: number): Promise<CustomerFrequency[]> {
     const pool = getPool();
     const result = await pool.query(
       `SELECT c.id, c.name, COUNT(o.id) as order_count

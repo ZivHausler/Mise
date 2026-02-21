@@ -11,8 +11,8 @@ export const PRODUCTION_STAGE = {
 export type ProductionStage = (typeof PRODUCTION_STAGE)[keyof typeof PRODUCTION_STAGE];
 
 export interface ProductionBatch {
-  id: string;
-  storeId: string;
+  id: number;
+  storeId: number;
   recipeId: string;
   recipeName: string;
   quantity: number;
@@ -30,17 +30,17 @@ export interface ProductionBatch {
 }
 
 export interface BatchOrder {
-  id: string;
-  batchId: string;
-  orderId: string;
+  id: number;
+  batchId: number;
+  orderId: number;
   orderItemIndex: number;
   quantityFromOrder: number;
 }
 
 export interface BatchPrepItem {
-  id: string;
-  batchId: string;
-  ingredientId: string;
+  id: number;
+  batchId: number;
+  ingredientId: number;
   ingredientName: string;
   requiredQuantity: number;
   unit: string;
@@ -48,14 +48,14 @@ export interface BatchPrepItem {
 }
 
 export interface AggregatedPrepItem {
-  ingredientId: string;
+  ingredientId: number;
   ingredientName: string;
   totalRequired: number;
   unit: string;
   preppedCount: number;
   totalCount: number;
   currentStock?: number;
-  items: (BatchPrepItem & { batchId: string; recipeName: string })[];
+  items: (BatchPrepItem & { batchId: number; recipeName: string })[];
 }
 
 export interface CreateBatchDTO {

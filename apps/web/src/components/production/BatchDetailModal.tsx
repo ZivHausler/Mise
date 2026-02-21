@@ -9,7 +9,7 @@ import { stageLabelKey, STAGE_COLORS, getPriorityConfig, priorityLabelKey } from
 import { cn } from '@/utils/cn';
 
 interface BatchDetailModalProps {
-  batchId: string;
+  batchId: number;
   onClose: () => void;
 }
 
@@ -116,7 +116,7 @@ export function BatchDetailModal({ batchId, onClose }: BatchDetailModalProps) {
               <h4 className="text-body-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">{t('production.orderSources')}</h4>
               <div className="space-y-1">
                 {b.orderSources.map((src: any) => (
-                  <div key={src.id} className="flex items-center justify-between rounded bg-neutral-50 dark:bg-neutral-700 px-3 py-1.5 text-body-sm">
+                  <div key={String(src.id)} className="flex items-center justify-between rounded bg-neutral-50 dark:bg-neutral-700 px-3 py-1.5 text-body-sm">
                     <span>Order: {src.orderId.slice(0, 8)}...</span>
                     <span>x{src.quantityFromOrder}</span>
                   </div>
@@ -131,7 +131,7 @@ export function BatchDetailModal({ batchId, onClose }: BatchDetailModalProps) {
               <h4 className="text-body-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">{t('production.prep.title')}</h4>
               <div className="space-y-1">
                 {b.prepItems.map((item: any) => (
-                  <div key={item.id} className="flex items-center gap-2 rounded bg-neutral-50 dark:bg-neutral-700 px-3 py-1.5 text-body-sm">
+                  <div key={String(item.id)} className="flex items-center gap-2 rounded bg-neutral-50 dark:bg-neutral-700 px-3 py-1.5 text-body-sm">
                     <span className={cn('flex-1', item.isPrepped && 'line-through text-neutral-400')}>
                       {item.ingredientName}
                     </span>

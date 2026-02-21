@@ -16,6 +16,8 @@ export default async function recipeRoutes(app: FastifyInstance) {
   app.get<{ Params: { id: string } }>('/:id', (req, reply) => controller.getById(req, reply));
   app.get<{ Params: { id: string } }>('/:id/cost', (req, reply) => controller.calculateCost(req, reply));
   app.post('/', (req, reply) => controller.create(req, reply));
+  app.post('/upload-urls', (req, reply) => controller.generateUploadUrls(req, reply));
+  app.delete('/delete-image', (req, reply) => controller.deleteImage(req, reply));
   app.put<{ Params: { id: string } }>('/:id', (req, reply) => controller.update(req, reply));
   app.delete<{ Params: { id: string } }>('/:id', (req, reply) => controller.delete(req, reply));
 }

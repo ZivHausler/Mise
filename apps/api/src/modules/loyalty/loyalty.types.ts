@@ -7,8 +7,8 @@ export const LOYALTY_TRANSACTION_TYPE = {
 export type LoyaltyTransactionType = (typeof LOYALTY_TRANSACTION_TYPE)[keyof typeof LOYALTY_TRANSACTION_TYPE];
 
 export interface LoyaltyConfig {
-  id: string;
-  storeId: string;
+  id: number;
+  storeId: number;
   isActive: boolean;
   pointsPerShekel: number;
   pointValue: number;
@@ -18,10 +18,10 @@ export interface LoyaltyConfig {
 }
 
 export interface LoyaltyTransaction {
-  id: string;
-  storeId: string;
-  customerId: string;
-  paymentId: string | null;
+  id: number;
+  storeId: number;
+  customerId: number;
+  paymentId: number | null;
   type: LoyaltyTransactionType;
   points: number;
   balanceAfter: number;
@@ -36,8 +36,8 @@ export interface CustomerLoyaltySummary {
 }
 
 export interface CreateLoyaltyTransactionDTO {
-  customerId: string;
-  paymentId?: string;
+  customerId: number;
+  paymentId?: number;
   type: LoyaltyTransactionType;
   points: number;
   description?: string;

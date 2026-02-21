@@ -9,7 +9,7 @@ export interface CustomerOrderFilters {
 }
 
 export class PgOrderRepository {
-  static async findById(storeId: string, id: string): Promise<Order | null> {
+  static async findById(storeId: number, id: number): Promise<Order | null> {
     const pool = getPool();
     const result = await pool.query(
       `SELECT o.*, c.name as customer_name FROM orders o LEFT JOIN customers c ON o.customer_id = c.id WHERE o.id = $1 AND o.store_id = $2`,
@@ -18,7 +18,7 @@ export class PgOrderRepository {
     return result.rows[0] ? this.mapRow(result.rows[0]) : null;
   }
 
-  static async findByCustomerId(storeId: string, customerId: string, options?: { limit: number; offset: number }, filters?: CustomerOrderFilters): Promise<{ orders: Order[]; total: number }> {
+  static async findByCustomerId(storeId: number, customerId: number, options?: { limit: number; offset: number }, filters?: CustomerOrderFilters): Promise<{ orders: Order[]; total: number }> {
     const pool = getPool();
     let whereClause = 'WHERE customer_id = $1 AND store_id = $2';
     const baseParams: unknown[] = [customerId, storeId];
@@ -53,7 +53,7 @@ export class PgOrderRepository {
     return { orders: result.rows.map((r: Record<string, unknown>) => this.mapRow(r)), total };
   }
 
-  static async findAll(storeId: string, filters?: { status?: OrderStatus; excludePaid?: boolean }): Promise<Order[]> {
+  static async findAll(storeId: number, filters?: { status?: OrderStatus; excludePaid?: boolean }): Promise<Order[]> {
     const pool = getPool();
     let query = 'SELECT o.*, c.name as customer_name FROM orders o LEFT JOIN customers c ON o.customer_id = c.id WHERE o.store_id = $1';
     const params: unknown[] = [storeId];
@@ -70,13 +70,13 @@ export class PgOrderRepository {
     return result.rows.map((r: Record<string, unknown>) => this.mapRow(r));
   }
 
-  static async create(storeId: string, data: CreateOrderDTO & { totalAmount: number; recurringGroupId?: string }): Promise<Order> {
+  static async create(storeId: number, data: CreateOrderDTO & { totalAmount: number; recurringGroupId?: number }): Promise<Order> {
     const pool = getPool();
     const items = JSON.stringify(data.items);
     const result = await pool.query(
       `WITH new_order AS (
-        INSERT INTO orders (id, store_id, customer_id, items, status, total_amount, notes, due_date, recurring_group_id, created_at, updated_at)
-        VALUES (gen_random_uuid(), $1, $2, $3, $4, $5, $6, $7, $8, NOW(), NOW())
+        INSERT INTO orders (store_id, customer_id, items, status, total_amount, notes, due_date, recurring_group_id, created_at, updated_at)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW(), NOW())
         RETURNING *
       )
       SELECT o.*, c.name as customer_name FROM new_order o LEFT JOIN customers c ON o.customer_id = c.id`,
@@ -85,7 +85,7 @@ export class PgOrderRepository {
     return this.mapRow(result.rows[0]);
   }
 
-  static async update(storeId: string, id: string, data: Partial<Order>): Promise<Order> {
+  static async update(storeId: number, id: number, data: Partial<Order>): Promise<Order> {
     const pool = getPool();
     const fields: string[] = [];
     const values: unknown[] = [];
@@ -109,7 +109,7 @@ export class PgOrderRepository {
     return this.mapRow(result.rows[0]);
   }
 
-  static async updateStatus(storeId: string, id: string, status: OrderStatus): Promise<Order> {
+  static async updateStatus(storeId: number, id: number, status: OrderStatus): Promise<Order> {
     const pool = getPool();
     const result = await pool.query(
       `UPDATE orders SET status = $1, updated_at = NOW() WHERE id = $2 AND store_id = $3 RETURNING *`,
@@ -118,13 +118,13 @@ export class PgOrderRepository {
     return this.mapRow(result.rows[0]);
   }
 
-  static async delete(storeId: string, id: string): Promise<void> {
+  static async delete(storeId: number, id: number): Promise<void> {
     const pool = getPool();
     await pool.query('DELETE FROM orders WHERE id = $1 AND store_id = $2', [id, storeId]);
   }
 
   static async findByDateRange(
-    storeId: string,
+    storeId: number,
     filters: { from: string; to: string; status?: number },
   ): Promise<Order[]> {
     const pool = getPool();
@@ -141,7 +141,7 @@ export class PgOrderRepository {
   }
 
   static async getCalendarAggregates(
-    storeId: string,
+    storeId: number,
     filters: { from: string; to: string },
   ): Promise<Array<{ day: string; total: number; received: number; inProgress: number; ready: number; delivered: number }>> {
     const pool = getPool();
@@ -173,7 +173,7 @@ export class PgOrderRepository {
   }
 
   static async findByDay(
-    storeId: string,
+    storeId: number,
     filters: { date: string; status?: number; limit: number; offset: number },
   ): Promise<{ orders: Order[]; total: number }> {
     const pool = getPool();
@@ -199,7 +199,7 @@ export class PgOrderRepository {
     return { orders: result.rows.map((r: Record<string, unknown>) => this.mapRow(r)), total };
   }
 
-  static async findFutureByRecurringGroup(storeId: string, recurringGroupId: string, afterDate: Date): Promise<Order[]> {
+  static async findFutureByRecurringGroup(storeId: number, recurringGroupId: number, afterDate: Date): Promise<Order[]> {
     const pool = getPool();
     const result = await pool.query(
       `SELECT o.*, c.name as customer_name FROM orders o LEFT JOIN customers c ON o.customer_id = c.id
@@ -210,7 +210,7 @@ export class PgOrderRepository {
     return result.rows.map((r: Record<string, unknown>) => this.mapRow(r));
   }
 
-  static async findByIdInternal(id: string): Promise<{ storeId: string; customerId: string } | null> {
+  static async findByIdInternal(id: number): Promise<{ storeId: number; customerId: number } | null> {
     const pool = getPool();
     const result = await pool.query(
       'SELECT store_id, customer_id FROM orders WHERE id = $1',
@@ -218,8 +218,8 @@ export class PgOrderRepository {
     );
     if (!result.rows[0]) return null;
     return {
-      storeId: result.rows[0]['store_id'] as string,
-      customerId: result.rows[0]['customer_id'] as string,
+      storeId: Number(result.rows[0]['store_id']),
+      customerId: Number(result.rows[0]['customer_id']),
     };
   }
 
@@ -233,16 +233,16 @@ export class PgOrderRepository {
     }
 
     return {
-      id: row['id'] as string,
+      id: Number(row['id']),
       orderNumber: Number(row['order_number']),
-      customerId: row['customer_id'] as string,
+      customerId: Number(row['customer_id']),
       customerName: (row['customer_name'] as string) || undefined,
       items,
       status: Number(row['status']) as OrderStatus,
       totalAmount: Number(row['total_amount']),
       notes: row['notes'] as string | undefined,
       dueDate: row['due_date'] ? new Date(row['due_date'] as string) : undefined,
-      recurringGroupId: (row['recurring_group_id'] as string) || undefined,
+      recurringGroupId: row['recurring_group_id'] != null ? Number(row['recurring_group_id']) : undefined,
       createdAt: new Date(row['created_at'] as string),
       updatedAt: new Date(row['updated_at'] as string),
     };

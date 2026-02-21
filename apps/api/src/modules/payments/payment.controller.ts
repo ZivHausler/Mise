@@ -23,19 +23,19 @@ export class PaymentController {
     if (request.query.method) filters.method = request.query.method;
     if (request.query.dateFrom) filters.dateFrom = request.query.dateFrom;
     if (request.query.dateTo) filters.dateTo = request.query.dateTo;
-    const { items, total } = await this.paymentService.getByCustomerId(storeId, request.params.customerId, { limit, offset }, Object.keys(filters).length ? filters : undefined);
+    const { items, total } = await this.paymentService.getByCustomerId(storeId, Number(request.params.customerId), { limit, offset }, Object.keys(filters).length ? filters : undefined);
     return reply.send({ success: true, data: items, pagination: { page, limit, total, totalPages: Math.ceil(total / limit) } });
   }
 
   async getByOrderId(request: FastifyRequest<{ Params: { orderId: string } }>, reply: FastifyReply) {
     const storeId = request.currentUser!.storeId!;
-    const payments = await this.paymentService.getByOrderId(storeId, request.params.orderId);
+    const payments = await this.paymentService.getByOrderId(storeId, Number(request.params.orderId));
     return reply.send({ success: true, data: payments });
   }
 
   async getPaymentSummary(request: FastifyRequest<{ Params: { orderId: string } }>, reply: FastifyReply) {
     const storeId = request.currentUser!.storeId!;
-    const summary = await this.paymentService.getPaymentSummary(storeId, request.params.orderId);
+    const summary = await this.paymentService.getPaymentSummary(storeId, Number(request.params.orderId));
     return reply.send({ success: true, data: summary });
   }
 
@@ -54,13 +54,13 @@ export class PaymentController {
 
   async refund(request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) {
     const storeId = request.currentUser!.storeId!;
-    const payment = await this.paymentService.refund(storeId, request.params.id, request.id);
+    const payment = await this.paymentService.refund(storeId, Number(request.params.id), request.id);
     return reply.send({ success: true, data: payment });
   }
 
   async delete(request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) {
     const storeId = request.currentUser!.storeId!;
-    await this.paymentService.delete(storeId, request.params.id);
+    await this.paymentService.delete(storeId, Number(request.params.id));
     return reply.status(204).send();
   }
 }

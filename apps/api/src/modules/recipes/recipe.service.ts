@@ -5,6 +5,12 @@ import { CalculateRecipeCostUseCase } from './use-cases/calculateRecipeCost.js';
 import { NotFoundError } from '../../core/errors/app-error.js';
 import type { InventoryService } from '../inventory/inventory.service.js';
 import { unitConversionFactor } from '../shared/unitConversion.js';
+import {
+  movePhotosToRecipe,
+  deleteImage,
+  deleteRecipeImages,
+  isTempUrl,
+} from '../../core/storage/gcs.js';
 
 export class RecipeService {
   private calculateCostUseCase: CalculateRecipeCostUseCase;
@@ -13,7 +19,7 @@ export class RecipeService {
     this.calculateCostUseCase = new CalculateRecipeCostUseCase(inventoryService);
   }
 
-  async getById(storeId: string, id: string): Promise<Recipe> {
+  async getById(storeId: number, id: string): Promise<Recipe> {
     const recipe = await RecipeCrud.getById(storeId, id);
     if (!recipe) throw new NotFoundError('Recipe not found');
     await this.enrichIngredients(storeId, recipe);
@@ -21,7 +27,7 @@ export class RecipeService {
     return recipe;
   }
 
-  async getAll(storeId: string, filters?: { category?: string; search?: string }): Promise<Recipe[]> {
+  async getAll(storeId: number, filters?: { category?: string; search?: string }): Promise<Recipe[]> {
     const recipes = await RecipeCrud.getAll(storeId, filters);
     for (const recipe of recipes) {
       await this.enrichIngredients(storeId, recipe);
@@ -30,13 +36,13 @@ export class RecipeService {
     return recipes;
   }
 
-  private async enrichIngredients(storeId: string, recipe: Recipe): Promise<void> {
+  private async enrichIngredients(storeId: number, recipe: Recipe): Promise<void> {
     if (!this.inventoryService || !recipe.ingredients) return;
     let totalCost = 0;
     const groupsMap = new Map<string, { id: string; name: string; color: string | null; icon: string | null }>();
     for (const ing of recipe.ingredients) {
       try {
-        const item = await this.inventoryService.getById(storeId, ing.ingredientId);
+        const item = await this.inventoryService.getById(storeId, Number(ing.ingredientId));
         ing.name = item.name;
         const factor = unitConversionFactor(ing.unit, item.unit);
         const convertedQty = ing.quantity * factor;
@@ -44,7 +50,8 @@ export class RecipeService {
         (ing as any).totalCost = +(convertedQty * item.costPerUnit).toFixed(2);
         totalCost += (ing as any).totalCost;
         for (const g of item.groups ?? []) {
-          if (!groupsMap.has(g.id)) groupsMap.set(g.id, { id: g.id, name: g.name, color: g.color, icon: g.icon });
+          const gid = String(g.id);
+          if (!groupsMap.has(gid)) groupsMap.set(gid, { id: gid, name: g.name, color: g.color, icon: g.icon });
         }
       } catch {
         ing.name = ing.name ?? 'Unknown';
@@ -57,7 +64,7 @@ export class RecipeService {
     (recipe as any).groups = Array.from(groupsMap.values());
   }
 
-  private async enrichSubRecipeSteps(storeId: string, recipe: Recipe): Promise<void> {
+  private async enrichSubRecipeSteps(storeId: number, recipe: Recipe): Promise<void> {
     if (!recipe.steps) return;
     let subRecipeCost = 0;
     for (const step of recipe.steps) {
@@ -90,11 +97,11 @@ export class RecipeService {
     }
   }
 
-  async create(storeId: string, data: CreateRecipeDTO): Promise<Recipe> {
+  async create(storeId: number, data: CreateRecipeDTO): Promise<Recipe> {
     if (this.inventoryService && data.ingredients) {
       for (const ing of data.ingredients) {
         try {
-          const inventoryItem = await this.inventoryService.getById(storeId, ing.ingredientId);
+          const inventoryItem = await this.inventoryService.getById(storeId, Number(ing.ingredientId));
           (ing as any).name = inventoryItem.name;
           (ing as any).costPerUnit = inventoryItem.costPerUnit;
         } catch {
@@ -118,6 +125,15 @@ export class RecipeService {
 
     const recipe = await RecipeCrud.create(storeId, data);
 
+    // Move temp photos to final location
+    if (data.photos?.length) {
+      const hasTempPhotos = data.photos.some(isTempUrl);
+      if (hasTempPhotos) {
+        const finalPhotos = await movePhotosToRecipe(storeId, recipe.id, data.photos);
+        await RecipeCrud.update(storeId, recipe.id, { photos: finalPhotos } as any);
+      }
+    }
+
     const totalCost = await this.calculateCostUseCase.execute(storeId, recipe.id);
     const costPerUnit = recipe.yield ? totalCost / recipe.yield : totalCost;
     await RecipeCrud.update(storeId, recipe.id, { totalCost, costPerUnit } as any);
@@ -126,14 +142,14 @@ export class RecipeService {
     return finalRecipe ?? recipe;
   }
 
-  async update(storeId: string, id: string, data: UpdateRecipeDTO): Promise<Recipe> {
+  async update(storeId: number, id: string, data: UpdateRecipeDTO): Promise<Recipe> {
     const existing = await RecipeCrud.getById(storeId, id);
     if (!existing) throw new NotFoundError('Recipe not found');
 
     if (this.inventoryService && data.ingredients) {
       for (const ing of data.ingredients) {
         try {
-          const inventoryItem = await this.inventoryService.getById(storeId, ing.ingredientId);
+          const inventoryItem = await this.inventoryService.getById(storeId, Number(ing.ingredientId));
           (ing as any).name = inventoryItem.name;
           (ing as any).costPerUnit = inventoryItem.costPerUnit;
         } catch {
@@ -155,6 +171,20 @@ export class RecipeService {
       }
     }
 
+    // Handle photo changes
+    if (data.photos !== undefined) {
+      // Move any temp photos to final location
+      const hasTempPhotos = data.photos?.some(isTempUrl);
+      if (hasTempPhotos && data.photos) {
+        data.photos = await movePhotosToRecipe(storeId, id, data.photos);
+      }
+      // Delete removed photos from storage
+      const oldPhotos = existing.photos ?? [];
+      const newPhotos = data.photos ?? [];
+      const removedPhotos = oldPhotos.filter((url) => !newPhotos.includes(url));
+      await Promise.all(removedPhotos.map((url) => deleteImage(url)));
+    }
+
     const recipe = await RecipeCrud.update(storeId, id, data);
 
     const totalCost = await this.calculateCostUseCase.execute(storeId, recipe.id);
@@ -171,7 +201,7 @@ export class RecipeService {
     return updated ?? recipe;
   }
 
-  async calculateCost(storeId: string, id: string): Promise<{ totalCost: number; costPerUnit: number }> {
+  async calculateCost(storeId: number, id: string): Promise<{ totalCost: number; costPerUnit: number }> {
     const recipe = await this.getById(storeId, id);
     const totalCost = await this.calculateCostUseCase.execute(storeId, id);
     const costPerUnit = recipe.yield ? totalCost / recipe.yield : totalCost;
@@ -181,9 +211,10 @@ export class RecipeService {
     return { totalCost, costPerUnit };
   }
 
-  async delete(storeId: string, id: string): Promise<void> {
+  async delete(storeId: number, id: string): Promise<void> {
     const existing = await RecipeCrud.getById(storeId, id);
     if (!existing) throw new NotFoundError('Recipe not found');
+    await deleteRecipeImages(storeId, id);
     return RecipeCrud.delete(storeId, id);
   }
 }

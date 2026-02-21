@@ -43,7 +43,7 @@ export interface PaymentFilters {
 }
 
 export class PgPaymentRepository {
-  static async findAll(storeId: string, options?: PaginationOptions, filters?: PaymentFilters): Promise<PaginatedResult<Payment>> {
+  static async findAll(storeId: number, options?: PaginationOptions, filters?: PaymentFilters): Promise<PaginatedResult<Payment>> {
     await ensureStatusColumn();
     const pool = getPool();
     const qb = new QueryBuilder(storeId);
@@ -83,7 +83,7 @@ export class PgPaymentRepository {
     return { items: result.rows.map((r: Record<string, unknown>) => this.mapRow(r)), total };
   }
 
-  static async findByCustomerId(storeId: string, customerId: string, options?: PaginationOptions, filters?: CustomerPaymentFilters): Promise<PaginatedResult<Payment>> {
+  static async findByCustomerId(storeId: number, customerId: number, options?: PaginationOptions, filters?: CustomerPaymentFilters): Promise<PaginatedResult<Payment>> {
     await ensureStatusColumn();
     const pool = getPool();
     let whereClause = 'WHERE o.customer_id = $1 AND o.store_id = $2';
@@ -126,7 +126,7 @@ export class PgPaymentRepository {
     return { items: result.rows.map((r: Record<string, unknown>) => this.mapRow(r)), total };
   }
 
-  static async findById(storeId: string, id: string): Promise<Payment | null> {
+  static async findById(storeId: number, id: number): Promise<Payment | null> {
     await ensureStatusColumn();
     const pool = getPool();
     const result = await pool.query(
@@ -138,7 +138,7 @@ export class PgPaymentRepository {
     return result.rows[0] ? this.mapRow(result.rows[0]) : null;
   }
 
-  static async findByOrderId(storeId: string, orderId: string): Promise<Payment[]> {
+  static async findByOrderId(storeId: number, orderId: number): Promise<Payment[]> {
     await ensureStatusColumn();
     const pool = getPool();
     const result = await pool.query(
@@ -151,7 +151,7 @@ export class PgPaymentRepository {
     return result.rows.map((r: Record<string, unknown>) => this.mapRow(r));
   }
 
-  static async create(storeId: string, data: CreatePaymentDTO): Promise<Payment> {
+  static async create(storeId: number, data: CreatePaymentDTO): Promise<Payment> {
     await ensureStatusColumn();
     const pool = getPool();
     // Verify the order belongs to the store
@@ -163,15 +163,15 @@ export class PgPaymentRepository {
       throw new Error('Order not found in this store');
     }
     const result = await pool.query(
-      `INSERT INTO payments (id, order_id, amount, method, notes, status, created_at)
-       VALUES (gen_random_uuid(), $1, $2, $3, $4, $5, NOW())
+      `INSERT INTO payments (order_id, amount, method, notes, status, created_at)
+       VALUES ($1, $2, $3, $4, $5, NOW())
        RETURNING *`,
       [data.orderId, data.amount, data.method, data.notes ?? null, PAYMENT_RECORD_STATUS.COMPLETED],
     );
     return this.mapRow(result.rows[0]);
   }
 
-  static async refund(storeId: string, id: string): Promise<Payment> {
+  static async refund(storeId: number, id: number): Promise<Payment> {
     await ensureStatusColumn();
     const pool = getPool();
     const result = await pool.query(
@@ -188,7 +188,7 @@ export class PgPaymentRepository {
     return this.mapRow(result.rows[0]);
   }
 
-  static async findPaidAmountsByStore(storeId: string): Promise<{ orderId: string; paidAmount: number }[]> {
+  static async findPaidAmountsByStore(storeId: number): Promise<{ orderId: number; paidAmount: number }[]> {
     await ensureStatusColumn();
     const pool = getPool();
     const result = await pool.query(
@@ -200,12 +200,12 @@ export class PgPaymentRepository {
       [storeId, PAYMENT_RECORD_STATUS.COMPLETED],
     );
     return result.rows.map((r: Record<string, unknown>) => ({
-      orderId: r['order_id'] as string,
+      orderId: Number(r['order_id']),
       paidAmount: Number(r['paid_amount']),
     }));
   }
 
-  static async delete(storeId: string, id: string): Promise<void> {
+  static async delete(storeId: number, id: number): Promise<void> {
     const pool = getPool();
     await pool.query(
       `DELETE FROM payments p
@@ -217,8 +217,8 @@ export class PgPaymentRepository {
 
   private static mapRow(row: Record<string, unknown>): Payment {
     return {
-      id: row['id'] as string,
-      orderId: row['order_id'] as string,
+      id: Number(row['id']),
+      orderId: Number(row['order_id']),
       orderNumber: row['order_number'] ? Number(row['order_number']) : undefined,
       customerName: (row['customer_name'] as string) || undefined,
       amount: Number(row['amount']),

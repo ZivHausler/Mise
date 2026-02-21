@@ -13,14 +13,14 @@ export class AdminController {
   async toggleAdmin(request: FastifyRequest, reply: FastifyReply) {
     const { id } = request.params as { id: string };
     const { isAdmin } = request.body as { isAdmin: boolean };
-    await this.service.toggleAdmin(request.currentUser!.userId, id, isAdmin);
+    await this.service.toggleAdmin(request.currentUser!.userId, Number(id), isAdmin);
     return reply.send({ success: true });
   }
 
   async toggleDisabled(request: FastifyRequest, reply: FastifyReply) {
     const { id } = request.params as { id: string };
     const { disabled } = request.body as { disabled: boolean };
-    await this.service.toggleDisabled(request.currentUser!.userId, id, disabled);
+    await this.service.toggleDisabled(request.currentUser!.userId, Number(id), disabled);
     return reply.send({ success: true });
   }
 
@@ -32,14 +32,14 @@ export class AdminController {
 
   async getStoreMembers(request: FastifyRequest, reply: FastifyReply) {
     const { id } = request.params as { id: string };
-    const members = await this.service.getStoreMembers(id);
+    const members = await this.service.getStoreMembers(Number(id));
     return reply.send({ success: true, data: members });
   }
 
   async updateStore(request: FastifyRequest, reply: FastifyReply) {
     const { id } = request.params as { id: string };
     const body = request.body as { name?: string; address?: string };
-    await this.service.updateStore(id, body);
+    await this.service.updateStore(Number(id), body);
     return reply.send({ success: true });
   }
 
@@ -48,8 +48,8 @@ export class AdminController {
     const result = await this.service.getInvitations(parseInt(page, 10), parseInt(limit, 10), {
       status,
       search,
-      storeId,
-      userId,
+      storeId: storeId ? Number(storeId) : undefined,
+      userId: userId ? Number(userId) : undefined,
       role,
       dateFrom,
       dateTo,
@@ -65,14 +65,14 @@ export class AdminController {
 
   async revokeInvitation(request: FastifyRequest, reply: FastifyReply) {
     const { id } = request.params as { id: string };
-    await this.service.revokeInvitation(id);
+    await this.service.revokeInvitation(Number(id));
     return reply.send({ success: true });
   }
 
   async getAuditLog(request: FastifyRequest, reply: FastifyReply) {
     const { page = '1', limit = '20', userId, method, statusCode, dateFrom, dateTo, search, since, excludeIds } = request.query as Record<string, string>;
     const result = await this.service.getAuditLog(parseInt(page, 10), parseInt(limit, 10), {
-      userId,
+      userId: userId ? Number(userId) : undefined,
       method,
       statusCode,
       dateFrom,
@@ -86,13 +86,13 @@ export class AdminController {
 
   async getAuditLogRequestBody(request: FastifyRequest, reply: FastifyReply) {
     const { id } = request.params as { id: string };
-    const body = await this.service.getAuditLogRequestBody(id);
+    const body = await this.service.getAuditLogRequestBody(Number(id));
     return reply.send({ success: true, data: body });
   }
 
   async getAuditLogResponseBody(request: FastifyRequest, reply: FastifyReply) {
     const { id } = request.params as { id: string };
-    const body = await this.service.getAuditLogResponseBody(id);
+    const body = await this.service.getAuditLogResponseBody(Number(id));
     return reply.send({ success: true, data: body });
   }
 

@@ -7,7 +7,7 @@ export class MongoRecipeRepository {
     return mongoClient.getDb().collection('recipes');
   }
 
-  static async findById(storeId: string, id: string): Promise<Recipe | null> {
+  static async findById(storeId: number, id: string): Promise<Recipe | null> {
     let objectId: ObjectId;
     try {
       objectId = new ObjectId(id);
@@ -18,7 +18,7 @@ export class MongoRecipeRepository {
     return doc ? this.mapDoc(doc) : null;
   }
 
-  static async findAll(storeId: string, filters?: { category?: string; search?: string }): Promise<Recipe[]> {
+  static async findAll(storeId: number, filters?: { category?: string; search?: string }): Promise<Recipe[]> {
     const query: Record<string, unknown> = {};
     query['storeId'] = storeId;
     if (filters?.category) {
@@ -36,7 +36,7 @@ export class MongoRecipeRepository {
     return docs.map((d) => this.mapDoc(d));
   }
 
-  static async create(storeId: string, data: CreateRecipeDTO): Promise<Recipe> {
+  static async create(storeId: number, data: CreateRecipeDTO): Promise<Recipe> {
     const now = new Date();
     const doc = {
       ...data,
@@ -51,7 +51,7 @@ export class MongoRecipeRepository {
     return this.mapDoc({ _id: result.insertedId, ...doc });
   }
 
-  static async update(storeId: string, id: string, data: UpdateRecipeDTO): Promise<Recipe> {
+  static async update(storeId: number, id: string, data: UpdateRecipeDTO): Promise<Recipe> {
     const objectId = new ObjectId(id);
     const updateFields: Record<string, unknown> = { ...data, updatedAt: new Date() };
     await this.collection.updateOne(
@@ -62,7 +62,7 @@ export class MongoRecipeRepository {
     return this.mapDoc(doc!);
   }
 
-  static async delete(storeId: string, id: string): Promise<void> {
+  static async delete(storeId: number, id: string): Promise<void> {
     const objectId = new ObjectId(id);
     await this.collection.deleteOne({ _id: objectId, storeId });
   }

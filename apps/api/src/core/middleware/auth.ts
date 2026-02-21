@@ -14,7 +14,7 @@ interface CachedUserStatus {
   cachedAt: number;
 }
 
-const userStatusCache = new Map<string, CachedUserStatus>();
+const userStatusCache = new Map<number, CachedUserStatus>();
 
 export function clearUserStatusCache(): void {
   userStatusCache.clear();

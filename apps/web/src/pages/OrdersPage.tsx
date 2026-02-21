@@ -140,7 +140,7 @@ export default function OrdersPage() {
                   ) : (
                     (ordersByStatus[status] ?? []).map((order: any) => (
                       <div
-                        key={order.id}
+                        key={String(order.id)}
                         onClick={() => navigate(`/orders/${order.id}`)}
                         className="cursor-pointer rounded-md border border-neutral-100 p-3 transition-shadow hover:shadow-sm"
                       >
@@ -172,7 +172,7 @@ export default function OrdersPage() {
         <DataTable
           columns={columns}
           data={(orders as any[]) ?? []}
-          keyExtractor={(row: any) => row.id}
+          keyExtractor={(row: any) => String(row.id)}
           onRowClick={(row: any) => navigate(`/orders/${row.id}`)}
           searchable
           searchPlaceholder={t('orders.searchPlaceholder', 'Search orders...')}

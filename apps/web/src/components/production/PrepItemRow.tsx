@@ -3,7 +3,7 @@ import { cn } from '@/utils/cn';
 
 interface PrepItemRowProps {
   item: {
-    id: string;
+    id: number;
     ingredientName: string;
     requiredQuantity: number;
     unit: string;

@@ -9,16 +9,16 @@ export type OrderStatus = (typeof ORDER_STATUS)[keyof typeof ORDER_STATUS];
 
 
 export interface Order {
-  id: string;
+  id: number;
   orderNumber: number;
-  customerId: string;
+  customerId: number;
   customerName?: string;
   items: OrderItem[];
   status: OrderStatus;
   totalAmount: number;
   notes?: string;
   dueDate?: Date;
-  recurringGroupId?: string;
+  recurringGroupId?: number;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -31,7 +31,7 @@ export interface OrderItem {
 }
 
 export interface CreateOrderDTO {
-  customerId: string;
+  customerId: number;
   items: Omit<OrderItem, 'unitPrice'>[];
   notes?: string;
   dueDate?: Date;

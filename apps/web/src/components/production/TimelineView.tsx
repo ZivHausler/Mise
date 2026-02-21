@@ -70,7 +70,7 @@ export function TimelineView({ date }: TimelineViewProps) {
 
         {(batches as any[]).map((batch: any, idx: number) => (
           <TimelineRow
-            key={batch.id}
+            key={String(batch.id)}
             batch={batch}
             index={idx}
             totalCols={HALF_HOUR_COLS}

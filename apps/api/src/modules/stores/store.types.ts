@@ -6,7 +6,7 @@ export enum StoreRole {
 }
 
 export interface Store {
-  id: string;
+  id: number;
   name: string;
   code: string | null;
   address: string | null;
@@ -15,16 +15,16 @@ export interface Store {
 }
 
 export interface UserStore {
-  userId: string;
-  storeId: string;
+  userId: number;
+  storeId: number;
   role: StoreRole;
   storeName: string;
   storeCode: string | null;
 }
 
 export interface StoreInvitation {
-  id: string;
-  storeId: string | null;
+  id: number;
+  storeId: number | null;
   storeName?: string | null;
   email: string;
   role: StoreRole;

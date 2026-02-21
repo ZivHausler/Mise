@@ -4,7 +4,7 @@ import type { UserPublic } from '../../auth/auth.types.js';
 import type { UpdateProfileDTO } from '../settings.types.js';
 
 export class ProfileCrud {
-  static async getById(userId: string): Promise<UserPublic | null> {
+  static async getById(userId: number): Promise<UserPublic | null> {
     const user = await PgAuthRepository.findById(userId);
     if (!user) return null;
     return {
@@ -16,7 +16,7 @@ export class ProfileCrud {
     };
   }
 
-  static async update(userId: string, data: UpdateProfileDTO): Promise<UserPublic> {
+  static async update(userId: number, data: UpdateProfileDTO): Promise<UserPublic> {
     const updated = await PgAuthRepository.updateProfile(userId, {
       name: data.name,
       phone: data.phone === null ? '' : data.phone,
@@ -31,7 +31,7 @@ export class ProfileCrud {
     };
   }
 
-  static async getOnboardingStatus(userId: string): Promise<{ completedAt: string | null }> {
+  static async getOnboardingStatus(userId: number): Promise<{ completedAt: string | null }> {
     const pool = getPool();
     const result = await pool.query(
       'SELECT onboarding_completed_at FROM users WHERE id = $1',
@@ -40,7 +40,7 @@ export class ProfileCrud {
     return { completedAt: result.rows[0]?.onboarding_completed_at ?? null };
   }
 
-  static async completeOnboarding(userId: string): Promise<void> {
+  static async completeOnboarding(userId: number): Promise<void> {
     const pool = getPool();
     await pool.query(
       'UPDATE users SET onboarding_completed_at = NOW() WHERE id = $1',
@@ -48,7 +48,7 @@ export class ProfileCrud {
     );
   }
 
-  static async resetOnboarding(userId: string): Promise<void> {
+  static async resetOnboarding(userId: number): Promise<void> {
     const pool = getPool();
     await pool.query(
       'UPDATE users SET onboarding_completed_at = NULL WHERE id = $1',

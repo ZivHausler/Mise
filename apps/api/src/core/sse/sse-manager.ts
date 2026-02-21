@@ -5,15 +5,15 @@ interface SSEClient {
 }
 
 class SSEManager {
-  private clients = new Map<string, SSEClient[]>();
+  private clients = new Map<number, SSEClient[]>();
 
-  addClient(storeId: string, reply: FastifyReply): void {
+  addClient(storeId: number, reply: FastifyReply): void {
     const storeClients = this.clients.get(storeId) ?? [];
     storeClients.push({ reply });
     this.clients.set(storeId, storeClients);
   }
 
-  removeClient(storeId: string, reply: FastifyReply): void {
+  removeClient(storeId: number, reply: FastifyReply): void {
     const storeClients = this.clients.get(storeId);
     if (!storeClients) return;
     const filtered = storeClients.filter((c) => c.reply !== reply);
@@ -24,7 +24,7 @@ class SSEManager {
     }
   }
 
-  broadcast(storeId: string, event: string, data: unknown): void {
+  broadcast(storeId: number, event: string, data: unknown): void {
     const storeClients = this.clients.get(storeId);
     if (!storeClients) return;
 

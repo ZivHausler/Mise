@@ -2,10 +2,10 @@ import type { FastifyInstance } from 'fastify';
 import { env } from '../../config/env.js';
 import { authMiddleware, requireStoreMiddleware } from '../../core/middleware/auth.js';
 
-function isEnabled(flagValue: string, storeId: string): boolean {
+function isEnabled(flagValue: string, storeId: number): boolean {
   if (!flagValue) return false;
   if (flagValue === '*') return true;
-  return flagValue.split(',').map((s) => s.trim()).includes(storeId);
+  return flagValue.split(',').map((s) => s.trim()).includes(String(storeId));
 }
 
 export default async function featuresRoutes(app: FastifyInstance) {

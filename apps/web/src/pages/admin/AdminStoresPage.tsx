@@ -61,8 +61,8 @@ export default function AdminStoresPage() {
   const [search, setSearch] = useState('');
   const debouncedSearch = useDebouncedValue(search, 500, () => setPage(1));
   const [selectedStoreId, setSelectedStoreId] = useState<string>('');
-  const [expandedStore, setExpandedStore] = useState<string | null>(null);
-  const [editingStore, setEditingStore] = useState<string | null>(null);
+  const [expandedStore, setExpandedStore] = useState<number | null>(null);
+  const [editingStore, setEditingStore] = useState<number | null>(null);
   const [editName, setEditName] = useState('');
   const [editAddress, setEditAddress] = useState('');
   const { data: allStoresData } = useAdminStores(1, 500);
@@ -70,12 +70,12 @@ export default function AdminStoresPage() {
 
   const data = selectedStoreId && rawData ? {
     ...rawData,
-    items: rawData.items?.filter((s) => s.id === selectedStoreId),
+    items: rawData.items?.filter((s) => String(s.id) === selectedStoreId),
   } : rawData;
   const { data: members, isLoading: membersLoading } = useAdminStoreMembers(expandedStore);
   const updateStore = useAdminUpdateStore();
 
-  const startEdit = (store: { id: string; name: string; address: string | null }) => {
+  const startEdit = (store: { id: number; name: string; address: string | null }) => {
     setEditingStore(store.id);
     setEditName(store.name);
     setEditAddress(store.address ?? '');
@@ -108,7 +108,7 @@ export default function AdminStoresPage() {
             <StoreFilterDropdown label={t('admin.stores.title')} count={selectedStoreId ? 1 : 0}>
               {[
                 { value: '', label: t('admin.stores.allStores') },
-                ...(allStoresData?.items?.map((s) => ({ value: s.id, label: s.name })) ?? []),
+                ...(allStoresData?.items?.map((s) => ({ value: String(s.id), label: s.name })) ?? []),
               ].map((opt) => (
                 <button key={opt.value} type="button" onClick={() => {
                   setSelectedStoreId(opt.value);
@@ -150,7 +150,7 @@ export default function AdminStoresPage() {
                 <tr><td colSpan={6} className="px-3 py-8 text-center text-body-sm text-neutral-400">{t('admin.stores.noStores')}</td></tr>
               ) : (
                 data?.items?.map((store, i) => (
-                  <React.Fragment key={store.id}>
+                  <React.Fragment key={String(store.id)}>
                     <tr className={`border-b border-neutral-100 dark:border-neutral-700 transition-colors hover:bg-primary-50 dark:hover:bg-neutral-700 ${i % 2 === 1 ? 'bg-neutral-50 dark:bg-neutral-800/50' : ''}`}>
                       <td className="px-2">
                         <button
@@ -184,7 +184,7 @@ export default function AdminStoresPage() {
                       </td>
                     </tr>
                     {expandedStore === store.id && (
-                      <tr key={`${store.id}-members`}>
+                      <tr key={`${String(store.id)}-members`}>
                         <td colSpan={6} className="px-8 py-0 bg-neutral-50 dark:bg-neutral-800/50">
                           <div className="animate-expand-down overflow-hidden">
                             <div className="py-3">

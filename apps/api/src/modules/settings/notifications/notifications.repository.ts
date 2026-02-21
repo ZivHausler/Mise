@@ -4,7 +4,7 @@ import { getPool } from '../../../core/database/postgres.js';
 export type NotificationRecipientRow = NotificationPreference & { email: string; name: string; phone?: string };
 
 export class PgNotifPrefsRepository {
-  static async findAll(userId: string): Promise<NotificationPreference[]> {
+  static async findAll(userId: number): Promise<NotificationPreference[]> {
     const pool = getPool();
     const result = await pool.query(
       'SELECT id, user_id, event_type, channel_email, channel_push, channel_sms, created_at, updated_at FROM notification_preferences WHERE user_id = $1 ORDER BY event_type',
@@ -13,7 +13,7 @@ export class PgNotifPrefsRepository {
     return result.rows.map(this.mapRow);
   }
 
-  static async upsert(userId: string, prefs: { eventType: string; email: boolean; push: boolean; sms: boolean }[]): Promise<NotificationPreference[]> {
+  static async upsert(userId: number, prefs: { eventType: string; email: boolean; push: boolean; sms: boolean }[]): Promise<NotificationPreference[]> {
     const pool = getPool();
 
     for (const pref of prefs) {
@@ -50,8 +50,8 @@ export class PgNotifPrefsRepository {
 
   private static mapRow(row: Record<string, unknown>): NotificationPreference {
     return {
-      id: row['id'] as string,
-      userId: row['user_id'] as string,
+      id: Number(row['id']),
+      userId: Number(row['user_id']),
       eventType: row['event_type'] as NotificationPreference['eventType'],
       channelEmail: row['channel_email'] as boolean,
       channelPush: row['channel_push'] as boolean,

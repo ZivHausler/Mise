@@ -4,8 +4,8 @@ import { OrderCrud } from '../orderCrud.js';
 import { NotFoundError, ValidationError } from '../../../core/errors/app-error.js';
 import { ORDER_STATUS_FLOW } from '@mise/shared/src/constants/index.js';
 
-export class UpdateOrderStatusUseCase implements UseCase<{ order: Order; previousStatus: OrderStatus }, [string, string, OrderStatus]> {
-  async execute(storeId: string, id: string, newStatus: OrderStatus): Promise<{ order: Order; previousStatus: OrderStatus }> {
+export class UpdateOrderStatusUseCase implements UseCase<{ order: Order; previousStatus: OrderStatus }, [number, number, OrderStatus]> {
+  async execute(storeId: number, id: number, newStatus: OrderStatus): Promise<{ order: Order; previousStatus: OrderStatus }> {
     const existing = await OrderCrud.getById(storeId, id);
     if (!existing) {
       throw new NotFoundError('Order not found');

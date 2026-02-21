@@ -89,7 +89,7 @@ export default function DashboardPage() {
               <div className="flex flex-col gap-2">
                 {visibleOrders.map((order: any) => (
                   <div
-                    key={order.id}
+                    key={String(order.id)}
                     onClick={() => navigate(`/orders/${order.id}`)}
                     className="cursor-pointer rounded-md border border-neutral-100 p-2 text-body-sm hover:bg-primary-50"
                   >

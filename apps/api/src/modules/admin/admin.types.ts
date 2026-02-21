@@ -1,5 +1,5 @@
 export interface AdminUser {
-  id: string;
+  id: number;
   email: string;
   name: string;
   isAdmin: boolean;
@@ -9,7 +9,7 @@ export interface AdminUser {
 }
 
 export interface AdminStore {
-  id: string;
+  id: number;
   name: string;
   code: string | null;
   address: string | null;
@@ -18,7 +18,7 @@ export interface AdminStore {
 }
 
 export interface AdminStoreMember {
-  userId: string;
+  userId: number;
   email: string;
   name: string;
   role: number;
@@ -26,9 +26,9 @@ export interface AdminStoreMember {
 }
 
 export interface AdminInvitation {
-  id: string;
+  id: number;
   email: string;
-  storeId: string | null;
+  storeId: number | null;
   storeName: string | null;
   role: number;
   token: string;
@@ -40,10 +40,10 @@ export interface AdminInvitation {
 }
 
 export interface AdminAuditEntry {
-  id: string;
-  userId: string;
+  id: number;
+  userId: number;
   userEmail: string;
-  storeId: string | null;
+  storeId: number | null;
   method: string;
   path: string;
   statusCode: number;

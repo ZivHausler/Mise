@@ -4,7 +4,7 @@ import { getPool } from '../../../core/database/postgres.js';
 const SELECT_COLS = 'id, store_id, name, color, icon, is_default, created_at, updated_at';
 
 export class PgGroupsRepository {
-  static async findAll(storeId: string): Promise<Group[]> {
+  static async findAll(storeId: number): Promise<Group[]> {
     const pool = getPool();
     const result = await pool.query(
       `SELECT ${SELECT_COLS} FROM groups WHERE store_id = $1 OR is_default = true ORDER BY is_default DESC, name`,
@@ -13,7 +13,7 @@ export class PgGroupsRepository {
     return result.rows.map(this.mapRow);
   }
 
-  static async findById(id: string, storeId: string): Promise<Group | null> {
+  static async findById(id: number, storeId: number): Promise<Group | null> {
     const pool = getPool();
     const result = await pool.query(
       `SELECT ${SELECT_COLS} FROM groups WHERE id = $1 AND (store_id = $2 OR is_default = true)`,
@@ -22,7 +22,7 @@ export class PgGroupsRepository {
     return result.rows[0] ? this.mapRow(result.rows[0]) : null;
   }
 
-  static async create(storeId: string, data: CreateGroupDTO): Promise<Group> {
+  static async create(storeId: number, data: CreateGroupDTO): Promise<Group> {
     const pool = getPool();
     const result = await pool.query(
       `INSERT INTO groups (store_id, name, color)
@@ -33,7 +33,7 @@ export class PgGroupsRepository {
     return this.mapRow(result.rows[0]);
   }
 
-  static async update(id: string, storeId: string, data: UpdateGroupDTO): Promise<Group> {
+  static async update(id: number, storeId: number, data: UpdateGroupDTO): Promise<Group> {
     const pool = getPool();
     const fields: string[] = [];
     const values: unknown[] = [];
@@ -55,15 +55,15 @@ export class PgGroupsRepository {
     return this.mapRow(result.rows[0]);
   }
 
-  static async delete(id: string, storeId: string): Promise<void> {
+  static async delete(id: number, storeId: number): Promise<void> {
     const pool = getPool();
     await pool.query('DELETE FROM groups WHERE id = $1 AND store_id = $2', [id, storeId]);
   }
 
   private static mapRow(row: Record<string, unknown>): Group {
     return {
-      id: row['id'] as string,
-      storeId: (row['store_id'] as string) || null,
+      id: Number(row['id']),
+      storeId: row['store_id'] != null ? Number(row['store_id']) : null,
       name: row['name'] as string,
       color: (row['color'] as string) || null,
       icon: (row['icon'] as string) || null,
