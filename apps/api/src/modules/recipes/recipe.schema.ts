@@ -36,7 +36,7 @@ export const createRecipeSchema = z.object({
   sellingPrice: z.number().min(0).max(1000000).optional(),
   notes: z.string().max(5000).optional(),
   variations: z.array(z.string().max(1000)).max(20).optional(),
-  photos: z.array(z.string().url().max(2000)).max(3).optional(),
+  photos: z.array(z.string().max(2000)).max(3).optional(),
 });
 
 export const updateRecipeSchema = createRecipeSchema.partial();
@@ -47,5 +47,5 @@ export const uploadUrlsSchema = z.object({
 });
 
 export const deleteImageSchema = z.object({
-  url: z.string().url(),
+  url: z.string().min(1),
 });
