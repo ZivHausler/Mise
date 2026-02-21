@@ -2,6 +2,7 @@ import type { FastifyInstance } from 'fastify';
 import { ProductionController } from './production.controller.js';
 import { ProductionService } from './production.service.js';
 import { authMiddleware, requireStoreMiddleware } from '../../core/middleware/auth.js';
+import { requireFeature } from '../../core/middleware/requireFeature.js';
 import { RecipeService } from '../recipes/recipe.service.js';
 import { InventoryService } from '../inventory/inventory.service.js';
 
@@ -13,6 +14,7 @@ export default async function productionRoutes(app: FastifyInstance) {
 
   app.addHook('preHandler', authMiddleware);
   app.addHook('preHandler', requireStoreMiddleware);
+  app.addHook('preHandler', requireFeature('production'));
 
   app.get<{ Querystring: { date: string } }>('/batches', (req, reply) => controller.getBatches(req, reply));
   app.get<{ Params: { id: string } }>('/batches/:id', (req, reply) => controller.getBatchById(req, reply));
