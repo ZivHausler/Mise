@@ -9,7 +9,7 @@ import { MergeEmailToGoogleUseCase } from './use-cases/mergeEmailToGoogle.js';
 import { GoogleRegisterUseCase } from './use-cases/googleRegister.js';
 import type { User } from './auth.types.js';
 import { PgStoreRepository } from '../stores/store.repository.js';
-import { StoreRole } from '../stores/store.types.js';
+import { StoreRole, type StoreInvitation } from '../stores/store.types.js';
 import { ForbiddenError } from '../../core/errors/app-error.js';
 import { env } from '../../config/env.js';
 import { blacklistToken } from '../../core/auth/token-blacklist.js';
@@ -36,22 +36,14 @@ export class AuthService {
   }
 
   async register(data: RegisterDTO, inviteToken?: string): Promise<AuthResponse> {
-    // Registration is invitation-only
-    if (!inviteToken) {
-      throw new ForbiddenError('Registration requires an invitation');
-    }
-
-    const invitation = await PgStoreRepository.findInvitationByToken(inviteToken);
-    if (!invitation) {
-      throw new ForbiddenError('Invalid or expired invitation');
-    }
+    const { invitation, token: validToken } = await this.validateInvitation(inviteToken, data.email);
 
     const user = await this.registerUseCase.execute(data);
 
     // Join-store invite: add user to store immediately
     if (invitation.storeId !== null) {
       await PgStoreRepository.addUserToStore(user.id, invitation.storeId, invitation.role);
-      await PgStoreRepository.markInvitationUsed(inviteToken);
+      await PgStoreRepository.markInvitationUsed(validToken);
       const token = this.generateToken(user, invitation.storeId, invitation.role);
       const invStores = await PgStoreRepository.getUserStores(user.id);
       return { user: this.toPublic(user), token, hasStore: true, stores: this.formatStores(invStores) };
@@ -64,7 +56,7 @@ export class AuthService {
       token,
       hasStore: false,
       stores: [],
-      pendingCreateStoreToken: inviteToken,
+      pendingCreateStoreToken: validToken,
     };
   }
 
@@ -83,22 +75,19 @@ export class AuthService {
   }
 
   async googleRegister(idToken: string, inviteToken?: string): Promise<AuthResponse> {
-    // Registration is invitation-only
-    if (!inviteToken) {
-      throw new ForbiddenError('Registration requires an invitation');
-    }
-
-    const invitation = await PgStoreRepository.findInvitationByToken(inviteToken);
-    if (!invitation) {
-      throw new ForbiddenError('Invalid or expired invitation');
-    }
+    const { invitation, token: validToken } = await this.validateInvitation(inviteToken);
 
     const user = await this.googleRegisterUseCase.execute(idToken);
+
+    // Validate after Google auth since the email comes from the token
+    if (invitation.email.toLowerCase() !== user.email.toLowerCase()) {
+      throw new ForbiddenError('Email does not match the invitation');
+    }
 
     // Join-store invite: add user to store immediately
     if (invitation.storeId !== null) {
       await PgStoreRepository.addUserToStore(user.id, invitation.storeId, invitation.role);
-      await PgStoreRepository.markInvitationUsed(inviteToken);
+      await PgStoreRepository.markInvitationUsed(validToken);
       const token = this.generateToken(user, invitation.storeId, invitation.role);
       const invStores = await PgStoreRepository.getUserStores(user.id);
       return { user: this.toPublic(user), token, hasStore: true, stores: this.formatStores(invStores) };
@@ -111,7 +100,7 @@ export class AuthService {
       token,
       hasStore: false,
       stores: [],
-      pendingCreateStoreToken: inviteToken,
+      pendingCreateStoreToken: validToken,
     };
   }
 
@@ -188,6 +177,23 @@ export class AuthService {
 
   private formatStores(stores: { storeId: number; storeName: string; role: number }[]) {
     return stores.map((s) => ({ storeId: s.storeId, storeName: s.storeName, role: s.role }));
+  }
+
+  private async validateInvitation(inviteToken: string | undefined, email?: string): Promise<{ invitation: StoreInvitation; token: string }> {
+    if (!inviteToken) {
+      throw new ForbiddenError('Registration requires an invitation');
+    }
+
+    const invitation = await PgStoreRepository.findInvitationByToken(inviteToken);
+    if (!invitation) {
+      throw new ForbiddenError('Invalid or expired invitation');
+    }
+
+    if (email && invitation.email.toLowerCase() !== email.toLowerCase()) {
+      throw new ForbiddenError('Email does not match the invitation');
+    }
+
+    return { invitation, token: inviteToken };
   }
 
   private toPublic(user: User): UserPublic {
