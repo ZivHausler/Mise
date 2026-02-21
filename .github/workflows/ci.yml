@@ -85,12 +85,4 @@ jobs:
             PGPASSWORD=${{ secrets.CI_DB_PASSWORD || 'ci-test-only' }} psql -h localhost -U mise -d mise -f "$f"
           done
 
-      - name: Run e2e tests
-        run: pnpm test:e2e
-        env:
-          DATABASE_URL: postgresql://mise:${{ secrets.CI_DB_PASSWORD || 'ci-test-only' }}@localhost:5432/mise
-          MONGODB_URI: mongodb://localhost:27017/mise
-          REDIS_URL: redis://localhost:6379
-          RABBITMQ_URL: amqp://localhost:5672
-          JWT_SECRET: ${{ secrets.CI_JWT_SECRET || 'ci-test-secret-that-is-long-enough-for-validation-purposes' }}
-          ADMIN_SECRET: ${{ secrets.CI_ADMIN_SECRET || 'ci-test-admin-secret-long-enough-for-validation' }}
+      # E2E tests require running servers — run locally with /run:tests
