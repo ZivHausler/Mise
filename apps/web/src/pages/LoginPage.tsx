@@ -19,6 +19,7 @@ export default function LoginPage() {
   const setStores = useAuthStore((s) => s.setStores);
   const updateToken = useAuthStore((s) => s.updateToken);
   const setHasStore = useAuthStore((s) => s.setHasStore);
+  const setActiveStore = useAuthStore((s) => s.setActiveStore);
   const setPendingCreateStoreToken = useAuthStore((s) => s.setPendingCreateStoreToken);
   const addToast = useToastStore((s) => s.addToast);
   const login = useLogin();
@@ -42,7 +43,10 @@ export default function LoginPage() {
         {
           onSuccess: (data: any) => {
             setAuth(data.user, data.token, data.hasStore, data.user?.isAdmin);
-            if (data.stores) setStores(data.stores);
+            if (data.stores) {
+              setStores(data.stores);
+              if (data.stores[0]?.storeId) setActiveStore(data.stores[0].storeId);
+            }
 
             if (inviteToken && isCreateStoreInvite) {
               setPendingCreateStoreToken(inviteToken);
@@ -55,6 +59,7 @@ export default function LoginPage() {
                     updateToken(inviteData.token);
                     setHasStore(true);
                     if (inviteData.stores) setStores(inviteData.stores);
+                    setActiveStore(inviteData.storeId);
                     navigate('/loading');
                   },
                   onError: () => {
@@ -80,7 +85,7 @@ export default function LoginPage() {
         },
       );
     },
-    [googleLogin, inviteToken, isCreateStoreInvite, acceptInvite, setAuth, setStores, updateToken, setHasStore, setPendingCreateStoreToken, navigate, addToast, t],
+    [googleLogin, inviteToken, isCreateStoreInvite, acceptInvite, setAuth, setStores, updateToken, setHasStore, setActiveStore, setPendingCreateStoreToken, navigate, addToast, t],
   );
 
   const { renderButton, isAvailable } = useGoogleAuth(handleGoogleCredential);
@@ -100,7 +105,10 @@ export default function LoginPage() {
         {
           onSuccess: (data: any) => {
             setAuth(data.user, data.token, data.hasStore, data.user?.isAdmin);
-            if (data.stores) setStores(data.stores);
+            if (data.stores) {
+              setStores(data.stores);
+              if (data.stores[0]?.storeId) setActiveStore(data.stores[0].storeId);
+            }
 
             if (inviteToken && isCreateStoreInvite) {
               setPendingCreateStoreToken(inviteToken);
@@ -112,6 +120,8 @@ export default function LoginPage() {
                   onSuccess: (inviteData) => {
                     updateToken(inviteData.token);
                     setHasStore(true);
+                    if (inviteData.stores) setStores(inviteData.stores);
+                    setActiveStore(inviteData.storeId);
                     navigate('/loading');
                   },
                   onError: () => {
@@ -136,7 +146,7 @@ export default function LoginPage() {
         },
       );
     },
-    [email, password, inviteToken, isCreateStoreInvite, login, acceptInvite, setAuth, setStores, updateToken, setHasStore, setPendingCreateStoreToken, navigate, addToast, t],
+    [email, password, inviteToken, isCreateStoreInvite, login, acceptInvite, setAuth, setStores, updateToken, setHasStore, setActiveStore, setPendingCreateStoreToken, navigate, addToast, t],
   );
 
   return (
