@@ -92,6 +92,21 @@ export function Sidebar() {
       </div>
 
       <nav className="flex-1 overflow-y-auto py-4">
+        {!collapsed && (isAdmin ? displayStores.length > 0 : displayStores.length > 1) && (
+          <div className="relative mb-3 px-3">
+            <select
+              onChange={handleStoreSwitch}
+              value={activeStoreId || displayStores[0]?.storeId || ''}
+              className="w-full appearance-none rounded-md bg-primary-800 px-3 py-2 pe-8 text-body-sm text-white outline-none focus:ring-2 focus:ring-primary-500"
+            >
+              {isAdmin && <option value="" disabled>{t('nav.selectStore', 'Select a store')}</option>}
+              {displayStores.map((s) => (
+                <option key={s.storeId} value={s.storeId}>{s.storeName}</option>
+              ))}
+            </select>
+            <ChevronDown className="pointer-events-none absolute end-5 top-1/2 h-4 w-4 -translate-y-1/2 text-primary-400" />
+          </div>
+        )}
         <ul className="flex flex-col gap-1 px-2">
           {navItems.map((item) => (
             <li key={item.path}>
@@ -117,21 +132,6 @@ export function Sidebar() {
       </nav>
 
       <div className="border-t border-primary-800 py-4 px-2">
-        {!collapsed && (isAdmin ? displayStores.length > 0 : displayStores.length > 1) && (
-          <div className="relative mb-2 px-1">
-            <select
-              onChange={handleStoreSwitch}
-              value={activeStoreId || displayStores[0]?.storeId || ''}
-              className="w-full appearance-none rounded-md bg-primary-800 px-3 py-2 pe-8 text-body-sm text-white outline-none focus:ring-2 focus:ring-primary-500"
-            >
-              {isAdmin && <option value="" disabled>{t('nav.selectStore', 'Select a store')}</option>}
-              {displayStores.map((s) => (
-                <option key={s.storeId} value={s.storeId}>{s.storeName}</option>
-              ))}
-            </select>
-            <ChevronDown className="pointer-events-none absolute end-3 top-1/2 h-4 w-4 -translate-y-1/2 text-primary-400" />
-          </div>
-        )}
         {isAdmin && (
           <NavLink
             to="/admin"
