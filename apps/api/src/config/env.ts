@@ -45,6 +45,9 @@ const envSchema = z.object({
 
   // Logging
   LOG_LEVEL: z.enum(['trace', 'debug', 'info', 'warn', 'error', 'fatal']).default('info'),
+
+  // Feature flags — comma-separated store IDs that have the feature enabled, or '*' for all stores
+  FEATURE_PRODUCTION: z.string().default(''),
 });
 
 export type Env = z.infer<typeof envSchema>;

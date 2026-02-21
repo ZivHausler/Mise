@@ -30,7 +30,7 @@ const navItems = [
   { path: '/customers', icon: Users, labelKey: 'nav.customers', tourId: 'sidebar-customers' },
   { path: '/orders', icon: ClipboardList, labelKey: 'nav.orders', tourId: 'sidebar-orders' },
   { path: '/payments', icon: CreditCard, labelKey: 'nav.payments', tourId: 'sidebar-payments' },
-  { path: '/production', icon: Factory, labelKey: 'nav.production', tourId: 'sidebar-production' },
+  { path: '/production', icon: Factory, labelKey: 'nav.production', tourId: 'sidebar-production', featureFlag: 'production' as const },
 ];
 
 const bottomItems = [
@@ -40,6 +40,7 @@ const bottomItems = [
 export function Sidebar() {
   const { t } = useTranslation();
   const collapsed = useAppStore((s) => s.sidebarCollapsed);
+  const { data: featureFlags } = useFeatureFlags();
   const toggleSidebar = useAppStore((s) => s.toggleSidebar);
   const stores = useAuthStore((s) => s.stores);
   const isAdmin = useAuthStore((s) => s.isAdmin);
@@ -108,26 +109,51 @@ export function Sidebar() {
           </div>
         )}
         <ul className="flex flex-col gap-1 px-2">
-          {navItems.map((item) => (
-            <li key={item.path}>
-              <NavLink
-                to={item.path}
-                end={item.path === '/'}
-                data-tour={item.tourId}
-                className={({ isActive }) =>
-                  cn(
-                    'flex items-center gap-3 rounded-md px-3 py-2.5 text-body-sm transition-colors',
-                    isActive
-                      ? 'bg-primary-800 text-white border-s-4 border-primary-500'
-                      : 'text-primary-300 hover:bg-primary-800 hover:text-white'
-                  )
-                }
-              >
-                <item.icon className="h-5 w-5 shrink-0" />
-                {!collapsed && <span>{t(item.labelKey)}</span>}
-              </NavLink>
-            </li>
-          ))}
+          {navItems.map((item) => {
+            const isLocked = item.featureFlag && !featureFlags?.[item.featureFlag];
+            if (isLocked) {
+              return (
+                <li key={item.path}>
+                  <div
+                    data-tour={item.tourId}
+                    className="flex items-center gap-3 rounded-md px-3 py-2.5 text-body-sm text-primary-600 cursor-not-allowed select-none"
+                  >
+                    <item.icon className="h-5 w-5 shrink-0" />
+                    {!collapsed && (
+                      <span className="flex items-center gap-1.5 min-w-0">
+                        <span>{t(item.labelKey)}</span>
+                        <Sparkles className="h-3.5 w-3.5 shrink-0 text-purple-400" />
+                        <span className="text-[10px] font-medium text-purple-400 leading-none whitespace-nowrap">
+                          {t('nav.comingSoon', 'Coming soon')}
+                        </span>
+                      </span>
+                    )}
+                    {collapsed && <Sparkles className="h-3 w-3 shrink-0 text-purple-400" />}
+                  </div>
+                </li>
+              );
+            }
+            return (
+              <li key={item.path}>
+                <NavLink
+                  to={item.path}
+                  end={item.path === '/'}
+                  data-tour={item.tourId}
+                  className={({ isActive }) =>
+                    cn(
+                      'flex items-center gap-3 rounded-md px-3 py-2.5 text-body-sm transition-colors',
+                      isActive
+                        ? 'bg-primary-800 text-white border-s-4 border-primary-500'
+                        : 'text-primary-300 hover:bg-primary-800 hover:text-white'
+                    )
+                  }
+                >
+                  <item.icon className="h-5 w-5 shrink-0" />
+                  {!collapsed && <span>{t(item.labelKey)}</span>}
+                </NavLink>
+              </li>
+            );
+          })}
         </ul>
       </nav>
 
