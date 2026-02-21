@@ -18,6 +18,7 @@ const queryClient = new QueryClient({
 // Lazy-loaded pages – each import is stored so we can prefetch chunks after first paint
 const pageImports = {
   login: () => import('@/pages/LoginPage'),
+  loading: () => import('@/pages/LoadingPage'),
   register: () => import('@/pages/RegisterPage'),
   storeSetup: () => import('@/pages/StoreSetupPage'),
   dashboard: () => import('@/pages/DashboardPage'),
@@ -47,6 +48,7 @@ const pageImports = {
 };
 
 const LoginPage = lazy(pageImports.login);
+const LoadingPage = lazy(pageImports.loading);
 const RegisterPage = lazy(pageImports.register);
 const StoreSetupPage = lazy(pageImports.storeSetup);
 const DashboardPage = lazy(pageImports.dashboard);
@@ -126,6 +128,7 @@ export function App() {
           <Suspense fallback={<PageLoading />}>
             <Routes>
               {/* Public routes */}
+              <Route path="/loading" element={<LoadingPage />} />
               <Route path="/login" element={<LoginPage />} />
               <Route path="/login/:inviteToken" element={<LoginPage />} />
               <Route path="/register" element={<RegisterPage />} />
