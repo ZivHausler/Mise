@@ -1,32 +1,65 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Search, Shield, ShieldOff, Ban, CheckCircle, ChevronLeft, ChevronRight } from 'lucide-react';
-import { useAdminUsers, useAdminToggleAdmin, useAdminToggleDisabled } from '@/api/hooks';
+import { Search, Shield, ShieldOff, Ban, CheckCircle, ChevronLeft, ChevronRight, Trash2 } from 'lucide-react';
+import { useAdminUsers, useAdminToggleAdmin, useAdminToggleDisabled, useAdminDeleteUser } from '@/api/hooks';
 import { Button } from '@/components/Button';
+import { ConfirmModal } from '@/components/Modal';
 import { useDebouncedValue } from '@/hooks/useDebouncedValue';
+
+type ConfirmAction =
+  | { type: 'toggleAdmin'; userId: number; currentIsAdmin: boolean }
+  | { type: 'toggleDisabled'; userId: number; currentlyDisabled: boolean }
+  | { type: 'delete'; userId: number; userName: string };
 
 export default function AdminUsersPage() {
   const { t } = useTranslation();
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
   const [includeAdmins, setIncludeAdmins] = useState(false);
+  const [confirmAction, setConfirmAction] = useState<ConfirmAction | null>(null);
   const debouncedSearch = useDebouncedValue(search, 500, () => setPage(1));
   const { data, isLoading } = useAdminUsers(page, 20, debouncedSearch, includeAdmins);
   const toggleAdmin = useAdminToggleAdmin();
   const toggleDisabled = useAdminToggleDisabled();
+  const deleteUser = useAdminDeleteUser();
 
-  const handleToggleAdmin = (userId: number, currentIsAdmin: boolean) => {
-    const action = currentIsAdmin ? t('admin.users.demoteConfirm') : t('admin.users.promoteConfirm');
-    if (confirm(action)) {
-      toggleAdmin.mutate({ userId, isAdmin: !currentIsAdmin });
+  const handleConfirm = () => {
+    if (!confirmAction) return;
+    switch (confirmAction.type) {
+      case 'toggleAdmin':
+        toggleAdmin.mutate({ userId: confirmAction.userId, isAdmin: !confirmAction.currentIsAdmin });
+        break;
+      case 'toggleDisabled':
+        toggleDisabled.mutate({ userId: confirmAction.userId, disabled: !confirmAction.currentlyDisabled });
+        break;
+      case 'delete':
+        deleteUser.mutate(confirmAction.userId);
+        break;
+    }
+    setConfirmAction(null);
+  };
+
+  const getConfirmTitle = () => {
+    if (!confirmAction) return '';
+    switch (confirmAction.type) {
+      case 'toggleAdmin': return confirmAction.currentIsAdmin ? t('admin.users.demote') : t('admin.users.promote');
+      case 'toggleDisabled': return confirmAction.currentlyDisabled ? t('admin.users.enable') : t('admin.users.disable');
+      case 'delete': return t('admin.users.deleteTitle');
     }
   };
 
-  const handleToggleDisabled = (userId: number, currentlyDisabled: boolean) => {
-    const action = currentlyDisabled ? t('admin.users.enableConfirm') : t('admin.users.disableConfirm');
-    if (confirm(action)) {
-      toggleDisabled.mutate({ userId, disabled: !currentlyDisabled });
+  const getConfirmMessage = () => {
+    if (!confirmAction) return '';
+    switch (confirmAction.type) {
+      case 'toggleAdmin': return confirmAction.currentIsAdmin ? t('admin.users.demoteConfirm') : t('admin.users.promoteConfirm');
+      case 'toggleDisabled': return confirmAction.currentlyDisabled ? t('admin.users.enableConfirm') : t('admin.users.disableConfirm');
+      case 'delete': return t('admin.users.deleteConfirm', { name: confirmAction.userName });
     }
+  };
+
+  const getConfirmVariant = (): 'danger' | 'primary' => {
+    if (!confirmAction) return 'danger';
+    return confirmAction.type === 'delete' || (confirmAction.type === 'toggleDisabled' && !confirmAction.currentlyDisabled) ? 'danger' : 'primary';
   };
 
   return (
@@ -100,7 +133,7 @@ export default function AdminUsersPage() {
                     <td className="px-3 py-2 text-end">
                       <div className="flex items-center justify-end gap-1">
                         <button
-                          onClick={() => handleToggleAdmin(user.id, user.isAdmin)}
+                          onClick={() => setConfirmAction({ type: 'toggleAdmin', userId: user.id, currentIsAdmin: user.isAdmin })}
                           disabled={user.isAdmin}
                           className="p-1.5 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-700 transition-colors disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent"
                           title={user.isAdmin ? t('admin.users.demote') : t('admin.users.promote')}
@@ -108,12 +141,20 @@ export default function AdminUsersPage() {
                           {user.isAdmin ? <ShieldOff className="w-4 h-4 text-amber-600" /> : <Shield className="w-4 h-4 text-blue-600" />}
                         </button>
                         <button
-                          onClick={() => handleToggleDisabled(user.id, !!user.disabledAt)}
+                          onClick={() => setConfirmAction({ type: 'toggleDisabled', userId: user.id, currentlyDisabled: !!user.disabledAt })}
                           disabled={user.isAdmin}
                           className="p-1.5 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-700 transition-colors disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent"
                           title={user.disabledAt ? t('admin.users.enable') : t('admin.users.disable')}
                         >
                           {user.disabledAt ? <CheckCircle className="w-4 h-4 text-green-600" /> : <Ban className="w-4 h-4 text-red-600" />}
+                        </button>
+                        <button
+                          onClick={() => setConfirmAction({ type: 'delete', userId: user.id, userName: user.name })}
+                          disabled={user.isAdmin}
+                          className="p-1.5 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-700 transition-colors disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent"
+                          title={t('admin.users.delete')}
+                        >
+                          <Trash2 className="w-4 h-4 text-red-600" />
                         </button>
                       </div>
                     </td>
@@ -157,6 +198,15 @@ export default function AdminUsersPage() {
           </div>
         )}
       </div>
+
+      <ConfirmModal
+        open={!!confirmAction}
+        onClose={() => setConfirmAction(null)}
+        onConfirm={handleConfirm}
+        title={getConfirmTitle()}
+        message={getConfirmMessage()}
+        variant={getConfirmVariant()}
+      />
     </div>
   );
 }

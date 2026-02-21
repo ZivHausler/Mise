@@ -22,14 +22,17 @@ export default async function adminRoutes(app: FastifyInstance) {
   app.get('/users', adminPreHandler, (req, reply) => controller.getUsers(req, reply));
   app.patch('/users/:id/admin', adminPreHandler, (req, reply) => controller.toggleAdmin(req, reply));
   app.patch('/users/:id/disabled', adminPreHandler, (req, reply) => controller.toggleDisabled(req, reply));
+  app.delete('/users/:id', adminPreHandler, (req, reply) => controller.deleteUser(req, reply));
 
   // Stores
   app.get('/stores', adminPreHandler, (req, reply) => controller.getStores(req, reply));
   app.get('/stores/:id/members', adminPreHandler, (req, reply) => controller.getStoreMembers(req, reply));
   app.patch('/stores/:id', adminPreHandler, (req, reply) => controller.updateStore(req, reply));
+  app.delete('/stores/:id', adminPreHandler, (req, reply) => controller.deleteStore(req, reply));
 
   // Invitations
   app.get('/invitations', adminPreHandler, (req, reply) => controller.getInvitations(req, reply));
+  app.get('/invitations/emails', adminPreHandler, (req, reply) => controller.getDistinctInvitationEmails(req, reply));
   app.post('/invitations/create-store', adminPreHandler, (req, reply) => controller.createStoreInvitation(req, reply));
   app.patch('/invitations/:id/revoke', adminPreHandler, (req, reply) => controller.revokeInvitation(req, reply));
 

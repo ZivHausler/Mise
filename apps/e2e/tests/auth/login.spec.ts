@@ -24,12 +24,10 @@ test.describe('Login page', () => {
     await expect(page.getByText(/failed|error|invalid/i)).toBeVisible({ timeout: 10_000 });
   });
 
-  test('navigates to register page', async ({ page }) => {
+  test('register link is hidden without invite token', async ({ page }) => {
     await page.goto('/login');
 
-    await page.getByRole('link', { name: 'Register' }).click();
-
-    // Register page requires invite token, so it redirects back to /login
-    await expect(page).toHaveURL(/\/login/);
+    // Register link only appears when an invite token is present in the URL
+    await expect(page.getByRole('link', { name: 'Register' })).not.toBeVisible();
   });
 });

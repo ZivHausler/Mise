@@ -51,7 +51,7 @@ export const Modal = React.memo(function Modal({
       <div className="fixed inset-0 bg-black/50" onClick={onClose} />
       <div
         className={cn(
-          'relative z-10 w-full rounded-lg bg-white shadow-lg animate-fade-in',
+          'relative z-10 w-full rounded-lg bg-white dark:bg-neutral-800 shadow-lg animate-fade-in',
           sizeClasses[size]
         )}
         role="dialog"
@@ -59,11 +59,11 @@ export const Modal = React.memo(function Modal({
         aria-label={title}
       >
         {title && (
-          <div className="flex items-center justify-between border-b border-neutral-200 px-6 py-4">
-            <h2 className="font-heading text-h3 text-neutral-800">{title}</h2>
+          <div className="flex items-center justify-between border-b border-neutral-200 dark:border-neutral-700 px-6 py-4">
+            <h2 className="font-heading text-h3 text-neutral-800 dark:text-neutral-100">{title}</h2>
             <button
               onClick={onClose}
-              className="rounded-md p-1 text-neutral-400 hover:bg-neutral-100 hover:text-neutral-600"
+              className="rounded-md p-1 text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-700 hover:text-neutral-600 dark:hover:text-neutral-300"
             >
               <X className="h-5 w-5" />
             </button>
@@ -71,7 +71,7 @@ export const Modal = React.memo(function Modal({
         )}
         <div className="max-h-[65vh] overflow-y-auto px-6 py-4">{children}</div>
         {footer && (
-          <div className="flex items-center justify-end gap-2 border-t border-neutral-200 px-6 py-4">
+          <div className="flex items-center justify-end gap-2 border-t border-neutral-200 dark:border-neutral-700 px-6 py-4">
             {footer}
           </div>
         )}
@@ -120,7 +120,7 @@ export const ConfirmModal = React.memo(function ConfirmModal({
         </>
       }
     >
-      <p className="text-body text-neutral-600">{message}</p>
+      <p className="text-body text-neutral-600 dark:text-neutral-300">{message}</p>
     </Modal>
   );
 });
