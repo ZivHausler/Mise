@@ -110,7 +110,7 @@ export function Sidebar() {
         )}
         <ul className="flex flex-col gap-1 px-2">
           {navItems.map((item) => {
-            const isLocked = item.featureFlag && !featureFlags?.[item.featureFlag];
+            const isLocked = item.featureFlag && !featureFlags?.[item.featureFlag] && !isAdmin;
             if (isLocked) {
               return (
                 <li key={item.path}>
@@ -120,13 +120,15 @@ export function Sidebar() {
                   >
                     <item.icon className="h-5 w-5 shrink-0" />
                     {!collapsed && (
-                      <span className="flex items-center gap-1.5 min-w-0">
+                      <div className="flex flex-col">
                         <span>{t(item.labelKey)}</span>
-                        <Sparkles className="h-4 w-4 shrink-0 text-purple-400" />
-                        <span className="text-xs font-medium text-purple-400 leading-none whitespace-nowrap">
-                          {t('nav.comingSoon')}
+                        <span className="flex items-center gap-1 -mt-0.5">
+                          <Sparkles className="h-3.5 w-3.5 shrink-0 text-purple-400" />
+                          <span className="text-xs font-medium text-purple-400">
+                            {t('nav.comingSoon')}
+                          </span>
                         </span>
-                      </span>
+                      </div>
                     )}
                     {collapsed && <Sparkles className="h-3.5 w-3.5 shrink-0 text-purple-400" />}
                   </div>
