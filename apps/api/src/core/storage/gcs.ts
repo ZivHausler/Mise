@@ -37,7 +37,7 @@ export async function generateSignedUploadUrl(
   const bucket = storage.bucket(env.GCS_BUCKET_NAME);
   const file = bucket.file(filePath);
 
-  const [url] = await file.generateSignedUrl({
+  const [url] = await file.getSignedUrl({
     version: 'v4',
     action: 'write',
     expires: Date.now() + 60 * 60 * 1000,
