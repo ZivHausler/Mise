@@ -6,7 +6,7 @@ import { getPriorityBorderColor } from '@/utils/productionStage';
 import { cn } from '@/utils/cn';
 
 interface BatchData {
-  id: string;
+  id: number;
   recipeName: string;
   quantity: number;
   stage: number;
@@ -31,7 +31,7 @@ export function BatchCard({ batch, index, variant, onClick, onAdvance, onRevert 
   const borderColor = getPriorityBorderColor(batch.priority);
 
   return (
-    <Draggable draggableId={batch.id} index={index}>
+    <Draggable draggableId={String(batch.id)} index={index}>
       {(provided, snapshot) => (
         <div
           ref={provided.innerRef}

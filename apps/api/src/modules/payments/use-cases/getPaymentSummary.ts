@@ -2,8 +2,8 @@ import type { UseCase } from '../../../core/use-case.js';
 import { PaymentCrud } from '../paymentCrud.js';
 import type { OrderPaymentSummary, PaymentStatus } from '../payment.types.js';
 
-export class GetPaymentSummaryUseCase implements UseCase<OrderPaymentSummary, [string, string, number]> {
-  async execute(storeId: string, orderId: string, orderTotalAmount: number): Promise<OrderPaymentSummary> {
+export class GetPaymentSummaryUseCase implements UseCase<OrderPaymentSummary, [number, number, number]> {
+  async execute(storeId: number, orderId: number, orderTotalAmount: number): Promise<OrderPaymentSummary> {
     const payments = await PaymentCrud.getByOrderId(storeId, orderId);
     const paidAmount = payments
       .filter((p) => p.status !== 'refunded')

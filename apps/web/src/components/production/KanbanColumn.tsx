@@ -6,7 +6,7 @@ import { STAGE_COLORS, stageLabelKey } from '@/utils/productionStage';
 import { cn } from '@/utils/cn';
 
 interface BatchData {
-  id: string;
+  id: number;
   recipeName: string;
   quantity: number;
   stage: number;
@@ -21,8 +21,8 @@ interface KanbanColumnProps {
   stageKey: string;
   batches: BatchData[];
   variant: 'default' | 'kiosk';
-  onBatchClick: (id: string) => void;
-  onAdvance?: (id: string, newStage: number) => void;
+  onBatchClick: (id: number) => void;
+  onAdvance?: (id: number, newStage: number) => void;
 }
 
 export function KanbanColumn({ stage, stageKey, batches, variant, onBatchClick, onAdvance }: KanbanColumnProps) {
@@ -71,7 +71,7 @@ export function KanbanColumn({ stage, stageKey, batches, variant, onBatchClick, 
           >
             {batches.map((batch, index) => (
               <BatchCard
-                key={batch.id}
+                key={String(batch.id)}
                 index={index}
                 batch={batch}
                 variant={variant}

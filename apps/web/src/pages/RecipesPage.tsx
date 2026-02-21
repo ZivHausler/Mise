@@ -30,9 +30,9 @@ export default function RecipesPage() {
   }, [recipeList]);
 
   const groups = useMemo(() => {
-    const map = new Map<string, { id: string; name: string; color: string | null; icon: string | null }>();
+    const map = new Map<string, { id: number; name: string; color: string | null; icon: string | null }>();
     recipeList.forEach((r: any) => {
-      (r.groups ?? []).forEach((g: any) => { if (!map.has(g.id)) map.set(g.id, g); });
+      (r.groups ?? []).forEach((g: any) => { if (!map.has(String(g.id))) map.set(String(g.id), g); });
     });
     return Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name));
   }, [recipeList]);
@@ -40,7 +40,7 @@ export default function RecipesPage() {
   const filteredRecipes = useMemo(() => {
     let result = recipeList;
     if (categoryFilter) result = result.filter((r: any) => r.category === categoryFilter);
-    if (groupFilter) result = result.filter((r: any) => (r.groups ?? []).some((g: any) => g.id === groupFilter));
+    if (groupFilter) result = result.filter((r: any) => (r.groups ?? []).some((g: any) => String(g.id) === groupFilter));
     return result;
   }, [recipeList, categoryFilter, groupFilter]);
 
@@ -100,7 +100,7 @@ export default function RecipesPage() {
         >
           <option value="">{t('recipes.allGroups', 'All Groups')}</option>
           {groups.map((g) => (
-            <option key={g.id} value={g.id}>{g.name}</option>
+            <option key={String(g.id)} value={String(g.id)}>{g.name}</option>
           ))}
         </select>
       )}

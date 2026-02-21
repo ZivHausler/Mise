@@ -8,10 +8,10 @@ const featureFlagEnvMap: Record<FeatureFlag, string> = {
   production: env.FEATURE_PRODUCTION,
 };
 
-function isEnabled(flagValue: string, storeId: string): boolean {
+function isEnabled(flagValue: string, storeId: number): boolean {
   if (!flagValue) return false;
   if (flagValue === '*') return true;
-  return flagValue.split(',').map((s) => s.trim()).includes(storeId);
+  return flagValue.split(',').map((s) => s.trim()).includes(String(storeId));
 }
 
 export function requireFeature(flag: FeatureFlag) {

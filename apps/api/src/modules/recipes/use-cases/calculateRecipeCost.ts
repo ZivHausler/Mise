@@ -4,10 +4,10 @@ import type { InventoryService } from '../../inventory/inventory.service.js';
 import { NotFoundError } from '../../../core/errors/app-error.js';
 import { unitConversionFactor } from '../../shared/unitConversion.js';
 
-export class CalculateRecipeCostUseCase implements UseCase<number, [string, string, Set<string>?]> {
+export class CalculateRecipeCostUseCase implements UseCase<number, [number, string, Set<string>?]> {
   constructor(private inventoryService?: InventoryService) {}
 
-  async execute(storeId: string, recipeId: string, visited = new Set<string>()): Promise<number> {
+  async execute(storeId: number, recipeId: string, visited = new Set<string>()): Promise<number> {
     if (visited.has(recipeId)) {
       return 0;
     }
@@ -26,7 +26,7 @@ export class CalculateRecipeCostUseCase implements UseCase<number, [string, stri
 
       if (this.inventoryService) {
         try {
-          const item = await this.inventoryService.getById(storeId, ingredient.ingredientId);
+          const item = await this.inventoryService.getById(storeId, Number(ingredient.ingredientId));
           costPerUnit = item.costPerUnit;
           factor = unitConversionFactor(ingredient.unit, item.unit);
         } catch {

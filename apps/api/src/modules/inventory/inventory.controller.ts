@@ -14,7 +14,7 @@ export class InventoryController {
     const { search, page, limit, groupIds: groupIdsParam, status: statusParam } = request.query;
     if (page || limit) {
       const { page: pageNum, limit: limitNum } = parsePaginationParams(page, limit);
-      const groupIds = groupIdsParam ? groupIdsParam.split(',').filter(Boolean) : undefined;
+      const groupIds = groupIdsParam ? groupIdsParam.split(',').filter(Boolean).map(Number) : undefined;
       const statuses = statusParam ? statusParam.split(',').filter(Boolean) : undefined;
       const result = await this.inventoryService.getAllPaginated(storeId, pageNum, limitNum, search, groupIds, statuses);
       return reply.send({ success: true, data: result.items, pagination: { total: result.total, page: result.page, limit: result.limit, totalPages: result.totalPages } });
@@ -25,7 +25,7 @@ export class InventoryController {
 
   async getById(request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) {
     const storeId = request.currentUser!.storeId!;
-    const ingredient = await this.inventoryService.getById(storeId, request.params.id);
+    const ingredient = await this.inventoryService.getById(storeId, Number(request.params.id));
     return reply.send({ success: true, data: ingredient });
   }
 
@@ -59,7 +59,7 @@ export class InventoryController {
   async update(request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) {
     const storeId = request.currentUser!.storeId!;
     const data = updateIngredientSchema.parse(request.body);
-    const ingredient = await this.inventoryService.update(storeId, request.params.id, data);
+    const ingredient = await this.inventoryService.update(storeId, Number(request.params.id), data);
     return reply.send({ success: true, data: ingredient });
   }
 
@@ -72,13 +72,13 @@ export class InventoryController {
 
   async getLog(request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) {
     const storeId = request.currentUser!.storeId!;
-    const log = await this.inventoryService.getLog(storeId, request.params.id);
+    const log = await this.inventoryService.getLog(storeId, Number(request.params.id));
     return reply.send({ success: true, data: log });
   }
 
   async delete(request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) {
     const storeId = request.currentUser!.storeId!;
-    await this.inventoryService.delete(storeId, request.params.id);
+    await this.inventoryService.delete(storeId, Number(request.params.id));
     return reply.status(204).send();
   }
 }

@@ -1,5 +1,5 @@
 export interface User {
-  id: string;
+  id: number;
   email: string;
   passwordHash: string | null;
   googleId?: string;
@@ -11,7 +11,7 @@ export interface User {
 }
 
 export interface UserPublic {
-  id: string;
+  id: number;
   email: string;
   name: string;
   phone?: string;
@@ -30,9 +30,9 @@ export interface LoginDTO {
 }
 
 export interface AuthTokenPayload {
-  userId: string;
+  userId: number;
   email: string;
-  storeId?: string;
+  storeId?: number;
   storeRole?: number;
   isAdmin?: boolean;
   jti?: string;
@@ -42,6 +42,6 @@ export interface AuthResponse {
   user: UserPublic;
   token: string;
   hasStore: boolean;
-  stores: { storeId: string; storeName: string; role: number }[];
+  stores: { storeId: number; storeName: string; role: number }[];
   pendingCreateStoreToken?: string;
 }

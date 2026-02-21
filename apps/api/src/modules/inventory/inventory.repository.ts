@@ -23,11 +23,11 @@ export class PgInventoryRepository {
        ORDER BY g.name`,
       [ids],
     );
-    const groupMap = new Map<string, { id: string; name: string; color: string | null; icon: string | null; isDefault: boolean }[]>();
+    const groupMap = new Map<number, { id: number; name: string; color: string | null; icon: string | null; isDefault: boolean }[]>();
     for (const row of result.rows as Record<string, unknown>[]) {
-      const iid = row['ingredient_id'] as string;
+      const iid = Number(row['ingredient_id']);
       if (!groupMap.has(iid)) groupMap.set(iid, []);
-      groupMap.get(iid)!.push({ id: row['id'] as string, name: row['name'] as string, color: (row['color'] as string) || null, icon: (row['icon'] as string) || null, isDefault: row['is_default'] as boolean });
+      groupMap.get(iid)!.push({ id: Number(row['id']), name: row['name'] as string, color: (row['color'] as string) || null, icon: (row['icon'] as string) || null, isDefault: row['is_default'] as boolean });
     }
     for (const ingredient of ingredients) {
       ingredient.groups = groupMap.get(ingredient.id) ?? [];
@@ -35,7 +35,7 @@ export class PgInventoryRepository {
     return ingredients;
   }
 
-  private static async syncGroups(ingredientId: string, groupIds: string[]): Promise<void> {
+  private static async syncGroups(ingredientId: number, groupIds: number[]): Promise<void> {
     const pool = getPool();
     await pool.query('DELETE FROM ingredient_groups WHERE ingredient_id = $1', [ingredientId]);
     if (groupIds.length > 0) {
@@ -44,7 +44,7 @@ export class PgInventoryRepository {
     }
   }
 
-  static async findById(storeId: string, id: string): Promise<Ingredient | null> {
+  static async findById(storeId: number, id: number): Promise<Ingredient | null> {
     const pool = getPool();
     const result = await pool.query('SELECT * FROM ingredients WHERE id = $1 AND store_id = $2', [id, storeId]);
     if (!result.rows[0]) return null;
@@ -52,7 +52,7 @@ export class PgInventoryRepository {
     return ingredients[0] ?? null;
   }
 
-  static async findAll(storeId: string, search?: string): Promise<Ingredient[]> {
+  static async findAll(storeId: number, search?: string): Promise<Ingredient[]> {
     const pool = getPool();
     const qb = new QueryBuilder(storeId);
     if (search) {
@@ -64,7 +64,7 @@ export class PgInventoryRepository {
     return this.attachGroups(ingredients);
   }
 
-  static async findAllPaginated(storeId: string, page: number, limit: number, search?: string, groupIds?: string[], statuses?: string[]): Promise<PaginatedResult<Ingredient>> {
+  static async findAllPaginated(storeId: number, page: number, limit: number, search?: string, groupIds?: number[], statuses?: string[]): Promise<PaginatedResult<Ingredient>> {
     const pool = getPool();
     const offset = (page - 1) * limit;
     const conditions: string[] = [];
@@ -125,7 +125,7 @@ export class PgInventoryRepository {
     return { items, total, page, limit, totalPages: Math.ceil(total / limit) };
   }
 
-  static async findLowStock(storeId: string): Promise<Ingredient[]> {
+  static async findLowStock(storeId: number): Promise<Ingredient[]> {
     const pool = getPool();
     const result = await pool.query(
       'SELECT * FROM ingredients WHERE store_id = $1 AND quantity < low_stock_threshold ORDER BY quantity ASC',
@@ -135,20 +135,20 @@ export class PgInventoryRepository {
     return this.attachGroups(ingredients);
   }
 
-  static async create(storeId: string, data: CreateIngredientDTO): Promise<Ingredient> {
+  static async create(storeId: number, data: CreateIngredientDTO): Promise<Ingredient> {
     const pool = getPool();
     const result = await pool.query(
-      `INSERT INTO ingredients (id, store_id, name, unit, quantity, cost_per_unit, package_size, low_stock_threshold, supplier, notes, created_at, updated_at)
-       VALUES (gen_random_uuid(), $1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), NOW())
+      `INSERT INTO ingredients (store_id, name, unit, quantity, cost_per_unit, package_size, low_stock_threshold, supplier, notes, created_at, updated_at)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), NOW())
        RETURNING *`,
       [storeId, data.name, data.unit, data.quantity, data.costPerUnit, data.packageSize ?? null, data.lowStockThreshold, data.supplier ?? null, data.notes ?? null],
     );
-    const id = result.rows[0]['id'] as string;
+    const id = Number(result.rows[0]['id']);
     if (data.groupIds?.length) await this.syncGroups(id, data.groupIds);
     return (await this.findById(storeId, id))!;
   }
 
-  static async update(storeId: string, id: string, data: UpdateIngredientDTO): Promise<Ingredient> {
+  static async update(storeId: number, id: number, data: UpdateIngredientDTO): Promise<Ingredient> {
     const pool = getPool();
     const fields: string[] = [];
     const values: unknown[] = [];
@@ -177,7 +177,7 @@ export class PgInventoryRepository {
     return (await this.findById(storeId, id))!;
   }
 
-  static async adjustStock(storeId: string, data: AdjustStockDTO): Promise<Ingredient> {
+  static async adjustStock(storeId: number, data: AdjustStockDTO): Promise<Ingredient> {
     const pool = getPool();
     const client = await pool.connect();
     try {
@@ -208,8 +208,8 @@ export class PgInventoryRepository {
       );
 
       await client.query(
-        `INSERT INTO inventory_log (id, ingredient_id, type, quantity, reason, price_paid, created_at)
-         VALUES (gen_random_uuid(), $1, $2, $3, $4, $5, NOW())`,
+        `INSERT INTO inventory_log (ingredient_id, type, quantity, reason, price_paid, created_at)
+         VALUES ($1, $2, $3, $4, $5, NOW())`,
         [data.ingredientId, INVENTORY_LOG_TYPE_DB[data.type], data.quantity, data.reason ?? null, data.pricePaid ?? null],
       );
 
@@ -243,7 +243,7 @@ export class PgInventoryRepository {
     }
   }
 
-  static async getLog(storeId: string, ingredientId: string): Promise<InventoryLog[]> {
+  static async getLog(storeId: number, ingredientId: number): Promise<InventoryLog[]> {
     const pool = getPool();
     const result = await pool.query(
       `SELECT il.* FROM inventory_log il
@@ -253,8 +253,8 @@ export class PgInventoryRepository {
       [ingredientId, storeId],
     );
     return result.rows.map((r: Record<string, unknown>) => ({
-      id: r['id'] as string,
-      ingredientId: r['ingredient_id'] as string,
+      id: Number(r['id']),
+      ingredientId: Number(r['ingredient_id']),
       type: INVENTORY_LOG_TYPE_FROM_DB[r['type'] as string]!,
       quantity: Number(r['quantity']),
       reason: (r['reason'] as string) ?? undefined,
@@ -263,14 +263,14 @@ export class PgInventoryRepository {
     }));
   }
 
-  static async delete(storeId: string, id: string): Promise<void> {
+  static async delete(storeId: number, id: number): Promise<void> {
     const pool = getPool();
     await pool.query('DELETE FROM ingredients WHERE id = $1 AND store_id = $2', [id, storeId]);
   }
 
   private static mapRow(row: Record<string, unknown>): Ingredient {
     return {
-      id: row['id'] as string,
+      id: Number(row['id']),
       name: row['name'] as string,
       unit: row['unit'] as string,
       quantity: Number(row['quantity']),

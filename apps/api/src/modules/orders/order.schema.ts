@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { MAX_RECURRING_OCCURRENCES } from '@mise/shared';
 
 export const createOrderSchema = z.object({
-  customerId: z.string().uuid(),
+  customerId: z.coerce.number().int().positive(),
   items: z.array(z.object({
     recipeId: z.string().max(100),
     recipeName: z.string().max(200).optional(),
@@ -15,7 +15,7 @@ export const createOrderSchema = z.object({
 });
 
 export const createRecurringOrderSchema = z.object({
-  customerId: z.string().uuid(),
+  customerId: z.coerce.number().int().positive(),
   items: z.array(z.object({
     recipeId: z.string().max(100),
     recipeName: z.string().max(200).optional(),

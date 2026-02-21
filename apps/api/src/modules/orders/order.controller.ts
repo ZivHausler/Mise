@@ -23,7 +23,7 @@ export class OrderController {
 
   async getById(request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) {
     const storeId = request.currentUser!.storeId!;
-    const order = await this.orderService.getById(storeId, request.params.id);
+    const order = await this.orderService.getById(storeId, Number(request.params.id));
     return reply.send({ success: true, data: order });
   }
 
@@ -32,7 +32,7 @@ export class OrderController {
     const userId = request.currentUser!.userId!;
     const { lang, dateFormat } = pdfQuerySchema.parse(request.query);
 
-    const order = await this.orderService.getById(storeId, request.params.id);
+    const order = await this.orderService.getById(storeId, Number(request.params.id));
     const stores = await PgStoreRepository.getUserStores(userId);
     const storeName = stores.find((s) => s.storeId === storeId)?.storeName ?? '';
     const currency = t(lang, 'common.currency', '\u20AA');
@@ -51,7 +51,7 @@ export class OrderController {
     if (request.query.status !== undefined && request.query.status !== '') filters.status = Number(request.query.status);
     if (request.query.dateFrom) filters.dateFrom = request.query.dateFrom;
     if (request.query.dateTo) filters.dateTo = request.query.dateTo;
-    const { orders, total } = await this.orderService.getByCustomerId(storeId, request.params.customerId, { limit, offset }, Object.keys(filters).length ? filters : undefined);
+    const { orders, total } = await this.orderService.getByCustomerId(storeId, Number(request.params.customerId), { limit, offset }, Object.keys(filters).length ? filters : undefined);
     return reply.send({ success: true, data: orders, pagination: { page, limit, total, totalPages: Math.ceil(total / limit) } });
   }
 
@@ -73,27 +73,27 @@ export class OrderController {
   async updateStatus(request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) {
     const storeId = request.currentUser!.storeId!;
     const { status } = updateOrderStatusSchema.parse(request.body);
-    const order = await this.orderService.updateStatus(storeId, request.params.id, status as OrderStatus, request.id);
+    const order = await this.orderService.updateStatus(storeId, Number(request.params.id), status as OrderStatus, request.id);
     return reply.send({ success: true, data: order });
   }
 
   async update(request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) {
     const storeId = request.currentUser!.storeId!;
     const data = updateOrderSchema.parse(request.body);
-    const order = await this.orderService.update(storeId, request.params.id, data);
+    const order = await this.orderService.update(storeId, Number(request.params.id), data);
     return reply.send({ success: true, data: order });
   }
 
   async updateRecurring(request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) {
     const storeId = request.currentUser!.storeId!;
     const data = updateOrderSchema.parse(request.body);
-    const { updated, futureUpdated } = await this.orderService.updateFutureRecurring(storeId, request.params.id, data);
+    const { updated, futureUpdated } = await this.orderService.updateFutureRecurring(storeId, Number(request.params.id), data);
     return reply.send({ success: true, data: { order: updated, futureUpdated } });
   }
 
   async delete(request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) {
     const storeId = request.currentUser!.storeId!;
-    await this.orderService.delete(storeId, request.params.id);
+    await this.orderService.delete(storeId, Number(request.params.id));
     return reply.status(204).send();
   }
 

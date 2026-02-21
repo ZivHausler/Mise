@@ -16,9 +16,10 @@ import RedeemPointsModal from '@/components/loyalty/RedeemPointsModal';
 
 export default function CustomerDetailPage() {
   const { id } = useParams<{ id: string }>();
+  const numId = id ? Number(id) : 0;
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { data: customer, isLoading } = useCustomer(id!);
+  const { data: customer, isLoading } = useCustomer(numId);
   const [ordersPage, setOrdersPage] = useState(1);
   const [paymentsPage, setPaymentsPage] = useState(1);
 
@@ -43,13 +44,13 @@ export default function CustomerDetailPage() {
     ...(paymentDateTo && { dateTo: paymentDateTo }),
   };
 
-  const { data: customerOrders } = useCustomerOrders(id!, ordersPage, 10, Object.keys(orderFilters).length ? orderFilters : undefined);
-  const { data: customerPayments } = useCustomerPayments(id!, paymentsPage, 10, Object.keys(paymentFilters).length ? paymentFilters : undefined);
+  const { data: customerOrders } = useCustomerOrders(numId, ordersPage, 10, Object.keys(orderFilters).length ? orderFilters : undefined);
+  const { data: customerPayments } = useCustomerPayments(numId, paymentsPage, 10, Object.keys(paymentFilters).length ? paymentFilters : undefined);
   const deleteCustomer = useDeleteCustomer();
   const formatDate = useFormatDate();
   const [loyaltyPage, setLoyaltyPage] = useState(1);
-  const { data: loyaltySummary } = useCustomerLoyalty(id!);
-  const { data: loyaltyTxData } = useCustomerLoyaltyTransactions(id!, loyaltyPage, 10);
+  const { data: loyaltySummary } = useCustomerLoyalty(numId);
+  const { data: loyaltyTxData } = useCustomerLoyaltyTransactions(numId, loyaltyPage, 10);
   const { data: rawLoyaltyConfig } = useLoyaltyConfig();
   const loyaltyConfig = rawLoyaltyConfig as { isActive: boolean; pointValue: number } | undefined;
   const [showDelete, setShowDelete] = useState(false);
@@ -187,7 +188,7 @@ export default function CustomerDetailPage() {
                   const label = getStatusLabel(o.status);
                   return (
                     <tr
-                      key={o.id}
+                      key={String(o.id)}
                       className="cursor-pointer border-b border-neutral-100 hover:bg-primary-50"
                       onClick={() => navigate(`/orders/${o.id}`)}
                     >
@@ -294,7 +295,7 @@ export default function CustomerDetailPage() {
               </thead>
               <tbody>
                 {payments.map((p: any) => (
-                  <tr key={p.id} className="border-b border-neutral-100">
+                  <tr key={String(p.id)} className="border-b border-neutral-100">
                     <td className="px-3 py-2">{formatDate(p.createdAt)}</td>
                     <td className="px-3 py-2">#{p.orderNumber}</td>
                     <td className="px-3 py-2 text-end font-mono">{p.amount} {t('common.currency')}</td>
@@ -393,7 +394,7 @@ export default function CustomerDetailPage() {
               </thead>
               <tbody>
                 {((loyaltyTxData as any)?.transactions ?? []).map((tx: any) => (
-                  <tr key={tx.id} className="border-b border-neutral-100">
+                  <tr key={String(tx.id)} className="border-b border-neutral-100">
                     <td className="px-3 py-2">{formatDate(tx.createdAt)}</td>
                     <td className="px-3 py-2">
                       <StatusBadge

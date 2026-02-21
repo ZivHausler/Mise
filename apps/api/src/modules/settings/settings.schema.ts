@@ -5,7 +5,7 @@ import { z } from 'zod';
 export const createUnitSchema = z.object({
   name: z.string().trim().min(1).max(100),
   abbreviation: z.string().trim().min(1).max(20),
-  categoryId: z.string().uuid(),
+  categoryId: z.coerce.number().int().positive(),
   conversionFactor: z.number().positive(),
 });
 

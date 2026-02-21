@@ -12,7 +12,7 @@ export class StoreService {
     private app: FastifyInstance,
   ) {}
 
-  async createStore(userId: string, email: string, data: CreateStoreDTO, inviteToken?: string): Promise<{ store: Store; token: string }> {
+  async createStore(userId: number, email: string, data: CreateStoreDTO, inviteToken?: string): Promise<{ store: Store; token: string }> {
     if (!data.name.trim()) {
       throw new ValidationError('Store name is required');
     }
@@ -37,11 +37,11 @@ export class StoreService {
     return { store, token };
   }
 
-  async getMyStores(userId: string): Promise<UserStore[]> {
+  async getMyStores(userId: number): Promise<UserStore[]> {
     return PgStoreRepository.getUserStores(userId);
   }
 
-  async selectStore(userId: string, email: string, storeId: string, isAdmin?: boolean): Promise<{ token: string }> {
+  async selectStore(userId: number, email: string, storeId: number, isAdmin?: boolean): Promise<{ token: string }> {
     if (isAdmin) {
       // Admins can select any store — verify store exists
       const pool = (await import('../../core/database/postgres.js')).getPool();
@@ -66,11 +66,11 @@ export class StoreService {
     return PgStoreRepository.getAllStores();
   }
 
-  async getStoreMembers(storeId: string): Promise<{ userId: string; email: string; name: string; role: StoreRole }[]> {
+  async getStoreMembers(storeId: number): Promise<{ userId: number; email: string; name: string; role: StoreRole }[]> {
     return PgStoreRepository.getStoreMembers(storeId);
   }
 
-  async getPendingInvitations(storeId: string) {
+  async getPendingInvitations(storeId: number) {
     const invitations = await PgStoreRepository.getPendingInvitations(storeId);
     return invitations.map((inv) => ({
       email: inv.email,
@@ -81,7 +81,7 @@ export class StoreService {
     }));
   }
 
-  async sendInvite(storeId: string, storeRole: StoreRole, email: string, inviteRole: StoreRole, isAdmin?: boolean): Promise<StoreInvitation & { inviteLink: string }> {
+  async sendInvite(storeId: number, storeRole: StoreRole, email: string, inviteRole: StoreRole, isAdmin?: boolean): Promise<StoreInvitation & { inviteLink: string }> {
     if (storeRole !== StoreRole.OWNER && !isAdmin) {
       throw new ForbiddenError('Only store owners can send invitations');
     }
@@ -108,7 +108,7 @@ export class StoreService {
     };
   }
 
-  async acceptInvite(userId: string, token: string): Promise<{ storeId: string; role: StoreRole }> {
+  async acceptInvite(userId: number, token: string): Promise<{ storeId: number; role: StoreRole }> {
     const invitation = await PgStoreRepository.findInvitationByToken(token);
     if (!invitation) {
       throw new NotFoundError('Invalid or expired invitation');
@@ -131,13 +131,13 @@ export class StoreService {
     return { ...invitation, inviteLink };
   }
 
-  generateTokenWithStore(userId: string, email: string, storeId: string, storeRole: StoreRole, isAdmin?: boolean): string {
+  generateTokenWithStore(userId: number, email: string, storeId: number, storeRole: StoreRole, isAdmin?: boolean): string {
     const payload: AuthTokenPayload = { userId, email, storeId, storeRole, jti: crypto.randomUUID() };
     if (isAdmin) payload['isAdmin'] = true;
     return this.app.jwt.sign(payload, { expiresIn: env.JWT_EXPIRES_IN });
   }
 
-  generateTokenWithoutStore(userId: string, email: string): string {
+  generateTokenWithoutStore(userId: number, email: string): string {
     return this.app.jwt.sign(
       { userId, email, jti: crypto.randomUUID() },
       { expiresIn: env.JWT_EXPIRES_IN },

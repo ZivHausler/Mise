@@ -6,7 +6,7 @@ import { EventNames } from '../../core/events/event-names.js';
 import { OrderCrud } from './orderCrud.js';
 import { UpdateOrderStatusUseCase } from './use-cases/updateOrderStatus.js';
 import { NotFoundError, ValidationError } from '../../core/errors/app-error.js';
-import { randomUUID } from 'crypto';
+import { getPool } from '../../core/database/postgres.js';
 import type { RecipeService } from '../recipes/recipe.service.js';
 import type { InventoryService } from '../inventory/inventory.service.js';
 import { InventoryLogType, MAX_RECURRING_OCCURRENCES } from '@mise/shared';
@@ -20,21 +20,21 @@ export class OrderService {
     private inventoryService?: InventoryService,
   ) {}
 
-  async getById(storeId: string, id: string): Promise<Order> {
+  async getById(storeId: number, id: number): Promise<Order> {
     const order = await OrderCrud.getById(storeId, id);
     if (!order) throw new NotFoundError('Order not found');
     return order;
   }
 
-  async getByCustomerId(storeId: string, customerId: string, options?: { limit: number; offset: number }, filters?: CustomerOrderFilters): Promise<{ orders: Order[]; total: number }> {
+  async getByCustomerId(storeId: number, customerId: number, options?: { limit: number; offset: number }, filters?: CustomerOrderFilters): Promise<{ orders: Order[]; total: number }> {
     return OrderCrud.findByCustomerId(storeId, customerId, options, filters);
   }
 
-  async getAll(storeId: string, filters?: { status?: OrderStatus; excludePaid?: boolean }): Promise<Order[]> {
+  async getAll(storeId: number, filters?: { status?: OrderStatus; excludePaid?: boolean }): Promise<Order[]> {
     return OrderCrud.getAll(storeId, filters);
   }
 
-  async create(storeId: string, data: CreateOrderDTO & { recurringGroupId?: string }, correlationId?: string): Promise<Order> {
+  async create(storeId: number, data: CreateOrderDTO & { recurringGroupId?: number }, correlationId?: string): Promise<Order> {
     let totalAmount = 0;
 
     for (const item of data.items) {
@@ -69,7 +69,7 @@ export class OrderService {
   }
 
   async createBatch(
-    storeId: string,
+    storeId: number,
     data: CreateOrderDTO,
     recurrence: { frequency: 'weekly'; daysOfWeek: number[]; endDate: string },
     correlationId?: string,
@@ -91,7 +91,9 @@ export class OrderService {
       throw new ValidationError('No occurrences match the selected days within the date range');
     }
 
-    const recurringGroupId = randomUUID();
+    const pool = getPool();
+    const seqResult = await pool.query("SELECT nextval('recurring_group_id_seq')::integer AS id");
+    const recurringGroupId = seqResult.rows[0].id as number;
     const orders: Order[] = [];
     for (const date of occurrenceDates) {
       const order = await this.create(storeId, { ...data, dueDate: date, recurringGroupId }, correlationId);
@@ -101,7 +103,7 @@ export class OrderService {
     return orders;
   }
 
-  async updateStatus(storeId: string, id: string, status: OrderStatus, correlationId?: string): Promise<Order> {
+  async updateStatus(storeId: number, id: number, status: OrderStatus, correlationId?: string): Promise<Order> {
     const { order, previousStatus } = await this.updateOrderStatusUseCase.execute(storeId, id, status);
 
     if (previousStatus === ORDER_STATUS.IN_PROGRESS && status === ORDER_STATUS.READY) {
@@ -113,7 +115,7 @@ export class OrderService {
     return order;
   }
 
-  private async adjustInventoryForOrder(storeId: string, order: Order, type: InventoryLogType): Promise<void> {
+  private async adjustInventoryForOrder(storeId: number, order: Order, type: InventoryLogType): Promise<void> {
     if (!this.recipeService || !this.inventoryService) return;
 
     for (const item of order.items) {
@@ -123,12 +125,12 @@ export class OrderService {
 
         for (const ingredient of recipe.ingredients) {
           try {
-            const inventoryItem = await this.inventoryService.getById(storeId, ingredient.ingredientId);
+            const inventoryItem = await this.inventoryService.getById(storeId, Number(ingredient.ingredientId));
             const factor = unitConversionFactor(ingredient.unit, inventoryItem.unit);
             const convertedQty = ingredient.quantity * factor * item.quantity;
 
             await this.inventoryService.adjustStock(storeId, {
-              ingredientId: ingredient.ingredientId,
+              ingredientId: Number(ingredient.ingredientId),
               type,
               quantity: convertedQty,
               reason: `Order ${order.id}`,
@@ -143,19 +145,19 @@ export class OrderService {
     }
   }
 
-  async getByDateRange(storeId: string, filters: { from: string; to: string; status?: number }): Promise<Order[]> {
+  async getByDateRange(storeId: number, filters: { from: string; to: string; status?: number }): Promise<Order[]> {
     return OrderCrud.findByDateRange(storeId, filters);
   }
 
-  async getCalendarAggregates(storeId: string, filters: { from: string; to: string }): Promise<Array<{ day: string; total: number; received: number; inProgress: number; ready: number; delivered: number }>> {
+  async getCalendarAggregates(storeId: number, filters: { from: string; to: string }): Promise<Array<{ day: string; total: number; received: number; inProgress: number; ready: number; delivered: number }>> {
     return OrderCrud.getCalendarAggregates(storeId, filters);
   }
 
-  async getByDay(storeId: string, filters: { date: string; status?: number; limit: number; offset: number }): Promise<{ orders: Order[]; total: number }> {
+  async getByDay(storeId: number, filters: { date: string; status?: number; limit: number; offset: number }): Promise<{ orders: Order[]; total: number }> {
     return OrderCrud.findByDay(storeId, filters);
   }
 
-  async update(storeId: string, id: string, data: UpdateOrderDTO): Promise<Order> {
+  async update(storeId: number, id: number, data: UpdateOrderDTO): Promise<Order> {
     const existing = await OrderCrud.getById(storeId, id);
     if (!existing) throw new NotFoundError('Order not found');
 
@@ -192,7 +194,7 @@ export class OrderService {
     return OrderCrud.update(storeId, id, updateData);
   }
 
-  async updateFutureRecurring(storeId: string, id: string, data: UpdateOrderDTO): Promise<{ updated: Order; futureUpdated: number }> {
+  async updateFutureRecurring(storeId: number, id: number, data: UpdateOrderDTO): Promise<{ updated: Order; futureUpdated: number }> {
     // First update the current order
     const updated = await this.update(storeId, id, data);
 
@@ -217,7 +219,7 @@ export class OrderService {
     return { updated, futureUpdated };
   }
 
-  async delete(storeId: string, id: string): Promise<void> {
+  async delete(storeId: number, id: number): Promise<void> {
     const existing = await OrderCrud.getById(storeId, id);
     if (!existing) {
       throw new NotFoundError('Order not found');

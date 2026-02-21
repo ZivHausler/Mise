@@ -17,7 +17,7 @@ export default async function loyaltyRoutes(app: FastifyInstance) {
 
   eventBus.subscribe(EventNames.PAYMENT_RECEIVED, async (event) => {
     try {
-      const { paymentId, orderId, amount } = event.payload as { paymentId: string; orderId: string; amount: number };
+      const { paymentId, orderId, amount } = event.payload as { paymentId: number; orderId: number; amount: number };
       await service.awardPointsForPayment(paymentId, orderId, amount);
     } catch (err) {
       app.log.error({ err, event }, 'Failed to award loyalty points');
@@ -26,7 +26,7 @@ export default async function loyaltyRoutes(app: FastifyInstance) {
 
   eventBus.subscribe(EventNames.PAYMENT_REFUNDED, async (event) => {
     try {
-      const { paymentId, orderId, amount } = event.payload as { paymentId: string; orderId: string; amount: number };
+      const { paymentId, orderId, amount } = event.payload as { paymentId: number; orderId: number; amount: number };
       await service.deductPointsForRefund(paymentId, orderId, amount);
     } catch (err) {
       app.log.error({ err, event }, 'Failed to deduct loyalty points');

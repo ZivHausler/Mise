@@ -36,7 +36,7 @@ export const splitBatchSchema = z.object({
 });
 
 export const mergeBatchesSchema = z.object({
-  batchIds: z.array(z.string().uuid()).min(2).max(50),
+  batchIds: z.array(z.coerce.number().int().positive()).min(2).max(50),
 });
 
 export const prepListDateSchema = z.object({

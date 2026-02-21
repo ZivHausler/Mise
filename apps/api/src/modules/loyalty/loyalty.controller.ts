@@ -8,7 +8,7 @@ export class LoyaltyController {
 
   async getCustomerBalance(request: FastifyRequest<{ Params: { customerId: string } }>, reply: FastifyReply) {
     const storeId = request.currentUser!.storeId!;
-    const summary = await this.loyaltyService.getCustomerBalance(storeId, request.params.customerId);
+    const summary = await this.loyaltyService.getCustomerBalance(storeId, Number(request.params.customerId));
     return reply.send({ success: true, data: summary });
   }
 
@@ -18,7 +18,7 @@ export class LoyaltyController {
   ) {
     const storeId = request.currentUser!.storeId!;
     const { page, limit, offset } = parsePaginationParams(request.query.page, request.query.limit);
-    const { items, total } = await this.loyaltyService.getCustomerTransactions(storeId, request.params.customerId, { limit, offset });
+    const { items, total } = await this.loyaltyService.getCustomerTransactions(storeId, Number(request.params.customerId), { limit, offset });
     return reply.send({ success: true, data: items, pagination: { page, limit, total, totalPages: Math.ceil(total / limit) } });
   }
 

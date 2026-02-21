@@ -30,7 +30,7 @@ export default function AccountTab() {
   const { data: profile, isLoading } = useProfile();
   const updateProfile = useUpdateProfile();
 
-  const p = profile as { id: string; email: string; name: string; phone?: string } | undefined;
+  const p = profile as { id: number; email: string; name: string; phone?: string } | undefined;
 
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');

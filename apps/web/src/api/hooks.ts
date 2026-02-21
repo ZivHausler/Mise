@@ -103,7 +103,7 @@ export function useOrders(filters?: { excludePaid?: boolean }) {
   return useQuery({ queryKey: ['orders', filters], queryFn: () => fetchApi<unknown[]>(`/orders${qs ? `?${qs}` : ''}`) });
 }
 
-export function useOrder(id: string) {
+export function useOrder(id: number) {
   return useQuery({ queryKey: ['orders', id], queryFn: () => fetchApi<unknown>(`/orders/${id}`), enabled: !!id });
 }
 
@@ -168,7 +168,7 @@ export function useUpdateOrder() {
   const addToast = useToastStore((s) => s.addToast);
   const { t } = useTranslation();
   return useMutation({
-    mutationFn: ({ id, ...body }: { id: string } & Record<string, unknown>) => putApi(`/orders/${id}`, body),
+    mutationFn: ({ id, ...body }: { id: number } & Record<string, unknown>) => putApi(`/orders/${id}`, body),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['orders'] }); qc.invalidateQueries({ queryKey: ['dashboard'] }); addToast('success', t('toasts.orderUpdated')); },
     onError: () => addToast('error', t('toasts.orderUpdateFailed')),
   });
@@ -179,7 +179,7 @@ export function useUpdateRecurringOrders() {
   const addToast = useToastStore((s) => s.addToast);
   const { t } = useTranslation();
   return useMutation({
-    mutationFn: ({ id, ...body }: { id: string } & Record<string, unknown>) =>
+    mutationFn: ({ id, ...body }: { id: number } & Record<string, unknown>) =>
       putApi<{ order: unknown; futureUpdated: number }>(`/orders/${id}/recurring`, body),
     onSuccess: (data) => {
       qc.invalidateQueries({ queryKey: ['orders'] });
@@ -195,7 +195,7 @@ export function useUpdateOrderStatus() {
   const addToast = useToastStore((s) => s.addToast);
   const { t } = useTranslation();
   return useMutation({
-    mutationFn: ({ id, status }: { id: string; status: number }) => patchApi(`/orders/${id}/status`, { status }),
+    mutationFn: ({ id, status }: { id: number; status: number }) => patchApi(`/orders/${id}/status`, { status }),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['orders'] }); qc.invalidateQueries({ queryKey: ['inventory'] }); qc.invalidateQueries({ queryKey: ['dashboard'] }); addToast('success', t('toasts.orderUpdated')); },
     onError: () => addToast('error', t('toasts.orderUpdateFailed')),
   });
@@ -206,7 +206,7 @@ export function useDeleteOrder() {
   const addToast = useToastStore((s) => s.addToast);
   const { t } = useTranslation();
   return useMutation({
-    mutationFn: (id: string) => deleteApi(`/orders/${id}`),
+    mutationFn: (id: number) => deleteApi(`/orders/${id}`),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['orders'] }); qc.invalidateQueries({ queryKey: ['dashboard'] }); addToast('success', t('toasts.orderDeleted')); },
     onError: () => addToast('error', t('toasts.orderDeleteFailed')),
   });
@@ -254,6 +254,21 @@ export function useDeleteRecipe() {
   });
 }
 
+export function useGenerateUploadUrls() {
+  return useMutation({
+    mutationFn: (body: { count: number; mimeTypes: string[] }) =>
+      postApi<{ slots: { uploadUrl: string; publicUrl: string }[] }>('/recipes/upload-urls', body),
+  });
+}
+
+export function useDeleteRecipeImage() {
+  return useMutation({
+    mutationFn: async (url: string) => {
+      await apiClient.delete('/recipes/delete-image', { data: { url } });
+    },
+  });
+}
+
 // Inventory
 export interface PaginationInfo {
   total: number;
@@ -289,7 +304,7 @@ export function useLowStock() {
   });
 }
 
-export function useInventoryItem(id: string) {
+export function useInventoryItem(id: number) {
   return useQuery({ queryKey: ['inventory', id], queryFn: () => fetchApi<unknown>(`/inventory/${id}`), enabled: !!id });
 }
 
@@ -309,7 +324,7 @@ export function useUpdateInventoryItem() {
   const addToast = useToastStore((s) => s.addToast);
   const { t } = useTranslation();
   return useMutation({
-    mutationFn: ({ id, ...body }: { id: string } & Record<string, unknown>) => putApi(`/inventory/${id}`, body),
+    mutationFn: ({ id, ...body }: { id: number } & Record<string, unknown>) => putApi(`/inventory/${id}`, body),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['inventory'] }); addToast('success', t('toasts.itemUpdated')); },
     onError: () => addToast('error', t('toasts.itemUpdateFailed')),
   });
@@ -320,7 +335,7 @@ export function useAdjustStock() {
   const addToast = useToastStore((s) => s.addToast);
   const { t } = useTranslation();
   return useMutation({
-    mutationFn: (body: { ingredientId: string; type: string; quantity: number; pricePaid?: number }) => postApi('/inventory/adjust', body),
+    mutationFn: (body: { ingredientId: number; type: string; quantity: number; pricePaid?: number }) => postApi('/inventory/adjust', body),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['inventory'] }); addToast('success', t('toasts.stockAdjusted')); },
     onError: () => addToast('error', t('toasts.stockAdjustFailed')),
   });
@@ -331,7 +346,7 @@ export function useDeleteInventoryItem() {
   const addToast = useToastStore((s) => s.addToast);
   const { t } = useTranslation();
   return useMutation({
-    mutationFn: (id: string) => deleteApi(`/inventory/${id}`),
+    mutationFn: (id: number) => deleteApi(`/inventory/${id}`),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['inventory'] }); addToast('success', t('toasts.itemDeleted')); },
     onError: () => addToast('error', t('toasts.itemDeleteFailed')),
   });
@@ -342,11 +357,11 @@ export function useCustomers() {
   return useQuery({ queryKey: ['customers'], queryFn: () => fetchApi<unknown[]>('/customers') });
 }
 
-export function useCustomer(id: string) {
+export function useCustomer(id: number) {
   return useQuery({ queryKey: ['customers', id], queryFn: () => fetchApi<unknown>(`/customers/${id}`), enabled: !!id });
 }
 
-export function useCustomerOrders(customerId: string, page = 1, limit = 10, filters?: { status?: number; dateFrom?: string; dateTo?: string }) {
+export function useCustomerOrders(customerId: number, page = 1, limit = 10, filters?: { status?: number; dateFrom?: string; dateTo?: string }) {
   return useQuery({
     queryKey: ['orders', 'customer', customerId, page, limit, filters],
     queryFn: async () => {
@@ -381,7 +396,7 @@ export function useUpdateCustomer() {
   const addToast = useToastStore((s) => s.addToast);
   const { t } = useTranslation();
   return useMutation({
-    mutationFn: ({ id, ...body }: { id: string } & Record<string, unknown>) => putApi(`/customers/${id}`, body),
+    mutationFn: ({ id, ...body }: { id: number } & Record<string, unknown>) => putApi(`/customers/${id}`, body),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['customers'] }); addToast('success', t('toasts.customerUpdated')); },
     onError: () => addToast('error', t('toasts.customerUpdateFailed')),
   });
@@ -392,7 +407,7 @@ export function useDeleteCustomer() {
   const addToast = useToastStore((s) => s.addToast);
   const { t } = useTranslation();
   return useMutation({
-    mutationFn: (id: string) => deleteApi(`/customers/${id}`),
+    mutationFn: (id: number) => deleteApi(`/customers/${id}`),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['customers'] }); addToast('success', t('toasts.customerDeleted')); },
     onError: () => addToast('error', t('toasts.customerDeleteFailed')),
   });
@@ -413,7 +428,7 @@ export function usePayments(page = 1, limit = 10, filters?: { status?: string; m
   });
 }
 
-export function useCustomerPayments(customerId: string, page = 1, limit = 10, filters?: { method?: string; dateFrom?: string; dateTo?: string }) {
+export function useCustomerPayments(customerId: number, page = 1, limit = 10, filters?: { method?: string; dateFrom?: string; dateTo?: string }) {
   return useQuery({
     queryKey: ['payments', 'customer', customerId, page, limit, filters],
     queryFn: async () => {
@@ -451,7 +466,7 @@ export function useRefundPayment() {
   const addToast = useToastStore((s) => s.addToast);
   const { t } = useTranslation();
   return useMutation({
-    mutationFn: (id: string) => postApi(`/payments/${id}/refund`, {}),
+    mutationFn: (id: number) => postApi(`/payments/${id}/refund`, {}),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['payments'] });
       qc.invalidateQueries({ queryKey: ['paymentStatuses'] });
@@ -503,7 +518,7 @@ export function useUpdateUnit() {
   const addToast = useToastStore((s) => s.addToast);
   const { t } = useTranslation();
   return useMutation({
-    mutationFn: ({ id, ...body }: { id: string } & Record<string, unknown>) => putApi(`/settings/units/${id}`, body),
+    mutationFn: ({ id, ...body }: { id: number } & Record<string, unknown>) => putApi(`/settings/units/${id}`, body),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['units'] }); addToast('success', t('toasts.unitUpdated')); },
     onError: () => addToast('error', t('toasts.unitUpdateFailed')),
   });
@@ -514,7 +529,7 @@ export function useDeleteUnit() {
   const addToast = useToastStore((s) => s.addToast);
   const { t } = useTranslation();
   return useMutation({
-    mutationFn: (id: string) => deleteApi(`/settings/units/${id}`),
+    mutationFn: (id: number) => deleteApi(`/settings/units/${id}`),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['units'] }); addToast('success', t('toasts.unitDeleted')); },
     onError: () => addToast('error', t('toasts.unitDeleteFailed')),
   });
@@ -541,7 +556,7 @@ export function useUpdateGroup() {
   const addToast = useToastStore((s) => s.addToast);
   const { t } = useTranslation();
   return useMutation({
-    mutationFn: ({ id, ...body }: { id: string } & Record<string, unknown>) => putApi(`/settings/groups/${id}`, body),
+    mutationFn: ({ id, ...body }: { id: number } & Record<string, unknown>) => putApi(`/settings/groups/${id}`, body),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['groups'] }); addToast('success', t('toasts.groupUpdated')); },
     onError: () => addToast('error', t('toasts.groupUpdateFailed')),
   });
@@ -552,7 +567,7 @@ export function useDeleteGroup() {
   const addToast = useToastStore((s) => s.addToast);
   const { t } = useTranslation();
   return useMutation({
-    mutationFn: (id: string) => deleteApi(`/settings/groups/${id}`),
+    mutationFn: (id: number) => deleteApi(`/settings/groups/${id}`),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['groups'] }); addToast('success', t('toasts.groupDeleted')); },
     onError: () => addToast('error', t('toasts.groupDeleteFailed')),
   });
@@ -656,7 +671,7 @@ export function useAdminUsers(page = 1, limit = 20, search?: string, includeAdmi
       if (search) params.set('search', search);
       if (includeAdmins) params.set('includeAdmins', 'true');
       const { data } = await apiClient.get(`/admin/users?${params}`);
-      return data.data as PaginatedResponse<{ id: string; email: string; name: string; isAdmin: boolean; disabledAt: string | null; createdAt: string; storeCount: number }>;
+      return data.data as PaginatedResponse<{ id: number; email: string; name: string; isAdmin: boolean; disabledAt: string | null; createdAt: string; storeCount: number }>;
     },
     placeholderData: keepPreviousData,
   });
@@ -667,7 +682,7 @@ export function useAdminToggleAdmin() {
   const addToast = useToastStore((s) => s.addToast);
   const { t } = useTranslation();
   return useMutation({
-    mutationFn: ({ userId, isAdmin }: { userId: string; isAdmin: boolean }) => patchApi(`/admin/users/${userId}/admin`, { isAdmin }),
+    mutationFn: ({ userId, isAdmin }: { userId: number; isAdmin: boolean }) => patchApi(`/admin/users/${userId}/admin`, { isAdmin }),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['admin', 'users'] }); addToast('success', t('toasts.adminToggled')); },
     onError: () => addToast('error', t('toasts.adminToggleFailed')),
   });
@@ -678,7 +693,7 @@ export function useAdminToggleDisabled() {
   const addToast = useToastStore((s) => s.addToast);
   const { t } = useTranslation();
   return useMutation({
-    mutationFn: ({ userId, disabled }: { userId: string; disabled: boolean }) => patchApi(`/admin/users/${userId}/disabled`, { disabled }),
+    mutationFn: ({ userId, disabled }: { userId: number; disabled: boolean }) => patchApi(`/admin/users/${userId}/disabled`, { disabled }),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['admin', 'users'] }); addToast('success', t('toasts.userStatusUpdated')); },
     onError: () => addToast('error', t('toasts.userStatusUpdateFailed')),
   });
@@ -691,16 +706,16 @@ export function useAdminStores(page = 1, limit = 20, search?: string) {
       const params = new URLSearchParams({ page: String(page), limit: String(limit) });
       if (search) params.set('search', search);
       const { data } = await apiClient.get(`/admin/stores?${params}`);
-      return data.data as PaginatedResponse<{ id: string; name: string; code: string | null; address: string | null; createdAt: string; memberCount: number }>;
+      return data.data as PaginatedResponse<{ id: number; name: string; code: string | null; address: string | null; createdAt: string; memberCount: number }>;
     },
     placeholderData: keepPreviousData,
   });
 }
 
-export function useAdminStoreMembers(storeId: string | null) {
+export function useAdminStoreMembers(storeId: number | null) {
   return useQuery({
     queryKey: ['admin', 'storeMembers', storeId],
-    queryFn: () => fetchApi<{ userId: string; email: string; name: string; role: number; joinedAt: string }[]>(`/admin/stores/${storeId}/members`),
+    queryFn: () => fetchApi<{ userId: number; email: string; name: string; role: number; joinedAt: string }[]>(`/admin/stores/${storeId}/members`),
     enabled: !!storeId,
   });
 }
@@ -710,7 +725,7 @@ export function useAdminUpdateStore() {
   const addToast = useToastStore((s) => s.addToast);
   const { t } = useTranslation();
   return useMutation({
-    mutationFn: ({ storeId, ...body }: { storeId: string; name?: string; address?: string }) => patchApi(`/admin/stores/${storeId}`, body),
+    mutationFn: ({ storeId, ...body }: { storeId: number; name?: string; address?: string }) => patchApi(`/admin/stores/${storeId}`, body),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['admin', 'stores'] }); addToast('success', t('toasts.storeUpdated')); },
     onError: () => addToast('error', t('toasts.storeUpdateFailed')),
   });
@@ -729,7 +744,7 @@ export function useAdminInvitations(page = 1, limit = 20, filters?: { status?: s
       if (filters?.dateFrom) params.set('dateFrom', filters.dateFrom);
       if (filters?.dateTo) params.set('dateTo', filters.dateTo);
       const { data } = await apiClient.get(`/admin/invitations?${params}`);
-      return data.data as PaginatedResponse<{ id: string; email: string; storeId: string | null; storeName: string | null; role: number; status: string; expiresAt: string; createdAt: string }>;
+      return data.data as PaginatedResponse<{ id: number; email: string; storeId: number | null; storeName: string | null; role: number; status: string; expiresAt: string; createdAt: string; token?: string }>;
     },
     placeholderData: keepPreviousData,
   });
@@ -751,7 +766,7 @@ export function useAdminRevokeInvitation() {
   const addToast = useToastStore((s) => s.addToast);
   const { t } = useTranslation();
   return useMutation({
-    mutationFn: (id: string) => patchApi(`/admin/invitations/${id}/revoke`, {}),
+    mutationFn: (id: number) => patchApi(`/admin/invitations/${id}/revoke`, {}),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['admin', 'invitations'] }); addToast('success', t('toasts.inviteRevoked')); },
     onError: () => addToast('error', t('toasts.inviteRevokeFailed')),
   });
@@ -773,18 +788,18 @@ export function useAdminAuditLog(page = 1, limit = 20, filters?: { userId?: stri
       return {
         items: result.items,
         pagination: { total: result.total, page: result.page, limit: result.limit, totalPages: result.totalPages },
-      } as PaginatedResponse<{ id: string; userId: string; userEmail: string; storeId: string | null; method: string; path: string; statusCode: number; ip: string; createdAt: string }>;
+      } as PaginatedResponse<{ id: number; userId: number; userEmail: string; storeId: number | null; method: string; path: string; statusCode: number; ip: string; createdAt: string }>;
     },
     staleTime: 0,
     placeholderData: keepPreviousData,
   });
 }
 
-type AuditLogEntry = { id: string; userId: string; userEmail: string; storeId: string | null; method: string; path: string; statusCode: number; ip: string; createdAt: string };
+type AuditLogEntry = { id: number; userId: number; userEmail: string; storeId: number | null; method: string; path: string; statusCode: number; ip: string; createdAt: string };
 
 export function useAuditLogUpdates(
   since: string | null,
-  excludeIds: string[],
+  excludeIds: number[],
   filters?: { userId?: string; method?: string; statusCode?: string; dateFrom?: string; dateTo?: string; search?: string },
 ) {
   return useQuery({
@@ -808,7 +823,7 @@ export function useAuditLogUpdates(
   });
 }
 
-export function useAuditLogRequestBody(auditLogId: string | null) {
+export function useAuditLogRequestBody(auditLogId: number | null) {
   return useQuery({
     queryKey: ['admin', 'auditLog', auditLogId, 'requestBody'],
     queryFn: () => fetchApi<unknown>(`/admin/audit-log/${auditLogId}/request-body`),
@@ -816,7 +831,7 @@ export function useAuditLogRequestBody(auditLogId: string | null) {
   });
 }
 
-export function useAuditLogResponseBody(auditLogId: string | null) {
+export function useAuditLogResponseBody(auditLogId: number | null) {
   return useQuery({
     queryKey: ['admin', 'auditLog', auditLogId, 'responseBody'],
     queryFn: () => fetchApi<unknown>(`/admin/audit-log/${auditLogId}/response-body`),
@@ -872,7 +887,7 @@ export function useUpdateLoyaltyConfig() {
 }
 
 // Loyalty — Customer
-export function useCustomerLoyalty(customerId: string) {
+export function useCustomerLoyalty(customerId: number) {
   return useQuery({
     queryKey: ['loyalty', customerId],
     queryFn: () => fetchApi<{ balance: number; lifetimeEarned: number; lifetimeRedeemed: number }>(`/loyalty/customer/${customerId}`),
@@ -880,7 +895,7 @@ export function useCustomerLoyalty(customerId: string) {
   });
 }
 
-export function useCustomerLoyaltyTransactions(customerId: string, page = 1, limit = 10) {
+export function useCustomerLoyaltyTransactions(customerId: number, page = 1, limit = 10) {
   return useQuery({
     queryKey: ['loyalty', customerId, 'transactions', page, limit],
     queryFn: async () => {
@@ -898,7 +913,7 @@ export function useAdjustLoyalty() {
   const addToast = useToastStore((s) => s.addToast);
   const { t } = useTranslation();
   return useMutation({
-    mutationFn: (body: { customerId: string; points: number; description?: string }) => postApi('/loyalty/adjust', body),
+    mutationFn: (body: { customerId: number; points: number; description?: string }) => postApi('/loyalty/adjust', body),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['loyalty'] });
       qc.invalidateQueries({ queryKey: ['customers'] });
@@ -913,7 +928,7 @@ export function useRedeemLoyalty() {
   const addToast = useToastStore((s) => s.addToast);
   const { t } = useTranslation();
   return useMutation({
-    mutationFn: (body: { customerId: string; points: number }) => postApi('/loyalty/redeem', body),
+    mutationFn: (body: { customerId: number; points: number }) => postApi('/loyalty/redeem', body),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['loyalty'] });
       qc.invalidateQueries({ queryKey: ['customers'] });
@@ -932,7 +947,7 @@ export function useProductionBatches(date: string) {
   });
 }
 
-export function useProductionBatch(id: string) {
+export function useProductionBatch(id: number) {
   return useQuery({
     queryKey: ['production', 'batch', id],
     queryFn: () => fetchApi<unknown>(`/production/batches/${id}`),
@@ -965,7 +980,7 @@ export function useCreateBatch() {
 export function useUpdateBatchStage() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, stage }: { id: string; stage: number }) => patchApi(`/production/batches/${id}/stage`, { stage }),
+    mutationFn: ({ id, stage }: { id: number; stage: number }) => patchApi(`/production/batches/${id}/stage`, { stage }),
     onSettled: () => {
       qc.invalidateQueries({ queryKey: ['production'] });
     },
@@ -977,7 +992,7 @@ export function useUpdateBatch() {
   const addToast = useToastStore((s) => s.addToast);
   const { t } = useTranslation();
   return useMutation({
-    mutationFn: ({ id, ...body }: { id: string } & Record<string, unknown>) => putApi(`/production/batches/${id}`, body),
+    mutationFn: ({ id, ...body }: { id: number } & Record<string, unknown>) => putApi(`/production/batches/${id}`, body),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['production'] }); addToast('success', t('toasts.batchUpdated')); },
     onError: () => addToast('error', t('toasts.batchUpdateFailed')),
   });
@@ -988,7 +1003,7 @@ export function useDeleteBatch() {
   const addToast = useToastStore((s) => s.addToast);
   const { t } = useTranslation();
   return useMutation({
-    mutationFn: (id: string) => deleteApi(`/production/batches/${id}`),
+    mutationFn: (id: number) => deleteApi(`/production/batches/${id}`),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['production'] }); addToast('success', t('toasts.batchDeleted')); },
     onError: () => addToast('error', t('toasts.batchDeleteFailed')),
   });
@@ -999,7 +1014,7 @@ export function useSplitBatch() {
   const addToast = useToastStore((s) => s.addToast);
   const { t } = useTranslation();
   return useMutation({
-    mutationFn: ({ id, splitQuantity }: { id: string; splitQuantity: number }) => postApi(`/production/batches/${id}/split`, { splitQuantity }),
+    mutationFn: ({ id, splitQuantity }: { id: number; splitQuantity: number }) => postApi(`/production/batches/${id}/split`, { splitQuantity }),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['production'] }); addToast('success', t('toasts.batchSplit')); },
     onError: () => addToast('error', t('toasts.batchSplitFailed')),
   });
@@ -1010,7 +1025,7 @@ export function useMergeBatches() {
   const addToast = useToastStore((s) => s.addToast);
   const { t } = useTranslation();
   return useMutation({
-    mutationFn: (body: { batchIds: string[] }) => postApi('/production/batches/merge', body),
+    mutationFn: (body: { batchIds: number[] }) => postApi('/production/batches/merge', body),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['production'] }); addToast('success', t('toasts.batchesMerged')); },
     onError: () => addToast('error', t('toasts.batchesMergeFailed')),
   });
@@ -1027,7 +1042,7 @@ export function usePrepList(date: string) {
 export function useTogglePrepItem() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, isPrepped }: { id: string; isPrepped: boolean }) => patchApi(`/production/prep-list/${id}`, { isPrepped }),
+    mutationFn: ({ id, isPrepped }: { id: number; isPrepped: boolean }) => patchApi(`/production/prep-list/${id}`, { isPrepped }),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['production'] }); },
   });
 }

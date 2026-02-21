@@ -46,6 +46,10 @@ const envSchema = z.object({
   // Logging
   LOG_LEVEL: z.enum(['trace', 'debug', 'info', 'warn', 'error', 'fatal']).default('info'),
 
+  // Google Cloud Storage
+  GCS_BUCKET_NAME: z.string().default(''),
+  GCS_PROJECT_ID: z.string().default(''),
+
   // Feature flags — comma-separated store IDs that have the feature enabled, or '*' for all stores
   FEATURE_PRODUCTION: z.string().default(''),
 });

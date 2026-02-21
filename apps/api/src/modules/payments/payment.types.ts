@@ -21,8 +21,8 @@ export const PAYMENT_RECORD_STATUS = {
 export type PaymentRecordStatus = (typeof PAYMENT_RECORD_STATUS)[keyof typeof PAYMENT_RECORD_STATUS];
 
 export interface Payment {
-  id: string;
-  orderId: string;
+  id: number;
+  orderId: number;
   orderNumber?: number;
   customerName?: string;
   amount: number;
@@ -33,14 +33,14 @@ export interface Payment {
 }
 
 export interface CreatePaymentDTO {
-  orderId: string;
+  orderId: number;
   amount: number;
   method: PaymentMethod;
   notes?: string;
 }
 
 export interface OrderPaymentSummary {
-  orderId: string;
+  orderId: number;
   totalAmount: number;
   paidAmount: number;
   status: PaymentStatus;

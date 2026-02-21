@@ -15,17 +15,17 @@ export class ProductionService {
     private inventoryService?: InventoryService,
   ) {}
 
-  async getBatchesByDate(storeId: string, date: string): Promise<ProductionBatch[]> {
+  async getBatchesByDate(storeId: number, date: string): Promise<ProductionBatch[]> {
     return ProductionCrud.findByDate(storeId, date);
   }
 
-  async getBatchById(storeId: string, id: string): Promise<ProductionBatch> {
+  async getBatchById(storeId: number, id: number): Promise<ProductionBatch> {
     const batch = await ProductionCrud.findById(storeId, id);
     if (!batch) throw new NotFoundError('Production batch not found');
     return batch;
   }
 
-  async createBatch(storeId: string, data: CreateBatchDTO): Promise<ProductionBatch> {
+  async createBatch(storeId: number, data: CreateBatchDTO): Promise<ProductionBatch> {
     let recipeName = data.recipeName ?? '';
     if (!recipeName && this.recipeService) {
       try {
@@ -59,7 +59,7 @@ export class ProductionService {
     return batch;
   }
 
-  async generateBatches(storeId: string, date: string): Promise<ProductionBatch[]> {
+  async generateBatches(storeId: number, date: string): Promise<ProductionBatch[]> {
     // 1. Query all orders with due_date on target date
     const orders = await OrderCrud.findByDateRange(storeId, { from: date, to: date });
     // Filter to only received/in_progress orders
@@ -68,7 +68,7 @@ export class ProductionService {
     if (eligibleOrders.length === 0) return [];
 
     // 2. Group order items by recipeId, sum quantities
-    const recipeGroups = new Map<string, { recipeId: string; totalQuantity: number; orderSources: { orderId: string; itemIndex: number; quantity: number }[] }>();
+    const recipeGroups = new Map<string, { recipeId: string; totalQuantity: number; orderSources: { orderId: number; itemIndex: number; quantity: number }[] }>();
 
     for (const order of eligibleOrders) {
       for (let i = 0; i < order.items.length; i++) {
@@ -130,7 +130,7 @@ export class ProductionService {
     return batches;
   }
 
-  async updateStage(storeId: string, id: string, stage: ProductionStage): Promise<ProductionBatch> {
+  async updateStage(storeId: number, id: number, stage: ProductionStage): Promise<ProductionBatch> {
     const existing = await ProductionCrud.findById(storeId, id);
     if (!existing) throw new NotFoundError('Production batch not found');
 
@@ -153,19 +153,19 @@ export class ProductionService {
     return batch;
   }
 
-  async updateBatch(storeId: string, id: string, data: UpdateBatchDTO): Promise<ProductionBatch> {
+  async updateBatch(storeId: number, id: number, data: UpdateBatchDTO): Promise<ProductionBatch> {
     const existing = await ProductionCrud.findById(storeId, id);
     if (!existing) throw new NotFoundError('Production batch not found');
     return ProductionCrud.update(storeId, id, data);
   }
 
-  async deleteBatch(storeId: string, id: string): Promise<void> {
+  async deleteBatch(storeId: number, id: number): Promise<void> {
     const existing = await ProductionCrud.findById(storeId, id);
     if (!existing) throw new NotFoundError('Production batch not found');
     return ProductionCrud.delete(storeId, id);
   }
 
-  async splitBatch(storeId: string, id: string, splitQuantity: number): Promise<{ original: ProductionBatch; newBatch: ProductionBatch }> {
+  async splitBatch(storeId: number, id: number, splitQuantity: number): Promise<{ original: ProductionBatch; newBatch: ProductionBatch }> {
     const existing = await ProductionCrud.findById(storeId, id);
     if (!existing) throw new NotFoundError('Production batch not found');
 
@@ -199,7 +199,7 @@ export class ProductionService {
     return { original, newBatch: updatedNewBatch };
   }
 
-  async mergeBatches(storeId: string, batchIds: string[]): Promise<ProductionBatch> {
+  async mergeBatches(storeId: number, batchIds: number[]): Promise<ProductionBatch> {
     const batches: ProductionBatch[] = [];
     for (const bId of batchIds) {
       const b = await ProductionCrud.findById(storeId, bId);
@@ -263,21 +263,21 @@ export class ProductionService {
     return finalBatch;
   }
 
-  async getPrepList(storeId: string, date: string) {
+  async getPrepList(storeId: number, date: string) {
     return ProductionCrud.getAggregatedPrepList(storeId, date);
   }
 
-  async togglePrepItem(storeId: string, id: string, isPrepped: boolean) {
+  async togglePrepItem(storeId: number, id: number, isPrepped: boolean) {
     const existing = await ProductionCrud.getPrepItemById(storeId, id);
     if (!existing) throw new NotFoundError('Prep item not found');
     return ProductionCrud.togglePrepItem(storeId, id, isPrepped);
   }
 
-  async getTimeline(storeId: string, date: string): Promise<ProductionBatch[]> {
+  async getTimeline(storeId: number, date: string): Promise<ProductionBatch[]> {
     return ProductionCrud.getTimelineData(storeId, date);
   }
 
-  private async createPrepItemsForBatch(storeId: string, batch: ProductionBatch): Promise<void> {
+  private async createPrepItemsForBatch(storeId: number, batch: ProductionBatch): Promise<void> {
     if (!this.recipeService) return;
 
     try {
@@ -288,7 +288,7 @@ export class ProductionService {
         const scaledQty = ing.quantity * batch.quantity;
         await ProductionCrud.createPrepItem(storeId, {
           batchId: batch.id,
-          ingredientId: ing.ingredientId,
+          ingredientId: Number(ing.ingredientId),
           ingredientName: ing.name ?? 'Unknown',
           requiredQuantity: +scaledQty.toFixed(4),
           unit: ing.unit,

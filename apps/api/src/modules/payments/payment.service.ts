@@ -13,19 +13,19 @@ export class PaymentService {
 
   constructor(private orderService?: OrderService) {}
 
-  async getAll(storeId: string, options?: PaginationOptions, filters?: PaymentFilters): Promise<PaginatedResult<Payment>> {
+  async getAll(storeId: number, options?: PaginationOptions, filters?: PaymentFilters): Promise<PaginatedResult<Payment>> {
     return PaymentCrud.getAll(storeId, options, filters);
   }
 
-  async getByCustomerId(storeId: string, customerId: string, options?: PaginationOptions, filters?: CustomerPaymentFilters): Promise<PaginatedResult<Payment>> {
+  async getByCustomerId(storeId: number, customerId: number, options?: PaginationOptions, filters?: CustomerPaymentFilters): Promise<PaginatedResult<Payment>> {
     return PaymentCrud.getByCustomerId(storeId, customerId, options, filters);
   }
 
-  async getByOrderId(storeId: string, orderId: string): Promise<Payment[]> {
+  async getByOrderId(storeId: number, orderId: number): Promise<Payment[]> {
     return PaymentCrud.getByOrderId(storeId, orderId);
   }
 
-  async getPaymentSummary(storeId: string, orderId: string): Promise<OrderPaymentSummary> {
+  async getPaymentSummary(storeId: number, orderId: number): Promise<OrderPaymentSummary> {
     let orderTotal = 0;
     if (this.orderService) {
       const order = await this.orderService.getById(storeId, orderId);
@@ -34,7 +34,7 @@ export class PaymentService {
     return this.getPaymentSummaryUseCase.execute(storeId, orderId, orderTotal);
   }
 
-  async getPaymentStatuses(storeId: string): Promise<Record<string, PaymentStatus>> {
+  async getPaymentStatuses(storeId: number): Promise<Record<string, PaymentStatus>> {
     const orders = this.orderService ? await this.orderService.getAll(storeId) : [];
     const paidAmounts = await PaymentCrud.getPaidAmountsByStore(storeId);
     const paidMap = new Map(paidAmounts.map((p) => [p.orderId, p.paidAmount]));
@@ -49,7 +49,7 @@ export class PaymentService {
     return statuses;
   }
 
-  async create(storeId: string, data: CreatePaymentDTO, correlationId?: string): Promise<Payment> {
+  async create(storeId: number, data: CreatePaymentDTO, correlationId?: string): Promise<Payment> {
     if (this.orderService) {
       await this.orderService.getById(storeId, data.orderId);
     }
@@ -66,7 +66,7 @@ export class PaymentService {
     return payment;
   }
 
-  async refund(storeId: string, id: string, correlationId?: string): Promise<Payment> {
+  async refund(storeId: number, id: number, correlationId?: string): Promise<Payment> {
     const payment = await PaymentCrud.getById(storeId, id);
     if (!payment) throw new NotFoundError('Payment not found');
     if (payment.status === 'refunded') throw new NotFoundError('Payment already refunded');
@@ -83,7 +83,7 @@ export class PaymentService {
     return refunded;
   }
 
-  async delete(storeId: string, id: string): Promise<void> {
+  async delete(storeId: number, id: number): Promise<void> {
     const payment = await PaymentCrud.getById(storeId, id);
     if (!payment) throw new NotFoundError('Payment not found');
     return PaymentCrud.delete(storeId, id);

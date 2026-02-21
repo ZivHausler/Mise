@@ -8,7 +8,7 @@ export class PgUnitsRepository {
     return result.rows.map(this.mapCategoryRow);
   }
 
-  static async findAll(storeId: string): Promise<Unit[]> {
+  static async findAll(storeId: number): Promise<Unit[]> {
     const pool = getPool();
     const result = await pool.query(
       `SELECT u.id, u.store_id, u.category_id, uc.name as category_name, u.name, u.abbreviation, u.conversion_factor, u.is_default, u.created_at, u.updated_at
@@ -21,7 +21,7 @@ export class PgUnitsRepository {
     return result.rows.map(this.mapRow);
   }
 
-  static async findById(id: string, storeId: string): Promise<Unit | null> {
+  static async findById(id: number, storeId: number): Promise<Unit | null> {
     const pool = getPool();
     const result = await pool.query(
       `SELECT u.id, u.store_id, u.category_id, uc.name as category_name, u.name, u.abbreviation, u.conversion_factor, u.is_default, u.created_at, u.updated_at
@@ -33,7 +33,7 @@ export class PgUnitsRepository {
     return result.rows[0] ? this.mapRow(result.rows[0]) : null;
   }
 
-  static async create(storeId: string, data: CreateUnitDTO): Promise<Unit> {
+  static async create(storeId: number, data: CreateUnitDTO): Promise<Unit> {
     const pool = getPool();
     const result = await pool.query(
       `INSERT INTO units (store_id, category_id, name, abbreviation, conversion_factor, is_default)
@@ -42,10 +42,10 @@ export class PgUnitsRepository {
       [storeId, data.categoryId, data.name, data.abbreviation, data.conversionFactor],
     );
     // Re-fetch with category name
-    return (await this.findById(result.rows[0]['id'] as string, storeId))!;
+    return (await this.findById(Number(result.rows[0]['id']), storeId))!;
   }
 
-  static async update(id: string, storeId: string, data: UpdateUnitDTO): Promise<Unit> {
+  static async update(id: number, storeId: number, data: UpdateUnitDTO): Promise<Unit> {
     const pool = getPool();
     const fields: string[] = [];
     const values: unknown[] = [];
@@ -67,16 +67,16 @@ export class PgUnitsRepository {
     return (await this.findById(id, storeId))!;
   }
 
-  static async delete(id: string, storeId: string): Promise<void> {
+  static async delete(id: number, storeId: number): Promise<void> {
     const pool = getPool();
     await pool.query('DELETE FROM units WHERE id = $1 AND store_id = $2', [id, storeId]);
   }
 
   private static mapRow(row: Record<string, unknown>): Unit {
     return {
-      id: row['id'] as string,
-      storeId: (row['store_id'] as string) || null,
-      categoryId: row['category_id'] as string,
+      id: Number(row['id']),
+      storeId: row['store_id'] != null ? Number(row['store_id']) : null,
+      categoryId: Number(row['category_id']),
       categoryName: (row['category_name'] as string) || undefined,
       name: row['name'] as string,
       abbreviation: row['abbreviation'] as string,
@@ -89,7 +89,7 @@ export class PgUnitsRepository {
 
   private static mapCategoryRow(row: Record<string, unknown>): UnitCategory {
     return {
-      id: row['id'] as string,
+      id: Number(row['id']),
       name: row['name'] as string,
       createdAt: new Date(row['created_at'] as string),
     };

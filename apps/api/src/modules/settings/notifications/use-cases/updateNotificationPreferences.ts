@@ -4,8 +4,8 @@ import { PgAuthRepository } from '../../../auth/auth.repository.js';
 import type { NotificationPreference, UpdateNotificationPrefsDTO } from '../../settings.types.js';
 import { ValidationError } from '../../../../core/errors/app-error.js';
 
-export class UpdateNotificationPreferencesUseCase implements UseCase<NotificationPreference[], [string, UpdateNotificationPrefsDTO]> {
-  async execute(userId: string, data: UpdateNotificationPrefsDTO): Promise<NotificationPreference[]> {
+export class UpdateNotificationPreferencesUseCase implements UseCase<NotificationPreference[], [number, UpdateNotificationPrefsDTO]> {
+  async execute(userId: number, data: UpdateNotificationPrefsDTO): Promise<NotificationPreference[]> {
     // Check if user has phone before allowing SMS
     const hasSmsEnabled = data.preferences.some((p) => p.sms);
     if (hasSmsEnabled) {

@@ -8,6 +8,7 @@ import { Breadcrumbs } from '@/components/Breadcrumbs';
 import { TextInput, TextArea, NumberInput, Select } from '@/components/FormFields';
 import { Button } from '@/components/Button';
 import { useCreateRecipe, useUpdateRecipe, useRecipe, useRecipes, useInventory } from '@/api/hooks';
+import { RecipeImageUpload } from '@/components/RecipeImageUpload';
 import { cn } from '@/utils/cn';
 import { useToastStore } from '@/store/toast';
 
@@ -81,6 +82,7 @@ export default function RecipeFormPage() {
 
   const r = existingRecipe as any;
 
+  const [photos, setPhotos] = useState<string[]>(r?.photos ?? []);
   const [name, setName] = useState(r?.name ?? '');
   const [category, setCategory] = useState(r?.category ?? '');
   const [description, setDescription] = useState(r?.description ?? '');
@@ -104,6 +106,7 @@ export default function RecipeFormPage() {
 
   useEffect(() => {
     if (!r) return;
+    setPhotos(r.photos ?? []);
     setName(r.name ?? '');
     setCategory(r.category ?? '');
     setDescription(r.description ?? '');
@@ -165,14 +168,14 @@ export default function RecipeFormPage() {
         addToast('error', t('recipes.stepsRequired', 'At least one step is required'));
         return;
       }
-      const body = { name, category, description: description || undefined, yield: yieldAmount === '' ? undefined : yieldAmount, sellingPrice: price === '' ? undefined : Number(price), ingredients, steps: formattedSteps };
+      const body = { name, category, description: description || undefined, yield: yieldAmount === '' ? undefined : yieldAmount, sellingPrice: price === '' ? undefined : Number(price), ingredients, steps: formattedSteps, photos: photos.length ? photos : undefined };
       if (isEdit) {
         updateRecipe.mutate({ id: id!, ...body }, { onSuccess: () => navigate(`/recipes/${id}`) });
       } else {
         createRecipe.mutate(body, { onSuccess: () => navigate('/recipes') });
       }
     },
-    [name, category, description, yieldAmount, price, ingredients, steps, isEdit, id, createRecipe, updateRecipe, navigate]
+    [name, category, description, yieldAmount, price, ingredients, steps, photos, isEdit, id, createRecipe, updateRecipe, navigate]
   );
 
   const isPending = createRecipe.isPending || updateRecipe.isPending;
@@ -198,6 +201,11 @@ export default function RecipeFormPage() {
                 <NumberInput label={t('recipes.sellingPrice', 'Selling Price (₪)')} value={price} onChange={setPrice} min={0} className="flex-1" />
               </Row>
             </Stack>
+          </Card>
+
+          <Card>
+            <h3 className="mb-3 font-heading text-h4 text-neutral-800">{t('recipes.photos', 'Photos')}</h3>
+            <RecipeImageUpload photos={photos} onChange={setPhotos} />
           </Card>
 
           <Card>

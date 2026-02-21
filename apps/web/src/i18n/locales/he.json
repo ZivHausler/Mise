@@ -197,7 +197,14 @@
     "emptyDesc": "הוסף את המתכון הראשון שלך.",
     "deleteTitle": "למחוק מתכון?",
     "deleteMsg": "לא ניתן לבטל פעולה זו.",
-    "qty": "כמות"
+    "qty": "כמות",
+    "photos": "תמונות",
+    "addPhoto": "הוסף תמונה",
+    "removePhoto": "הסר תמונה",
+    "uploadingPhoto": "מעלה...",
+    "photoLimitReached": "הגעת למקסימום תמונות",
+    "invalidFileType": "רק JPEG, PNG ו-WebP מותרים",
+    "fileTooLarge": "הקובץ חייב להיות מתחת ל-5 MB"
   },
   "inventory": {
     "name": "שם",

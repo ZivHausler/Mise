@@ -3,35 +3,35 @@ import type { PaginationOptions, PaginatedResult, CustomerPaymentFilters, Paymen
 import type { CreatePaymentDTO, Payment } from './payment.types.js';
 
 export class PaymentCrud {
-  static async create(storeId: string, data: CreatePaymentDTO): Promise<Payment> {
+  static async create(storeId: number, data: CreatePaymentDTO): Promise<Payment> {
     return PgPaymentRepository.create(storeId, data);
   }
 
-  static async getById(storeId: string, id: string): Promise<Payment | null> {
+  static async getById(storeId: number, id: number): Promise<Payment | null> {
     return PgPaymentRepository.findById(storeId, id);
   }
 
-  static async getAll(storeId: string, options?: PaginationOptions, filters?: PaymentFilters): Promise<PaginatedResult<Payment>> {
+  static async getAll(storeId: number, options?: PaginationOptions, filters?: PaymentFilters): Promise<PaginatedResult<Payment>> {
     return PgPaymentRepository.findAll(storeId, options, filters);
   }
 
-  static async getByOrderId(storeId: string, orderId: string): Promise<Payment[]> {
+  static async getByOrderId(storeId: number, orderId: number): Promise<Payment[]> {
     return PgPaymentRepository.findByOrderId(storeId, orderId);
   }
 
-  static async getByCustomerId(storeId: string, customerId: string, options?: PaginationOptions, filters?: CustomerPaymentFilters): Promise<PaginatedResult<Payment>> {
+  static async getByCustomerId(storeId: number, customerId: number, options?: PaginationOptions, filters?: CustomerPaymentFilters): Promise<PaginatedResult<Payment>> {
     return PgPaymentRepository.findByCustomerId(storeId, customerId, options, filters);
   }
 
-  static async getPaidAmountsByStore(storeId: string): Promise<{ orderId: string; paidAmount: number }[]> {
+  static async getPaidAmountsByStore(storeId: number): Promise<{ orderId: number; paidAmount: number }[]> {
     return PgPaymentRepository.findPaidAmountsByStore(storeId);
   }
 
-  static async refund(storeId: string, id: string): Promise<Payment> {
+  static async refund(storeId: number, id: number): Promise<Payment> {
     return PgPaymentRepository.refund(storeId, id);
   }
 
-  static async delete(storeId: string, id: string): Promise<void> {
+  static async delete(storeId: number, id: number): Promise<void> {
     return PgPaymentRepository.delete(storeId, id);
   }
 }

@@ -1,5 +1,5 @@
 export interface NotificationRecipient {
-  userId: string;
+  userId: number;
   name: string;
   email: string;
   phone?: string;

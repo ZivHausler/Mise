@@ -7,15 +7,15 @@ export class PgStoreRepository {
   static async createStore(data: CreateStoreDTO): Promise<Store> {
     const pool = getPool();
     const result = await pool.query(
-      `INSERT INTO stores (id, name, code, address, created_at, updated_at)
-       VALUES (gen_random_uuid(), $1, $2, $3, NOW(), NOW())
+      `INSERT INTO stores (name, code, address, created_at, updated_at)
+       VALUES ($1, $2, $3, NOW(), NOW())
        RETURNING *`,
       [data.name, data.code ?? null, data.address ?? null],
     );
     return this.mapStoreRow(result.rows[0]);
   }
 
-  static async addUserToStore(userId: string, storeId: string, role: StoreRole): Promise<void> {
+  static async addUserToStore(userId: number, storeId: number, role: StoreRole): Promise<void> {
     const pool = getPool();
     await pool.query(
       `INSERT INTO users_stores (user_id, store_id, role, created_at)
@@ -25,7 +25,7 @@ export class PgStoreRepository {
     );
   }
 
-  static async getUserStores(userId: string): Promise<UserStore[]> {
+  static async getUserStores(userId: number): Promise<UserStore[]> {
     const pool = getPool();
     const result = await pool.query(
       `SELECT us.user_id, us.store_id, us.role, s.name as store_name, s.code as store_code
@@ -36,8 +36,8 @@ export class PgStoreRepository {
       [userId],
     );
     return result.rows.map((row: Record<string, unknown>) => ({
-      userId: row['user_id'] as string,
-      storeId: row['store_id'] as string,
+      userId: Number(row['user_id']),
+      storeId: Number(row['store_id']),
       role: row['role'] as StoreRole,
       storeName: row['store_name'] as string,
       storeCode: (row['store_code'] as string) || null,
@@ -50,7 +50,7 @@ export class PgStoreRepository {
     return result.rows.map((row: Record<string, unknown>) => this.mapStoreRow(row));
   }
 
-  static async getUserStoreRole(userId: string, storeId: string): Promise<StoreRole | null> {
+  static async getUserStoreRole(userId: number, storeId: number): Promise<StoreRole | null> {
     const pool = getPool();
     const result = await pool.query(
       `SELECT role FROM users_stores WHERE user_id = $1 AND store_id = $2`,
@@ -59,7 +59,7 @@ export class PgStoreRepository {
     return result.rows[0] ? (result.rows[0]['role'] as StoreRole) : null;
   }
 
-  static async getStoreMembers(storeId: string): Promise<{ userId: string; email: string; name: string; role: StoreRole }[]> {
+  static async getStoreMembers(storeId: number): Promise<{ userId: number; email: string; name: string; role: StoreRole }[]> {
     const pool = getPool();
     const result = await pool.query(
       `SELECT u.id as user_id, u.email, u.name, us.role
@@ -70,20 +70,20 @@ export class PgStoreRepository {
       [storeId],
     );
     return result.rows.map((row: Record<string, unknown>) => ({
-      userId: row['user_id'] as string,
+      userId: Number(row['user_id']),
       email: row['email'] as string,
       name: row['name'] as string,
       role: row['role'] as StoreRole,
     }));
   }
 
-  static async createInvitation(storeId: string, email: string, role: StoreRole): Promise<StoreInvitation> {
+  static async createInvitation(storeId: number, email: string, role: StoreRole): Promise<StoreInvitation> {
     const pool = getPool();
     const token = crypto.randomBytes(32).toString('hex');
     const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
     const result = await pool.query(
-      `INSERT INTO store_invitations (id, store_id, email, role, token, expires_at, created_at)
-       VALUES (gen_random_uuid(), $1, $2, $3, $4, $5, NOW())
+      `INSERT INTO store_invitations (store_id, email, role, token, expires_at, created_at)
+       VALUES ($1, $2, $3, $4, $5, NOW())
        RETURNING *`,
       [storeId, email, role, token, expiresAt],
     );
@@ -109,15 +109,15 @@ export class PgStoreRepository {
     const token = crypto.randomBytes(32).toString('hex');
     const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
     const result = await pool.query(
-      `INSERT INTO store_invitations (id, store_id, email, role, token, expires_at, created_at)
-       VALUES (gen_random_uuid(), NULL, $1, $2, $3, $4, NOW())
+      `INSERT INTO store_invitations (store_id, email, role, token, expires_at, created_at)
+       VALUES (NULL, $1, $2, $3, $4, NOW())
        RETURNING *`,
       [email, StoreRole.OWNER, token, expiresAt],
     );
     return this.mapInvitationRow(result.rows[0]);
   }
 
-  static async getPendingInvitations(storeId: string): Promise<{ email: string; role: StoreRole; token: string; createdAt: Date; expiresAt: Date }[]> {
+  static async getPendingInvitations(storeId: number): Promise<{ email: string; role: StoreRole; token: string; createdAt: Date; expiresAt: Date }[]> {
     const pool = getPool();
     const result = await pool.query(
       `SELECT email, role, token, created_at, expires_at
@@ -145,7 +145,7 @@ export class PgStoreRepository {
 
   private static mapStoreRow(row: Record<string, unknown>): Store {
     return {
-      id: row['id'] as string,
+      id: Number(row['id']),
       name: row['name'] as string,
       code: (row['code'] as string) || null,
       address: (row['address'] as string) || null,
@@ -156,8 +156,8 @@ export class PgStoreRepository {
 
   private static mapInvitationRow(row: Record<string, unknown>): StoreInvitation {
     return {
-      id: row['id'] as string,
-      storeId: (row['store_id'] as string) || null,
+      id: Number(row['id']),
+      storeId: row['store_id'] != null ? Number(row['store_id']) : null,
       email: row['email'] as string,
       role: row['role'] as StoreRole,
       token: row['token'] as string,

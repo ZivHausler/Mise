@@ -2,7 +2,7 @@ import type { ProductionBatch, BatchOrder, BatchPrepItem, ProductionStage } from
 import { getPool } from '../../core/database/postgres.js';
 
 export class PgProductionRepository {
-  static async findByDate(storeId: string, date: string): Promise<ProductionBatch[]> {
+  static async findByDate(storeId: number, date: string): Promise<ProductionBatch[]> {
     const pool = getPool();
     const result = await pool.query(
       `SELECT * FROM production_batches WHERE store_id = $1 AND production_date = $2::date ORDER BY priority DESC, created_at ASC`,
@@ -11,7 +11,7 @@ export class PgProductionRepository {
     return result.rows.map((r: Record<string, unknown>) => this.mapBatchRow(r));
   }
 
-  static async findById(storeId: string, id: string): Promise<ProductionBatch | null> {
+  static async findById(storeId: number, id: number): Promise<ProductionBatch | null> {
     const pool = getPool();
     const result = await pool.query(
       `SELECT * FROM production_batches WHERE id = $1 AND store_id = $2`,
@@ -38,7 +38,7 @@ export class PgProductionRepository {
   }
 
   static async create(
-    storeId: string,
+    storeId: number,
     data: {
       recipeId: string;
       recipeName: string;
@@ -60,7 +60,7 @@ export class PgProductionRepository {
     return this.mapBatchRow(result.rows[0]);
   }
 
-  static async updateStage(storeId: string, id: string, stage: ProductionStage): Promise<ProductionBatch> {
+  static async updateStage(storeId: number, id: number, stage: ProductionStage): Promise<ProductionBatch> {
     const pool = getPool();
     const result = await pool.query(
       `UPDATE production_batches SET stage = $1, updated_at = NOW() WHERE id = $2 AND store_id = $3 RETURNING *`,
@@ -69,7 +69,7 @@ export class PgProductionRepository {
     return this.mapBatchRow(result.rows[0]);
   }
 
-  static async update(storeId: string, id: string, data: Partial<{ quantity: number; priority: number; assignedTo: string | null; notes: string | null }>): Promise<ProductionBatch> {
+  static async update(storeId: number, id: number, data: Partial<{ quantity: number; priority: number; assignedTo: string | null; notes: string | null }>): Promise<ProductionBatch> {
     const pool = getPool();
     const fields: string[] = [];
     const values: unknown[] = [];
@@ -90,12 +90,12 @@ export class PgProductionRepository {
     return this.mapBatchRow(result.rows[0]);
   }
 
-  static async delete(storeId: string, id: string): Promise<void> {
+  static async delete(storeId: number, id: number): Promise<void> {
     const pool = getPool();
     await pool.query('DELETE FROM production_batches WHERE id = $1 AND store_id = $2', [id, storeId]);
   }
 
-  static async createBatchOrder(storeId: string, data: { batchId: string; orderId: string; orderItemIndex: number; quantityFromOrder: number }): Promise<void> {
+  static async createBatchOrder(storeId: number, data: { batchId: number; orderId: number; orderItemIndex: number; quantityFromOrder: number }): Promise<void> {
     const pool = getPool();
     await pool.query(
       `INSERT INTO batch_orders (store_id, batch_id, order_id, order_item_index, quantity_from_order)
@@ -104,7 +104,7 @@ export class PgProductionRepository {
     );
   }
 
-  static async createPrepItem(storeId: string, data: { batchId: string; ingredientId: string; ingredientName: string; requiredQuantity: number; unit: string }): Promise<void> {
+  static async createPrepItem(storeId: number, data: { batchId: number; ingredientId: number; ingredientName: string; requiredQuantity: number; unit: string }): Promise<void> {
     const pool = getPool();
     await pool.query(
       `INSERT INTO batch_prep_items (store_id, batch_id, ingredient_id, ingredient_name, required_quantity, unit)
@@ -113,7 +113,7 @@ export class PgProductionRepository {
     );
   }
 
-  static async togglePrepItem(storeId: string, id: string, isPrepped: boolean): Promise<BatchPrepItem> {
+  static async togglePrepItem(storeId: number, id: number, isPrepped: boolean): Promise<BatchPrepItem> {
     const pool = getPool();
     const result = await pool.query(
       `UPDATE batch_prep_items SET is_prepped = $1 WHERE id = $2 AND store_id = $3 RETURNING *`,
@@ -122,7 +122,7 @@ export class PgProductionRepository {
     return this.mapPrepItemRow(result.rows[0]);
   }
 
-  static async getPrepItemById(storeId: string, id: string): Promise<BatchPrepItem | null> {
+  static async getPrepItemById(storeId: number, id: number): Promise<BatchPrepItem | null> {
     const pool = getPool();
     const result = await pool.query(
       `SELECT * FROM batch_prep_items WHERE id = $1 AND store_id = $2`,
@@ -131,7 +131,7 @@ export class PgProductionRepository {
     return result.rows[0] ? this.mapPrepItemRow(result.rows[0]) : null;
   }
 
-  static async getAggregatedPrepList(storeId: string, date: string): Promise<Array<{ ingredientId: string; ingredientName: string; totalRequired: number; unit: string; preppedCount: number; totalCount: number; items: (BatchPrepItem & { recipeName: string })[] }>> {
+  static async getAggregatedPrepList(storeId: number, date: string): Promise<Array<{ ingredientId: string; ingredientName: string; totalRequired: number; unit: string; preppedCount: number; totalCount: number; items: (BatchPrepItem & { recipeName: string })[] }>> {
     const pool = getPool();
     const result = await pool.query(
       `SELECT
@@ -149,11 +149,11 @@ export class PgProductionRepository {
     for (const row of result.rows) {
       const item = this.mapPrepItemRow(row as Record<string, unknown>);
       const recipeName = (row as Record<string, unknown>)['recipe_name'] as string;
-      const key = item.ingredientId;
+      const key = String(item.ingredientId);
 
       if (!grouped.has(key)) {
         grouped.set(key, {
-          ingredientId: item.ingredientId,
+          ingredientId: String(item.ingredientId),
           ingredientName: item.ingredientName,
           totalRequired: 0,
           unit: item.unit,
@@ -172,7 +172,7 @@ export class PgProductionRepository {
     return Array.from(grouped.values());
   }
 
-  static async getTimelineData(storeId: string, date: string): Promise<ProductionBatch[]> {
+  static async getTimelineData(storeId: number, date: string): Promise<ProductionBatch[]> {
     const pool = getPool();
     const result = await pool.query(
       `SELECT * FROM production_batches WHERE store_id = $1 AND production_date = $2::date ORDER BY priority DESC, created_at ASC`,
@@ -181,17 +181,17 @@ export class PgProductionRepository {
     return result.rows.map((r: Record<string, unknown>) => this.mapBatchRow(r));
   }
 
-  static async deleteBatchOrdersByBatchId(storeId: string, batchId: string): Promise<void> {
+  static async deleteBatchOrdersByBatchId(storeId: number, batchId: number): Promise<void> {
     const pool = getPool();
     await pool.query('DELETE FROM batch_orders WHERE batch_id = $1 AND store_id = $2', [batchId, storeId]);
   }
 
-  static async deletePrepItemsByBatchId(storeId: string, batchId: string): Promise<void> {
+  static async deletePrepItemsByBatchId(storeId: number, batchId: number): Promise<void> {
     const pool = getPool();
     await pool.query('DELETE FROM batch_prep_items WHERE batch_id = $1 AND store_id = $2', [batchId, storeId]);
   }
 
-  static async getBatchOrdersByBatchId(storeId: string, batchId: string): Promise<BatchOrder[]> {
+  static async getBatchOrdersByBatchId(storeId: number, batchId: number): Promise<BatchOrder[]> {
     const pool = getPool();
     const result = await pool.query(
       `SELECT * FROM batch_orders WHERE batch_id = $1 AND store_id = $2`,
@@ -202,8 +202,8 @@ export class PgProductionRepository {
 
   private static mapBatchRow(row: Record<string, unknown>): ProductionBatch {
     return {
-      id: row['id'] as string,
-      storeId: row['store_id'] as string,
+      id: Number(row['id']),
+      storeId: Number(row['store_id']),
       recipeId: row['recipe_id'] as string,
       recipeName: row['recipe_name'] as string,
       quantity: Number(row['quantity']),
@@ -222,9 +222,9 @@ export class PgProductionRepository {
 
   private static mapBatchOrderRow(row: Record<string, unknown>): BatchOrder {
     return {
-      id: row['id'] as string,
-      batchId: row['batch_id'] as string,
-      orderId: row['order_id'] as string,
+      id: Number(row['id']),
+      batchId: Number(row['batch_id']),
+      orderId: Number(row['order_id']),
       orderItemIndex: Number(row['order_item_index']),
       quantityFromOrder: Number(row['quantity_from_order']),
     };
@@ -232,9 +232,9 @@ export class PgProductionRepository {
 
   private static mapPrepItemRow(row: Record<string, unknown>): BatchPrepItem {
     return {
-      id: row['id'] as string,
-      batchId: row['batch_id'] as string,
-      ingredientId: row['ingredient_id'] as string,
+      id: Number(row['id']),
+      batchId: Number(row['batch_id']),
+      ingredientId: Number(row['ingredient_id']),
       ingredientName: row['ingredient_name'] as string,
       requiredQuantity: Number(row['required_quantity']),
       unit: row['unit'] as string,

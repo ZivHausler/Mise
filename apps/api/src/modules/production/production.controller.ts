@@ -25,7 +25,7 @@ export class ProductionController {
 
   async getBatchById(request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) {
     const storeId = request.currentUser!.storeId!;
-    const batch = await this.productionService.getBatchById(storeId, request.params.id);
+    const batch = await this.productionService.getBatchById(storeId, Number(request.params.id));
     return reply.send({ success: true, data: batch });
   }
 
@@ -46,27 +46,27 @@ export class ProductionController {
   async updateStage(request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) {
     const storeId = request.currentUser!.storeId!;
     const { stage } = updateStageSchema.parse(request.body);
-    const batch = await this.productionService.updateStage(storeId, request.params.id, stage as ProductionStage);
+    const batch = await this.productionService.updateStage(storeId, Number(request.params.id), stage as ProductionStage);
     return reply.send({ success: true, data: batch });
   }
 
   async updateBatch(request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) {
     const storeId = request.currentUser!.storeId!;
     const data = updateBatchSchema.parse(request.body);
-    const batch = await this.productionService.updateBatch(storeId, request.params.id, data);
+    const batch = await this.productionService.updateBatch(storeId, Number(request.params.id), data);
     return reply.send({ success: true, data: batch });
   }
 
   async deleteBatch(request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) {
     const storeId = request.currentUser!.storeId!;
-    await this.productionService.deleteBatch(storeId, request.params.id);
+    await this.productionService.deleteBatch(storeId, Number(request.params.id));
     return reply.status(204).send();
   }
 
   async splitBatch(request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) {
     const storeId = request.currentUser!.storeId!;
     const { splitQuantity } = splitBatchSchema.parse(request.body);
-    const result = await this.productionService.splitBatch(storeId, request.params.id, splitQuantity);
+    const result = await this.productionService.splitBatch(storeId, Number(request.params.id), splitQuantity);
     return reply.send({ success: true, data: result });
   }
 
@@ -87,7 +87,7 @@ export class ProductionController {
   async togglePrepItem(request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) {
     const storeId = request.currentUser!.storeId!;
     const { isPrepped } = togglePrepItemSchema.parse(request.body);
-    const item = await this.productionService.togglePrepItem(storeId, request.params.id, isPrepped);
+    const item = await this.productionService.togglePrepItem(storeId, Number(request.params.id), isPrepped);
     return reply.send({ success: true, data: item });
   }
 

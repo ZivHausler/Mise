@@ -13,7 +13,7 @@ export class CustomerController {
 
   async getById(request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) {
     const storeId = request.currentUser!.storeId!;
-    const customer = await this.customerService.getById(request.params.id, storeId);
+    const customer = await this.customerService.getById(Number(request.params.id), storeId);
     return reply.send({ success: true, data: customer });
   }
 
@@ -27,13 +27,13 @@ export class CustomerController {
   async update(request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) {
     const storeId = request.currentUser!.storeId!;
     const data = updateCustomerSchema.parse(request.body);
-    const customer = await this.customerService.update(request.params.id, storeId, data);
+    const customer = await this.customerService.update(Number(request.params.id), storeId, data);
     return reply.send({ success: true, data: customer });
   }
 
   async delete(request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) {
     const storeId = request.currentUser!.storeId!;
-    await this.customerService.delete(request.params.id, storeId);
+    await this.customerService.delete(Number(request.params.id), storeId);
     return reply.status(204).send();
   }
 }

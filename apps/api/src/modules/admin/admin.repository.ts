@@ -54,12 +54,12 @@ export class PgAdminRepository {
     };
   }
 
-  static async toggleAdmin(userId: string, isAdmin: boolean): Promise<void> {
+  static async toggleAdmin(userId: number, isAdmin: boolean): Promise<void> {
     const pool = getPool();
     await pool.query('UPDATE users SET is_admin = $1 WHERE id = $2', [isAdmin, userId]);
   }
 
-  static async toggleDisabled(userId: string, disabled: boolean): Promise<void> {
+  static async toggleDisabled(userId: number, disabled: boolean): Promise<void> {
     const pool = getPool();
     const disabledAt = disabled ? 'NOW()' : 'NULL';
     await pool.query(`UPDATE users SET disabled_at = ${disabledAt} WHERE id = $1`, [userId]);
@@ -103,7 +103,7 @@ export class PgAdminRepository {
     };
   }
 
-  static async getStoreMembers(storeId: string): Promise<AdminStoreMember[]> {
+  static async getStoreMembers(storeId: number): Promise<AdminStoreMember[]> {
     const pool = getPool();
     const result = await pool.query(
       `SELECT u.id AS user_id, u.email, u.name, us.role, us.created_at AS joined_at
@@ -116,7 +116,7 @@ export class PgAdminRepository {
     return result.rows.map(this.mapStoreMemberRow);
   }
 
-  static async updateStore(storeId: string, data: { name?: string; address?: string }): Promise<void> {
+  static async updateStore(storeId: number, data: { name?: string; address?: string }): Promise<void> {
     const pool = getPool();
     const sets: string[] = [];
     const params: unknown[] = [];
@@ -140,7 +140,7 @@ export class PgAdminRepository {
   static async getInvitations(
     page: number,
     limit: number,
-    filters: { status?: string; search?: string; storeId?: string; userId?: string; role?: string; dateFrom?: string; dateTo?: string },
+    filters: { status?: string; search?: string; storeId?: number; userId?: number; role?: string; dateFrom?: string; dateTo?: string },
   ): Promise<PaginatedResult<AdminInvitation>> {
     const pool = getPool();
     const offset = (page - 1) * limit;
@@ -231,8 +231,8 @@ export class PgAdminRepository {
     const token = crypto.randomBytes(32).toString('hex');
 
     const result = await pool.query(
-      `INSERT INTO store_invitations (id, store_id, email, role, token, expires_at, created_at)
-       VALUES (gen_random_uuid(), NULL, $1, 1, $2, NOW() + INTERVAL '7 days', NOW())
+      `INSERT INTO store_invitations (store_id, email, role, token, expires_at, created_at)
+       VALUES (NULL, $1, 1, $2, NOW() + INTERVAL '7 days', NOW())
        RETURNING *`,
       [email, token],
     );
@@ -240,7 +240,7 @@ export class PgAdminRepository {
     return this.mapInvitationRow({ ...result.rows[0], store_name: null });
   }
 
-  static async revokeInvitation(invitationId: string): Promise<void> {
+  static async revokeInvitation(invitationId: number): Promise<void> {
     const pool = getPool();
     await pool.query(
       'UPDATE store_invitations SET revoked_at = NOW() WHERE id = $1',
@@ -251,7 +251,7 @@ export class PgAdminRepository {
   static async getAuditLog(
     page: number,
     limit: number,
-    filters: { userId?: string; method?: string; statusCode?: string; dateFrom?: string; dateTo?: string; search?: string; since?: string; excludeIds?: string[] },
+    filters: { userId?: number; method?: string; statusCode?: string; dateFrom?: string; dateTo?: string; search?: string; since?: string; excludeIds?: string[] },
   ): Promise<PaginatedResult<AdminAuditEntry>> {
     const pool = getPool();
     const offset = (page - 1) * limit;
@@ -365,14 +365,14 @@ export class PgAdminRepository {
     };
   }
 
-  static async findUserById(userId: string): Promise<{ id: string; isAdmin: boolean } | null> {
+  static async findUserById(userId: number): Promise<{ id: number; isAdmin: boolean } | null> {
     const pool = getPool();
     const result = await pool.query('SELECT id, is_admin FROM users WHERE id = $1', [userId]);
     if (!result.rows[0]) return null;
-    return { id: result.rows[0].id as string, isAdmin: result.rows[0].is_admin as boolean };
+    return { id: Number(result.rows[0].id), isAdmin: result.rows[0].is_admin as boolean };
   }
 
-  static async findInvitationById(id: string): Promise<{ usedAt: Date | null; revokedAt: Date | null; expiresAt: Date } | null> {
+  static async findInvitationById(id: number): Promise<{ usedAt: Date | null; revokedAt: Date | null; expiresAt: Date } | null> {
     const pool = getPool();
     const result = await pool.query(
       'SELECT used_at, revoked_at, expires_at FROM store_invitations WHERE id = $1',
@@ -388,7 +388,7 @@ export class PgAdminRepository {
 
   private static mapUserRow(row: Record<string, unknown>): AdminUser {
     return {
-      id: row['id'] as string,
+      id: Number(row['id']),
       email: row['email'] as string,
       name: row['name'] as string,
       isAdmin: row['is_admin'] as boolean,
@@ -400,7 +400,7 @@ export class PgAdminRepository {
 
   private static mapStoreRow(row: Record<string, unknown>): AdminStore {
     return {
-      id: row['id'] as string,
+      id: Number(row['id']),
       name: row['name'] as string,
       code: (row['code'] as string) ?? null,
       address: (row['address'] as string) ?? null,
@@ -411,7 +411,7 @@ export class PgAdminRepository {
 
   private static mapStoreMemberRow(row: Record<string, unknown>): AdminStoreMember {
     return {
-      userId: row['user_id'] as string,
+      userId: Number(row['user_id']),
       email: row['email'] as string,
       name: row['name'] as string,
       role: row['role'] as number,
@@ -430,9 +430,9 @@ export class PgAdminRepository {
     else if (expiresAt <= new Date()) status = 'expired';
 
     return {
-      id: row['id'] as string,
+      id: Number(row['id']),
       email: row['email'] as string,
-      storeId: (row['store_id'] as string) ?? null,
+      storeId: row['store_id'] != null ? Number(row['store_id']) : null,
       storeName: (row['store_name'] as string) ?? null,
       role: row['role'] as number,
       token: row['token'] as string,
@@ -470,7 +470,7 @@ export class PgAdminRepository {
     return result.rowCount ?? 0;
   }
 
-  static async getAuditLogRequestBody(auditLogId: string): Promise<unknown | null> {
+  static async getAuditLogRequestBody(auditLogId: number): Promise<unknown | null> {
     const pool = getPool();
     const result = await pool.query(
       'SELECT body FROM admin_audit_log_request_body WHERE audit_log_id = $1',
@@ -479,7 +479,7 @@ export class PgAdminRepository {
     return result.rows[0]?.body ?? null;
   }
 
-  static async getAuditLogResponseBody(auditLogId: string): Promise<unknown | null> {
+  static async getAuditLogResponseBody(auditLogId: number): Promise<unknown | null> {
     const pool = getPool();
     const result = await pool.query(
       'SELECT body FROM admin_audit_log_response_body WHERE audit_log_id = $1',
@@ -490,10 +490,10 @@ export class PgAdminRepository {
 
   private static mapAuditEntryRow(row: Record<string, unknown>): AdminAuditEntry {
     return {
-      id: row['id'] as string,
-      userId: row['user_id'] as string,
+      id: Number(row['id']),
+      userId: Number(row['user_id']),
       userEmail: row['user_email'] as string,
-      storeId: (row['store_id'] as string) ?? null,
+      storeId: row['store_id'] != null ? Number(row['store_id']) : null,
       method: row['method'] as string,
       path: row['path'] as string,
       statusCode: row['status_code'] as number,

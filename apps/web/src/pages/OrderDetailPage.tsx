@@ -17,9 +17,10 @@ import { printOrder } from '@/utils/orderPrint';
 
 export default function OrderDetailPage() {
   const { id } = useParams<{ id: string }>();
+  const numId = id ? Number(id) : 0;
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { data: order, isLoading } = useOrder(id!);
+  const { data: order, isLoading } = useOrder(numId);
   const updateOrderStatus = useUpdateOrderStatus();
   const deleteOrder = useDeleteOrder();
   const { data: paymentStatuses } = usePaymentStatuses();

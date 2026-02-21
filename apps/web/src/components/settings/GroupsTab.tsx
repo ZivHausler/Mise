@@ -14,7 +14,7 @@ import { useGroups, useCreateGroup, useUpdateGroup, useDeleteGroup } from '@/api
 import { PRESET_COLORS } from '@/constants/defaults';
 
 interface GroupItem {
-  id: string;
+  id: number;
   name: string;
   color: string | null;
   icon: string | null;
@@ -97,7 +97,7 @@ export default function GroupsTab() {
           </p>
           <Stack gap={1}>
             {defaultGroups.map((group) => (
-              <div key={group.id} className="flex items-center justify-between rounded-md px-3 py-2.5">
+              <div key={String(group.id)} className="flex items-center justify-between rounded-md px-3 py-2.5">
                 <span className="flex items-center gap-3">
                   <GroupIcon icon={group.icon} color={group.color} />
                   <span className="text-body-sm font-medium text-neutral-800">{getGroupName(group)}</span>
@@ -116,7 +116,7 @@ export default function GroupsTab() {
           </p>
           <Stack gap={1}>
             {userGroups.map((group) => (
-              <div key={group.id} className="flex items-center justify-between rounded-md px-3 py-2.5 hover:bg-neutral-50">
+              <div key={String(group.id)} className="flex items-center justify-between rounded-md px-3 py-2.5 hover:bg-neutral-50">
                 <span className="flex items-center gap-3">
                   <span
                     className="h-3 w-3 shrink-0 rounded-full"
