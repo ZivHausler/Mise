@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Plus, XCircle, Search, X, Filter, ChevronDown, ChevronLeft, ChevronRight, Copy, Check } from 'lucide-react';
-import { useAdminInvitations, useAdminCreateStoreInvite, useAdminRevokeInvitation, useAdminStores, useAdminUsers } from '@/api/hooks';
+import { useAdminInvitations, useAdminCreateStoreInvite, useAdminRevokeInvitation, useAdminStores, useAdminInvitationEmails } from '@/api/hooks';
 import { ROLE_LABELS, STORE_ROLES } from '@/constants/defaults';
 import { Button } from '@/components/Button';
 import { useDebouncedValue } from '@/hooks/useDebouncedValue';
@@ -72,7 +72,7 @@ export default function AdminInvitationsPage() {
 
   const [search, setSearch] = useState('');
   const [storeIdFilter, setStoreIdFilter] = useState('');
-  const [userIdFilter, setUserIdFilter] = useState('');
+  const [emailFilter, setEmailFilter] = useState('');
   const [roleFilter, setRoleFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [dateFrom, setDateFrom] = useState('');
@@ -81,14 +81,14 @@ export default function AdminInvitationsPage() {
   const resetPage = useCallback(() => setPage(1), []);
   const debouncedSearch = useDebouncedValue(search, 500, resetPage);
 
-  const { data: storesData } = useAdminStores(1, 100);
-  const { data: usersData } = useAdminUsers(1, 100);
+  const { data: storesData } = useAdminStores(1, 500);
+  const { data: emailsData } = useAdminInvitationEmails();
 
   const filters = {
     status: statusFilter === 'all' ? undefined : statusFilter,
     search: debouncedSearch || undefined,
     storeId: storeIdFilter || undefined,
-    userId: userIdFilter || undefined,
+    email: emailFilter || undefined,
     role: roleFilter || undefined,
     dateFrom: dateFrom || undefined,
     dateTo: dateTo || undefined,
@@ -133,7 +133,7 @@ export default function AdminInvitationsPage() {
   };
 
   const storeFilterCount = storeIdFilter ? 1 : 0;
-  const userFilterCount = userIdFilter ? 1 : 0;
+  const emailFilterCount = emailFilter ? 1 : 0;
   const roleFilterCount = roleFilter ? 1 : 0;
   const statusFilterCount = statusFilter !== 'all' ? 1 : 0;
   const dateFilterCount = (dateFrom ? 1 : 0) + (dateTo ? 1 : 0);
@@ -152,7 +152,7 @@ export default function AdminInvitationsPage() {
         </Button>
       </div>
 
-      <div className="overflow-hidden rounded-lg border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800">
+      <div className="rounded-lg border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800">
         <div className="flex flex-col gap-3 border-b border-neutral-200 dark:border-neutral-700 p-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="relative w-72">
             <Search className="absolute inset-y-0 start-0 my-auto ms-3 h-4 w-4 text-neutral-400" />
@@ -165,18 +165,21 @@ export default function AdminInvitationsPage() {
             />
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <InvFilterDropdown label={t('admin.invitations.email')} count={userFilterCount}>
+            <InvFilterDropdown label={t('admin.invitations.email')} count={emailFilterCount}>
+              <div className="max-h-60 overflow-y-auto">
               {[
                 { value: '', label: t('admin.invitations.status.all') },
-                ...(usersData?.items?.map((u) => ({ value: String(u.id), label: u.email })) ?? []),
+                ...(emailsData?.map((email) => ({ value: email, label: email })) ?? []),
               ].map((opt) => (
-                <button key={opt.value} type="button" onClick={() => { setUserIdFilter(opt.value); setPage(1); }}
-                  className={`flex w-full items-center gap-2 rounded-md px-3 py-2 text-body-sm transition-colors truncate ${userIdFilter === opt.value ? 'bg-primary-50 text-primary-700 dark:bg-neutral-700 dark:text-primary-300' : 'text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-700'}`}>
+                <button key={opt.value} type="button" onClick={() => { setEmailFilter(opt.value); setPage(1); }}
+                  className={`flex w-full items-center gap-2 rounded-md px-3 py-2 text-body-sm transition-colors truncate ${emailFilter === opt.value ? 'bg-primary-50 text-primary-700 dark:bg-neutral-700 dark:text-primary-300' : 'text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-700'}`}>
                   {opt.label}
                 </button>
               ))}
+              </div>
             </InvFilterDropdown>
             <InvFilterDropdown label={t('admin.invitations.store')} count={storeFilterCount}>
+              <div className="max-h-60 overflow-y-auto">
               {[
                 { value: '', label: t('admin.invitations.status.all') },
                 ...(storesData?.items?.map((s) => ({ value: String(s.id), label: s.name })) ?? []),
@@ -186,6 +189,7 @@ export default function AdminInvitationsPage() {
                   {opt.label}
                 </button>
               ))}
+              </div>
             </InvFilterDropdown>
             <InvFilterDropdown label={t('admin.invitations.role')} count={roleFilterCount}>
               {ROLE_OPTIONS.map((opt) => (
@@ -225,9 +229,9 @@ export default function AdminInvitationsPage() {
                 </div>
               </div>
             </InvFilterDropdown>
-            {(search || storeIdFilter || userIdFilter || roleFilter || statusFilter !== 'all' || dateFrom || dateTo) && (
+            {(search || storeIdFilter || emailFilter || roleFilter || statusFilter !== 'all' || dateFrom || dateTo) && (
               <button
-                onClick={() => { setSearch(''); setStoreIdFilter(''); setUserIdFilter(''); setRoleFilter(''); setStatusFilter('all'); setDateFrom(''); setDateTo(''); setPage(1); }}
+                onClick={() => { setSearch(''); setStoreIdFilter(''); setEmailFilter(''); setRoleFilter(''); setStatusFilter('all'); setDateFrom(''); setDateTo(''); setPage(1); }}
                 className="inline-flex items-center gap-1 text-body-sm text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200"
               >
                 <X className="h-3.5 w-3.5" />

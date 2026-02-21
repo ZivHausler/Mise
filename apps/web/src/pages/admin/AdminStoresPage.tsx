@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Search, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Pencil, Check, X, Filter } from 'lucide-react';
-import { useAdminStores, useAdminStoreMembers, useAdminUpdateStore } from '@/api/hooks';
+import { Search, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Pencil, Check, X, Filter, Trash2 } from 'lucide-react';
+import { useAdminStores, useAdminStoreMembers, useAdminUpdateStore, useAdminDeleteStore } from '@/api/hooks';
 import { ROLE_LABELS } from '@/constants/defaults';
 import { Button } from '@/components/Button';
+import { ConfirmModal } from '@/components/Modal';
 import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 
 function StoreFilterDropdown({ label, count, children }: { label: string; count: number; children: React.ReactNode }) {
@@ -65,6 +66,7 @@ export default function AdminStoresPage() {
   const [editingStore, setEditingStore] = useState<number | null>(null);
   const [editName, setEditName] = useState('');
   const [editAddress, setEditAddress] = useState('');
+  const [deleteTarget, setDeleteTarget] = useState<{ id: number; name: string } | null>(null);
   const { data: allStoresData } = useAdminStores(1, 500);
   const { data: rawData, isLoading } = useAdminStores(page, 20, debouncedSearch);
 
@@ -74,6 +76,7 @@ export default function AdminStoresPage() {
   } : rawData;
   const { data: members, isLoading: membersLoading } = useAdminStoreMembers(expandedStore);
   const updateStore = useAdminUpdateStore();
+  const deleteStore = useAdminDeleteStore();
 
   const startEdit = (store: { id: number; name: string; address: string | null }) => {
     setEditingStore(store.id);
@@ -179,7 +182,10 @@ export default function AdminStoresPage() {
                             <button onClick={() => setEditingStore(null)} className="p-1.5 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-700"><X className="w-4 h-4 text-red-600" /></button>
                           </div>
                         ) : (
-                          <button onClick={() => startEdit(store)} className="p-1.5 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-700"><Pencil className="w-4 h-4 text-neutral-600 dark:text-neutral-400" /></button>
+                          <div className="flex items-center justify-end gap-1">
+                            <button onClick={() => startEdit(store)} className="p-1.5 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-700"><Pencil className="w-4 h-4 text-neutral-600 dark:text-neutral-400" /></button>
+                            <button onClick={() => setDeleteTarget({ id: store.id, name: store.name })} className="p-1.5 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-700" title={t('admin.stores.delete')}><Trash2 className="w-4 h-4 text-red-600" /></button>
+                          </div>
                         )}
                       </td>
                     </tr>
@@ -249,6 +255,20 @@ export default function AdminStoresPage() {
           </div>
         )}
       </div>
+
+      <ConfirmModal
+        open={!!deleteTarget}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={() => {
+          if (deleteTarget) {
+            deleteStore.mutate(deleteTarget.id);
+            setDeleteTarget(null);
+          }
+        }}
+        title={t('admin.stores.deleteTitle')}
+        message={t('admin.stores.deleteConfirm', { name: deleteTarget?.name })}
+        variant="danger"
+      />
     </div>
   );
 }
