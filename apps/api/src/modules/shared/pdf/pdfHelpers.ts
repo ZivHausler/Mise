@@ -50,9 +50,16 @@ export const FONT_NAME = 'Rubik';
 
 let cachedFontBase64: string | null = null;
 
+function getAssetsDir(): string {
+  const fromDist = path.resolve(__dirname, '../assets');
+  const fromSrc = path.resolve(__dirname, '../../../../assets');
+  if (fs.existsSync(fromDist)) return fromDist;
+  return fromSrc;
+}
+
 function getFontBase64(): string {
   if (!cachedFontBase64) {
-    const fontPath = path.resolve(__dirname, '../../../../assets/fonts/Rubik-Regular.ttf');
+    const fontPath = path.resolve(getAssetsDir(), 'fonts/Rubik-Regular.ttf');
     try {
       const buf = fs.readFileSync(fontPath);
       cachedFontBase64 = arrayBufferToBase64(buf.buffer as ArrayBuffer);

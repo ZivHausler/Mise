@@ -75,14 +75,33 @@ export async function authMiddleware(request: FastifyRequest, _reply: FastifyRep
 }
 
 export async function requireStoreMiddleware(request: FastifyRequest, _reply: FastifyReply) {
+  const pool = getPool();
+
+  // Admin bypass: admins can proceed even without a store selected
+  if (request.currentUser?.isAdmin) {
+    const adminResult = await pool.query(
+      'SELECT is_admin FROM users WHERE id = $1',
+      [request.currentUser.userId],
+    );
+    if (adminResult.rows[0]?.['is_admin'] === true) {
+      // If admin has a storeId, verify it exists
+      if (request.currentUser.storeId) {
+        const storeResult = await pool.query('SELECT id FROM stores WHERE id = $1', [request.currentUser.storeId]);
+        if (!storeResult.rows[0]) {
+          throw new ForbiddenError('Store not found.');
+        }
+      }
+      return;
+    }
+  }
+
   if (!request.currentUser?.storeId) {
     throw new ForbiddenError('No store selected. Please create or join a store first.');
   }
 
   const { userId, storeId, storeRole } = request.currentUser;
-  const pool = getPool();
 
-  // Admin bypass: verify is_admin in DB (not just JWT claim)
+  // Admin bypass via storeRole (legacy tokens)
   if (storeRole === StoreRole.ADMIN) {
     const adminResult = await pool.query(
       'SELECT is_admin FROM users WHERE id = $1',
@@ -91,7 +110,6 @@ export async function requireStoreMiddleware(request: FastifyRequest, _reply: Fa
     if (!adminResult.rows[0] || adminResult.rows[0]['is_admin'] !== true) {
       throw new ForbiddenError('Admin privileges revoked.');
     }
-    // Verify the store exists
     const storeResult = await pool.query('SELECT id FROM stores WHERE id = $1', [storeId]);
     if (!storeResult.rows[0]) {
       throw new ForbiddenError('Store not found.');

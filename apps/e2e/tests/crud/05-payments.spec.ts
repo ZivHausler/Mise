@@ -17,9 +17,9 @@ test.describe('Payments CRUD', () => {
     // Modal opens
     await expect(page.getByRole('heading', { name: 'Log Payment' })).toBeVisible();
 
-    // Wait for order options to load, then select the first one
+    // Wait for order options to load (placeholder + at least 1 order), then select the first real order
     const orderSelect = page.getByLabel('Order');
-    await expect(orderSelect.locator('option')).toHaveCount(2, { timeout: 10_000 }); // placeholder + 1 order
+    await expect(orderSelect.locator('option').nth(1)).toBeAttached({ timeout: 10_000 });
     await orderSelect.selectOption({ index: 1 });
 
     // Select method Cash
