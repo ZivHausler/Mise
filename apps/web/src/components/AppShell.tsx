@@ -109,7 +109,7 @@ const MobileNav = React.memo(function MobileNav({ onClose }: { onClose: () => vo
             >
               {isAdmin && <option value="" disabled>{t('nav.selectStore', 'Select a store')}</option>}
               {displayStores.map((s: any) => (
-                <option key={s.storeId} value={s.storeId}>{s.storeName}</option>
+                <option key={s.storeId} value={s.storeId}>{isAdmin ? `${s.storeId}  |  ` : ''}{s.storeName}</option>
               ))}
             </select>
             <ChevronDown className="pointer-events-none absolute end-2 top-1/2 h-4 w-4 -translate-y-1/2 text-primary-400" />
