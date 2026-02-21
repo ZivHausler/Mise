@@ -1,7 +1,6 @@
 import type { FastifyInstance } from 'fastify';
 import { env } from '../../config/env.js';
-import { authMiddleware } from '../../core/middleware/auth.js';
-import { requireStoreMiddleware } from '../../core/middleware/requireStore.js';
+import { authMiddleware, requireStoreMiddleware } from '../../core/middleware/auth.js';
 
 function isEnabled(flagValue: string, storeId: string): boolean {
   if (!flagValue) return false;

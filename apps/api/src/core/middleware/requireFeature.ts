@@ -16,6 +16,7 @@ function isEnabled(flagValue: string, storeId: string): boolean {
 
 export function requireFeature(flag: FeatureFlag) {
   return async (request: FastifyRequest, reply: FastifyReply) => {
+    if (request.currentUser?.isAdmin) return;
     const storeId = request.currentUser?.storeId;
     if (!storeId || !isEnabled(featureFlagEnvMap[flag], storeId)) {
       throw new ForbiddenError('This feature is not available for your store', 'FEATURE_DISABLED');
