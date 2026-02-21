@@ -11,8 +11,7 @@ on:
 env:
   PROJECT_ID: mise-prod-app
   REGION: me-west1
-  REPO: mise-docker
-  IMAGE: api
+  IMAGE: gcr.io/mise-prod-app/mise-api
 
 jobs:
   deploy:
@@ -32,38 +31,25 @@ jobs:
         uses: google-github-actions/setup-gcloud@v2
 
       - name: Configure Docker
-        run: gcloud auth configure-docker ${{ env.REGION }}-docker.pkg.dev --quiet
+        run: gcloud auth configure-docker gcr.io --quiet
 
       - name: Build and push image
         run: |
           docker build \
-            -t ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPO }}/${{ env.IMAGE }}:${{ github.sha }} \
-            -t ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPO }}/${{ env.IMAGE }}:latest \
+            -t ${{ env.IMAGE }}:${{ github.sha }} \
+            -t ${{ env.IMAGE }}:latest \
             -f apps/api/Dockerfile .
-          docker push ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPO }}/${{ env.IMAGE }}:${{ github.sha }}
-          docker push ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPO }}/${{ env.IMAGE }}:latest
+          docker push ${{ env.IMAGE }}:${{ github.sha }}
+          docker push ${{ env.IMAGE }}:latest
 
       - name: Deploy to Cloud Run
         uses: google-github-actions/deploy-cloudrun@v2
         with:
           service: mise-api
           region: ${{ env.REGION }}
-          image: ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPO }}/${{ env.IMAGE }}:${{ github.sha }}
+          image: ${{ env.IMAGE }}:${{ github.sha }}
 
       - name: Verify deployment
         run: |
           URL=$(gcloud run services describe mise-api --region=${{ env.REGION }} --format='value(status.url)')
           curl -sf "$URL/health" || exit 1
-
-      - name: Cleanup old images (keep last 2)
-        run: |
-          gcloud artifacts docker images list \
-            ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPO }}/${{ env.IMAGE }} \
-            --sort-by=UPDATE_TIME \
-            --format='get(version)' \
-            | head -n -2 \
-            | while read -r DIGEST; do
-                gcloud artifacts docker images delete \
-                  "${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPO }}/${{ env.IMAGE }}@${DIGEST}" \
-                  --quiet --delete-tags 2>/dev/null || true
-              done

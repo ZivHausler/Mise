@@ -30,8 +30,11 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Build
-        run: pnpm --filter @mise/web build
+      - name: Build shared packages
+        run: pnpm --filter @mise/shared build
+
+      - name: Build web (Vite only)
+        run: cd apps/web && npx vite build
         env:
           VITE_API_URL: https://mise-prod-app.web.app
           VITE_GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
