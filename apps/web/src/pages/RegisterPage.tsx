@@ -161,6 +161,7 @@ export default function RegisterPage() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="baker@mise.app"
+              disabled={!!inviteQuery.data?.email}
             />
             <div>
               <TextInput
