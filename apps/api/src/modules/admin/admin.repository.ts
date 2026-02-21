@@ -140,7 +140,7 @@ export class PgAdminRepository {
   static async getInvitations(
     page: number,
     limit: number,
-    filters: { status?: string; search?: string; storeId?: number; userId?: number; role?: string; dateFrom?: string; dateTo?: string },
+    filters: { status?: string; search?: string; storeId?: number; userId?: number; email?: string; role?: string; dateFrom?: string; dateTo?: string },
   ): Promise<PaginatedResult<AdminInvitation>> {
     const pool = getPool();
     const offset = (page - 1) * limit;
@@ -176,7 +176,10 @@ export class PgAdminRepository {
       filterParams.push(filters.storeId);
     }
 
-    if (filters.userId) {
+    if (filters.email) {
+      conditions.push(`si.email = $${idx++}`);
+      filterParams.push(filters.email);
+    } else if (filters.userId) {
       conditions.push(`si.email = (SELECT email FROM users WHERE id = $${idx++})`);
       filterParams.push(filters.userId);
     }
@@ -223,6 +226,12 @@ export class PgAdminRepository {
       limit,
       totalPages: Math.ceil(total / limit),
     };
+  }
+
+  static async getDistinctInvitationEmails(): Promise<string[]> {
+    const pool = getPool();
+    const result = await pool.query('SELECT DISTINCT email FROM store_invitations ORDER BY email ASC');
+    return result.rows.map((row: Record<string, unknown>) => row['email'] as string);
   }
 
   static async createCreateStoreInvitation(email: string): Promise<AdminInvitation> {
@@ -363,6 +372,20 @@ export class PgAdminRepository {
         count: row['count'] as number,
       })),
     };
+  }
+
+  static async deleteUser(userId: number): Promise<void> {
+    const pool = getPool();
+    await pool.query('DELETE FROM users_stores WHERE user_id = $1', [userId]);
+    await pool.query('DELETE FROM store_invitations WHERE email = (SELECT email FROM users WHERE id = $1)', [userId]);
+    await pool.query('DELETE FROM users WHERE id = $1', [userId]);
+  }
+
+  static async deleteStore(storeId: number): Promise<void> {
+    const pool = getPool();
+    await pool.query('DELETE FROM users_stores WHERE store_id = $1', [storeId]);
+    await pool.query('DELETE FROM store_invitations WHERE store_id = $1', [storeId]);
+    await pool.query('DELETE FROM stores WHERE id = $1', [storeId]);
   }
 
   static async findUserById(userId: number): Promise<{ id: number; isAdmin: boolean } | null> {

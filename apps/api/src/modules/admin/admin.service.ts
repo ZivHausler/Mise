@@ -35,6 +35,25 @@ export class AdminService {
     await PgAdminRepository.toggleDisabled(targetUserId, disabled);
   }
 
+  async deleteUser(currentUserId: number, targetUserId: number): Promise<void> {
+    if (currentUserId === targetUserId) {
+      throw new ForbiddenError('Cannot delete your own account');
+    }
+    const user = await PgAdminRepository.findUserById(targetUserId);
+    if (!user) throw new NotFoundError('User not found');
+    if (user.isAdmin) {
+      throw new ForbiddenError('Cannot delete an admin user');
+    }
+    await PgAdminRepository.deleteUser(targetUserId);
+  }
+
+  async deleteStore(storeId: number): Promise<void> {
+    const pool = (await import('../../core/database/postgres.js')).getPool();
+    const result = await pool.query('SELECT id FROM stores WHERE id = $1', [storeId]);
+    if (!result.rows[0]) throw new NotFoundError('Store not found');
+    await PgAdminRepository.deleteStore(storeId);
+  }
+
   async getStores(page: number, limit: number, search?: string): Promise<PaginatedResult<AdminStore>> {
     return PgAdminRepository.getStores(page, limit, search);
   }
@@ -53,12 +72,16 @@ export class AdminService {
   async getInvitations(
     page: number,
     limit: number,
-    filters: { status?: string; search?: string; storeId?: number; userId?: number; role?: string; dateFrom?: string; dateTo?: string },
+    filters: { status?: string; search?: string; storeId?: number; userId?: number; email?: string; role?: string; dateFrom?: string; dateTo?: string },
   ): Promise<PaginatedResult<AdminInvitation>> {
     if (filters.status && !['pending', 'used', 'expired', 'revoked'].includes(filters.status)) {
       throw new ValidationError('Invalid status filter');
     }
     return PgAdminRepository.getInvitations(page, limit, filters);
+  }
+
+  async getDistinctInvitationEmails(): Promise<string[]> {
+    return PgAdminRepository.getDistinctInvitationEmails();
   }
 
   async createStoreInvitation(email: string): Promise<AdminInvitation> {
