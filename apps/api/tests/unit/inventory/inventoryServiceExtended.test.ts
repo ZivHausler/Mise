@@ -25,7 +25,7 @@ vi.mock('../../../src/modules/inventory/use-cases/adjustStock.js', () => ({
 
 import { InventoryCrud } from '../../../src/modules/inventory/inventoryCrud.js';
 
-const STORE_ID = 'store-1';
+const STORE_ID = 1;
 
 describe('InventoryService - extended', () => {
   let service: InventoryService;
@@ -75,25 +75,25 @@ describe('InventoryService - extended', () => {
       vi.mocked(InventoryCrud.getById).mockResolvedValue(ingredient);
       vi.mocked(InventoryCrud.update).mockResolvedValue({ ...ingredient, name: 'Updated' });
 
-      const result = await service.update(STORE_ID, 'ing-1', { name: 'Updated' });
+      const result = await service.update(STORE_ID, 1, { name: 'Updated' });
       expect(result.name).toBe('Updated');
     });
 
     it('should throw NotFoundError when ingredient not found', async () => {
       vi.mocked(InventoryCrud.getById).mockResolvedValue(null);
 
-      await expect(service.update(STORE_ID, 'nonexistent', { name: 'x' })).rejects.toThrow(NotFoundError);
+      await expect(service.update(STORE_ID, 999, { name: 'x' })).rejects.toThrow(NotFoundError);
     });
   });
 
   describe('getLog', () => {
     it('should return inventory log', async () => {
-      const logs = [{ id: 'log-1', ingredientId: 'ing-1', type: 'addition', quantity: 10, createdAt: new Date() }] as any;
+      const logs = [{ id: 1, ingredientId: 1, type: 'addition', quantity: 10, createdAt: new Date() }] as any;
       vi.mocked(InventoryCrud.getLog).mockResolvedValue(logs);
 
-      const result = await service.getLog(STORE_ID, 'ing-1');
+      const result = await service.getLog(STORE_ID, 1);
       expect(result).toHaveLength(1);
-      expect(InventoryCrud.getLog).toHaveBeenCalledWith(STORE_ID, 'ing-1');
+      expect(InventoryCrud.getLog).toHaveBeenCalledWith(STORE_ID, 1);
     });
   });
 
@@ -102,13 +102,13 @@ describe('InventoryService - extended', () => {
       vi.mocked(InventoryCrud.getById).mockResolvedValue(createIngredient());
       vi.mocked(InventoryCrud.delete).mockResolvedValue(undefined);
 
-      await expect(service.delete(STORE_ID, 'ing-1')).resolves.toBeUndefined();
+      await expect(service.delete(STORE_ID, 1)).resolves.toBeUndefined();
     });
 
     it('should throw NotFoundError when ingredient not found', async () => {
       vi.mocked(InventoryCrud.getById).mockResolvedValue(null);
 
-      await expect(service.delete(STORE_ID, 'nonexistent')).rejects.toThrow(NotFoundError);
+      await expect(service.delete(STORE_ID, 999)).rejects.toThrow(NotFoundError);
     });
   });
 });

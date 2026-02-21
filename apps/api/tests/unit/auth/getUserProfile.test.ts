@@ -30,16 +30,16 @@ describe('GetUserProfileUseCase', () => {
     const user = createUser();
     vi.mocked(PgAuthRepository.findById).mockResolvedValue(user);
 
-    const result = await useCase.execute('user-1');
+    const result = await useCase.execute(1);
 
     expect(result).toEqual(user);
-    expect(PgAuthRepository.findById).toHaveBeenCalledWith('user-1');
+    expect(PgAuthRepository.findById).toHaveBeenCalledWith(1);
   });
 
   it('should throw NotFoundError when user does not exist', async () => {
     vi.mocked(PgAuthRepository.findById).mockResolvedValue(null);
 
-    await expect(useCase.execute('nonexistent')).rejects.toThrow(NotFoundError);
-    await expect(useCase.execute('nonexistent')).rejects.toThrow('User not found');
+    await expect(useCase.execute(999)).rejects.toThrow(NotFoundError);
+    await expect(useCase.execute(999)).rejects.toThrow('User not found');
   });
 });

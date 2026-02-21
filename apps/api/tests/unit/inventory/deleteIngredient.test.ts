@@ -17,7 +17,7 @@ vi.mock('../../../src/modules/inventory/inventory.repository.js', () => ({
 
 import { PgInventoryRepository } from '../../../src/modules/inventory/inventory.repository.js';
 
-const STORE_ID = 'store-1';
+const STORE_ID = 1;
 
 describe('InventoryCrud.delete', () => {
   beforeEach(() => {
@@ -27,7 +27,7 @@ describe('InventoryCrud.delete', () => {
   it('should delete an ingredient by delegating to repository', async () => {
     vi.mocked(PgInventoryRepository.delete).mockResolvedValue(undefined);
 
-    await expect(InventoryCrud.delete(STORE_ID, 'ing-1')).resolves.toBeUndefined();
-    expect(PgInventoryRepository.delete).toHaveBeenCalledWith(STORE_ID, 'ing-1');
+    await expect(InventoryCrud.delete(STORE_ID, 1)).resolves.toBeUndefined();
+    expect(PgInventoryRepository.delete).toHaveBeenCalledWith(STORE_ID, 1);
   });
 });

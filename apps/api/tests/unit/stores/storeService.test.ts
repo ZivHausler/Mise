@@ -76,7 +76,7 @@ describe('StoreService', () => {
     });
 
     it('should throw ForbiddenError when invitation is a join-store invitation', async () => {
-      vi.mocked(PgStoreRepository.findInvitationByToken).mockResolvedValue({ storeId: 'existing-store' } as any);
+      vi.mocked(PgStoreRepository.findInvitationByToken).mockResolvedValue({ storeId: 999 } as any);
 
       await expect(service.createStore('u1', 'u@test.com', { name: 'Bakery' }, 'tok')).rejects.toThrow(ForbiddenError);
     });

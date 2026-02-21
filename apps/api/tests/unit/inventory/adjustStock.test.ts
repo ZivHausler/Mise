@@ -26,7 +26,7 @@ vi.mock('../../../src/core/events/event-names.js', () => ({
 
 import { InventoryCrud } from '../../../src/modules/inventory/inventoryCrud.js';
 
-const STORE_ID = 'store-1';
+const STORE_ID = 1;
 
 describe('AdjustStockUseCase', () => {
   let useCase: AdjustStockUseCase;
@@ -43,7 +43,7 @@ describe('AdjustStockUseCase', () => {
     vi.mocked(InventoryCrud.adjustStock).mockResolvedValue(updated);
 
     const result = await useCase.execute(STORE_ID, {
-      ingredientId: 'ing-1',
+      ingredientId: 1,
       type: InventoryLogType.ADDITION,
       quantity: 10,
     });
@@ -59,7 +59,7 @@ describe('AdjustStockUseCase', () => {
     vi.mocked(InventoryCrud.adjustStock).mockResolvedValue(updated);
 
     const result = await useCase.execute(STORE_ID, {
-      ingredientId: 'ing-1',
+      ingredientId: 1,
       type: InventoryLogType.USAGE,
       quantity: 10,
     });
@@ -71,7 +71,7 @@ describe('AdjustStockUseCase', () => {
     vi.mocked(InventoryCrud.getById).mockResolvedValue(createIngredient());
 
     await expect(
-      useCase.execute(STORE_ID, { ingredientId: 'ing-1', type: InventoryLogType.ADDITION, quantity: 0 }),
+      useCase.execute(STORE_ID, { ingredientId: 1, type: InventoryLogType.ADDITION, quantity: 0 }),
     ).rejects.toThrow('Adjustment quantity must be positive');
   });
 
@@ -79,7 +79,7 @@ describe('AdjustStockUseCase', () => {
     vi.mocked(InventoryCrud.getById).mockResolvedValue(createIngredient());
 
     await expect(
-      useCase.execute(STORE_ID, { ingredientId: 'ing-1', type: InventoryLogType.ADDITION, quantity: -5 }),
+      useCase.execute(STORE_ID, { ingredientId: 1, type: InventoryLogType.ADDITION, quantity: -5 }),
     ).rejects.toThrow('Adjustment quantity must be positive');
   });
 
@@ -87,7 +87,7 @@ describe('AdjustStockUseCase', () => {
     vi.mocked(InventoryCrud.getById).mockResolvedValue(null);
 
     await expect(
-      useCase.execute(STORE_ID, { ingredientId: 'nonexistent', type: InventoryLogType.ADDITION, quantity: 10 }),
+      useCase.execute(STORE_ID, { ingredientId: 999, type: InventoryLogType.ADDITION, quantity: 10 }),
     ).rejects.toThrow(NotFoundError);
   });
 
@@ -98,7 +98,7 @@ describe('AdjustStockUseCase', () => {
     vi.mocked(InventoryCrud.adjustStock).mockResolvedValue(updated);
 
     const result = await useCase.execute(STORE_ID, {
-      ingredientId: 'ing-1',
+      ingredientId: 1,
       type: InventoryLogType.ADJUSTMENT,
       quantity: 5,
     });
@@ -108,12 +108,12 @@ describe('AdjustStockUseCase', () => {
 
   it('should publish low stock event when quantity drops below threshold', async () => {
     const ingredient = createIngredient({ quantity: 50 });
-    const updated = createIngredient({ quantity: 3, lowStockThreshold: 10, id: 'ing-1', name: 'Flour' });
+    const updated = createIngredient({ quantity: 3, lowStockThreshold: 10, id: 1, name: 'Flour' });
     vi.mocked(InventoryCrud.getById).mockResolvedValue(ingredient);
     vi.mocked(InventoryCrud.adjustStock).mockResolvedValue(updated);
 
     await useCase.execute(STORE_ID, {
-      ingredientId: 'ing-1',
+      ingredientId: 1,
       type: InventoryLogType.USAGE,
       quantity: 47,
     });
@@ -138,7 +138,7 @@ describe('AdjustStockUseCase', () => {
     vi.mocked(InventoryCrud.adjustStock).mockResolvedValue(updated);
 
     await useCase.execute(STORE_ID, {
-      ingredientId: 'ing-1',
+      ingredientId: 1,
       type: InventoryLogType.USAGE,
       quantity: 20,
     });

@@ -18,7 +18,7 @@ vi.mock('../../../src/modules/inventory/inventory.repository.js', () => ({
 
 import { PgInventoryRepository } from '../../../src/modules/inventory/inventory.repository.js';
 
-const STORE_ID = 'store-1';
+const STORE_ID = 1;
 
 describe('InventoryCrud.update', () => {
   beforeEach(() => {
@@ -29,9 +29,9 @@ describe('InventoryCrud.update', () => {
     const updated = createIngredient({ name: 'Whole Wheat Flour' });
     vi.mocked(PgInventoryRepository.update).mockResolvedValue(updated);
 
-    const result = await InventoryCrud.update(STORE_ID, 'ing-1', { name: 'Whole Wheat Flour' });
+    const result = await InventoryCrud.update(STORE_ID, 1, { name: 'Whole Wheat Flour' });
 
     expect(result.name).toBe('Whole Wheat Flour');
-    expect(PgInventoryRepository.update).toHaveBeenCalledWith(STORE_ID, 'ing-1', { name: 'Whole Wheat Flour' });
+    expect(PgInventoryRepository.update).toHaveBeenCalledWith(STORE_ID, 1, { name: 'Whole Wheat Flour' });
   });
 });

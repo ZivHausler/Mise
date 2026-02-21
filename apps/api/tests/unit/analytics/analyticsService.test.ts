@@ -13,7 +13,7 @@ vi.mock('../../../src/modules/analytics/analytics.repository.js', () => ({
 
 import { PgAnalyticsRepository } from '../../../src/modules/analytics/analytics.repository.js';
 
-const STORE_ID = 'store-1';
+const STORE_ID = 1;
 
 describe('AnalyticsService', () => {
   let service: AnalyticsService;
@@ -66,7 +66,7 @@ describe('AnalyticsService', () => {
 
   describe('getCustomerFrequency', () => {
     it('should return customer frequency data', async () => {
-      const frequency = [{ id: 'c1', name: 'Jane', order_count: 10 }];
+      const frequency = [{ id: 1, name: 'Jane', order_count: 10 }];
       vi.mocked(PgAnalyticsRepository.getCustomerFrequency).mockResolvedValue(frequency);
 
       const result = await service.getCustomerFrequency(STORE_ID);

@@ -29,7 +29,7 @@ vi.mock('../../../src/modules/payments/use-cases/getPaymentSummary.js', () => ({
 import { PaymentCrud } from '../../../src/modules/payments/paymentCrud.js';
 import { getEventBus } from '../../../src/core/events/event-bus.js';
 
-const STORE_ID = 'store-1';
+const STORE_ID = 1;
 
 describe('PaymentService', () => {
   let service: PaymentService;
@@ -44,17 +44,17 @@ describe('PaymentService', () => {
 
   describe('create', () => {
     it('should publish payment.received event after creating payment', async () => {
-      const payment = createPayment({ id: 'pay-1', orderId: 'order-1', amount: 50 });
+      const payment = createPayment({ id: 1, orderId: 1, amount: 50 });
       vi.mocked(PaymentCrud.create).mockResolvedValue(payment);
 
-      await service.create(STORE_ID, { orderId: 'order-1', amount: 50, method: 'cash' });
+      await service.create(STORE_ID, { orderId: 1, amount: 50, method: 'cash' });
 
       expect(eventBus.publish).toHaveBeenCalledWith(
         expect.objectContaining({
           eventName: 'payment.received',
           payload: expect.objectContaining({
-            paymentId: 'pay-1',
-            orderId: 'order-1',
+            paymentId: 1,
+            orderId: 1,
             amount: 50,
           }),
         }),
@@ -67,22 +67,22 @@ describe('PaymentService', () => {
       vi.mocked(PaymentCrud.getById).mockResolvedValue(createPayment());
       vi.mocked(PaymentCrud.delete).mockResolvedValue(undefined);
 
-      await expect(service.delete(STORE_ID, 'pay-1')).resolves.toBeUndefined();
+      await expect(service.delete(STORE_ID, 1)).resolves.toBeUndefined();
     });
 
     it('should throw NotFoundError when payment not found', async () => {
       vi.mocked(PaymentCrud.getById).mockResolvedValue(null);
 
-      await expect(service.delete(STORE_ID, 'nonexistent')).rejects.toThrow(NotFoundError);
+      await expect(service.delete(STORE_ID, 999)).rejects.toThrow(NotFoundError);
     });
   });
 
   describe('getByOrderId', () => {
     it('should return payments for an order', async () => {
-      const payments = [createPayment({ id: 'p1' }), createPayment({ id: 'p2' })];
+      const payments = [createPayment({ id: 1 }), createPayment({ id: 2 })];
       vi.mocked(PaymentCrud.getByOrderId).mockResolvedValue(payments);
 
-      const result = await service.getByOrderId(STORE_ID, 'order-1');
+      const result = await service.getByOrderId(STORE_ID, 1);
       expect(result).toHaveLength(2);
     });
   });

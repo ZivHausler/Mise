@@ -31,7 +31,7 @@ vi.mock('../../../src/modules/payments/use-cases/getPaymentSummary.js', () => ({
 import { PaymentCrud } from '../../../src/modules/payments/paymentCrud.js';
 import { getEventBus } from '../../../src/core/events/event-bus.js';
 
-const STORE_ID = 'store-1';
+const STORE_ID = 1;
 
 describe('PaymentService - extended', () => {
   let service: PaymentService;
@@ -59,14 +59,14 @@ describe('PaymentService - extended', () => {
       const result = { data: [createPayment()], total: 1, page: 1, limit: 10 };
       vi.mocked(PaymentCrud.getByCustomerId).mockResolvedValue(result);
 
-      const res = await service.getByCustomerId(STORE_ID, 'cust-1');
+      const res = await service.getByCustomerId(STORE_ID, 1);
       expect(res.data).toHaveLength(1);
     });
   });
 
   describe('getPaymentSummary', () => {
     it('should return payment summary without order service', async () => {
-      const summary = { orderId: 'o1', totalAmount: 0, paidAmount: 50, status: 'partial' as const, payments: [] };
+      const summary = { orderId: 1, totalAmount: 0, paidAmount: 50, status: 'partial' as const, payments: [] };
       const mockExecute = vi.fn().mockResolvedValue(summary);
 
       // Re-create service to use new mock
@@ -74,8 +74,8 @@ describe('PaymentService - extended', () => {
       vi.mocked(GetPaymentSummaryUseCase).mockImplementation(() => ({ execute: mockExecute }) as any);
       service = new PaymentService();
 
-      const result = await service.getPaymentSummary(STORE_ID, 'o1');
-      expect(mockExecute).toHaveBeenCalledWith(STORE_ID, 'o1', 0);
+      const result = await service.getPaymentSummary(STORE_ID, 1);
+      expect(mockExecute).toHaveBeenCalledWith(STORE_ID, 1, 0);
     });
   });
 
@@ -95,7 +95,7 @@ describe('PaymentService - extended', () => {
       const refunded = createPayment({ status: 'refunded' as any });
       vi.mocked(PaymentCrud.refund).mockResolvedValue(refunded);
 
-      const result = await service.refund(STORE_ID, 'pay-1');
+      const result = await service.refund(STORE_ID, 1);
       expect(result.status).toBe('refunded');
       expect(eventBus.publish).toHaveBeenCalledWith(
         expect.objectContaining({ eventName: 'payment.refunded' }),
@@ -105,13 +105,13 @@ describe('PaymentService - extended', () => {
     it('should throw NotFoundError when payment not found', async () => {
       vi.mocked(PaymentCrud.getById).mockResolvedValue(null);
 
-      await expect(service.refund(STORE_ID, 'nonexistent')).rejects.toThrow(NotFoundError);
+      await expect(service.refund(STORE_ID, 999)).rejects.toThrow(NotFoundError);
     });
 
     it('should throw NotFoundError when payment already refunded', async () => {
       vi.mocked(PaymentCrud.getById).mockResolvedValue(createPayment({ status: 'refunded' as any }));
 
-      await expect(service.refund(STORE_ID, 'pay-1')).rejects.toThrow(NotFoundError);
+      await expect(service.refund(STORE_ID, 1)).rejects.toThrow(NotFoundError);
     });
   });
 });

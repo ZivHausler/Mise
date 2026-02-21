@@ -28,7 +28,7 @@ vi.mock('../../../src/modules/inventory/use-cases/adjustStock.js', () => ({
 
 import { InventoryCrud } from '../../../src/modules/inventory/inventoryCrud.js';
 
-const STORE_ID = 'store-1';
+const STORE_ID = 1;
 
 describe('InventoryService', () => {
   let service: InventoryService;
@@ -45,7 +45,7 @@ describe('InventoryService', () => {
       mockAdjustStockResult = updated;
 
       const result = await service.adjustStock(STORE_ID, {
-        ingredientId: 'ing-1',
+        ingredientId: 1,
         type: InventoryLogType.ADDITION,
         quantity: 10,
       });
@@ -59,20 +59,20 @@ describe('InventoryService', () => {
       const ingredient = createIngredient();
       vi.mocked(InventoryCrud.getById).mockResolvedValue(ingredient);
 
-      const result = await service.getById(STORE_ID, 'ing-1');
+      const result = await service.getById(STORE_ID, 1);
       expect(result).toEqual(ingredient);
     });
 
     it('should throw NotFoundError when ingredient not found', async () => {
       vi.mocked(InventoryCrud.getById).mockResolvedValue(null);
 
-      await expect(service.getById(STORE_ID, 'nonexistent')).rejects.toThrow(NotFoundError);
+      await expect(service.getById(STORE_ID, 999)).rejects.toThrow(NotFoundError);
     });
   });
 
   describe('getAll', () => {
     it('should return all ingredients', async () => {
-      const ingredients = [createIngredient({ id: 'i1' }), createIngredient({ id: 'i2' })];
+      const ingredients = [createIngredient({ id: 1 }), createIngredient({ id: 2 })];
       vi.mocked(InventoryCrud.getAll).mockResolvedValue(ingredients);
 
       const result = await service.getAll(STORE_ID);

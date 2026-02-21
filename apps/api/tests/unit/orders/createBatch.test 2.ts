@@ -48,7 +48,7 @@ vi.mock('../../../src/modules/shared/unitConversion.js', () => ({
 import { OrderCrud } from '../../../src/modules/orders/orderCrud.js';
 import { getEventBus } from '../../../src/core/events/event-bus.js';
 
-const STORE_ID = 1;
+const STORE_ID = 'store-1';
 
 describe('OrderService.createBatch', () => {
   let service: OrderService;
@@ -65,7 +65,7 @@ describe('OrderService.createBatch', () => {
     vi.mocked(OrderCrud.create).mockImplementation(async (_storeId, data) => {
       createCallCount++;
       return createOrder({
-        id: createCallCount,
+        id: `order-${createCallCount}`,
         customerId: data.customerId,
         dueDate: data.dueDate,
         recurringGroupId: (data as any).recurringGroupId,
@@ -77,7 +77,7 @@ describe('OrderService.createBatch', () => {
     // Monday 2025-01-06 to Friday 2025-01-10, selecting Mon(1) and Wed(3)
     const orders = await service.createBatch(
       STORE_ID,
-      { customerId: 1, items: [{ recipeId: 'r1', quantity: 1 }], dueDate: new Date('2025-01-06') },
+      { customerId: 'cust-1', items: [{ recipeId: 'r1', quantity: 1 }], dueDate: new Date('2025-01-06') },
       { frequency: 'weekly', daysOfWeek: [1, 3], endDate: '2025-01-17' },
     );
 
@@ -89,7 +89,7 @@ describe('OrderService.createBatch', () => {
   it('should assign the same recurringGroupId to all orders', async () => {
     await service.createBatch(
       STORE_ID,
-      { customerId: 1, items: [{ recipeId: 'r1', quantity: 1 }], dueDate: new Date('2025-01-06') },
+      { customerId: 'cust-1', items: [{ recipeId: 'r1', quantity: 1 }], dueDate: new Date('2025-01-06') },
       { frequency: 'weekly', daysOfWeek: [1], endDate: '2025-01-13' },
     );
 
@@ -104,7 +104,7 @@ describe('OrderService.createBatch', () => {
     await expect(
       service.createBatch(
         STORE_ID,
-        { customerId: 1, items: [{ recipeId: 'r1', quantity: 1 }], dueDate: new Date('2025-01-06') },
+        { customerId: 'cust-1', items: [{ recipeId: 'r1', quantity: 1 }], dueDate: new Date('2025-01-06') },
         { frequency: 'weekly', daysOfWeek: [6], endDate: '2025-01-10' },
       ),
     ).rejects.toThrow(ValidationError);
@@ -114,7 +114,7 @@ describe('OrderService.createBatch', () => {
     // Select every day for a 2-year range — should cap at 52
     const orders = await service.createBatch(
       STORE_ID,
-      { customerId: 1, items: [{ recipeId: 'r1', quantity: 1 }], dueDate: new Date('2025-01-01') },
+      { customerId: 'cust-1', items: [{ recipeId: 'r1', quantity: 1 }], dueDate: new Date('2025-01-01') },
       { frequency: 'weekly', daysOfWeek: [0, 1, 2, 3, 4, 5, 6], endDate: '2026-12-31' },
     );
 
@@ -124,7 +124,7 @@ describe('OrderService.createBatch', () => {
   it('should publish an event for each created order', async () => {
     await service.createBatch(
       STORE_ID,
-      { customerId: 1, items: [{ recipeId: 'r1', quantity: 1 }], dueDate: new Date('2025-01-06') },
+      { customerId: 'cust-1', items: [{ recipeId: 'r1', quantity: 1 }], dueDate: new Date('2025-01-06') },
       { frequency: 'weekly', daysOfWeek: [1], endDate: '2025-01-13' },
     );
 
@@ -143,7 +143,7 @@ describe('OrderService.createBatch', () => {
 
     const orders = await service.createBatch(
       STORE_ID,
-      { customerId: 1, items: [{ recipeId: 'r1', quantity: 1 }] },
+      { customerId: 'cust-1', items: [{ recipeId: 'r1', quantity: 1 }] },
       { frequency: 'weekly', daysOfWeek: [0, 1, 2, 3, 4, 5, 6], endDate: endDateStr },
     );
 

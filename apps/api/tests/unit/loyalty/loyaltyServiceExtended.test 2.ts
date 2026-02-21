@@ -23,12 +23,12 @@ vi.mock('../../../src/modules/orders/order.repository.js', () => ({
 import { LoyaltyCrud } from '../../../src/modules/loyalty/loyaltyCrud.js';
 import { PgOrderRepository } from '../../../src/modules/orders/order.repository.js';
 
-const STORE_ID = 1;
-const CUSTOMER_ID = 1;
+const STORE_ID = 'store-1';
+const CUSTOMER_ID = 'cust-1';
 
 function makeConfig(overrides: Record<string, unknown> = {}) {
   return {
-    id: 1,
+    id: 'cfg-1',
     storeId: STORE_ID,
     isActive: true,
     pointsPerShekel: 1,
@@ -53,7 +53,7 @@ describe('LoyaltyService - extended', () => {
       vi.mocked(PgOrderRepository.findByIdInternal).mockResolvedValue({ storeId: STORE_ID, customerId: CUSTOMER_ID });
       vi.mocked(LoyaltyCrud.getConfig).mockResolvedValue(makeConfig({ pointsPerShekel: 1 }));
 
-      await service.awardPointsForPayment(1, 1, 0.5);
+      await service.awardPointsForPayment('pay-1', 'order-1', 0.5);
 
       // Math.floor(0.5 * 1) = 0 → should not award
       expect(LoyaltyCrud.updateCustomerBalance).not.toHaveBeenCalled();
@@ -65,7 +65,7 @@ describe('LoyaltyService - extended', () => {
       vi.mocked(LoyaltyCrud.updateCustomerBalance).mockResolvedValue(49);
       vi.mocked(LoyaltyCrud.createTransaction).mockResolvedValue({} as any);
 
-      await service.awardPointsForPayment(1, 1, 33);
+      await service.awardPointsForPayment('pay-1', 'order-1', 33);
 
       expect(LoyaltyCrud.updateCustomerBalance).toHaveBeenCalledWith(STORE_ID, CUSTOMER_ID, 49);
     });
@@ -76,7 +76,7 @@ describe('LoyaltyService - extended', () => {
       vi.mocked(LoyaltyCrud.updateCustomerBalance).mockResolvedValue(1000000);
       vi.mocked(LoyaltyCrud.createTransaction).mockResolvedValue({} as any);
 
-      await service.awardPointsForPayment(1, 1, 100000);
+      await service.awardPointsForPayment('pay-1', 'order-1', 100000);
 
       expect(LoyaltyCrud.updateCustomerBalance).toHaveBeenCalledWith(STORE_ID, CUSTOMER_ID, 1000000);
     });
@@ -85,7 +85,7 @@ describe('LoyaltyService - extended', () => {
       vi.mocked(PgOrderRepository.findByIdInternal).mockResolvedValue({ storeId: STORE_ID, customerId: CUSTOMER_ID });
       vi.mocked(LoyaltyCrud.getConfig).mockResolvedValue(makeConfig());
 
-      await service.awardPointsForPayment(1, 1, 0);
+      await service.awardPointsForPayment('pay-1', 'order-1', 0);
 
       expect(LoyaltyCrud.updateCustomerBalance).not.toHaveBeenCalled();
     });
@@ -95,7 +95,7 @@ describe('LoyaltyService - extended', () => {
     it('should do nothing when order not found', async () => {
       vi.mocked(PgOrderRepository.findByIdInternal).mockResolvedValue(null);
 
-      await service.deductPointsForRefund(1, 1, 100);
+      await service.deductPointsForRefund('pay-1', 'order-1', 100);
 
       expect(LoyaltyCrud.findTransactionByPaymentId).not.toHaveBeenCalled();
     });
@@ -103,12 +103,12 @@ describe('LoyaltyService - extended', () => {
     it('should not deduct when customer balance is zero', async () => {
       vi.mocked(PgOrderRepository.findByIdInternal).mockResolvedValue({ storeId: STORE_ID, customerId: CUSTOMER_ID });
       vi.mocked(LoyaltyCrud.findTransactionByPaymentId).mockResolvedValue({
-        id: 1, storeId: STORE_ID, customerId: CUSTOMER_ID, paymentId: 1,
+        id: 'tx-1', storeId: STORE_ID, customerId: CUSTOMER_ID, paymentId: 'pay-1',
         type: 'earned', points: 100, balanceAfter: 100, description: null, createdAt: new Date(),
       });
       vi.mocked(LoyaltyCrud.getCustomerBalance).mockResolvedValue({ balance: 0, lifetimeEarned: 100, lifetimeRedeemed: 100 });
 
-      await service.deductPointsForRefund(1, 1, 100);
+      await service.deductPointsForRefund('pay-1', 'order-1', 100);
 
       // deduction = min(100, 0) = 0 → should not call update
       expect(LoyaltyCrud.updateCustomerBalance).not.toHaveBeenCalled();
@@ -117,14 +117,14 @@ describe('LoyaltyService - extended', () => {
     it('should deduct full earned amount when balance is sufficient', async () => {
       vi.mocked(PgOrderRepository.findByIdInternal).mockResolvedValue({ storeId: STORE_ID, customerId: CUSTOMER_ID });
       vi.mocked(LoyaltyCrud.findTransactionByPaymentId).mockResolvedValue({
-        id: 1, storeId: STORE_ID, customerId: CUSTOMER_ID, paymentId: 1,
+        id: 'tx-1', storeId: STORE_ID, customerId: CUSTOMER_ID, paymentId: 'pay-1',
         type: 'earned', points: 50, balanceAfter: 50, description: null, createdAt: new Date(),
       });
       vi.mocked(LoyaltyCrud.getCustomerBalance).mockResolvedValue({ balance: 200, lifetimeEarned: 200, lifetimeRedeemed: 0 });
       vi.mocked(LoyaltyCrud.updateCustomerBalance).mockResolvedValue(150);
       vi.mocked(LoyaltyCrud.createTransaction).mockResolvedValue({} as any);
 
-      await service.deductPointsForRefund(1, 1, 50);
+      await service.deductPointsForRefund('pay-1', 'order-1', 50);
 
       expect(LoyaltyCrud.updateCustomerBalance).toHaveBeenCalledWith(STORE_ID, CUSTOMER_ID, -50);
       expect(LoyaltyCrud.createTransaction).toHaveBeenCalledWith(
