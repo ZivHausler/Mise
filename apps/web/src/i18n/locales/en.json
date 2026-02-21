@@ -578,6 +578,10 @@
     "userStatusUpdateFailed": "Failed to update user status",
     "storeUpdated": "Store updated",
     "storeUpdateFailed": "Failed to update store",
+    "userDeleted": "User deleted",
+    "userDeleteFailed": "Failed to delete user",
+    "storeDeleted": "Store deleted",
+    "storeDeleteFailed": "Failed to delete store",
     "inviteCreated": "Invitation created",
     "inviteCreateFailed": "Failed to create invitation",
     "inviteRevoked": "Invitation revoked",
@@ -728,7 +732,10 @@
       "enableConfirm": "Enable this user account?",
       "disableConfirm": "Disable this user account?",
       "noUsers": "No users found",
-      "includeAdmins": "Include admins"
+      "includeAdmins": "Include admins",
+      "delete": "Delete User",
+      "deleteTitle": "Delete User?",
+      "deleteConfirm": "Permanently delete {{name}}? This action cannot be undone."
     },
     "stores": {
       "title": "Stores",
@@ -741,7 +748,10 @@
       "noStores": "No stores found",
       "noMembers": "No members",
       "memberList": "Members",
-      "allStores": "All stores"
+      "allStores": "All stores",
+      "delete": "Delete Store",
+      "deleteTitle": "Delete Store?",
+      "deleteConfirm": "Permanently delete {{name}}? This action cannot be undone."
     },
     "invitations": {
       "title": "Invitations",

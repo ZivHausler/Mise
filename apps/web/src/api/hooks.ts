@@ -699,6 +699,28 @@ export function useAdminToggleDisabled() {
   });
 }
 
+export function useAdminDeleteUser() {
+  const qc = useQueryClient();
+  const addToast = useToastStore((s) => s.addToast);
+  const { t } = useTranslation();
+  return useMutation({
+    mutationFn: (userId: number) => deleteApi(`/admin/users/${userId}`),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['admin', 'users'] }); addToast('success', t('toasts.userDeleted')); },
+    onError: () => addToast('error', t('toasts.userDeleteFailed')),
+  });
+}
+
+export function useAdminDeleteStore() {
+  const qc = useQueryClient();
+  const addToast = useToastStore((s) => s.addToast);
+  const { t } = useTranslation();
+  return useMutation({
+    mutationFn: (storeId: number) => deleteApi(`/admin/stores/${storeId}`),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['admin', 'stores'] }); addToast('success', t('toasts.storeDeleted')); },
+    onError: () => addToast('error', t('toasts.storeDeleteFailed')),
+  });
+}
+
 export function useAdminStores(page = 1, limit = 20, search?: string) {
   return useQuery({
     queryKey: ['admin', 'stores', page, limit, search],
@@ -731,7 +753,14 @@ export function useAdminUpdateStore() {
   });
 }
 
-export function useAdminInvitations(page = 1, limit = 20, filters?: { status?: string; search?: string; storeId?: string; userId?: string; role?: string; dateFrom?: string; dateTo?: string }) {
+export function useAdminInvitationEmails() {
+  return useQuery({
+    queryKey: ['admin', 'invitations', 'emails'],
+    queryFn: () => fetchApi<string[]>('/admin/invitations/emails'),
+  });
+}
+
+export function useAdminInvitations(page = 1, limit = 20, filters?: { status?: string; search?: string; storeId?: string; userId?: string; email?: string; role?: string; dateFrom?: string; dateTo?: string }) {
   return useQuery({
     queryKey: ['admin', 'invitations', page, limit, filters],
     queryFn: async () => {
@@ -740,6 +769,7 @@ export function useAdminInvitations(page = 1, limit = 20, filters?: { status?: s
       if (filters?.search) params.set('search', filters.search);
       if (filters?.storeId) params.set('storeId', filters.storeId);
       if (filters?.userId) params.set('userId', filters.userId);
+      if (filters?.email) params.set('email', filters.email);
       if (filters?.role) params.set('role', filters.role);
       if (filters?.dateFrom) params.set('dateFrom', filters.dateFrom);
       if (filters?.dateTo) params.set('dateTo', filters.dateTo);

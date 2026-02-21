@@ -24,6 +24,18 @@ export class AdminController {
     return reply.send({ success: true });
   }
 
+  async deleteUser(request: FastifyRequest, reply: FastifyReply) {
+    const { id } = request.params as { id: string };
+    await this.service.deleteUser(request.currentUser!.userId, Number(id));
+    return reply.send({ success: true });
+  }
+
+  async deleteStore(request: FastifyRequest, reply: FastifyReply) {
+    const { id } = request.params as { id: string };
+    await this.service.deleteStore(Number(id));
+    return reply.send({ success: true });
+  }
+
   async getStores(request: FastifyRequest, reply: FastifyReply) {
     const { page = '1', limit = '20', search } = request.query as Record<string, string>;
     const result = await this.service.getStores(parseInt(page, 10), parseInt(limit, 10), search);
@@ -44,17 +56,23 @@ export class AdminController {
   }
 
   async getInvitations(request: FastifyRequest, reply: FastifyReply) {
-    const { page = '1', limit = '20', status, search, storeId, userId, role, dateFrom, dateTo } = request.query as Record<string, string>;
+    const { page = '1', limit = '20', status, search, storeId, userId, email, role, dateFrom, dateTo } = request.query as Record<string, string>;
     const result = await this.service.getInvitations(parseInt(page, 10), parseInt(limit, 10), {
       status,
       search,
       storeId: storeId ? Number(storeId) : undefined,
       userId: userId ? Number(userId) : undefined,
+      email: email || undefined,
       role,
       dateFrom,
       dateTo,
     });
     return reply.send({ success: true, data: result });
+  }
+
+  async getDistinctInvitationEmails(_request: FastifyRequest, reply: FastifyReply) {
+    const emails = await this.service.getDistinctInvitationEmails();
+    return reply.send({ success: true, data: emails });
   }
 
   async createStoreInvitation(request: FastifyRequest, reply: FastifyReply) {
