@@ -12,7 +12,8 @@ import { useAuthStore } from '@/store/auth';
 export default function TeamTab() {
   const { t } = useTranslation();
   const stores = useAuthStore((s) => s.stores);
-  const isOwner = stores[0]?.role === STORE_ROLES.OWNER;
+  const isAdmin = useAuthStore((s) => s.isAdmin);
+  const isOwner = stores[0]?.role === STORE_ROLES.OWNER || isAdmin;
   const { data: members, isLoading } = useStoreMembers();
   const { data: pendingInvitations } = usePendingInvitations();
   const sendInvite = useSendInvite();
