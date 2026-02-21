@@ -43,7 +43,7 @@ export class MongoRecipeRepository {
       storeId,
       totalCost: 0,
       costPerUnit: 0,
-      photos: [],
+      photos: data.photos ?? [],
       createdAt: now,
       updatedAt: now,
     };
