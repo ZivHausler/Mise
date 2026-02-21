@@ -18,7 +18,7 @@ export default async function localUploadRoutes(app: FastifyInstance) {
   }
 
   app.get('/uploads/*', async (request, reply) => {
-    const wildcard = (request.params as Record<string, string>)['*'];
+    const wildcard = (request.params as Record<string, string>)['*'] ?? '';
     const filePath = join(LOCAL_UPLOAD_DIR, wildcard);
     try {
       const data = await fs.readFile(filePath);
@@ -32,7 +32,7 @@ export default async function localUploadRoutes(app: FastifyInstance) {
   });
 
   app.put('/uploads/put/*', async (request, reply) => {
-    const wildcard = (request.params as Record<string, string>)['*'];
+    const wildcard = (request.params as Record<string, string>)['*'] ?? '';
     const body = request.body;
     if (!Buffer.isBuffer(body)) {
       return reply.status(400).send({ error: 'Expected binary body' });
