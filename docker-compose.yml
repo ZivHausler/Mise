@@ -76,6 +76,7 @@ services:
       GF_SERVER_ROOT_URL: 'http://localhost:3002/grafana'
       GF_SERVER_SERVE_FROM_SUB_PATH: 'true'
       GF_PANELS_DISABLE_SANITIZE_HTML: 'true'
+      GF_DS_SECRET: mise
     volumes:
       - grafana_data:/var/lib/grafana
       - ./grafana/provisioning:/etc/grafana/provisioning
