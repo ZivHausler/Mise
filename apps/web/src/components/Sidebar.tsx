@@ -124,7 +124,7 @@ export function Sidebar() {
                         <span>{t(item.labelKey)}</span>
                         <Sparkles className="h-3.5 w-3.5 shrink-0 text-purple-400" />
                         <span className="text-[10px] font-medium text-purple-400 leading-none whitespace-nowrap">
-                          {t('nav.comingSoon', 'Coming soon')}
+                          {t('nav.comingSoon')}
                         </span>
                       </span>
                     )}

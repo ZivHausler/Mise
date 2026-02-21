@@ -48,7 +48,8 @@
     "settings": "Settings",
     "more": "More",
     "admin": "Admin Panel",
-    "production": "Production"
+    "production": "Production",
+    "comingSoon": "Coming soon"
   },
   "auth": {
     "login": "Log In",
