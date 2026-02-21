@@ -1,0 +1,70 @@
+name: Deploy Grafana to Cloud Run
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "grafana/**"
+
+env:
+  PROJECT_ID: mise-prod-app
+  REGION: me-west1
+  IMAGE: gcr.io/mise-prod-app/mise-grafana
+  CLOUD_SQL_INSTANCE: mise-prod-app:me-west1:mise-pg
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Authenticate to GCP
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Configure Docker
+        run: gcloud auth configure-docker gcr.io --quiet
+
+      - name: Build and push image
+        run: |
+          docker build \
+            -t ${{ env.IMAGE }}:${{ github.sha }} \
+            -t ${{ env.IMAGE }}:latest \
+            grafana
+          docker push ${{ env.IMAGE }}:${{ github.sha }}
+          docker push ${{ env.IMAGE }}:latest
+
+      - name: Deploy to Cloud Run
+        uses: google-github-actions/deploy-cloudrun@v2
+        with:
+          service: mise-grafana
+          region: ${{ env.REGION }}
+          image: ${{ env.IMAGE }}:${{ github.sha }}
+          flags: |
+            --add-cloudsql-instances=${{ env.CLOUD_SQL_INSTANCE }}
+            --allow-unauthenticated
+            --memory=256Mi
+            --cpu=1
+            --min-instances=0
+            --max-instances=1
+            --port=8080
+          env_vars: |
+            GF_SERVER_ROOT_URL=https://mise-prod-app.web.app/grafana
+            GF_DS_URL=127.0.0.1:5432
+            GF_DS_DATABASE=mise
+            GF_DS_USER=mise
+            GF_DS_SSLMODE=disable
+          secrets: |
+            GF_DS_SECRET=prod-db-password:latest
+
+      - name: Verify deployment
+        run: |
+          URL=$(gcloud run services describe mise-grafana --region=${{ env.REGION }} --format='value(status.url)')
+          curl -sf "$URL/grafana/api/health" || exit 1
