@@ -185,12 +185,14 @@ export default function LoginPage() {
           </Stack>
         </form>
 
-        <p className="mt-6 text-center text-body-sm text-neutral-500">
-          {t('auth.noAccount', "Don't have an account?")}{' '}
-          <Link to={inviteToken ? `/register/${inviteToken}` : '/register'} className="text-primary-500 hover:underline">
-            {t('auth.register')}
-          </Link>
-        </p>
+        {inviteToken && (
+          <p className="mt-6 text-center text-body-sm text-neutral-500">
+            {t('auth.noAccount', "Don't have an account?")}{' '}
+            <Link to={`/register/${inviteToken}`} className="text-primary-500 hover:underline">
+              {t('auth.register')}
+            </Link>
+          </p>
+        )}
 
         {isAvailable && (
           <>
