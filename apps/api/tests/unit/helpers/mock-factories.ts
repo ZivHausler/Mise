@@ -20,7 +20,7 @@ export function createMockEventBus(): EventBus {
 
 export function createUser(overrides?: Partial<User>): User {
   return {
-    id: 'user-1',
+    id: 1,
     email: 'baker@mise.com',
     passwordHash: 'MOCK_BCRYPT_HASH_NOT_REAL',
     name: 'Test Baker',
@@ -32,7 +32,7 @@ export function createUser(overrides?: Partial<User>): User {
 
 export function createIngredient(overrides?: Partial<Ingredient>): Ingredient {
   return {
-    id: 'ing-1',
+    id: 1,
     name: 'Flour',
     unit: 'kg',
     quantity: 50,
@@ -46,7 +46,7 @@ export function createIngredient(overrides?: Partial<Ingredient>): Ingredient {
 
 export function createCustomer(overrides?: Partial<Customer>): Customer {
   return {
-    id: 'cust-1',
+    id: 1,
     name: 'Jane Doe',
     phone: '054-1234567',
     email: 'jane@example.com',
@@ -76,9 +76,9 @@ export function createRecipe(overrides?: Partial<Recipe>): Recipe {
 
 export function createOrder(overrides?: Partial<Order>): Order {
   return {
-    id: 'order-1',
+    id: 1,
     orderNumber: 100000001,
-    customerId: 'cust-1',
+    customerId: 1,
     items: [{ recipeId: 'recipe-1', quantity: 2, unitPrice: 50 }],
     status: 0, // ORDER_STATUS.RECEIVED
     totalAmount: 100,
@@ -90,8 +90,8 @@ export function createOrder(overrides?: Partial<Order>): Order {
 
 export function createPayment(overrides?: Partial<Payment>): Payment {
   return {
-    id: 'pay-1',
-    orderId: 'order-1',
+    id: 1,
+    orderId: 1,
     amount: 50,
     method: 'cash',
     createdAt: new Date('2025-01-01'),
