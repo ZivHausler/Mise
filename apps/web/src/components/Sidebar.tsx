@@ -122,13 +122,13 @@ export function Sidebar() {
                     {!collapsed && (
                       <span className="flex items-center gap-1.5 min-w-0">
                         <span>{t(item.labelKey)}</span>
-                        <Sparkles className="h-3.5 w-3.5 shrink-0 text-purple-400" />
+                        <Sparkles className="h-4 w-4 shrink-0 text-purple-400" />
                         <span className="text-xs font-medium text-purple-400 leading-none whitespace-nowrap">
                           {t('nav.comingSoon')}
                         </span>
                       </span>
                     )}
-                    {collapsed && <Sparkles className="h-3 w-3 shrink-0 text-purple-400" />}
+                    {collapsed && <Sparkles className="h-3.5 w-3.5 shrink-0 text-purple-400" />}
                   </div>
                 </li>
               );
