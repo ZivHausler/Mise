@@ -1,6 +1,7 @@
--- Migration 020: Fix serial column defaults after UUID-to-serial migration
+-- Migration 020: Fix serial column defaults after UUID-to-serial migration (019)
 -- Ensures all id columns have proper DEFAULT nextval(...) and NOT NULL constraints
 -- Also backfills any NULL ids from existing rows
+-- Only runs if columns are already INTEGER (i.e., migration 019 succeeded)
 -- This is idempotent and safe to re-run
 
 DO $$
@@ -16,8 +17,19 @@ DECLARE
   seq_name TEXT;
   max_id INTEGER;
   null_count INTEGER;
+  col_type TEXT;
 BEGIN
   FOREACH t IN ARRAY tables LOOP
+    -- Check if the id column is already integer; skip if still UUID
+    SELECT data_type INTO col_type
+    FROM information_schema.columns
+    WHERE table_schema = 'public' AND table_name = t AND column_name = 'id';
+
+    IF col_type != 'integer' THEN
+      RAISE NOTICE 'Skipping % — id column is %, not integer', t, col_type;
+      CONTINUE;
+    END IF;
+
     seq_name := t || '_id_seq';
 
     -- Create sequence if it doesn't exist
