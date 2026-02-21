@@ -5,9 +5,9 @@ import { Users, CreditCard, Settings, Factory, ChevronRight } from 'lucide-react
 import { Page, PageHeader } from '@/components/Layout';
 
 const moreItems = [
-  { path: '/production', icon: Factory, labelKey: 'nav.production' },
   { path: '/customers', icon: Users, labelKey: 'nav.customers' },
   { path: '/payments', icon: CreditCard, labelKey: 'nav.payments' },
+  { path: '/production', icon: Factory, labelKey: 'nav.production' },
   { path: '/settings', icon: Settings, labelKey: 'nav.settings' },
 ];
 

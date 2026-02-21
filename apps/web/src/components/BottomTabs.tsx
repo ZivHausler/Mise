@@ -6,9 +6,9 @@ import { cn } from '@/utils/cn';
 
 const tabs = [
   { path: '/', icon: LayoutDashboard, labelKey: 'nav.dashboard', tourId: 'bottomtab-dashboard' },
-  { path: '/orders', icon: ClipboardList, labelKey: 'nav.orders', tourId: 'bottomtab-orders' },
-  { path: '/recipes', icon: BookOpen, labelKey: 'nav.recipes', tourId: 'bottomtab-recipes' },
   { path: '/inventory', icon: Package, labelKey: 'nav.inventory', tourId: 'bottomtab-inventory' },
+  { path: '/recipes', icon: BookOpen, labelKey: 'nav.recipes', tourId: 'bottomtab-recipes' },
+  { path: '/orders', icon: ClipboardList, labelKey: 'nav.orders', tourId: 'bottomtab-orders' },
   { path: '/more', icon: MoreHorizontal, labelKey: 'nav.more', tourId: 'bottomtab-more' },
 ];
 
