@@ -255,9 +255,9 @@ export class PgInventoryRepository {
     return result.rows.map((r: Record<string, unknown>) => ({
       id: r['id'] as string,
       ingredientId: r['ingredient_id'] as string,
-      type: INVENTORY_LOG_TYPE_FROM_DB[r['type'] as string],
+      type: INVENTORY_LOG_TYPE_FROM_DB[r['type'] as string]!,
       quantity: Number(r['quantity']),
-      reason: r['reason'] as string | undefined,
+      reason: (r['reason'] as string) ?? undefined,
       pricePaid: r['price_paid'] != null ? Number(r['price_paid']) : undefined,
       createdAt: new Date(r['created_at'] as string),
     }));

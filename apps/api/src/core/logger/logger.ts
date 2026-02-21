@@ -1,7 +1,8 @@
 import pino from 'pino';
+import type { PinoLoggerOptions } from 'fastify/types/logger.js';
 import { env } from '../../config/env.js';
 
-export const logger = {
+export const logger: PinoLoggerOptions = {
   level: env.LOG_LEVEL,
   transport:
     env.NODE_ENV === 'development'
@@ -15,12 +16,13 @@ export const logger = {
         }
       : undefined,
   serializers: {
-    req(request: Record<string, unknown>) {
+    req(request: unknown) {
+      const req = request as Record<string, unknown>;
       return {
-        method: request['method'],
-        url: request['url'],
-        hostname: request['hostname'],
-        remoteAddress: request['ip'],
+        method: req['method'],
+        url: req['url'],
+        hostname: req['hostname'],
+        remoteAddress: req['ip'],
       };
     },
   },

@@ -2,23 +2,86 @@ name: CI
 
 on:
   push:
+    branches-ignore: [main]
   pull_request:
     branches: [main]
+
+env:
+  CI_DB_USER: mise
+  CI_DB_NAME: mise
 
 jobs:
   test:
     runs-on: ubuntu-latest
 
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: ${{ env.CI_DB_USER }}
+          POSTGRES_PASSWORD: ${{ secrets.CI_DB_PASSWORD || 'ci-test-only' }}
+          POSTGRES_DB: ${{ env.CI_DB_NAME }}
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U mise"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+      mongodb:
+        image: mongo:7
+        ports:
+          - 27017:27017
+
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+
+      rabbitmq:
+        image: rabbitmq:3-alpine
+        ports:
+          - 5672:5672
+
     steps:
       - uses: actions/checkout@v4
 
       - uses: pnpm/action-setup@v4
+        with:
+          version: 9.1.0
 
       - uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: pnpm
 
-      - run: pnpm install --frozen-lockfile
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
 
-      - run: pnpm --filter @mise/api test
+      - name: Build shared packages
+        run: pnpm --filter @mise/shared build && pnpm --filter @mise/db build
+
+      - name: Type check
+        run: pnpm --filter @mise/api type-check
+
+      - name: Lint
+        run: pnpm lint
+        continue-on-error: true
+
+      - name: Run unit tests
+        run: pnpm --filter @mise/api test
+        env:
+          DATABASE_URL: postgresql://mise:${{ secrets.CI_DB_PASSWORD || 'ci-test-only' }}@localhost:5432/mise
+          MONGODB_URI: mongodb://localhost:27017/mise
+          REDIS_URL: redis://localhost:6379
+          RABBITMQ_URL: amqp://localhost:5672
+          JWT_SECRET: ${{ secrets.CI_JWT_SECRET || 'ci-test-secret-that-is-long-enough-for-validation-purposes' }}
+          ADMIN_SECRET: ${{ secrets.CI_ADMIN_SECRET || 'ci-test-admin-secret-long-enough-for-validation' }}
+
+      - name: Run migrations
+        run: |
+          for f in packages/db/src/migrations/*.sql; do
+            PGPASSWORD=${{ secrets.CI_DB_PASSWORD || 'ci-test-only' }} psql -h localhost -U mise -d mise -f "$f"
+          done
+

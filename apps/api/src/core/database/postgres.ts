@@ -33,7 +33,7 @@ export function getPool(): pg.Pool {
       max: postgresConfig.pool.max,
       idleTimeoutMillis: postgresConfig.pool.idleTimeoutMillis,
       connectionTimeoutMillis: postgresConfig.pool.connectionTimeoutMillis,
-      ...(env.NODE_ENV === 'production' ? { ssl: { rejectUnauthorized: true } } : {}),
+      ...(env.NODE_ENV === 'production' && !postgresConfig.connectionString.includes('/cloudsql/') ? { ssl: { rejectUnauthorized: true } } : {}),
     });
   }
   return pool;

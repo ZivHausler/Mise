@@ -5,9 +5,18 @@ import { InternalError } from '../../../core/errors/app-error.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
+function getAssetsDir(): string {
+  // In bundled dist (production), __dirname is apps/api/dist → go up one level
+  // In source (development), __dirname is apps/api/src/modules/shared/pdf → go up four levels
+  const fromDist = path.resolve(__dirname, '../assets');
+  const fromSrc = path.resolve(__dirname, '../../../../assets');
+  if (fs.existsSync(fromDist)) return fromDist;
+  return fromSrc;
+}
+
 function loadLocale(filename: string): Record<string, unknown> {
   try {
-    const filePath = path.resolve(__dirname, '../../../../assets/locales', filename);
+    const filePath = path.resolve(getAssetsDir(), 'locales', filename);
     return JSON.parse(fs.readFileSync(filePath, 'utf-8'));
   } catch (err) {
     throw new InternalError(`Failed to load PDF locale file: ${filename}`);

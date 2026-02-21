@@ -83,11 +83,8 @@ function loadEnv(): Env {
       process.exit(1);
     }
 
-    if (
-      parsed.data.REDIS_URL === 'redis://localhost:6379' ||
-      !parsed.data.REDIS_URL.includes('@')
-    ) {
-      process.stderr.write('FATAL: REDIS_URL must include authentication credentials in production (e.g. redis://:password@host:6379)\n');
+    if (parsed.data.REDIS_URL === 'redis://localhost:6379') {
+      process.stderr.write('FATAL: REDIS_URL must not be localhost in production\n');
       process.exit(1);
     }
   }

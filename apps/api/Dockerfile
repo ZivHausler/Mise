@@ -15,15 +15,17 @@ COPY --from=deps /app/apps/api/node_modules ./apps/api/node_modules
 COPY --from=deps /app/packages/shared/node_modules ./packages/shared/node_modules
 COPY --from=deps /app/packages/db/node_modules ./packages/db/node_modules
 COPY . .
-RUN pnpm --filter @mise/shared build && \
-    pnpm --filter @mise/db build && \
-    pnpm --filter @mise/api build
+RUN cd apps/api && pnpm tsup --config tsup.config.docker.ts
 
 FROM base AS runner
 ENV NODE_ENV=production
-COPY --from=build /app/apps/api/dist ./dist
-COPY --from=build /app/apps/api/package.json ./
-COPY --from=build /app/node_modules ./node_modules
+WORKDIR /app
+COPY --from=deps /app/node_modules ./node_modules
+COPY --from=deps /app/apps/api/node_modules ./apps/api/node_modules
+COPY --from=build /app/apps/api/dist ./apps/api/dist
+COPY --from=build /app/apps/api/package.json ./apps/api/
+COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
+COPY apps/api/assets ./apps/api/assets
 
 EXPOSE 3001
-CMD ["node", "dist/server.js"]
+CMD ["node", "apps/api/dist/server.js"]

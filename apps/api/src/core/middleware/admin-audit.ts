@@ -25,7 +25,7 @@ export const adminAuditPlugin = fp(async function adminAuditPlugin(app: FastifyI
 
     // Skip admin GET requests to avoid feedback loops from polling/browsing
     const path = request.url.split('?')[0];
-    if (request.method === 'GET' && path.startsWith('/api/admin/')) return payload;
+    if (request.method === 'GET' && path?.startsWith('/api/admin/')) return payload;
 
     const requestBody = truncateBody(request.body);
 
@@ -52,8 +52,8 @@ export const adminAuditPlugin = fp(async function adminAuditPlugin(app: FastifyI
         reply.statusCode,
         request.ip,
       ],
-    ).then((result) => {
-      const auditLogId = result.rows[0].id as string;
+    ).then((result: { rows: Record<string, unknown>[] }) => {
+      const auditLogId = result.rows[0]!['id'] as string;
       const promises: Promise<unknown>[] = [];
 
       if (requestBody) {
