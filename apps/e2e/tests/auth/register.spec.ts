@@ -69,8 +69,8 @@ test.describe('Register page', () => {
     await page.goto(`/register/${token}`);
 
     await page.getByLabel('Name').fill('Register Test');
-    await page.getByLabel('Email').clear();
-    await page.getByLabel('Email').fill(testEmail);
+    // Email is pre-filled and disabled from the invite — verify it has the correct value
+    await expect(page.getByLabel('Email')).toHaveValue(testEmail);
     await page.getByLabel('Password').fill('ValidPass1');
     await page.getByRole('button', { name: 'Register' }).click();
 

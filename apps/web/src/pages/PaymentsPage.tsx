@@ -271,7 +271,7 @@ export default function PaymentsPage() {
               value={form.orderId}
               onChange={(e) => {
                 const orderId = e.target.value;
-                const order = ((orders as any[]) ?? []).find((o: any) => o.id === orderId);
+                const order = ((orders as any[]) ?? []).find((o: any) => String(o.id) === orderId);
                 setForm({ ...form, orderId, amount: order?.totalAmount ?? '' });
               }}
               required

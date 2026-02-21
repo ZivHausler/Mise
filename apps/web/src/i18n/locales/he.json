@@ -578,6 +578,10 @@
     "userStatusUpdateFailed": "עדכון סטטוס משתמש נכשל",
     "storeUpdated": "החנות עודכנה",
     "storeUpdateFailed": "עדכון החנות נכשל",
+    "userDeleted": "המשתמש נמחק",
+    "userDeleteFailed": "מחיקת המשתמש נכשלה",
+    "storeDeleted": "החנות נמחקה",
+    "storeDeleteFailed": "מחיקת החנות נכשלה",
     "inviteCreated": "ההזמנה נוצרה",
     "inviteCreateFailed": "יצירת ההזמנה נכשלה",
     "inviteRevoked": "ההזמנה בוטלה",
@@ -728,7 +732,10 @@
       "enableConfirm": "להפעיל את חשבון המשתמש?",
       "disableConfirm": "להשבית את חשבון המשתמש?",
       "noUsers": "לא נמצאו משתמשים",
-      "includeAdmins": "הצג מנהלים"
+      "includeAdmins": "הצג מנהלים",
+      "delete": "מחק משתמש",
+      "deleteTitle": "למחוק משתמש?",
+      "deleteConfirm": "למחוק לצמיתות את {{name}}? לא ניתן לבטל פעולה זו."
     },
     "stores": {
       "title": "חנויות",
@@ -741,7 +748,10 @@
       "noStores": "לא נמצאו חנויות",
       "noMembers": "אין חברים",
       "memberList": "חברים",
-      "allStores": "כל החנויות"
+      "allStores": "כל החנויות",
+      "delete": "מחק חנות",
+      "deleteTitle": "למחוק חנות?",
+      "deleteConfirm": "למחוק לצמיתות את {{name}}? לא ניתן לבטל פעולה זו."
     },
     "invitations": {
       "title": "הזמנות",
