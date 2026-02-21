@@ -14,11 +14,11 @@ export function getDesktopTourSteps(t: TFunction, dir: 'ltr' | 'rtl'): Step[] {
       data: { path: '/' },
     },
     {
-      target: '[data-tour="sidebar-orders"]',
-      title: t('tour.steps.orders.title'),
-      content: t('tour.steps.orders.content'),
+      target: '[data-tour="sidebar-inventory"]',
+      title: t('tour.steps.inventory.title'),
+      content: t('tour.steps.inventory.content'),
       placement: sidebarPlacement,
-      data: { path: '/orders' },
+      data: { path: '/inventory' },
     },
     {
       target: '[data-tour="sidebar-recipes"]',
@@ -28,18 +28,18 @@ export function getDesktopTourSteps(t: TFunction, dir: 'ltr' | 'rtl'): Step[] {
       data: { path: '/recipes' },
     },
     {
-      target: '[data-tour="sidebar-inventory"]',
-      title: t('tour.steps.inventory.title'),
-      content: t('tour.steps.inventory.content'),
-      placement: sidebarPlacement,
-      data: { path: '/inventory' },
-    },
-    {
       target: '[data-tour="sidebar-customers"]',
       title: t('tour.steps.customers.title'),
       content: t('tour.steps.customers.content'),
       placement: sidebarPlacement,
       data: { path: '/customers' },
+    },
+    {
+      target: '[data-tour="sidebar-orders"]',
+      title: t('tour.steps.orders.title'),
+      content: t('tour.steps.orders.content'),
+      placement: sidebarPlacement,
+      data: { path: '/orders' },
     },
     {
       target: '[data-tour="sidebar-payments"]',
@@ -81,11 +81,11 @@ export function getMobileTourSteps(t: TFunction): Step[] {
       data: { path: '/' },
     },
     {
-      target: '[data-tour="bottomtab-orders"]',
-      title: t('tour.steps.orders.title'),
-      content: t('tour.steps.orders.content'),
+      target: '[data-tour="bottomtab-inventory"]',
+      title: t('tour.steps.inventory.title'),
+      content: t('tour.steps.inventory.content'),
       placement: 'top',
-      data: { path: '/orders' },
+      data: { path: '/inventory' },
     },
     {
       target: '[data-tour="bottomtab-recipes"]',
@@ -95,11 +95,11 @@ export function getMobileTourSteps(t: TFunction): Step[] {
       data: { path: '/recipes' },
     },
     {
-      target: '[data-tour="bottomtab-inventory"]',
-      title: t('tour.steps.inventory.title'),
-      content: t('tour.steps.inventory.content'),
+      target: '[data-tour="bottomtab-orders"]',
+      title: t('tour.steps.orders.title'),
+      content: t('tour.steps.orders.content'),
       placement: 'top',
-      data: { path: '/inventory' },
+      data: { path: '/orders' },
     },
     {
       target: '[data-tour="bottomtab-more"]',
