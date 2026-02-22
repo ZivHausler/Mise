@@ -118,6 +118,8 @@ export class OrderService {
   private async adjustInventoryForOrder(storeId: number, order: Order, type: InventoryLogType): Promise<void> {
     if (!this.recipeService || !this.inventoryService) return;
 
+    const adjustedIngredients: { ingredientId: number; name: string; currentQuantity: number; threshold: number; unit: string }[] = [];
+
     for (const item of order.items) {
       try {
         const recipe = await this.recipeService.getById(storeId, item.recipeId);
@@ -129,12 +131,22 @@ export class OrderService {
             const factor = unitConversionFactor(ingredient.unit, inventoryItem.unit);
             const convertedQty = ingredient.quantity * factor * item.quantity;
 
-            await this.inventoryService.adjustStock(storeId, {
+            const updated = await this.inventoryService.adjustStock(storeId, {
               ingredientId: Number(ingredient.ingredientId),
               type,
               quantity: convertedQty,
               reason: `Order ${order.id}`,
-            });
+            }, undefined, { suppressEvent: true });
+
+            if (updated && updated.quantity <= updated.lowStockThreshold) {
+              adjustedIngredients.push({
+                ingredientId: updated.id,
+                name: updated.name,
+                currentQuantity: updated.quantity,
+                threshold: updated.lowStockThreshold,
+                unit: updated.unit,
+              });
+            }
           } catch {
             // skip if inventory item not found
           }
@@ -142,6 +154,14 @@ export class OrderService {
       } catch {
         // skip if recipe not found
       }
+    }
+
+    if (adjustedIngredients.length > 0) {
+      await getEventBus().publish({
+        eventName: EventNames.INVENTORY_LOW_STOCK,
+        payload: { items: adjustedIngredients },
+        timestamp: new Date(),
+      });
     }
   }
 

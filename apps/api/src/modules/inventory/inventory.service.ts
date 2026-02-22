@@ -37,9 +37,9 @@ export class InventoryService {
     return InventoryCrud.update(storeId, id, data);
   }
 
-  async adjustStock(storeId: number, data: AdjustStockDTO, correlationId?: string): Promise<Ingredient> {
+  async adjustStock(storeId: number, data: AdjustStockDTO, correlationId?: string, options?: { suppressEvent?: boolean }): Promise<Ingredient> {
     const adjustStockUseCase = new AdjustStockUseCase();
-    return adjustStockUseCase.execute(storeId, data, correlationId);
+    return adjustStockUseCase.execute(storeId, data, correlationId, options);
   }
 
   async getLog(storeId: number, ingredientId: number): Promise<InventoryLog[]> {
