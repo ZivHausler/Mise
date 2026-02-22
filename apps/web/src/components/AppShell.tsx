@@ -66,6 +66,7 @@ const MobileNav = React.memo(function MobileNav({ onClose }: { onClose: () => vo
   const stores = useAuthStore((s) => s.stores);
   const isAdmin = useAuthStore((s) => s.isAdmin);
   const updateToken = useAuthStore((s) => s.updateToken);
+  const setActiveStore = useAuthStore((s) => s.setActiveStore);
   const selectStore = useSelectStore();
   const allStoresQuery = useAllStores(isAdmin);
   const qc = useQueryClient();
@@ -82,12 +83,13 @@ const MobileNav = React.memo(function MobileNav({ onClose }: { onClose: () => vo
         {
           onSuccess: (data: any) => {
             updateToken(data.token);
+            setActiveStore(storeId);
             qc.invalidateQueries();
           },
         },
       );
     },
-    [selectStore, updateToken, qc],
+    [selectStore, updateToken, setActiveStore, qc],
   );
 
   return (
