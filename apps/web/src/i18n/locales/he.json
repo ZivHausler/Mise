@@ -453,7 +453,9 @@
       "copyLink": "העתק קישור הזמנה",
       "linkCopied": "הקישור הועתק!",
       "linkGenerated": "קישור הזמנה נוצר",
-      "inviteAnother": "הזמן עוד"
+      "inviteAnother": "הזמן עוד",
+      "revokeInvite": "בטל הזמנה",
+      "revokeConfirm": "האם אתה בטוח שברצונך לבטל הזמנה זו?"
     },
     "units": {
       "weight": "משקל",

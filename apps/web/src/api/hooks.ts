@@ -630,7 +630,7 @@ export function useStoreMembers() {
 export function usePendingInvitations() {
   return useQuery({
     queryKey: ['pendingInvitations'],
-    queryFn: () => fetchApi<{ email: string; role: number; inviteLink: string; createdAt: string; expiresAt: string }[]>('/stores/invitations/pending'),
+    queryFn: () => fetchApi<{ id: number; email: string; role: number; inviteLink: string; createdAt: string; expiresAt: string }[]>('/stores/invitations/pending'),
   });
 }
 
@@ -642,6 +642,17 @@ export function useSendInvite() {
     mutationFn: (body: { email: string; role: number }) => postApi<{ token: string; inviteLink: string }>('/stores/invite', body),
     onSuccess: () => { addToast('success', t('toasts.inviteSent')); qc.invalidateQueries({ queryKey: ['storeMembers'] }); qc.invalidateQueries({ queryKey: ['pendingInvitations'] }); },
     onError: () => addToast('error', t('toasts.inviteFailed')),
+  });
+}
+
+export function useRevokeInvitation() {
+  const qc = useQueryClient();
+  const addToast = useToastStore((s) => s.addToast);
+  const { t } = useTranslation();
+  return useMutation({
+    mutationFn: (id: number) => patchApi(`/stores/invitations/${id}/revoke`, {}),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['pendingInvitations'] }); qc.invalidateQueries({ queryKey: ['storeMembers'] }); addToast('success', t('toasts.inviteRevoked')); },
+    onError: () => addToast('error', t('toasts.inviteRevokeFailed')),
   });
 }
 

@@ -73,12 +73,24 @@ export class StoreService {
   async getPendingInvitations(storeId: number) {
     const invitations = await PgStoreRepository.getPendingInvitations(storeId);
     return invitations.map((inv) => ({
+      id: inv.id,
       email: inv.email,
       role: inv.role,
       inviteLink: `${env.FRONTEND_URL}/invite/${inv.token}`,
       createdAt: inv.createdAt,
       expiresAt: inv.expiresAt,
     }));
+  }
+
+  async revokeInvitation(storeId: number, storeRole: StoreRole, invitationId: number, isAdmin?: boolean): Promise<void> {
+    if (storeRole !== StoreRole.OWNER && !isAdmin) {
+      throw new ForbiddenError('Only store owners can revoke invitations');
+    }
+
+    const revoked = await PgStoreRepository.revokeInvitation(invitationId, storeId);
+    if (!revoked) {
+      throw new NotFoundError('Invitation not found or already revoked');
+    }
   }
 
   async sendInvite(storeId: number, storeRole: StoreRole, email: string, inviteRole: StoreRole, isAdmin?: boolean): Promise<StoreInvitation & { inviteLink: string }> {
