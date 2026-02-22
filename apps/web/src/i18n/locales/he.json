@@ -456,7 +456,8 @@
       "linkGenerated": "קישור הזמנה נוצר",
       "inviteAnother": "הזמן עוד",
       "revokeInvite": "בטל הזמנה",
-      "revokeConfirm": "האם אתה בטוח שברצונך לבטל הזמנה זו?"
+      "revokeConfirm": "האם אתה בטוח שברצונך לבטל הזמנה זו?",
+      "removeMember": "הסר חבר"
     },
     "units": {
       "weight": "משקל",
@@ -607,7 +608,9 @@
     "batchSplit": "מקבץ פוצל",
     "batchSplitFailed": "פיצול מקבץ נכשל",
     "batchesMerged": "מקבצים מוזגו",
-    "batchesMergeFailed": "מיזוג מקבצים נכשל"
+    "batchesMergeFailed": "מיזוג מקבצים נכשל",
+    "memberRemoved": "החבר הוסר",
+    "memberRemoveFailed": "הסרת החבר נכשלה"
   },
   "store": {
     "setupTitle": "הקם את המאפייה שלך",

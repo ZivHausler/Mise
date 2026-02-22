@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { UserPlus, Mail, Copy, Check, Link as LinkIcon, Clock, X } from 'lucide-react';
+import { UserPlus, UserMinus, Mail, Copy, Check, Link as LinkIcon, Clock, X } from 'lucide-react';
 import { Card, Section, Stack } from '@/components/Layout';
 import { TextInput, Select } from '@/components/FormFields';
 import { Button } from '@/components/Button';
 import { Spinner } from '@/components/Feedback';
-import { useStoreMembers, useSendInvite, usePendingInvitations, useRevokeInvitation } from '@/api/hooks';
+import { useStoreMembers, useSendInvite, usePendingInvitations, useRevokeInvitation, useRemoveMember } from '@/api/hooks';
 import { INVITE_ROLE_OPTIONS, ROLE_LABELS, STORE_ROLES } from '@/constants/defaults';
 import { useAuthStore } from '@/store/auth';
 
@@ -18,6 +18,7 @@ export default function TeamTab() {
   const { data: pendingInvitations } = usePendingInvitations();
   const sendInvite = useSendInvite();
   const revokeInvitation = useRevokeInvitation();
+  const removeMember = useRemoveMember();
 
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviteRole, setInviteRole] = useState('3');
@@ -75,9 +76,21 @@ export default function TeamTab() {
                   <p className="text-body-sm font-medium text-neutral-800">{m.name}</p>
                   <p className="text-body-sm text-neutral-500">{m.email}</p>
                 </div>
-                <span className="rounded-full bg-primary-100 px-3 py-1 text-body-sm font-medium text-primary-700">
-                  {t(`settings.team.role${m.role}`, ROLE_LABELS[m.role] || 'Member')}
-                </span>
+                <div className="flex items-center gap-2">
+                  {isOwner && m.role !== STORE_ROLES.OWNER && (
+                    <button
+                      type="button"
+                      onClick={() => removeMember.mutate(Number(m.userId))}
+                      className="rounded p-1.5 text-neutral-400 hover:bg-red-50 hover:text-red-600 transition-colors"
+                      title={t('settings.team.removeMember')}
+                    >
+                      <UserMinus className="h-4 w-4" />
+                    </button>
+                  )}
+                  <span className="rounded-full bg-primary-100 px-3 py-1 text-body-sm font-medium text-primary-700">
+                    {t(`settings.team.role${m.role}`, ROLE_LABELS[m.role] || 'Member')}
+                  </span>
+                </div>
               </div>
             ))}
 

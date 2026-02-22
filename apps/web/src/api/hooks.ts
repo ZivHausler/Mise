@@ -656,6 +656,17 @@ export function useRevokeInvitation() {
   });
 }
 
+export function useRemoveMember() {
+  const qc = useQueryClient();
+  const addToast = useToastStore((s) => s.addToast);
+  const { t } = useTranslation();
+  return useMutation({
+    mutationFn: (userId: number) => deleteApi(`/stores/members/${userId}`),
+    onSuccess: () => { addToast('success', t('toasts.memberRemoved')); qc.invalidateQueries({ queryKey: ['storeMembers'] }); },
+    onError: () => addToast('error', t('toasts.memberRemoveFailed')),
+  });
+}
+
 export function useAcceptInvite() {
   return useMutation({
     mutationFn: (body: { token: string }) => postApi<{ token: string; storeId: string; role: number; stores: { storeId: string; storeName: string; role: number }[] }>('/stores/accept-invite', body),

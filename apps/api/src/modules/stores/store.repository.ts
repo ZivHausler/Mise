@@ -77,6 +77,15 @@ export class PgStoreRepository {
     }));
   }
 
+  static async removeUserFromStore(userId: number, storeId: number): Promise<boolean> {
+    const pool = getPool();
+    const result = await pool.query(
+      `DELETE FROM users_stores WHERE user_id = $1 AND store_id = $2`,
+      [userId, storeId],
+    );
+    return (result.rowCount ?? 0) > 0;
+  }
+
   static async createInvitation(storeId: number, email: string, role: StoreRole): Promise<StoreInvitation> {
     const pool = getPool();
     const token = crypto.randomBytes(32).toString('hex');
