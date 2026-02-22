@@ -1,7 +1,7 @@
 import type { User, RegisterDTO } from './auth.types.js';
 import { getPool } from '../../core/database/postgres.js';
 
-const SELECT_COLS = 'id, email, password_hash, google_id, name, phone, is_admin, created_at, updated_at';
+const SELECT_COLS = 'id, email, password_hash, google_id, name, phone, language, is_admin, created_at, updated_at';
 
 export class PgAuthRepository {
   static async findById(id: number): Promise<User | null> {
@@ -42,7 +42,7 @@ export class PgAuthRepository {
     return this.mapRow(result.rows[0]);
   }
 
-  static async updateProfile(userId: number, data: { name?: string; phone?: string }): Promise<User> {
+  static async updateProfile(userId: number, data: { name?: string; phone?: string; language?: number }): Promise<User> {
     const pool = getPool();
     const fields: string[] = [];
     const values: unknown[] = [];
@@ -55,6 +55,10 @@ export class PgAuthRepository {
     if (data.phone !== undefined) {
       fields.push(`phone = $${idx++}`);
       values.push(data.phone);
+    }
+    if (data.language !== undefined) {
+      fields.push(`language = $${idx++}`);
+      values.push(data.language);
     }
 
     if (fields.length === 0) {
@@ -113,6 +117,7 @@ export class PgAuthRepository {
       googleId: (row['google_id'] as string) || undefined,
       name: row['name'] as string,
       phone: (row['phone'] as string) || undefined,
+      language: Number(row['language'] ?? 0),
       isAdmin: row['is_admin'] === true,
       createdAt: new Date(row['created_at'] as string),
       updatedAt: new Date(row['updated_at'] as string),

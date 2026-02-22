@@ -7,6 +7,10 @@ import { AdminSidebar } from '@/components/admin/AdminSidebar';
 import { PageSkeleton } from '@/components/Feedback';
 import { useAppStore } from '@/store/app';
 import { useAuthStore } from '@/store/auth';
+import { useUpdateProfile } from '@/api/hooks';
+import { languageDir } from '@/utils/language';
+import { LANGUAGE_TO_ENUM } from '@/constants/defaults';
+import type { Language } from '@/constants/defaults';
 
 export default function AdminShell() {
   const { t, i18n } = useTranslation();
@@ -25,13 +29,15 @@ export default function AdminShell() {
     return () => { document.documentElement.classList.remove('dark'); };
   }, [adminDarkMode]);
 
+  const updateProfile = useUpdateProfile();
   const toggleLanguage = useCallback(() => {
-    const newLang = i18n.language === 'he' ? 'en' : 'he';
+    const newLang = (i18n.language === 'he' ? 'en' : 'he') as Language;
     i18n.changeLanguage(newLang);
     setLanguage(newLang);
-    document.documentElement.dir = newLang === 'he' ? 'rtl' : 'ltr';
+    document.documentElement.dir = languageDir(newLang);
     document.documentElement.lang = newLang;
-  }, [i18n, setLanguage]);
+    updateProfile.mutate({ language: LANGUAGE_TO_ENUM[newLang] });
+  }, [i18n, setLanguage, updateProfile]);
 
   return (
     <div className="flex h-[100dvh] overflow-hidden bg-primary-50 dark:bg-neutral-900">

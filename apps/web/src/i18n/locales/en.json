@@ -429,7 +429,8 @@
     "showSaturday": "Show Saturday",
     "languages": {
       "en": "English",
-      "he": "Hebrew"
+      "he": "Hebrew",
+      "ar": "Arabic"
     },
     "tabs": {
       "account": "Account",

@@ -8,9 +8,14 @@ export type DateFormat = (typeof DATE_FORMATS)[number];
 export const DEFAULT_DATE_FORMAT: DateFormat = 'dd/mm/yyyy';
 
 // --- Languages -------------------------------------------------------------
-export const LANGUAGES = ['en', 'he'] as const;
+export const LANGUAGES = ['en', 'he', 'ar'] as const;
 export type Language = (typeof LANGUAGES)[number];
 export const DEFAULT_LANGUAGE: Language = 'he';
+
+/** Map frontend language codes to backend Language enum values (0=Hebrew,1=English,3=Arabic). */
+export const LANGUAGE_TO_ENUM: Record<Language, number> = { he: 0, en: 1, ar: 3 };
+/** Map backend Language enum values to frontend language codes. */
+export const ENUM_TO_LANGUAGE: Record<number, Language> = { 0: 'he', 1: 'en', 3: 'ar' };
 
 // --- Payment methods -------------------------------------------------------
 export const PAYMENT_METHODS = ['cash', 'credit_card', 'bank_transfer'] as const;
