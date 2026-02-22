@@ -14,4 +14,5 @@ export interface NotificationContext {
 
 export interface NotificationChannel {
   send(recipient: NotificationRecipient, context: NotificationContext): Promise<void>;
+  sendBatch(recipients: NotificationRecipient[], context: NotificationContext): Promise<void>;
 }
