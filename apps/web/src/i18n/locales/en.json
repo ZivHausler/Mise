@@ -456,7 +456,8 @@
       "linkGenerated": "Invite link generated",
       "inviteAnother": "Invite Another",
       "revokeInvite": "Revoke invitation",
-      "revokeConfirm": "Are you sure you want to revoke this invitation?"
+      "revokeConfirm": "Are you sure you want to revoke this invitation?",
+      "removeMember": "Remove member"
     },
     "units": {
       "weight": "Weight",
@@ -607,7 +608,9 @@
     "batchSplit": "Batch split",
     "batchSplitFailed": "Failed to split batch",
     "batchesMerged": "Batches merged",
-    "batchesMergeFailed": "Failed to merge batches"
+    "batchesMergeFailed": "Failed to merge batches",
+    "memberRemoved": "Member removed",
+    "memberRemoveFailed": "Failed to remove member"
   },
   "store": {
     "setupTitle": "Set up your bakery",

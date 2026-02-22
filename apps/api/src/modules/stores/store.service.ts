@@ -93,6 +93,27 @@ export class StoreService {
     }
   }
 
+  async removeMember(storeId: number, storeRole: StoreRole, callerUserId: number, targetUserId: number, isAdmin?: boolean): Promise<void> {
+    if (storeRole !== StoreRole.OWNER && !isAdmin) {
+      throw new ForbiddenError('Only store owners can remove members');
+    }
+
+    if (callerUserId === targetUserId) {
+      throw new ForbiddenError('You cannot remove yourself');
+    }
+
+    const targetRole = await PgStoreRepository.getUserStoreRole(targetUserId, storeId);
+    if (!targetRole) {
+      throw new NotFoundError('User is not a member of this store');
+    }
+
+    if (targetRole === StoreRole.OWNER) {
+      throw new ForbiddenError('Cannot remove a store owner');
+    }
+
+    await PgStoreRepository.removeUserFromStore(targetUserId, storeId);
+  }
+
   async sendInvite(storeId: number, storeRole: StoreRole, email: string, inviteRole: StoreRole, isAdmin?: boolean): Promise<StoreInvitation & { inviteLink: string }> {
     if (storeRole !== StoreRole.OWNER && !isAdmin) {
       throw new ForbiddenError('Only store owners can send invitations');
