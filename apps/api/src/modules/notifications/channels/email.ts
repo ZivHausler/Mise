@@ -224,4 +224,48 @@ export class EmailNotifier implements NotificationChannel {
       );
     }
   }
+
+  async sendBatch(recipients: NotificationRecipient[], context: NotificationContext): Promise<void> {
+    if (recipients.length === 0) return;
+
+    if (!resend) {
+      appLogger.warn(
+        { bcc: recipients.map((r) => r.email), eventType: context.eventType, payload: context.payload },
+        '[EMAIL] Batch notification NOT sent — RESEND_API_KEY is not configured',
+      );
+      return;
+    }
+
+    // Use the first recipient's language for the shared email template
+    const lang = recipients[0].language ?? Language.HEBREW;
+    const { subject, html } = buildEmail(context, lang);
+
+    try {
+      const { data, error } = await resend.emails.send({
+        from: FROM_EMAIL,
+        to: FROM_EMAIL,
+        bcc: recipients.map((r) => r.email),
+        subject,
+        html,
+      });
+
+      if (error) {
+        appLogger.error(
+          { bcc: recipients.map((r) => r.email), eventType: context.eventType, error },
+          '[EMAIL] Failed to send batch notification',
+        );
+        return;
+      }
+
+      appLogger.info(
+        { bcc: recipients.map((r) => r.email), eventType: context.eventType, emailId: data?.id },
+        '[EMAIL] Batch notification sent successfully',
+      );
+    } catch (err) {
+      appLogger.error(
+        { bcc: recipients.map((r) => r.email), eventType: context.eventType, err },
+        '[EMAIL] Unexpected error sending batch notification',
+      );
+    }
+  }
 }

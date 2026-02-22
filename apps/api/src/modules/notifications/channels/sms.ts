@@ -10,4 +10,10 @@ export class SmsNotifier implements NotificationChannel {
       '[SMS] Notification NOT sent — channel is not configured',
     );
   }
+
+  async sendBatch(recipients: NotificationRecipient[], context: NotificationContext): Promise<void> {
+    for (const recipient of recipients) {
+      await this.send(recipient, context);
+    }
+  }
 }
