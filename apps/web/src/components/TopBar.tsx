@@ -3,6 +3,10 @@ import { Menu, Globe } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useAppStore } from '@/store/app';
 import { useAuthStore } from '@/store/auth';
+import { useUpdateProfile } from '@/api/hooks';
+import { languageDir } from '@/utils/language';
+import { LANGUAGE_TO_ENUM } from '@/constants/defaults';
+import type { Language } from '@/constants/defaults';
 import { StoreName } from './StoreName';
 
 interface TopBarProps {
@@ -13,13 +17,15 @@ export const TopBar = React.memo(function TopBar({ onMenuClick }: TopBarProps) {
   const { t, i18n } = useTranslation();
   const setLanguage = useAppStore((s) => s.setLanguage);
   const user = useAuthStore((s) => s.user);
+  const updateProfile = useUpdateProfile();
   const toggleLanguage = useCallback(() => {
-    const newLang = i18n.language === 'he' ? 'en' : 'he';
+    const newLang = (i18n.language === 'he' ? 'en' : 'he') as Language;
     i18n.changeLanguage(newLang);
     setLanguage(newLang);
-    document.documentElement.dir = newLang === 'he' ? 'rtl' : 'ltr';
+    document.documentElement.dir = languageDir(newLang);
     document.documentElement.lang = newLang;
-  }, [i18n, setLanguage]);
+    updateProfile.mutate({ language: LANGUAGE_TO_ENUM[newLang] });
+  }, [i18n, setLanguage, updateProfile]);
 
   return (
     <header className="sticky top-0 z-sticky flex h-16 items-center justify-between border-b border-neutral-200 bg-white px-4 md:px-6">

@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { AppShell } from '@/components/AppShell';
 import { PageLoading, ToastContainer } from '@/components/Feedback';
 import { useAuthStore } from '@/store/auth';
+import { languageDir } from '@/utils/language';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -113,7 +114,7 @@ function StoreSetupRoute({ children }: { children: React.ReactNode }) {
 
 export function App() {
   const { i18n } = useTranslation();
-  const dir = i18n.language === 'he' ? 'rtl' : 'ltr';
+  const dir = languageDir(i18n.language);
 
   // Keep html dir/lang in sync
   React.useEffect(() => {

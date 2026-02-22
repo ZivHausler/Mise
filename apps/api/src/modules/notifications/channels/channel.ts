@@ -3,6 +3,7 @@ export interface NotificationRecipient {
   name: string;
   email: string;
   phone?: string;
+  language: number;
 }
 
 export interface NotificationContext {

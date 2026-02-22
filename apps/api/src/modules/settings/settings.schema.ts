@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { Language } from '@mise/shared';
 
 // ─── Units ──────────────────────────────────────────────────────────────────
 
@@ -40,6 +41,7 @@ export type UpdateGroupDTO = z.infer<typeof updateGroupSchema>;
 export const updateProfileSchema = z.object({
   name: z.string().trim().min(1).max(255).optional(),
   phone: z.string().regex(/^05\d{8}$/, 'Invalid phone number — e.g. 0541234567').optional().nullable(),
+  language: z.nativeEnum(Language).optional(),
 });
 
 export type UpdateProfileDTO = z.infer<typeof updateProfileSchema>;

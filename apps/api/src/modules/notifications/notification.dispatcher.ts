@@ -37,7 +37,7 @@ export class NotificationDispatcher {
 
       if (recipient.channelEmail) {
         await this.emailNotifier.send(
-          { userId: recipient.userId, name: recipient.name, email: recipient.email, phone: recipient.phone },
+          { userId: recipient.userId, name: recipient.name, email: recipient.email, phone: recipient.phone, language: recipient.language },
           context,
         );
         emailCount++;
@@ -45,7 +45,7 @@ export class NotificationDispatcher {
 
       if (recipient.channelSms && recipient.phone) {
         await this.smsNotifier.send(
-          { userId: recipient.userId, name: recipient.name, email: recipient.email, phone: recipient.phone },
+          { userId: recipient.userId, name: recipient.name, email: recipient.email, phone: recipient.phone, language: recipient.language },
           context,
         );
         smsCount++;

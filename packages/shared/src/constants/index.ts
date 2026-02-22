@@ -1,3 +1,9 @@
+export enum Language {
+  HEBREW = 0,
+  ENGLISH = 1,
+  ARABIC = 3,
+}
+
 export enum InventoryLogType {
   ADDITION = 0,
   USAGE = 1,
