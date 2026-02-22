@@ -453,7 +453,9 @@
       "copyLink": "Copy invite link",
       "linkCopied": "Link copied!",
       "linkGenerated": "Invite link generated",
-      "inviteAnother": "Invite Another"
+      "inviteAnother": "Invite Another",
+      "revokeInvite": "Revoke invitation",
+      "revokeConfirm": "Are you sure you want to revoke this invitation?"
     },
     "units": {
       "weight": "Weight",

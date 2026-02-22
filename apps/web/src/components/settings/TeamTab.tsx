@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { UserPlus, Mail, Copy, Check, Link as LinkIcon, Clock } from 'lucide-react';
+import { UserPlus, Mail, Copy, Check, Link as LinkIcon, Clock, X } from 'lucide-react';
 import { Card, Section, Stack } from '@/components/Layout';
 import { TextInput, Select } from '@/components/FormFields';
 import { Button } from '@/components/Button';
 import { Spinner } from '@/components/Feedback';
-import { useStoreMembers, useSendInvite, usePendingInvitations } from '@/api/hooks';
+import { useStoreMembers, useSendInvite, usePendingInvitations, useRevokeInvitation } from '@/api/hooks';
 import { INVITE_ROLE_OPTIONS, ROLE_LABELS, STORE_ROLES } from '@/constants/defaults';
 import { useAuthStore } from '@/store/auth';
 
@@ -17,6 +17,7 @@ export default function TeamTab() {
   const { data: members, isLoading } = useStoreMembers();
   const { data: pendingInvitations } = usePendingInvitations();
   const sendInvite = useSendInvite();
+  const revokeInvitation = useRevokeInvitation();
 
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviteRole, setInviteRole] = useState('3');
@@ -61,7 +62,7 @@ export default function TeamTab() {
   if (isLoading) return <div className="flex justify-center py-8"><Spinner /></div>;
 
   const memberList = (members as Array<{ userId: string; name: string; email: string; role: number }>) ?? [];
-  const pendingList = (pendingInvitations as Array<{ email: string; role: number; inviteLink: string; createdAt: string; expiresAt: string }>) ?? [];
+  const pendingList = (pendingInvitations as Array<{ id: number; email: string; role: number; inviteLink: string; createdAt: string; expiresAt: string }>) ?? [];
 
   return (
     <Stack gap={6}>
@@ -82,24 +83,40 @@ export default function TeamTab() {
 
             {pendingList.map((inv) => (
               <div key={inv.email} className="flex items-center justify-between rounded-md border border-dashed border-amber-300 bg-amber-50 px-4 py-3">
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-3 min-w-0">
                   <Clock className="h-4 w-4 text-amber-500 shrink-0" />
-                  <div>
-                    <p className="text-body-sm font-medium text-neutral-600">{inv.email}</p>
+                  <div className="min-w-0">
+                    <p className="text-body-sm font-medium text-neutral-600 truncate">{inv.email}</p>
                     <p className="text-body-sm text-neutral-400">
                       {t(`settings.team.role${inv.role}`, ROLE_LABELS[inv.role] || 'Member')}
                     </p>
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => handleCopyPendingLink(inv.email, inv.inviteLink)}
-                    className="rounded p-1.5 text-amber-600 hover:bg-amber-100 hover:text-amber-700 transition-colors"
-                    title={t('settings.team.copyLink')}
-                  >
-                    {copiedPendingEmail === inv.email ? <Check className="h-4 w-4 text-green-600" /> : <Copy className="h-4 w-4" />}
-                  </button>
+                <div className="flex flex-col sm:flex-row items-center gap-1 sm:gap-2">
+                  <div className="flex items-center gap-1">
+                    <button
+                      type="button"
+                      onClick={() => handleCopyPendingLink(inv.email, inv.inviteLink)}
+                      className="rounded p-1.5 text-amber-600 hover:bg-amber-100 hover:text-amber-700 transition-colors"
+                      title={t('settings.team.copyLink')}
+                    >
+                      {copiedPendingEmail === inv.email ? <Check className="h-4 w-4 text-green-600" /> : <Copy className="h-4 w-4" />}
+                    </button>
+                    {isOwner && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (window.confirm(t('settings.team.revokeConfirm'))) {
+                            revokeInvitation.mutate(inv.id);
+                          }
+                        }}
+                        className="rounded p-1.5 text-red-500 hover:bg-red-100 hover:text-red-700 transition-colors"
+                        title={t('settings.team.revokeInvite')}
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                    )}
+                  </div>
                   <span className="rounded-full bg-amber-100 px-3 py-1 text-body-sm font-medium text-amber-700">
                     {t('settings.team.pending')}
                   </span>

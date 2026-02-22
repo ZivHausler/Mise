@@ -96,7 +96,7 @@ export class PgStoreRepository {
       `SELECT si.*, s.name as store_name
        FROM store_invitations si
        LEFT JOIN stores s ON s.id = si.store_id
-       WHERE si.token = $1 AND si.used_at IS NULL AND si.expires_at > NOW()`,
+       WHERE si.token = $1 AND si.used_at IS NULL AND si.revoked_at IS NULL AND si.expires_at > NOW()`,
       [token],
     );
     if (!result.rows[0]) return null;
@@ -117,22 +117,33 @@ export class PgStoreRepository {
     return this.mapInvitationRow(result.rows[0]);
   }
 
-  static async getPendingInvitations(storeId: number): Promise<{ email: string; role: StoreRole; token: string; createdAt: Date; expiresAt: Date }[]> {
+  static async getPendingInvitations(storeId: number): Promise<{ id: number; email: string; role: StoreRole; token: string; createdAt: Date; expiresAt: Date }[]> {
     const pool = getPool();
     const result = await pool.query(
-      `SELECT email, role, token, created_at, expires_at
+      `SELECT id, email, role, token, created_at, expires_at
        FROM store_invitations
        WHERE store_id = $1 AND used_at IS NULL AND revoked_at IS NULL AND expires_at > NOW()
        ORDER BY created_at DESC`,
       [storeId],
     );
     return result.rows.map((row: Record<string, unknown>) => ({
+      id: Number(row['id']),
       email: row['email'] as string,
       role: row['role'] as StoreRole,
       token: row['token'] as string,
       createdAt: new Date(row['created_at'] as string),
       expiresAt: new Date(row['expires_at'] as string),
     }));
+  }
+
+  static async revokeInvitation(invitationId: number, storeId: number): Promise<boolean> {
+    const pool = getPool();
+    const result = await pool.query(
+      `UPDATE store_invitations SET revoked_at = NOW()
+       WHERE id = $1 AND store_id = $2 AND used_at IS NULL AND revoked_at IS NULL`,
+      [invitationId, storeId],
+    );
+    return (result.rowCount ?? 0) > 0;
   }
 
   static async markInvitationUsed(token: string): Promise<void> {
