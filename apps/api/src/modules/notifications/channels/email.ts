@@ -237,7 +237,7 @@ export class EmailNotifier implements NotificationChannel {
     }
 
     // Use the first recipient's language for the shared email template
-    const lang = recipients[0].language ?? Language.HEBREW;
+    const lang = recipients[0]!.language ?? Language.HEBREW;
     const { subject, html } = buildEmail(context, lang);
 
     try {
