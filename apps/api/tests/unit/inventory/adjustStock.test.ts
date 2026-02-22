@@ -121,12 +121,15 @@ describe('AdjustStockUseCase', () => {
     expect(mockPublish).toHaveBeenCalledWith(
       expect.objectContaining({
         eventName: 'inventory.low_stock',
-        payload: expect.objectContaining({
-          ingredientId: updated.id,
-          name: updated.name,
-          currentQuantity: 3,
-          threshold: 10,
-        }),
+        payload: {
+          items: [expect.objectContaining({
+            ingredientId: updated.id,
+            name: updated.name,
+            currentQuantity: 3,
+            threshold: 10,
+            unit: updated.unit,
+          })],
+        },
       }),
     );
   });
@@ -143,6 +146,22 @@ describe('AdjustStockUseCase', () => {
       quantity: 20,
     });
 
+    expect(mockPublish).not.toHaveBeenCalled();
+  });
+
+  it('should skip event when suppressEvent option is true', async () => {
+    const ingredient = createIngredient({ quantity: 50 });
+    const updated = createIngredient({ quantity: 3, lowStockThreshold: 10, id: 1, name: 'Flour' });
+    vi.mocked(InventoryCrud.getById).mockResolvedValue(ingredient);
+    vi.mocked(InventoryCrud.adjustStock).mockResolvedValue(updated);
+
+    const result = await useCase.execute(STORE_ID, {
+      ingredientId: 1,
+      type: InventoryLogType.USAGE,
+      quantity: 47,
+    }, undefined, { suppressEvent: true });
+
+    expect(result.quantity).toBe(3);
     expect(mockPublish).not.toHaveBeenCalled();
   });
 });
