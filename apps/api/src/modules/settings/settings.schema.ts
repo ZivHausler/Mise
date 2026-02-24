@@ -20,21 +20,21 @@ export const updateUnitSchema = z.object({
 
 export type UpdateUnitDTO = z.infer<typeof updateUnitSchema>;
 
-// ─── Groups ─────────────────────────────────────────────────────────────────
+// ─── Allergens ─────────────────────────────────────────────────────────────
 
-export const createGroupSchema = z.object({
+export const createAllergenSchema = z.object({
   name: z.string().trim().min(1).max(200),
   color: z.string().regex(/^#[0-9A-Fa-f]{6}$/).optional(),
 });
 
-export type CreateGroupDTO = z.infer<typeof createGroupSchema>;
+export type CreateAllergenDTO = z.infer<typeof createAllergenSchema>;
 
-export const updateGroupSchema = z.object({
+export const updateAllergenSchema = z.object({
   name: z.string().trim().min(1).max(200).optional(),
   color: z.string().regex(/^#[0-9A-Fa-f]{6}$/).nullable().optional(),
 });
 
-export type UpdateGroupDTO = z.infer<typeof updateGroupSchema>;
+export type UpdateAllergenDTO = z.infer<typeof updateAllergenSchema>;
 
 // ─── Profile ────────────────────────────────────────────────────────────────
 

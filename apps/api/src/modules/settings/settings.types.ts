@@ -23,9 +23,9 @@ export interface Unit {
   updatedAt: Date;
 }
 
-// ─── Groups ─────────────────────────────────────────────────────────────────
+// ─── Allergens ─────────────────────────────────────────────────────────────
 
-export interface Group {
+export interface Allergen {
   id: number;
   storeId: number | null;
   name: string;
@@ -55,10 +55,10 @@ export {
   type CreateUnitDTO,
   updateUnitSchema,
   type UpdateUnitDTO,
-  createGroupSchema,
-  type CreateGroupDTO,
-  updateGroupSchema,
-  type UpdateGroupDTO,
+  createAllergenSchema,
+  type CreateAllergenDTO,
+  updateAllergenSchema,
+  type UpdateAllergenDTO,
   updateProfileSchema,
   type UpdateProfileDTO,
   NOTIFICATION_EVENT_TYPES,

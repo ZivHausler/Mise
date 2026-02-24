@@ -4,8 +4,8 @@ import { authMiddleware, requireStoreMiddleware } from '../../core/middleware/au
 import { UnitsService } from './units/units.service.js';
 import { UnitsController } from './units/units.controller.js';
 
-import { GroupsService } from './groups/groups.service.js';
-import { GroupsController } from './groups/groups.controller.js';
+import { AllergensService } from './allergens/allergens.service.js';
+import { AllergensController } from './allergens/allergens.controller.js';
 
 import { ProfileService } from './profile/profile.service.js';
 import { ProfileController } from './profile/profile.controller.js';
@@ -30,14 +30,14 @@ export default async function settingsRoutes(app: FastifyInstance) {
   app.put('/units/:id', (req, reply) => unitsController.update(req, reply));
   app.delete('/units/:id', (req, reply) => unitsController.delete(req, reply));
 
-  // Groups
-  const groupsService = new GroupsService();
-  const groupsController = new GroupsController(groupsService);
+  // Allergens
+  const allergensService = new AllergensService();
+  const allergensController = new AllergensController(allergensService);
 
-  app.get('/groups', (req, reply) => groupsController.list(req, reply));
-  app.post('/groups', (req, reply) => groupsController.create(req, reply));
-  app.put('/groups/:id', (req, reply) => groupsController.update(req, reply));
-  app.delete('/groups/:id', (req, reply) => groupsController.delete(req, reply));
+  app.get('/allergens', (req, reply) => allergensController.list(req, reply));
+  app.post('/allergens', (req, reply) => allergensController.create(req, reply));
+  app.put('/allergens/:id', (req, reply) => allergensController.update(req, reply));
+  app.delete('/allergens/:id', (req, reply) => allergensController.delete(req, reply));
 
   // Profile
   const profileService = new ProfileService();
