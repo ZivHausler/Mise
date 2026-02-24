@@ -1,14 +1,15 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Edit, Trash2, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Edit, Trash2, ChevronLeft, ChevronRight, ChevronUp, ChevronDown } from 'lucide-react';
 import { Page, Card, Section, Stack, Row } from '@/components/Layout';
 import { Breadcrumbs } from '@/components/Breadcrumbs';
 import { Button } from '@/components/Button';
 import { StatusBadge } from '@/components/DataDisplay';
 import { PageSkeleton } from '@/components/Feedback';
 import { ConfirmModal } from '@/components/Modal';
-import { useCustomer, useCustomerOrders, useCustomerPayments, useDeleteCustomer, useCustomerLoyalty, useCustomerLoyaltyTransactions, useLoyaltyConfig } from '@/api/hooks';
+import { useCustomer, useCustomerOrders, useCustomerPayments, useDeleteCustomer, useUpdateCustomer, useCustomerLoyalty, useCustomerLoyaltyTransactions, useLoyaltyConfig } from '@/api/hooks';
 import { getStatusLabel, STATUS_LABELS } from '@/utils/orderStatus';
 import { useFormatDate } from '@/utils/dateFormat';
 import AdjustPointsModal from '@/components/loyalty/AdjustPointsModal';
@@ -28,6 +29,10 @@ export default function CustomerDetailPage() {
   const [orderDateFrom, setOrderDateFrom] = useState('');
   const [orderDateTo, setOrderDateTo] = useState('');
 
+  // Order sorting
+  const [orderSortBy, setOrderSortBy] = useState<'created_at' | 'order_number'>('created_at');
+  const [orderSortDir, setOrderSortDir] = useState<'asc' | 'desc'>('desc');
+
   // Payment filters
   const [paymentMethodFilter, setPaymentMethodFilter] = useState<string | undefined>(undefined);
   const [paymentDateFrom, setPaymentDateFrom] = useState('');
@@ -44,9 +49,10 @@ export default function CustomerDetailPage() {
     ...(paymentDateTo && { dateTo: paymentDateTo }),
   };
 
-  const { data: customerOrders } = useCustomerOrders(numId, ordersPage, 10, Object.keys(orderFilters).length ? orderFilters : undefined);
+  const { data: customerOrders } = useCustomerOrders(numId, ordersPage, 10, Object.keys(orderFilters).length ? orderFilters : undefined, orderSortBy, orderSortDir);
   const { data: customerPayments } = useCustomerPayments(numId, paymentsPage, 10, Object.keys(paymentFilters).length ? paymentFilters : undefined);
   const deleteCustomer = useDeleteCustomer();
+  const updateCustomer = useUpdateCustomer();
   const formatDate = useFormatDate();
   const [loyaltyPage, setLoyaltyPage] = useState(1);
   const { data: loyaltySummary } = useCustomerLoyalty(numId);
@@ -57,6 +63,18 @@ export default function CustomerDetailPage() {
   const [showAdjust, setShowAdjust] = useState(false);
   const [showRedeem, setShowRedeem] = useState(false);
   const [activeTab, setActiveTab] = useState<'orders' | 'payments' | 'loyalty'>('orders');
+  const queryClient = useQueryClient();
+
+  // Refetch tab data when switching tabs
+  useEffect(() => {
+    if (activeTab === 'orders') {
+      queryClient.invalidateQueries({ queryKey: ['orders', 'customer', numId] });
+    } else if (activeTab === 'payments') {
+      queryClient.invalidateQueries({ queryKey: ['payments', 'customer', numId] });
+    } else if (activeTab === 'loyalty') {
+      queryClient.invalidateQueries({ queryKey: ['loyalty', numId] });
+    }
+  }, [activeTab, numId, queryClient]);
 
   const c = customer as any;
   const ordersData = customerOrders as any;
@@ -177,8 +195,40 @@ export default function CustomerDetailPage() {
             <table className="w-full text-body-sm">
               <thead>
                 <tr className="border-b bg-neutral-50">
-                  <th className="px-3 py-2 text-start font-semibold">#</th>
-                  <th className="px-3 py-2 text-start font-semibold">{t('orders.dueDate', 'Date')}</th>
+                  <th
+                    className="sticky start-0 z-10 cursor-pointer select-none bg-neutral-50 px-3 py-2 text-start font-semibold"
+                    onClick={() => {
+                      if (orderSortBy === 'created_at') {
+                        setOrderSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
+                      } else {
+                        setOrderSortBy('created_at');
+                        setOrderSortDir('desc');
+                      }
+                      setOrdersPage(1);
+                    }}
+                  >
+                    <span className="inline-flex items-center gap-1">
+                      {t('orders.dueDate', 'Date')}
+                      {orderSortBy === 'created_at' && (orderSortDir === 'asc' ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />)}
+                    </span>
+                  </th>
+                  <th
+                    className="cursor-pointer select-none px-3 py-2 text-start font-semibold"
+                    onClick={() => {
+                      if (orderSortBy === 'order_number') {
+                        setOrderSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
+                      } else {
+                        setOrderSortBy('order_number');
+                        setOrderSortDir('asc');
+                      }
+                      setOrdersPage(1);
+                    }}
+                  >
+                    <span className="inline-flex items-center gap-1">
+                      {t('orders.orderNumber', 'Order Number')}
+                      {orderSortBy === 'order_number' && (orderSortDir === 'asc' ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />)}
+                    </span>
+                  </th>
                   <th className="px-3 py-2 text-center font-semibold">{t('orders.statusLabel', 'Status')}</th>
                   <th className="px-3 py-2 text-end font-semibold">{t('orders.total', 'Total')}</th>
                 </tr>
@@ -189,11 +239,11 @@ export default function CustomerDetailPage() {
                   return (
                     <tr
                       key={String(o.id)}
-                      className="cursor-pointer border-b border-neutral-100 hover:bg-primary-50"
+                      className="group cursor-pointer border-b border-neutral-100 hover:bg-primary-50"
                       onClick={() => navigate(`/orders/${o.id}`)}
                     >
+                      <td className="sticky start-0 z-10 bg-white px-3 py-2 group-hover:bg-primary-50">{formatDate(o.dueDate ?? o.createdAt)}</td>
                       <td className="px-3 py-2">#{o.orderNumber}</td>
-                      <td className="px-3 py-2">{formatDate(o.dueDate ?? o.createdAt)}</td>
                       <td className="px-3 py-2 text-center">
                         <StatusBadge variant={label} label={t(`orders.status.${label}`, label)} />
                       </td>
@@ -273,7 +323,6 @@ export default function CustomerDetailPage() {
               >
                 <option value="">{t('payments.allMethods', 'All methods')}</option>
                 <option value="cash">{t('payments.cash', 'Cash')}</option>
-                <option value="credit_card">{t('payments.card', 'Card')}</option>
               </select>
               {(paymentMethodFilter || paymentDateFrom || paymentDateTo) && (
                 <button
@@ -287,16 +336,16 @@ export default function CustomerDetailPage() {
             <table className="w-full text-body-sm">
               <thead>
                 <tr className="border-b bg-neutral-50">
-                  <th className="px-3 py-2 text-start font-semibold">{t('payments.date', 'Date')}</th>
-                  <th className="px-3 py-2 text-start font-semibold">{t('payments.order', 'Order')}</th>
+                  <th className="sticky start-0 z-10 bg-neutral-50 px-3 py-2 text-start font-semibold">{t('payments.date', 'Date')}</th>
+                  <th className="px-3 py-2 text-start font-semibold">{t('orders.orderNumber', 'Order Number')}</th>
                   <th className="px-3 py-2 text-end font-semibold">{t('payments.amount', 'Amount')}</th>
                   <th className="px-3 py-2 text-start font-semibold">{t('payments.method', 'Method')}</th>
                 </tr>
               </thead>
               <tbody>
                 {payments.map((p: any) => (
-                  <tr key={String(p.id)} className="border-b border-neutral-100">
-                    <td className="px-3 py-2">{formatDate(p.createdAt)}</td>
+                  <tr key={String(p.id)} className="group border-b border-neutral-100">
+                    <td className="sticky start-0 z-10 bg-white px-3 py-2">{formatDate(p.createdAt)}</td>
                     <td className="px-3 py-2">#{p.orderNumber}</td>
                     <td className="px-3 py-2 text-end font-mono">{p.amount} {t('common.currency')}</td>
                     <td className="px-3 py-2">
@@ -350,6 +399,49 @@ export default function CustomerDetailPage() {
 
         {activeTab === 'loyalty' && (
           <div>
+            {/* Per-customer loyalty toggle */}
+            <div className="mb-4 flex items-center justify-between rounded-lg border border-neutral-200 p-3">
+              <span className="text-body-sm font-medium text-neutral-700">{t('customers.loyaltyEnabled', 'Points accumulation active')}</span>
+              <button
+                type="button"
+                role="switch"
+                aria-checked={c.loyaltyEnabled !== false}
+                onClick={() => updateCustomer.mutate({ id: c.id, loyaltyEnabled: c.loyaltyEnabled === false })}
+                className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${c.loyaltyEnabled !== false ? 'bg-primary-500' : 'bg-neutral-300'}`}
+              >
+                <span className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${c.loyaltyEnabled !== false ? 'ltr:translate-x-5 rtl:-translate-x-5' : 'translate-x-0'}`} />
+              </button>
+            </div>
+
+            {c.loyaltyEnabled === false ? (
+              <p className="py-8 text-center text-body-sm text-neutral-400">{t('customers.loyaltyDisabledMsg', 'Points accumulation is disabled for this customer.')}</p>
+            ) : (<>
+            {/* Tier selector */}
+            <div className="mb-4 rounded-lg border border-neutral-200 p-3">
+              <div className="mb-2 text-body-sm font-medium text-neutral-700">{t('customers.loyaltyTier', 'Loyalty Tier')}</div>
+              <div className="flex gap-2">
+                {(['bronze', 'silver', 'gold'] as const).map((tier) => {
+                  const isActive = (c.loyaltyTier ?? 'bronze') === tier;
+                  const colors = {
+                    bronze: isActive ? 'bg-orange-100 text-orange-800 ring-2 ring-orange-400' : 'bg-neutral-50 text-neutral-500 hover:bg-orange-50',
+                    silver: isActive ? 'bg-slate-200 text-slate-700 ring-2 ring-slate-400' : 'bg-neutral-50 text-neutral-500 hover:bg-slate-50',
+                    gold: isActive ? 'bg-amber-100 text-amber-800 ring-2 ring-amber-400' : 'bg-neutral-50 text-neutral-500 hover:bg-amber-50',
+                  };
+                  const multipliers = { bronze: 1, silver: 1.5, gold: 2 };
+                  return (
+                    <button
+                      key={tier}
+                      onClick={() => updateCustomer.mutate({ id: c.id, loyaltyTier: tier })}
+                      className={`flex flex-col items-center gap-0.5 rounded-full px-4 py-1.5 text-body-sm font-medium transition-all sm:flex-row sm:gap-1.5 ${colors[tier]}`}
+                    >
+                      {t(`loyalty.tiers.${tier}`, tier)}
+                      <span className="text-xs opacity-75">{t('loyalty.tierMultiplier', { multiplier: multipliers[tier] })}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
             {/* Summary cards */}
             <div className="mb-4 grid grid-cols-3 gap-3">
               <div className="rounded-lg bg-primary-50 p-3 text-center">
@@ -372,7 +464,7 @@ export default function CustomerDetailPage() {
             </div>
 
             {/* Action buttons */}
-            <div className="mb-4 flex gap-2">
+            <div className="mb-4 flex justify-center gap-2 sm:justify-start">
               <Button size="sm" variant="secondary" onClick={() => setShowAdjust(true)}>
                 {t('loyalty.adjustPoints')}
               </Button>
@@ -382,42 +474,44 @@ export default function CustomerDetailPage() {
             </div>
 
             {/* Transaction history */}
-            <table className="w-full text-body-sm">
-              <thead>
-                <tr className="border-b bg-neutral-50">
-                  <th className="px-3 py-2 text-start font-semibold">{t('payments.date', 'Date')}</th>
-                  <th className="px-3 py-2 text-start font-semibold">{t('loyalty.type')}</th>
-                  <th className="px-3 py-2 text-end font-semibold">{t('loyalty.points')}</th>
-                  <th className="px-3 py-2 text-end font-semibold">{t('loyalty.balanceAfter')}</th>
-                  <th className="px-3 py-2 text-start font-semibold">{t('loyalty.description')}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {((loyaltyTxData as any)?.transactions ?? []).map((tx: any) => (
-                  <tr key={String(tx.id)} className="border-b border-neutral-100">
-                    <td className="px-3 py-2">{formatDate(tx.createdAt)}</td>
-                    <td className="px-3 py-2">
-                      <StatusBadge
-                        variant={tx.type === 'earned' ? 'ready' : tx.type === 'redeemed' ? 'delivered' : 'info'}
-                        label={t(`loyalty.types.${tx.type}`, tx.type)}
-                      />
-                    </td>
-                    <td className={`px-3 py-2 text-end font-mono ${tx.points > 0 ? 'text-success-dark' : 'text-error'}`}>
-                      {tx.points > 0 ? `+${tx.points}` : tx.points}
-                    </td>
-                    <td className="px-3 py-2 text-end font-mono">{tx.balanceAfter}</td>
-                    <td className="px-3 py-2 text-neutral-500">{formatLoyaltyDescription(tx.description, t) || '—'}</td>
+            <div className="overflow-x-auto">
+              <table className="w-full text-body-sm">
+                <thead>
+                  <tr className="border-b bg-neutral-50">
+                    <th className="sticky start-0 z-10 bg-neutral-50 px-3 py-2 text-start font-semibold">{t('payments.date', 'Date')}</th>
+                    <th className="px-3 py-2 text-start font-semibold">{t('loyalty.type')}</th>
+                    <th className="px-3 py-2 text-end font-semibold">{t('loyalty.points')}</th>
+                    <th className="px-3 py-2 text-end font-semibold">{t('loyalty.balanceAfter')}</th>
+                    <th className="px-3 py-2 text-start font-semibold">{t('loyalty.description')}</th>
                   </tr>
-                ))}
-                {((loyaltyTxData as any)?.transactions ?? []).length === 0 && (
-                  <tr>
-                    <td colSpan={5} className="px-3 py-8 text-center text-neutral-400">
-                      {t('loyalty.noTransactions')}
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {((loyaltyTxData as any)?.transactions ?? []).map((tx: any) => (
+                    <tr key={String(tx.id)} className="border-b border-neutral-100">
+                      <td className="sticky start-0 z-10 bg-white px-3 py-2">{formatDate(tx.createdAt)}</td>
+                      <td className="px-3 py-2">
+                        <StatusBadge
+                          variant={tx.type === 'earned' ? 'ready' : tx.type === 'redeemed' ? 'delivered' : 'info'}
+                          label={t(`loyalty.types.${tx.type}`, tx.type)}
+                        />
+                      </td>
+                      <td className={`px-3 py-2 text-end font-mono ${tx.points > 0 ? 'text-success-dark' : 'text-error'}`}>
+                        {tx.points > 0 ? `+${tx.points}` : tx.points}
+                      </td>
+                      <td className="px-3 py-2 text-end font-mono">{tx.balanceAfter}</td>
+                      <td className="whitespace-nowrap px-3 py-2 text-neutral-500">{formatLoyaltyDescription(tx.description, t) || '—'}</td>
+                    </tr>
+                  ))}
+                  {((loyaltyTxData as any)?.transactions ?? []).length === 0 && (
+                    <tr>
+                      <td colSpan={5} className="px-3 py-8 text-center text-neutral-400">
+                        {t('loyalty.noTransactions')}
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
             {(loyaltyTxData as any)?.pagination && (loyaltyTxData as any).pagination.totalPages > 1 && (
               <div className="flex items-center justify-between border-t border-neutral-200 px-4 py-3">
                 <span className="text-body-sm text-neutral-500">
@@ -450,6 +544,7 @@ export default function CustomerDetailPage() {
                 </div>
               </div>
             )}
+            </>)}
           </div>
         )}
       </Card>

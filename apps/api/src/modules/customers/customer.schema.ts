@@ -10,6 +10,8 @@ export const createCustomerSchema = z.object({
     allergies: z.array(z.string().max(100)).max(50).optional(),
     favorites: z.array(z.string().max(100)).max(50).optional(),
   }).optional(),
+  loyaltyEnabled: z.boolean().optional(),
+  loyaltyTier: z.enum(['bronze', 'silver', 'gold']).optional(),
 });
 
 export const updateCustomerSchema = createCustomerSchema.partial();

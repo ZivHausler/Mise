@@ -252,7 +252,7 @@ export class PgAdminRepository {
   static async revokeInvitation(invitationId: number): Promise<void> {
     const pool = getPool();
     await pool.query(
-      'UPDATE store_invitations SET revoked_at = NOW() WHERE id = $1',
+      'DELETE FROM store_invitations WHERE id = $1',
       [invitationId],
     );
   }

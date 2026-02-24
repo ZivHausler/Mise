@@ -5,6 +5,7 @@ export interface User {
   googleId?: string;
   name: string;
   phone?: string;
+  language: number;
   isAdmin: boolean;
   createdAt: Date;
   updatedAt: Date;
@@ -15,6 +16,7 @@ export interface UserPublic {
   email: string;
   name: string;
   phone?: string;
+  language: number;
   isAdmin: boolean;
 }
 

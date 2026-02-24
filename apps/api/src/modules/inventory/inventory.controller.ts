@@ -9,14 +9,14 @@ import { t } from '../shared/pdf/i18n.js';
 export class InventoryController {
   constructor(private inventoryService: InventoryService) {}
 
-  async getAll(request: FastifyRequest<{ Querystring: { search?: string; page?: string; limit?: string; groupIds?: string; status?: string } }>, reply: FastifyReply) {
+  async getAll(request: FastifyRequest<{ Querystring: { search?: string; page?: string; limit?: string; allergenIds?: string; status?: string } }>, reply: FastifyReply) {
     const storeId = request.currentUser!.storeId!;
-    const { search, page, limit, groupIds: groupIdsParam, status: statusParam } = request.query;
+    const { search, page, limit, allergenIds: allergenIdsParam, status: statusParam } = request.query;
     if (page || limit) {
       const { page: pageNum, limit: limitNum } = parsePaginationParams(page, limit);
-      const groupIds = groupIdsParam ? groupIdsParam.split(',').filter(Boolean).map(Number) : undefined;
+      const allergenIds = allergenIdsParam ? allergenIdsParam.split(',').filter(Boolean).map(Number) : undefined;
       const statuses = statusParam ? statusParam.split(',').filter(Boolean) : undefined;
-      const result = await this.inventoryService.getAllPaginated(storeId, pageNum, limitNum, search, groupIds, statuses);
+      const result = await this.inventoryService.getAllPaginated(storeId, pageNum, limitNum, search, allergenIds, statuses);
       return reply.send({ success: true, data: result.items, pagination: { total: result.total, page: result.page, limit: result.limit, totalPages: result.totalPages } });
     }
     const ingredients = await this.inventoryService.getAll(storeId, search);

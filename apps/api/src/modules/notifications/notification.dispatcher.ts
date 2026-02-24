@@ -1,7 +1,7 @@
 import type { DomainEvent } from '../../core/events/event-bus.js';
 import { EventNames } from '../../core/events/event-names.js';
 import { PgNotifPrefsRepository } from '../settings/notifications/notifications.repository.js';
-import type { NotificationChannel } from './channels/channel.js';
+import type { NotificationChannel, NotificationRecipient } from './channels/channel.js';
 import type { FastifyBaseLogger } from 'fastify';
 
 const EVENT_NAME_MAP: Record<string, string> = {
@@ -25,35 +25,43 @@ export class NotificationDispatcher {
     }
 
     const recipients = await PgNotifPrefsRepository.findByEventType(eventType);
-    let emailCount = 0;
-    let smsCount = 0;
+    const context = {
+      eventType,
+      eventName: event.eventName,
+      payload: event.payload,
+    };
+
+    const emailRecipients: NotificationRecipient[] = [];
+    const smsRecipients: NotificationRecipient[] = [];
 
     for (const recipient of recipients) {
-      const context = {
-        eventType,
-        eventName: event.eventName,
-        payload: event.payload,
+      const nr: NotificationRecipient = {
+        userId: recipient.userId,
+        name: recipient.name,
+        email: recipient.email,
+        phone: recipient.phone,
+        language: recipient.language,
       };
 
       if (recipient.channelEmail) {
-        await this.emailNotifier.send(
-          { userId: recipient.userId, name: recipient.name, email: recipient.email, phone: recipient.phone },
-          context,
-        );
-        emailCount++;
+        emailRecipients.push(nr);
       }
 
       if (recipient.channelSms && recipient.phone) {
-        await this.smsNotifier.send(
-          { userId: recipient.userId, name: recipient.name, email: recipient.email, phone: recipient.phone },
-          context,
-        );
-        smsCount++;
+        smsRecipients.push(nr);
       }
     }
 
+    if (emailRecipients.length > 0) {
+      await this.emailNotifier.sendBatch(emailRecipients, context);
+    }
+
+    if (smsRecipients.length > 0) {
+      await this.smsNotifier.sendBatch(smsRecipients, context);
+    }
+
     this.logger.info(
-      `Dispatched ${eventType} to ${recipients.length} user(s) (${emailCount} email, ${smsCount} sms)`,
+      `Dispatched ${eventType} to ${recipients.length} user(s) (${emailRecipients.length} email, ${smsRecipients.length} sms)`,
     );
   }
 }

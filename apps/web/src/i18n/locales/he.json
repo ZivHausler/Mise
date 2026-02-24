@@ -110,6 +110,7 @@
     "notes": "הערות",
     "noItems": "אין פריטים",
     "orderNum": "הזמנה",
+    "orderNumber": "מספר הזמנה",
     "advance": "קדם",
     "revert": "חזור",
     "createdAt": "תאריך יצירה",
@@ -204,7 +205,13 @@
     "uploadingPhoto": "מעלה...",
     "photoLimitReached": "הגעת למקסימום תמונות",
     "invalidFileType": "רק JPEG, PNG ו-WebP מותרים",
-    "fileTooLarge": "הקובץ חייב להיות מתחת ל-5 MB"
+    "fileTooLarge": "הקובץ חייב להיות מתחת ל-5 MB",
+    "tags": "תגיות",
+    "allTags": "כל התגיות",
+    "allergens": "אלרגנים",
+    "allAllergens": "כל האלרגנים",
+    "noResults": "אין מתכונים תואמים",
+    "noResultsDesc": "נסה לשנות או לנקות את המסננים."
   },
   "inventory": {
     "name": "שם",
@@ -239,7 +246,7 @@
     "pricePaid": "מחיר ששולם (₪)",
     "packages": "אריזות",
     "units": "יחידות",
-    "groups": "קבוצות",
+    "allergens": "אלרגנים",
     "editItem": "עריכת פריט",
     "deleteTitle": "למחוק פריט?",
     "deleteMsg": "הפריט יימחק לצמיתות.",
@@ -268,7 +275,10 @@
     "allergies": "אלרגיות",
     "orderHistory": "היסטוריית הזמנות",
     "noOrders": "אין הזמנות עדיין.",
-    "loyalty": "נאמנות",
+    "loyalty": "צבירת נקודות",
+    "loyaltyEnabled": "צבירת נקודות פעילה",
+    "loyaltyTier": "דרגת צבירה",
+    "loyaltyDisabledMsg": "צבירת נקודות מושבתת עבור לקוח זה.",
     "noPayments": "היסטוריית תשלומים תופיע כאן.",
     "noNotes": "אין הערות או העדפות.",
     "empty": "אין לקוחות עדיין",
@@ -320,7 +330,13 @@
     "points": "נקודות",
     "balanceAfter": "יתרה אחרי",
     "description": "תיאור",
-    "noTransactions": "אין עסקאות נאמנות עדיין.",
+    "tiers": {
+      "bronze": "ארד",
+      "silver": "כסף",
+      "gold": "זהב"
+    },
+    "tierMultiplier": "×{{multiplier}} נקודות",
+    "noTransactions": "אין עסקאות צבירת נקודות עדיין.",
     "shekelEquivalent": "≈ ₪{{value}}",
     "types": {
       "earned": "נצבר",
@@ -333,7 +349,7 @@
       "redeemed": "מומשו {{points}} נקודות תמורת ₪{{value}}"
     },
     "adjustModal": {
-      "title": "עדכון נקודות נאמנות",
+      "title": "עדכון נקודות",
       "points": "נקודות",
       "pointsHint": "חיובי להוספה, שלילי לניכוי",
       "description": "תיאור",
@@ -341,7 +357,7 @@
       "currentBalance": "יתרה נוכחית"
     },
     "redeemModal": {
-      "title": "מימוש נקודות נאמנות",
+      "title": "מימוש נקודות",
       "points": "נקודות למימוש",
       "discount": "ערך הנחה",
       "minPoints": "מינימום {{min}} נקודות נדרש",
@@ -429,15 +445,17 @@
     "showSaturday": "הצג יום שבת",
     "languages": {
       "en": "אנגלית",
-      "he": "עברית"
+      "he": "עברית",
+      "ar": "ערבית"
     },
     "tabs": {
       "account": "חשבון",
       "team": "צוות",
       "units": "יחידות",
-      "groups": "קבוצות",
+      "allergens": "אלרגנים",
+      "tags": "תגיות",
       "notifications": "התראות",
-      "loyalty": "נאמנות"
+      "loyalty": "צבירת נקודות"
     },
     "team": {
       "title": "חברי צוות",
@@ -453,7 +471,10 @@
       "copyLink": "העתק קישור הזמנה",
       "linkCopied": "הקישור הועתק!",
       "linkGenerated": "קישור הזמנה נוצר",
-      "inviteAnother": "הזמן עוד"
+      "inviteAnother": "הזמן עוד",
+      "revokeInvite": "בטל הזמנה",
+      "revokeConfirm": "האם אתה בטוח שברצונך לבטל הזמנה זו?",
+      "removeMember": "הסר חבר"
     },
     "units": {
       "weight": "משקל",
@@ -468,21 +489,31 @@
       "factorHint": "ביחס ליחידת הבסיס בקטגוריה (למשל גרם, מ\"ל, יחידה)",
       "noUnits": "אין יחידות בקטגוריה זו."
     },
-    "groups": {
-      "add": "הוסף קבוצה",
-      "edit": "ערוך קבוצה",
+    "allergens": {
+      "add": "הוסף אלרגן",
+      "edit": "ערוך אלרגן",
       "name": "שם",
+      "icon": "סמל",
       "color": "צבע",
       "namePlaceholder": "למשל ללא חלב",
       "defaults": "ברירת מחדל",
       "custom": "מותאם אישית",
-      "empty": "אין קבוצות מותאמות אישית עדיין.",
-      "emptyDesc": "צור קבוצות לתיוג וארגון פריטים.",
+      "empty": "אין אלרגנים מותאמים אישית עדיין.",
+      "emptyDesc": "צור אלרגנים לתיוג וארגון פריטים.",
       "defaultNames": {
         "Dairy": "חלבי",
         "Gluten": "גלוטן",
         "Nuts": "אגוזים"
       }
+    },
+    "tags": {
+      "title": "תגיות מתכונים",
+      "add": "הוסף תגית",
+      "edit": "ערוך תגית",
+      "name": "שם",
+      "namePlaceholder": "למשל חלבי, עוגה, חם",
+      "empty": "אין תגיות עדיין.",
+      "emptyDesc": "צור תגיות לארגון המתכונים שלך."
     },
     "account": {
       "title": "חשבון",
@@ -490,7 +521,7 @@
       "phoneError": "מספר טלפון לא תקין — לדוגמה 0541234567"
     },
     "loyalty": {
-      "title": "תוכנית נאמנות",
+      "title": "תוכנית צבירת נקודות",
       "isActive": "הפעל תוכנית",
       "pointsPerShekel": "נקודות ל-₪",
       "pointValue": "ערך נקודה (₪)",
@@ -558,12 +589,18 @@
     "unitUpdateFailed": "עדכון היחידה נכשל",
     "unitDeleted": "היחידה נמחקה",
     "unitDeleteFailed": "מחיקת היחידה נכשלה",
-    "groupCreated": "הקבוצה נוצרה",
-    "groupCreateFailed": "יצירת הקבוצה נכשלה",
-    "groupUpdated": "הקבוצה עודכנה",
-    "groupUpdateFailed": "עדכון הקבוצה נכשל",
-    "groupDeleted": "הקבוצה נמחקה",
-    "groupDeleteFailed": "מחיקת הקבוצה נכשלה",
+    "allergenCreated": "האלרגן נוצר",
+    "allergenCreateFailed": "יצירת האלרגן נכשלה",
+    "allergenUpdated": "האלרגן עודכן",
+    "allergenUpdateFailed": "עדכון האלרגן נכשל",
+    "allergenDeleted": "האלרגן נמחק",
+    "allergenDeleteFailed": "מחיקת האלרגן נכשלה",
+    "tagCreated": "התגית נוצרה",
+    "tagCreateFailed": "יצירת התגית נכשלה",
+    "tagUpdated": "התגית עודכנה",
+    "tagUpdateFailed": "עדכון התגית נכשל",
+    "tagDeleted": "התגית נמחקה",
+    "tagDeleteFailed": "מחיקת התגית נכשלה",
     "profileUpdated": "הפרופיל עודכן",
     "profileUpdateFailed": "עדכון הפרופיל נכשל",
     "notificationsUpdated": "העדפות ההתראות עודכנו",
@@ -587,8 +624,8 @@
     "inviteRevoked": "ההזמנה בוטלה",
     "inviteRevokeFailed": "ביטול ההזמנה נכשל",
     "tourRestarted": "הסיור הופעל מחדש — נווט ללוח הבקרה כדי להתחיל",
-    "loyaltyConfigUpdated": "הגדרות נאמנות עודכנו",
-    "loyaltyConfigUpdateFailed": "עדכון הגדרות נאמנות נכשל",
+    "loyaltyConfigUpdated": "הגדרות צבירת נקודות עודכנו",
+    "loyaltyConfigUpdateFailed": "עדכון הגדרות צבירת נקודות נכשל",
     "loyaltyAdjusted": "הנקודות עודכנו",
     "loyaltyAdjustFailed": "עדכון נקודות נכשל",
     "loyaltyRedeemed": "הנקודות מומשו",
@@ -604,7 +641,9 @@
     "batchSplit": "מקבץ פוצל",
     "batchSplitFailed": "פיצול מקבץ נכשל",
     "batchesMerged": "מקבצים מוזגו",
-    "batchesMergeFailed": "מיזוג מקבצים נכשל"
+    "batchesMergeFailed": "מיזוג מקבצים נכשל",
+    "memberRemoved": "החבר הוסר",
+    "memberRemoveFailed": "הסרת החבר נכשלה"
   },
   "store": {
     "setupTitle": "הקם את המאפייה שלך",

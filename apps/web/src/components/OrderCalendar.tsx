@@ -1,9 +1,9 @@
 import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { ChevronLeft, ChevronRight, Plus } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Plus, BadgeDollarSign } from 'lucide-react';
 import { cn } from '@/utils/cn';
-import { useCalendarAggregates, useCalendarRange } from '@/api/hooks';
+import { useCalendarAggregates, useCalendarRange, usePaymentStatuses } from '@/api/hooks';
 import { getStatusLabel } from '@/utils/orderStatus';
 import { useFormatDate } from '@/utils/dateFormat';
 import { StatusBadge } from '@/components/DataDisplay';
@@ -104,22 +104,24 @@ interface DayCellProps {
   isCurrentMonth: boolean;
   isToday: boolean;
   orders: OrderForCalendar[];
+  paymentStatuses: Record<string, string>;
   onOrderClick: (id: number) => void;
   onDayClick: (date: Date) => void;
   t: ReturnType<typeof useTranslation>['t'];
 }
 
-const MAX_VISIBLE_ORDERS = 3;
+const MAX_VISIBLE_ORDERS = 2;
 
-const DayCell = React.memo(function DayCell({ date, isCurrentMonth, isToday, orders, onOrderClick, onDayClick, t }: DayCellProps) {
+const DayCell = React.memo(function DayCell({ date, isCurrentMonth, isToday, orders, paymentStatuses, onOrderClick, onDayClick, t }: DayCellProps) {
   const overdue = orders.filter((o) => o.status < 2 && new Date(o.dueDate) < new Date() && !isSameDay(new Date(o.dueDate), new Date()));
   const hasOverdue = overdue.length > 0;
+  const extraCount = orders.length - MAX_VISIBLE_ORDERS;
 
   return (
     <div
       onClick={() => onDayClick(date)}
       className={cn(
-        'group relative min-h-[100px] cursor-pointer border border-neutral-100 p-1.5 transition-colors hover:bg-primary-50/50',
+        'group relative h-[100px] cursor-pointer overflow-hidden border border-neutral-100 p-1.5 transition-colors hover:bg-primary-50/50',
         !isCurrentMonth && 'bg-neutral-50/60 opacity-50',
         isToday && 'bg-blue-50/60 ring-2 ring-inset ring-blue-400',
         hasOverdue && isCurrentMonth && 'bg-red-50/30',
@@ -165,12 +167,13 @@ const DayCell = React.memo(function DayCell({ date, isCurrentMonth, isToday, ord
               <span className={cn('h-2 w-2 shrink-0 rounded-full', STATUS_DOT_COLORS[label])} />
               <span className="truncate font-medium text-neutral-700">#{order.orderNumber}</span>
               <span className="hidden truncate text-neutral-500 sm:inline">{order.customerName}</span>
+              {paymentStatuses[order.id] === 'paid' && <BadgeDollarSign className="h-3 w-3 shrink-0 text-green-600" />}
             </button>
           );
         })}
-        {orders.length > MAX_VISIBLE_ORDERS && (
+        {extraCount > 0 && (
           <span className="px-1 text-[10px] font-medium text-primary-600">
-            +{orders.length - MAX_VISIBLE_ORDERS} {t('calendar.more', 'more')}
+            +{extraCount} {t('calendar.more', 'more')}
           </span>
         )}
       </div>
@@ -183,6 +186,7 @@ const DayCell = React.memo(function DayCell({ date, isCurrentMonth, isToday, ord
 interface DayDetailProps {
   date: Date;
   orders: OrderForCalendar[];
+  paymentStatuses: Record<string, string>;
   onClose: () => void;
   onOrderClick: (id: number) => void;
   onCreateOrder: (dateStr: string) => void;
@@ -190,7 +194,7 @@ interface DayDetailProps {
   formatDate: (date: string | Date) => string;
 }
 
-function DayDetail({ date, orders, onClose, onOrderClick, onCreateOrder, t, formatDate }: DayDetailProps) {
+function DayDetail({ date, orders, paymentStatuses, onClose, onOrderClick, onCreateOrder, t, formatDate }: DayDetailProps) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30" onClick={onClose}>
       <div
@@ -230,6 +234,7 @@ function DayDetail({ date, orders, onClose, onOrderClick, onCreateOrder, t, form
                       <div className="flex items-center gap-2">
                         <span className="font-medium text-neutral-800">#{order.orderNumber}</span>
                         <StatusBadge variant={label as any} label={t(`orders.status.${label}`, label)} />
+                        {paymentStatuses[order.id] === 'paid' && <BadgeDollarSign className="h-4 w-4 text-green-600" />}
                       </div>
                       <p className="mt-0.5 truncate text-caption text-neutral-500">{order.customerName}</p>
                       {order.items?.length > 0 && (
@@ -367,6 +372,8 @@ export default function OrderCalendar() {
   const { from, to } = useMemo(() => getMonthRange(year, month), [year, month]);
   const { data: aggregates, isLoading: aggsLoading, isFetching: aggsFetching } = useCalendarAggregates(from, to);
   const { data: orders, isLoading: ordersLoading, isFetching: ordersFetching } = useCalendarRange(from, to, statusFilter);
+  const { data: paymentStatuses } = usePaymentStatuses();
+  const pStatuses = (paymentStatuses ?? {}) as Record<string, string>;
 
   const isLoading = aggsLoading || ordersLoading;
   const isFetching = aggsFetching || ordersFetching;
@@ -387,7 +394,7 @@ export default function OrderCalendar() {
     return () => mq.removeEventListener('change', handler);
   }, []);
   const gridColStyle = isSmall
-    ? `repeat(${visibleColCount}, 24vw)`
+    ? `repeat(${visibleColCount}, 28vw)`
     : `repeat(${visibleColCount}, minmax(0, 1fr))`;
 
   // Group orders by date string
@@ -573,6 +580,7 @@ export default function OrderCalendar() {
                     isCurrentMonth={date.getMonth() === month}
                     isToday={isToday}
                     orders={dayOrders}
+                    paymentStatuses={pStatuses}
                     onOrderClick={handleOrderClick}
                     onDayClick={handleDayClick}
                     t={t}
@@ -602,6 +610,7 @@ export default function OrderCalendar() {
         <DayDetail
           date={selectedDay}
           orders={selectedDayOrders}
+          paymentStatuses={pStatuses}
           onClose={() => setSelectedDay(null)}
           onOrderClick={(id) => { setSelectedDay(null); handleOrderClick(id); }}
           onCreateOrder={handleCreateOrder}

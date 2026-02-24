@@ -50,6 +50,9 @@ export default async function orderSSERoutes(app: FastifyInstance) {
       throw new UnauthorizedError('No store selected');
     }
 
+    // Hijack the response so Fastify won't auto-close it
+    await reply.hijack();
+
     // Set SSE headers
     reply.raw.writeHead(200, {
       'Content-Type': 'text/event-stream',
@@ -62,12 +65,20 @@ export default async function orderSSERoutes(app: FastifyInstance) {
 
     sseManager.addClient(storeId, reply);
 
+    // Heartbeat to keep the connection alive through proxies
+    const heartbeat = setInterval(() => {
+      try {
+        reply.raw.write(':ping\n\n');
+      } catch {
+        clearInterval(heartbeat);
+      }
+    }, 15_000);
+
     // Clean up on disconnect
     request.raw.on('close', () => {
+      console.log(`[SSE] Connection closed for store ${storeId}`);
+      clearInterval(heartbeat);
       sseManager.removeClient(storeId, reply);
     });
-
-    // Keep the connection open — don't call reply.send()
-    // Fastify will handle the raw response we've already started
   });
 }

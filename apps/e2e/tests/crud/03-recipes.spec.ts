@@ -18,7 +18,6 @@ test.describe('Recipes CRUD', () => {
 
     // Basic info
     await page.getByLabel('Name').fill('Sourdough Bread');
-    await page.getByLabel('Category').selectOption('breads');
     await page.getByLabel(/Selling Price/).fill('25');
 
     // Add ingredient — select Flour from the dropdown
@@ -44,8 +43,6 @@ test.describe('Recipes CRUD', () => {
 
     await expect(page).toHaveURL(/\/recipes\/.+/);
     await expect(page.getByRole('heading', { name: 'Sourdough Bread' })).toBeVisible();
-    // Verify category
-    await expect(page.getByText('breads').first()).toBeVisible();
     // Verify ingredient in Ingredients tab
     await expect(page.getByText('Flour')).toBeVisible();
   });
@@ -87,7 +84,6 @@ test.describe('Recipes CRUD', () => {
     await page.goto('/recipes/new');
 
     await page.getByLabel('Name').fill('Sourdough Bread');
-    await page.getByLabel('Category').selectOption('breads');
     await page.getByLabel(/Selling Price/).fill('25');
 
     // Add ingredient

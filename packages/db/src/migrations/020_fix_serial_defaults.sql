@@ -8,7 +8,7 @@ DO $$
 DECLARE
   tables TEXT[] := ARRAY[
     'users', 'stores', 'customers', 'ingredients', 'inventory_log',
-    'orders', 'payments', 'unit_categories', 'units', 'groups',
+    'orders', 'payments', 'unit_categories', 'units', 'allergens',
     'notification_preferences', 'store_invitations', 'admin_audit_log',
     'loyalty_config', 'loyalty_transactions', 'production_batches',
     'batch_orders', 'batch_prep_items'

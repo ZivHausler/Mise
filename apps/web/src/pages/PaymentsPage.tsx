@@ -1,14 +1,15 @@
 import React, { useMemo, useState, useCallback, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useSearchParams } from 'react-router-dom';
 import { Plus, CreditCard, ChevronLeft, ChevronRight, RotateCcw, Filter, ChevronDown } from 'lucide-react';
-import { Page, PageHeader, Stack } from '@/components/Layout';
+import { Page, PageHeader } from '@/components/Layout';
 import { Button } from '@/components/Button';
 import { DataTable, StatusBadge, EmptyState, type Column } from '@/components/DataDisplay';
 import { PageSkeleton } from '@/components/Feedback';
 import { Modal } from '@/components/Modal';
-import { NumberInput, Select, DatePicker, TextInput } from '@/components/FormFields';
-import { usePayments, useCreatePayment, useRefundPayment, useOrders } from '@/api/hooks';
-import { PAYMENT_METHODS, DEFAULT_PAYMENT_METHOD, PAYMENT_METHOD_I18N } from '@/constants/defaults';
+import { LogPaymentModal } from '@/components/LogPaymentModal';
+import { usePayments, useRefundPayment } from '@/api/hooks';
+import { PAYMENT_METHODS, PAYMENT_METHOD_I18N } from '@/constants/defaults';
 import { useFormatDate } from '@/utils/dateFormat';
 
 function PaymentFilterDropdown({ label, count, children }: { label: string; count: number; children: React.ReactNode }) {
@@ -52,6 +53,8 @@ function PaymentFilterDropdown({ label, count, children }: { label: string; coun
 export default function PaymentsPage() {
   const { t } = useTranslation();
   const formatDate = useFormatDate();
+  const [searchParams] = useSearchParams();
+  const defaultSearch = searchParams.get('search') ?? '';
   const [page, setPage] = useState(1);
   const [filterStatus, setFilterStatus] = useState('');
   const [filterMethod, setFilterMethod] = useState('');
@@ -62,12 +65,9 @@ export default function PaymentsPage() {
     return Object.keys(f).length ? f : undefined;
   }, [filterStatus, filterMethod]);
   const { data: paymentsData, isLoading } = usePayments(page, 10, filters);
-  const { data: orders } = useOrders({ excludePaid: true });
-  const createPayment = useCreatePayment();
   const refundPayment = useRefundPayment();
   const [showAdd, setShowAdd] = useState(false);
   const [refundTarget, setRefundTarget] = useState<any>(null);
-  const [form, setForm] = useState({ orderId: '', amount: '' as number | '', method: DEFAULT_PAYMENT_METHOD as string, date: '', notes: '' });
 
   // Reset page when filters change
   useEffect(() => { setPage(1); }, [filterStatus, filterMethod]);
@@ -75,11 +75,6 @@ export default function PaymentsPage() {
   const paymentsResult = paymentsData as any;
   const list = (paymentsResult?.payments as any[]) ?? [];
   const pagination = paymentsResult?.pagination;
-
-  const orderOptions = ((orders as any[]) ?? []).map((o: any) => ({
-    value: o.id,
-    label: `#${o.orderNumber} - ${o.customerName ?? 'Customer'}`,
-  }));
 
   const columns: Column<any>[] = useMemo(
     () => [
@@ -136,15 +131,6 @@ export default function PaymentsPage() {
       onSuccess: () => setRefundTarget(null),
     });
   }, [refundTarget, refundPayment]);
-
-  const handleCreate = useCallback(() => {
-    createPayment.mutate(form, {
-      onSuccess: () => {
-        setShowAdd(false);
-        setForm({ orderId: '', amount: '', method: DEFAULT_PAYMENT_METHOD, date: '', notes: '' });
-      },
-    });
-  }, [form, createPayment]);
 
   if (isLoading) return <PageSkeleton />;
 
@@ -218,6 +204,7 @@ export default function PaymentsPage() {
             keyExtractor={(row: any) => row.id}
             searchable
             bare
+            defaultSearch={defaultSearch}
           />
           {pagination && pagination.totalPages > 1 && (
             <div className="flex items-center justify-between border-t border-neutral-200 px-4 py-3">
@@ -254,44 +241,7 @@ export default function PaymentsPage() {
         </div>
       )}
 
-      <Modal open={showAdd} onClose={() => setShowAdd(false)} title={t('payments.logPayment', 'Log Payment')} size="md"
-        footer={
-          <>
-            <Button variant="secondary" onClick={() => setShowAdd(false)}>{t('common.cancel')}</Button>
-            <Button variant="primary" onClick={handleCreate} loading={createPayment.isPending}>{t('payments.logPayment', 'Log Payment')}</Button>
-          </>
-        }
-      >
-        <Stack gap={4}>
-          <div className="flex gap-3">
-            <Select
-              label={t('payments.order', 'Order')}
-              options={orderOptions}
-              placeholder={t('payments.selectOrder', 'Select order...')}
-              value={form.orderId}
-              onChange={(e) => {
-                const orderId = e.target.value;
-                const order = ((orders as any[]) ?? []).find((o: any) => String(o.id) === orderId);
-                setForm({ ...form, orderId, amount: order?.totalAmount ?? '' });
-              }}
-              required
-              className="flex-1"
-            />
-            <NumberInput label={t('payments.amount', 'Amount (₪)')} value={form.amount} onChange={() => {}} min={0} required disabled className="w-20 sm:w-28" />
-          </div>
-          <Select
-            label={t('payments.method', 'Method')}
-            options={PAYMENT_METHODS.map((m) => ({
-              value: m,
-              label: t(`payments.${PAYMENT_METHOD_I18N[m]}`, m),
-            }))}
-            value={form.method}
-            onChange={(e) => setForm({ ...form, method: e.target.value })}
-          />
-          <DatePicker label={t('payments.date', 'Date')} value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })} />
-          <TextInput label={t('payments.notes', 'Notes')} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} dir="auto" />
-        </Stack>
-      </Modal>
+      <LogPaymentModal open={showAdd} onClose={() => setShowAdd(false)} />
 
       <Modal
         open={!!refundTarget}

@@ -82,7 +82,7 @@ describe('GetPaymentSummaryUseCase', () => {
   it('should include payment details in summary', async () => {
     const payments = [
       createPayment({ id: 1, amount: 50, method: 'cash' }),
-      createPayment({ id: 2, amount: 50, method: 'credit_card' }),
+      createPayment({ id: 2, amount: 50, method: 'cash' }),
     ];
     vi.mocked(PaymentCrud.getByOrderId).mockResolvedValue(payments);
 

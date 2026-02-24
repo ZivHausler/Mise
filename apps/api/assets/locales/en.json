@@ -214,7 +214,7 @@
     "pricePaid": "Price Paid (₪)",
     "packages": "Packages",
     "units": "Units",
-    "groups": "Groups",
+    "allergens": "Allergens",
     "editItem": "Edit Item",
     "deleteTitle": "Delete Item?",
     "deleteMsg": "This item will be permanently deleted.",
@@ -244,6 +244,7 @@
     "orderHistory": "Order History",
     "noOrders": "No orders yet.",
     "loyalty": "Loyalty",
+    "loyaltyTier": "Loyalty Tier",
     "noPayments": "Payment history will appear here.",
     "noNotes": "No notes or preferences.",
     "empty": "No customers yet",
@@ -295,6 +296,12 @@
     "points": "Points",
     "balanceAfter": "Balance After",
     "description": "Description",
+    "tiers": {
+      "bronze": "Bronze",
+      "silver": "Silver",
+      "gold": "Gold"
+    },
+    "tierMultiplier": "×{{multiplier}} points",
     "noTransactions": "No loyalty transactions yet.",
     "shekelEquivalent": "≈ ₪{{value}}",
     "types": {
@@ -398,7 +405,7 @@
       "account": "Account",
       "team": "Team",
       "units": "Units",
-      "groups": "Groups",
+      "allergens": "Allergens",
       "notifications": "Notifications",
       "loyalty": "Loyalty"
     },
@@ -431,16 +438,16 @@
       "factorHint": "Relative to base unit in category (e.g. gram, ml, piece)",
       "noUnits": "No units in this category."
     },
-    "groups": {
-      "add": "Add Group",
-      "edit": "Edit Group",
+    "allergens": {
+      "add": "Add Allergen",
+      "edit": "Edit Allergen",
       "name": "Name",
       "color": "Color",
       "namePlaceholder": "e.g. Dairy-free",
       "defaults": "Defaults",
       "custom": "Custom",
-      "empty": "No custom groups yet.",
-      "emptyDesc": "Create groups to tag and organize items.",
+      "empty": "No custom allergens yet.",
+      "emptyDesc": "Create allergens to tag and organize items.",
       "defaultNames": {
         "Dairy": "Dairy",
         "Gluten": "Gluten",
@@ -518,12 +525,12 @@
     "unitUpdateFailed": "Failed to update unit",
     "unitDeleted": "Unit deleted",
     "unitDeleteFailed": "Failed to delete unit",
-    "groupCreated": "Group created",
-    "groupCreateFailed": "Failed to create group",
-    "groupUpdated": "Group updated",
-    "groupUpdateFailed": "Failed to update group",
-    "groupDeleted": "Group deleted",
-    "groupDeleteFailed": "Failed to delete group",
+    "allergenCreated": "Allergen created",
+    "allergenCreateFailed": "Failed to create allergen",
+    "allergenUpdated": "Allergen updated",
+    "allergenUpdateFailed": "Failed to update allergen",
+    "allergenDeleted": "Allergen deleted",
+    "allergenDeleteFailed": "Failed to delete allergen",
     "profileUpdated": "Profile updated",
     "profileUpdateFailed": "Failed to update profile",
     "notificationsUpdated": "Notification preferences updated",
@@ -610,7 +617,7 @@
       },
       "settings": {
         "title": "Settings",
-        "content": "Configure your profile, team, units, groups, and notification preferences."
+        "content": "Configure your profile, team, units, allergens, and notification preferences."
       },
       "language": {
         "title": "Language",

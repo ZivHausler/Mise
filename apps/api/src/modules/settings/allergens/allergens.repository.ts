@@ -1,39 +1,39 @@
-import type { Group, CreateGroupDTO, UpdateGroupDTO } from '../settings.types.js';
+import type { Allergen, CreateAllergenDTO, UpdateAllergenDTO } from '../settings.types.js';
 import { getPool } from '../../../core/database/postgres.js';
 
 const SELECT_COLS = 'id, store_id, name, color, icon, is_default, created_at, updated_at';
 
-export class PgGroupsRepository {
-  static async findAll(storeId: number): Promise<Group[]> {
+export class PgAllergensRepository {
+  static async findAll(storeId: number): Promise<Allergen[]> {
     const pool = getPool();
     const result = await pool.query(
-      `SELECT ${SELECT_COLS} FROM groups WHERE store_id = $1 OR is_default = true ORDER BY is_default DESC, name`,
+      `SELECT ${SELECT_COLS} FROM allergens WHERE store_id = $1 OR is_default = true ORDER BY is_default DESC, name`,
       [storeId],
     );
     return result.rows.map(this.mapRow);
   }
 
-  static async findById(id: number, storeId: number): Promise<Group | null> {
+  static async findById(id: number, storeId: number): Promise<Allergen | null> {
     const pool = getPool();
     const result = await pool.query(
-      `SELECT ${SELECT_COLS} FROM groups WHERE id = $1 AND (store_id = $2 OR is_default = true)`,
+      `SELECT ${SELECT_COLS} FROM allergens WHERE id = $1 AND (store_id = $2 OR is_default = true)`,
       [id, storeId],
     );
     return result.rows[0] ? this.mapRow(result.rows[0]) : null;
   }
 
-  static async create(storeId: number, data: CreateGroupDTO): Promise<Group> {
+  static async create(storeId: number, data: CreateAllergenDTO): Promise<Allergen> {
     const pool = getPool();
     const result = await pool.query(
-      `INSERT INTO groups (store_id, name, color)
-       VALUES ($1, $2, $3)
+      `INSERT INTO allergens (store_id, name, color, icon)
+       VALUES ($1, $2, $3, $4)
        RETURNING ${SELECT_COLS}`,
-      [storeId, data.name, data.color || null],
+      [storeId, data.name, data.color || null, data.icon || null],
     );
     return this.mapRow(result.rows[0]);
   }
 
-  static async update(id: number, storeId: number, data: UpdateGroupDTO): Promise<Group> {
+  static async update(id: number, storeId: number, data: UpdateAllergenDTO): Promise<Allergen> {
     const pool = getPool();
     const fields: string[] = [];
     const values: unknown[] = [];
@@ -41,6 +41,7 @@ export class PgGroupsRepository {
 
     if (data.name !== undefined) { fields.push(`name = $${idx++}`); values.push(data.name); }
     if (data.color !== undefined) { fields.push(`color = $${idx++}`); values.push(data.color); }
+    if (data.icon !== undefined) { fields.push(`icon = $${idx++}`); values.push(data.icon); }
 
     fields.push('updated_at = NOW()');
     values.push(id);
@@ -48,7 +49,7 @@ export class PgGroupsRepository {
     values.push(storeId);
 
     const result = await pool.query(
-      `UPDATE groups SET ${fields.join(', ')} WHERE id = $${idIdx} AND store_id = $${idx}
+      `UPDATE allergens SET ${fields.join(', ')} WHERE id = $${idIdx} AND store_id = $${idx}
        RETURNING ${SELECT_COLS}`,
       values,
     );
@@ -57,10 +58,10 @@ export class PgGroupsRepository {
 
   static async delete(id: number, storeId: number): Promise<void> {
     const pool = getPool();
-    await pool.query('DELETE FROM groups WHERE id = $1 AND store_id = $2', [id, storeId]);
+    await pool.query('DELETE FROM allergens WHERE id = $1 AND store_id = $2', [id, storeId]);
   }
 
-  private static mapRow(row: Record<string, unknown>): Group {
+  private static mapRow(row: Record<string, unknown>): Allergen {
     return {
       id: Number(row['id']),
       storeId: row['store_id'] != null ? Number(row['store_id']) : null,

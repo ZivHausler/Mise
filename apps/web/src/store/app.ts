@@ -1,12 +1,12 @@
 import { create } from 'zustand';
-import { DEFAULT_DATE_FORMAT, DEFAULT_LANGUAGE, DEFAULT_WEEK_START_DAY, DEFAULT_SHOW_FRIDAY, DEFAULT_SHOW_SATURDAY } from '@/constants/defaults';
+import { DEFAULT_DATE_FORMAT, DEFAULT_LANGUAGE, DEFAULT_WEEK_START_DAY, DEFAULT_SHOW_FRIDAY, DEFAULT_SHOW_SATURDAY, ENUM_TO_LANGUAGE } from '@/constants/defaults';
 import type { DateFormat, Language, WeekStartDay } from '@/constants/defaults';
 
 export type { DateFormat, Language, WeekStartDay };
 
 type OrdersViewMode = 'pipeline' | 'list' | 'calendar';
 type RecipesViewMode = 'grid' | 'list';
-type SettingsTab = 'account' | 'team' | 'units' | 'groups' | 'notifications' | 'loyalty';
+type SettingsTab = 'account' | 'team' | 'units' | 'allergens' | 'tags' | 'notifications' | 'loyalty';
 type ProductionTab = 'board' | 'timeline' | 'prepList';
 type AdminDashboardRange = 'week' | 'month' | 'year';
 
@@ -36,6 +36,7 @@ interface AppState {
   setProductionTab: (tab: ProductionTab) => void;
   setSettingsTab: (tab: SettingsTab) => void;
   setAdminDashboardRange: (range: AdminDashboardRange) => void;
+  initLanguageFromProfile: (langEnum: number) => void;
 }
 
 function boolFromStorage(key: string, fallback: boolean): boolean {
@@ -45,7 +46,7 @@ function boolFromStorage(key: string, fallback: boolean): boolean {
 }
 
 export const useAppStore = create<AppState>((set) => ({
-  language: (localStorage.getItem('i18nextLng') as Language) || DEFAULT_LANGUAGE,
+  language: DEFAULT_LANGUAGE,
   dateFormat: (localStorage.getItem('dateFormat') as DateFormat) || DEFAULT_DATE_FORMAT,
   weekStartDay: (localStorage.getItem('weekStartDay') as WeekStartDay) || DEFAULT_WEEK_START_DAY,
   showFriday: boolFromStorage('showFriday', DEFAULT_SHOW_FRIDAY),
@@ -104,5 +105,10 @@ export const useAppStore = create<AppState>((set) => ({
   setAdminDashboardRange: (adminDashboardRange) => {
     localStorage.setItem('adminDashboardRange', adminDashboardRange);
     set({ adminDashboardRange });
+  },
+  initLanguageFromProfile: (langEnum) => {
+    const language = ENUM_TO_LANGUAGE[langEnum] ?? DEFAULT_LANGUAGE;
+    localStorage.setItem('i18nextLng', language);
+    set({ language });
   },
 }));

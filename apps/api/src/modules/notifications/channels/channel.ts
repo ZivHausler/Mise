@@ -3,6 +3,7 @@ export interface NotificationRecipient {
   name: string;
   email: string;
   phone?: string;
+  language: number;
 }
 
 export interface NotificationContext {
@@ -13,4 +14,5 @@ export interface NotificationContext {
 
 export interface NotificationChannel {
   send(recipient: NotificationRecipient, context: NotificationContext): Promise<void>;
+  sendBatch(recipients: NotificationRecipient[], context: NotificationContext): Promise<void>;
 }

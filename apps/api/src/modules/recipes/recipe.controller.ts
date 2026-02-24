@@ -11,7 +11,7 @@ import {
 export class RecipeController {
   constructor(private recipeService: RecipeService) {}
 
-  async getAll(request: FastifyRequest<{ Querystring: { category?: string; search?: string } }>, reply: FastifyReply) {
+  async getAll(request: FastifyRequest<{ Querystring: { tag?: string; search?: string } }>, reply: FastifyReply) {
     const storeId = request.currentUser!.storeId!;
     const recipes = await this.recipeService.getAll(storeId, request.query);
     return reply.send({ success: true, data: recipes });

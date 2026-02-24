@@ -49,7 +49,7 @@ export default function OrdersPage() {
 
   const columns: Column<any>[] = useMemo(
     () => [
-      { key: 'orderNumber', header: '#', sortable: true, render: (row: any) => (
+      { key: 'orderNumber', header: t('orders.orderNumber', 'Order Number'), sortable: true, render: (row: any) => (
         <span className="inline-flex items-center gap-1">
           #{row.orderNumber}
           {paymentStatuses?.[row.id] === 'paid' && <BadgeDollarSign className="h-4 w-4 text-green-600" />}

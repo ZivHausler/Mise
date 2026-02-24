@@ -1,16 +1,53 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Plus, LayoutGrid, List, BookOpen } from 'lucide-react';
+import { Plus, LayoutGrid, List, BookOpen, ChevronDown, Filter } from 'lucide-react';
 import { Page, PageHeader, Card } from '@/components/Layout';
 import { Button } from '@/components/Button';
 import { DataTable, EmptyState, type Column } from '@/components/DataDisplay';
 import { RotatingImage } from '@/components/RotatingImage';
 import { PageSkeleton } from '@/components/Feedback';
-import { Caption } from '@/components/Typography';
 import { useRecipes } from '@/api/hooks';
-import { GroupIcon } from '@/components/settings/GroupsTab';
+import { AllergenIcon, useAllergenName } from '@/components/settings/AllergensTab';
 import { useAppStore } from '@/store/app';
+
+function FilterDropdown({ label, count, children }: { label: string; count: number; children: React.ReactNode }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [open]);
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className={`inline-flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-body-sm font-medium transition-colors ${count > 0 ? 'border-primary-300 bg-primary-50 text-primary-700' : 'border-neutral-200 text-neutral-600 hover:bg-neutral-50'}`}
+      >
+        <Filter className="h-3.5 w-3.5" />
+        {label}
+        {count > 0 && (
+          <span className="flex h-5 min-w-[20px] items-center justify-center rounded-full bg-primary-500 px-1.5 text-[11px] font-semibold text-white">
+            {count}
+          </span>
+        )}
+        <ChevronDown className={`h-3.5 w-3.5 transition-transform ${open ? 'rotate-180' : ''}`} />
+      </button>
+      {open && (
+        <div className="absolute start-0 top-full z-20 mt-1 min-w-[100px] rounded-lg border border-neutral-200 bg-white p-1 shadow-lg">
+          {children}
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function RecipesPage() {
   const { t } = useTranslation();
@@ -18,31 +55,32 @@ export default function RecipesPage() {
   const { data: recipes, isLoading } = useRecipes();
   const viewMode = useAppStore((s) => s.recipesViewMode);
   const setViewMode = useAppStore((s) => s.setRecipesViewMode);
-  const [categoryFilter, setCategoryFilter] = useState<string>('');
-  const [groupFilter, setGroupFilter] = useState<string>('');
+  const [tagFilters, setTagFilters] = useState<string[]>([]);
+  const [allergenFilters, setAllergenFilters] = useState<string[]>([]);
 
+  const getAllergenName = useAllergenName();
   const recipeList = (recipes as any[]) ?? [];
 
-  const categories = useMemo(() => {
+  const uniqueTags = useMemo(() => {
     const set = new Set<string>();
-    recipeList.forEach((r: any) => { if (r.category) set.add(r.category); });
+    recipeList.forEach((r: any) => { (r.tags ?? []).forEach((t: string) => set.add(t)); });
     return Array.from(set).sort();
   }, [recipeList]);
 
-  const groups = useMemo(() => {
+  const allergenList = useMemo(() => {
     const map = new Map<string, { id: number; name: string; color: string | null; icon: string | null }>();
     recipeList.forEach((r: any) => {
-      (r.groups ?? []).forEach((g: any) => { if (!map.has(String(g.id))) map.set(String(g.id), g); });
+      (r.allergens ?? []).forEach((g: any) => { if (!map.has(String(g.id))) map.set(String(g.id), g); });
     });
     return Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name));
   }, [recipeList]);
 
   const filteredRecipes = useMemo(() => {
     let result = recipeList;
-    if (categoryFilter) result = result.filter((r: any) => r.category === categoryFilter);
-    if (groupFilter) result = result.filter((r: any) => (r.groups ?? []).some((g: any) => String(g.id) === groupFilter));
+    if (tagFilters.length > 0) result = result.filter((r: any) => tagFilters.every((t) => (r.tags ?? []).includes(t)));
+    if (allergenFilters.length > 0) result = result.filter((r: any) => allergenFilters.every((id) => (r.allergens ?? []).some((g: any) => String(g.id) === id)));
     return result;
-  }, [recipeList, categoryFilter, groupFilter]);
+  }, [recipeList, tagFilters, allergenFilters]);
 
   const columns: Column<any>[] = useMemo(
     () => [
@@ -59,7 +97,18 @@ export default function RecipesPage() {
           ),
       },
       { key: 'name', header: t('recipes.name', 'Name'), sortable: true },
-      { key: 'category', header: t('recipes.category', 'Category'), sortable: true },
+      {
+        key: 'tags',
+        header: t('recipes.tags', 'Tags'),
+        render: (row: any) =>
+          row.tags?.length > 0 ? (
+            <div className="flex flex-wrap gap-1">
+              {row.tags.map((tag: string) => (
+                <span key={tag} className="inline-block rounded-full bg-primary-50 px-2 py-0.5 text-caption font-medium text-primary-700">{tag}</span>
+              ))}
+            </div>
+          ) : null,
+      },
       {
         key: 'cost',
         header: t('recipes.cost', 'Cost'),
@@ -78,35 +127,44 @@ export default function RecipesPage() {
 
   if (isLoading) return <PageSkeleton />;
 
-  const filterToolbar = (categories.length > 0 || groups.length > 0) ? (
+  const filterToolbar = (uniqueTags.length > 0 || allergenList.length > 0) ? (
     <>
-      {categories.length > 0 && (
-        <select
-          value={categoryFilter}
-          onChange={(e) => setCategoryFilter(e.target.value)}
-          className="h-9 rounded-md border border-neutral-200 bg-white px-3 text-body-sm text-neutral-700 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20"
-        >
-          <option value="">{t('recipes.allCategories', 'All Categories')}</option>
-          {categories.map((c) => (
-            <option key={c} value={c}>{c}</option>
-          ))}
-        </select>
+      {uniqueTags.length > 0 && (
+        <FilterDropdown label={t('recipes.tags', 'Tags')} count={tagFilters.length}>
+          {uniqueTags.map((tag) => {
+            const selected = tagFilters.includes(tag);
+            return (
+              <button key={tag} type="button" onClick={() => setTagFilters((prev) => selected ? prev.filter((t) => t !== tag) : [...prev, tag])}
+                className={`flex w-full items-center gap-2 rounded-md px-3 py-2 text-body-sm transition-colors ${selected ? 'bg-primary-50 text-primary-700' : 'text-neutral-700 hover:bg-neutral-50'}`}>
+                <span className={`flex h-4 w-4 items-center justify-center rounded border ${selected ? 'border-primary-500 bg-primary-500 text-white' : 'border-neutral-300'}`}>
+                  {selected && <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>}
+                </span>
+                <span>{tag}</span>
+              </button>
+            );
+          })}
+        </FilterDropdown>
       )}
-      {groups.length > 0 && (
-        <select
-          value={groupFilter}
-          onChange={(e) => setGroupFilter(e.target.value)}
-          className="h-9 rounded-md border border-neutral-200 bg-white px-3 text-body-sm text-neutral-700 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20"
-        >
-          <option value="">{t('recipes.allGroups', 'All Groups')}</option>
-          {groups.map((g) => (
-            <option key={String(g.id)} value={String(g.id)}>{g.name}</option>
-          ))}
-        </select>
+      {allergenList.length > 0 && (
+        <FilterDropdown label={t('recipes.allergens', 'Allergens')} count={allergenFilters.length}>
+          {allergenList.map((g) => {
+            const selected = allergenFilters.includes(String(g.id));
+            return (
+              <button key={String(g.id)} type="button" onClick={() => setAllergenFilters((prev) => selected ? prev.filter((id) => id !== String(g.id)) : [...prev, String(g.id)])}
+                className={`flex w-full items-center gap-2 rounded-md px-3 py-2 text-body-sm transition-colors ${selected ? 'bg-primary-50 text-primary-700' : 'text-neutral-700 hover:bg-neutral-50'}`}>
+                <span className={`flex h-4 w-4 items-center justify-center rounded border ${selected ? 'border-primary-500 bg-primary-500 text-white' : 'border-neutral-300'}`}>
+                  {selected && <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>}
+                </span>
+                <AllergenIcon icon={g.icon ?? null} color={g.color ?? null} size={g.icon ? 16 : 10} />
+                <span>{getAllergenName(g)}</span>
+              </button>
+            );
+          })}
+        </FilterDropdown>
       )}
-      {(categoryFilter || groupFilter) && (
+      {(tagFilters.length > 0 || allergenFilters.length > 0) && (
         <button
-          onClick={() => { setCategoryFilter(''); setGroupFilter(''); }}
+          onClick={() => { setTagFilters([]); setAllergenFilters([]); }}
           className="text-body-sm text-primary-600 hover:text-primary-700"
         >
           {t('common.clearFilters', 'Clear filters')}
@@ -183,13 +241,19 @@ export default function RecipesPage() {
                   </div>
                 )}
                 <h3 className="font-heading text-h4 text-neutral-800">{recipe.name}</h3>
-                {recipe.category && <Caption>{recipe.category}</Caption>}
+                {recipe.tags?.length > 0 && (
+                  <div className="mt-1 flex flex-wrap gap-1">
+                    {recipe.tags.map((tag: string) => (
+                      <span key={tag} className="inline-block rounded-full bg-primary-50 px-2 py-0.5 text-caption font-medium text-primary-700">{tag}</span>
+                    ))}
+                  </div>
+                )}
               </div>
-              {recipe.groups?.length > 0 && (
+              {recipe.allergens?.length > 0 && (
                 <div className="mt-2 flex flex-wrap gap-1">
-                  {recipe.groups.map((g: any) => (
-                    <span key={g.id} title={g.name} className="inline-flex items-center rounded-full bg-neutral-100 p-1">
-                      <GroupIcon icon={g.icon ?? null} color={g.color ?? null} size={12} />
+                  {recipe.allergens.map((g: any) => (
+                    <span key={g.id} title={getAllergenName(g)} className="inline-flex items-center rounded-full bg-neutral-100 p-1">
+                      <AllergenIcon icon={g.icon ?? null} color={g.color ?? null} size={12} />
                     </span>
                   ))}
                 </div>

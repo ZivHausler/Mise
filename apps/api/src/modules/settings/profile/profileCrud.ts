@@ -12,6 +12,7 @@ export class ProfileCrud {
       email: user.email,
       name: user.name,
       phone: user.phone,
+      language: user.language,
       isAdmin: user.isAdmin,
     };
   }
@@ -20,6 +21,7 @@ export class ProfileCrud {
     const updated = await PgAuthRepository.updateProfile(userId, {
       name: data.name,
       phone: data.phone === null ? '' : data.phone,
+      language: data.language,
     });
 
     return {
@@ -27,6 +29,7 @@ export class ProfileCrud {
       email: updated.email,
       name: updated.name,
       phone: updated.phone,
+      language: updated.language,
       isAdmin: updated.isAdmin,
     };
   }
