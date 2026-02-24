@@ -361,14 +361,16 @@ export function useCustomer(id: number) {
   return useQuery({ queryKey: ['customers', id], queryFn: () => fetchApi<unknown>(`/customers/${id}`), enabled: !!id });
 }
 
-export function useCustomerOrders(customerId: number, page = 1, limit = 10, filters?: { status?: number; dateFrom?: string; dateTo?: string }) {
+export function useCustomerOrders(customerId: number, page = 1, limit = 10, filters?: { status?: number; dateFrom?: string; dateTo?: string }, sortBy?: string, sortDir?: string) {
   return useQuery({
-    queryKey: ['orders', 'customer', customerId, page, limit, filters],
+    queryKey: ['orders', 'customer', customerId, page, limit, filters, sortBy, sortDir],
     queryFn: async () => {
       const params = new URLSearchParams({ page: String(page), limit: String(limit) });
       if (filters?.status !== undefined) params.set('status', String(filters.status));
       if (filters?.dateFrom) params.set('dateFrom', filters.dateFrom);
       if (filters?.dateTo) params.set('dateTo', filters.dateTo);
+      if (sortBy) params.set('sortBy', sortBy);
+      if (sortDir) params.set('sortDir', sortDir);
       const { data } = await apiClient.get(`/orders/customer/${customerId}?${params}`);
       return { orders: data.data, pagination: data.pagination };
     },

@@ -6,6 +6,8 @@ export interface CustomerOrderFilters {
   status?: number;
   dateFrom?: string;
   dateTo?: string;
+  sortBy?: 'created_at' | 'order_number';
+  sortDir?: 'asc' | 'desc';
 }
 
 export class PgOrderRepository {
@@ -43,7 +45,10 @@ export class PgOrderRepository {
     );
     const total = Number(countResult.rows[0].count);
 
-    let query = `SELECT * FROM orders ${whereClause} ORDER BY created_at DESC`;
+    const sortColumnMap: Record<string, string> = { created_at: 'created_at', order_number: 'order_number' };
+    const sortColumn = sortColumnMap[filters?.sortBy ?? 'created_at'] ?? 'created_at';
+    const sortDirection = filters?.sortDir === 'asc' ? 'ASC' : 'DESC';
+    let query = `SELECT * FROM orders ${whereClause} ORDER BY ${sortColumn} ${sortDirection}`;
     const params = [...baseParams];
     if (options) {
       query += ` LIMIT $${idx++} OFFSET $${idx++}`;

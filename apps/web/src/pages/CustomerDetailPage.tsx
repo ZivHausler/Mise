@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Edit, Trash2, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Edit, Trash2, ChevronLeft, ChevronRight, ChevronUp, ChevronDown } from 'lucide-react';
 import { Page, Card, Section, Stack, Row } from '@/components/Layout';
 import { Breadcrumbs } from '@/components/Breadcrumbs';
 import { Button } from '@/components/Button';
@@ -28,6 +28,10 @@ export default function CustomerDetailPage() {
   const [orderDateFrom, setOrderDateFrom] = useState('');
   const [orderDateTo, setOrderDateTo] = useState('');
 
+  // Order sorting
+  const [orderSortBy, setOrderSortBy] = useState<'created_at' | 'order_number'>('created_at');
+  const [orderSortDir, setOrderSortDir] = useState<'asc' | 'desc'>('desc');
+
   // Payment filters
   const [paymentMethodFilter, setPaymentMethodFilter] = useState<string | undefined>(undefined);
   const [paymentDateFrom, setPaymentDateFrom] = useState('');
@@ -44,7 +48,7 @@ export default function CustomerDetailPage() {
     ...(paymentDateTo && { dateTo: paymentDateTo }),
   };
 
-  const { data: customerOrders } = useCustomerOrders(numId, ordersPage, 10, Object.keys(orderFilters).length ? orderFilters : undefined);
+  const { data: customerOrders } = useCustomerOrders(numId, ordersPage, 10, Object.keys(orderFilters).length ? orderFilters : undefined, orderSortBy, orderSortDir);
   const { data: customerPayments } = useCustomerPayments(numId, paymentsPage, 10, Object.keys(paymentFilters).length ? paymentFilters : undefined);
   const deleteCustomer = useDeleteCustomer();
   const formatDate = useFormatDate();
@@ -177,8 +181,40 @@ export default function CustomerDetailPage() {
             <table className="w-full text-body-sm">
               <thead>
                 <tr className="border-b bg-neutral-50">
-                  <th className="px-3 py-2 text-start font-semibold">#</th>
-                  <th className="px-3 py-2 text-start font-semibold">{t('orders.dueDate', 'Date')}</th>
+                  <th
+                    className="sticky start-0 z-10 cursor-pointer select-none bg-neutral-50 px-3 py-2 text-start font-semibold"
+                    onClick={() => {
+                      if (orderSortBy === 'created_at') {
+                        setOrderSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
+                      } else {
+                        setOrderSortBy('created_at');
+                        setOrderSortDir('desc');
+                      }
+                      setOrdersPage(1);
+                    }}
+                  >
+                    <span className="inline-flex items-center gap-1">
+                      {t('orders.dueDate', 'Date')}
+                      {orderSortBy === 'created_at' && (orderSortDir === 'asc' ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />)}
+                    </span>
+                  </th>
+                  <th
+                    className="cursor-pointer select-none px-3 py-2 text-start font-semibold"
+                    onClick={() => {
+                      if (orderSortBy === 'order_number') {
+                        setOrderSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
+                      } else {
+                        setOrderSortBy('order_number');
+                        setOrderSortDir('asc');
+                      }
+                      setOrdersPage(1);
+                    }}
+                  >
+                    <span className="inline-flex items-center gap-1">
+                      {t('orders.orderNumber', 'Order Number')}
+                      {orderSortBy === 'order_number' && (orderSortDir === 'asc' ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />)}
+                    </span>
+                  </th>
                   <th className="px-3 py-2 text-center font-semibold">{t('orders.statusLabel', 'Status')}</th>
                   <th className="px-3 py-2 text-end font-semibold">{t('orders.total', 'Total')}</th>
                 </tr>
@@ -189,11 +225,11 @@ export default function CustomerDetailPage() {
                   return (
                     <tr
                       key={String(o.id)}
-                      className="cursor-pointer border-b border-neutral-100 hover:bg-primary-50"
+                      className="group cursor-pointer border-b border-neutral-100 hover:bg-primary-50"
                       onClick={() => navigate(`/orders/${o.id}`)}
                     >
+                      <td className="sticky start-0 z-10 bg-white px-3 py-2 group-hover:bg-primary-50">{formatDate(o.dueDate ?? o.createdAt)}</td>
                       <td className="px-3 py-2">#{o.orderNumber}</td>
-                      <td className="px-3 py-2">{formatDate(o.dueDate ?? o.createdAt)}</td>
                       <td className="px-3 py-2 text-center">
                         <StatusBadge variant={label} label={t(`orders.status.${label}`, label)} />
                       </td>
@@ -286,16 +322,16 @@ export default function CustomerDetailPage() {
             <table className="w-full text-body-sm">
               <thead>
                 <tr className="border-b bg-neutral-50">
-                  <th className="px-3 py-2 text-start font-semibold">{t('payments.date', 'Date')}</th>
-                  <th className="px-3 py-2 text-start font-semibold">{t('payments.order', 'Order')}</th>
+                  <th className="sticky start-0 z-10 bg-neutral-50 px-3 py-2 text-start font-semibold">{t('payments.date', 'Date')}</th>
+                  <th className="px-3 py-2 text-start font-semibold">{t('orders.orderNumber', 'Order Number')}</th>
                   <th className="px-3 py-2 text-end font-semibold">{t('payments.amount', 'Amount')}</th>
                   <th className="px-3 py-2 text-start font-semibold">{t('payments.method', 'Method')}</th>
                 </tr>
               </thead>
               <tbody>
                 {payments.map((p: any) => (
-                  <tr key={String(p.id)} className="border-b border-neutral-100">
-                    <td className="px-3 py-2">{formatDate(p.createdAt)}</td>
+                  <tr key={String(p.id)} className="group border-b border-neutral-100">
+                    <td className="sticky start-0 z-10 bg-white px-3 py-2">{formatDate(p.createdAt)}</td>
                     <td className="px-3 py-2">#{p.orderNumber}</td>
                     <td className="px-3 py-2 text-end font-mono">{p.amount} {t('common.currency')}</td>
                     <td className="px-3 py-2">
