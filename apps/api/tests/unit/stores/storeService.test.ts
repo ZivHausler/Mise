@@ -15,6 +15,7 @@ vi.mock('../../../src/modules/stores/store.repository.js', () => ({
     getPendingInvitations: vi.fn(),
     createInvitation: vi.fn(),
     findInvitationByToken: vi.fn(),
+    findStoreById: vi.fn(),
     createCreateStoreInvitation: vi.fn(),
   },
 }));
@@ -28,6 +29,12 @@ vi.mock('../../../src/config/env.js', () => ({
 
 vi.mock('../../../src/core/logger/logger.js', () => ({
   appLogger: { info: vi.fn(), warn: vi.fn(), error: vi.fn() },
+}));
+
+vi.mock('../../../src/modules/notifications/channels/email.js', () => ({
+  sendInviteEmail: vi.fn().mockResolvedValue(undefined),
+  buildStoreInviteEmail: vi.fn().mockReturnValue({ subject: 'test', html: '<p>test</p>' }),
+  buildCreateStoreInviteEmail: vi.fn().mockReturnValue({ subject: 'test', html: '<p>test</p>' }),
 }));
 
 import { PgStoreRepository } from '../../../src/modules/stores/store.repository.js';
@@ -151,16 +158,18 @@ describe('StoreService', () => {
 
   describe('sendInvite', () => {
     it('should send invite when user is owner', async () => {
-      const invitation = { id: 'inv-1', token: 'tok', email: 'a@test.com', storeId: 's1', role: StoreRole.EMPLOYEE } as any;
+      const invitation = { id: 'inv-1', token: 'tok', email: 'a@test.com', storeId: 's1', role: StoreRole.EMPLOYEE, expiresAt: new Date() } as any;
       vi.mocked(PgStoreRepository.createInvitation).mockResolvedValue(invitation);
+      vi.mocked(PgStoreRepository.findStoreById).mockResolvedValue({ id: 's1', name: 'Bakery' } as any);
 
       const result = await service.sendInvite('s1', StoreRole.OWNER, 'a@test.com', StoreRole.EMPLOYEE);
       expect(result.inviteLink).toContain('/invite/tok');
     });
 
     it('should send invite when user is admin', async () => {
-      const invitation = { id: 'inv-1', token: 'tok', email: 'a@test.com' } as any;
+      const invitation = { id: 'inv-1', token: 'tok', email: 'a@test.com', expiresAt: new Date() } as any;
       vi.mocked(PgStoreRepository.createInvitation).mockResolvedValue(invitation);
+      vi.mocked(PgStoreRepository.findStoreById).mockResolvedValue({ id: 's1', name: 'Bakery' } as any);
 
       const result = await service.sendInvite('s1', StoreRole.EMPLOYEE, 'a@test.com', StoreRole.EMPLOYEE, true);
       expect(result).toBeDefined();
@@ -230,7 +239,7 @@ describe('StoreService', () => {
 
   describe('createCreateStoreInvitation', () => {
     it('should create a create-store invitation', async () => {
-      const invitation = { id: 'inv-1', token: 'tok', email: 'a@test.com' } as any;
+      const invitation = { id: 'inv-1', token: 'tok', email: 'a@test.com', expiresAt: new Date() } as any;
       vi.mocked(PgStoreRepository.createCreateStoreInvitation).mockResolvedValue(invitation);
 
       const result = await service.createCreateStoreInvitation('a@test.com');
