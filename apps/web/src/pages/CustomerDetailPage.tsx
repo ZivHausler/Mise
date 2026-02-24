@@ -371,7 +371,7 @@ export default function CustomerDetailPage() {
             </div>
 
             {/* Action buttons */}
-            <div className="mb-4 flex gap-2">
+            <div className="mb-4 flex justify-center gap-2 sm:justify-start">
               <Button size="sm" variant="secondary" onClick={() => setShowAdjust(true)}>
                 {t('loyalty.adjustPoints')}
               </Button>
@@ -381,42 +381,44 @@ export default function CustomerDetailPage() {
             </div>
 
             {/* Transaction history */}
-            <table className="w-full text-body-sm">
-              <thead>
-                <tr className="border-b bg-neutral-50">
-                  <th className="px-3 py-2 text-start font-semibold">{t('payments.date', 'Date')}</th>
-                  <th className="px-3 py-2 text-start font-semibold">{t('loyalty.type')}</th>
-                  <th className="px-3 py-2 text-end font-semibold">{t('loyalty.points')}</th>
-                  <th className="px-3 py-2 text-end font-semibold">{t('loyalty.balanceAfter')}</th>
-                  <th className="px-3 py-2 text-start font-semibold">{t('loyalty.description')}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {((loyaltyTxData as any)?.transactions ?? []).map((tx: any) => (
-                  <tr key={String(tx.id)} className="border-b border-neutral-100">
-                    <td className="px-3 py-2">{formatDate(tx.createdAt)}</td>
-                    <td className="px-3 py-2">
-                      <StatusBadge
-                        variant={tx.type === 'earned' ? 'ready' : tx.type === 'redeemed' ? 'delivered' : 'info'}
-                        label={t(`loyalty.types.${tx.type}`, tx.type)}
-                      />
-                    </td>
-                    <td className={`px-3 py-2 text-end font-mono ${tx.points > 0 ? 'text-success-dark' : 'text-error'}`}>
-                      {tx.points > 0 ? `+${tx.points}` : tx.points}
-                    </td>
-                    <td className="px-3 py-2 text-end font-mono">{tx.balanceAfter}</td>
-                    <td className="px-3 py-2 text-neutral-500">{formatLoyaltyDescription(tx.description, t) || '—'}</td>
+            <div className="overflow-x-auto">
+              <table className="w-full text-body-sm">
+                <thead>
+                  <tr className="border-b bg-neutral-50">
+                    <th className="sticky start-0 z-10 bg-neutral-50 px-3 py-2 text-start font-semibold">{t('payments.date', 'Date')}</th>
+                    <th className="px-3 py-2 text-start font-semibold">{t('loyalty.type')}</th>
+                    <th className="px-3 py-2 text-end font-semibold">{t('loyalty.points')}</th>
+                    <th className="px-3 py-2 text-end font-semibold">{t('loyalty.balanceAfter')}</th>
+                    <th className="px-3 py-2 text-start font-semibold">{t('loyalty.description')}</th>
                   </tr>
-                ))}
-                {((loyaltyTxData as any)?.transactions ?? []).length === 0 && (
-                  <tr>
-                    <td colSpan={5} className="px-3 py-8 text-center text-neutral-400">
-                      {t('loyalty.noTransactions')}
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {((loyaltyTxData as any)?.transactions ?? []).map((tx: any) => (
+                    <tr key={String(tx.id)} className="border-b border-neutral-100">
+                      <td className="sticky start-0 z-10 bg-white px-3 py-2">{formatDate(tx.createdAt)}</td>
+                      <td className="px-3 py-2">
+                        <StatusBadge
+                          variant={tx.type === 'earned' ? 'ready' : tx.type === 'redeemed' ? 'delivered' : 'info'}
+                          label={t(`loyalty.types.${tx.type}`, tx.type)}
+                        />
+                      </td>
+                      <td className={`px-3 py-2 text-end font-mono ${tx.points > 0 ? 'text-success-dark' : 'text-error'}`}>
+                        {tx.points > 0 ? `+${tx.points}` : tx.points}
+                      </td>
+                      <td className="px-3 py-2 text-end font-mono">{tx.balanceAfter}</td>
+                      <td className="whitespace-nowrap px-3 py-2 text-neutral-500">{formatLoyaltyDescription(tx.description, t) || '—'}</td>
+                    </tr>
+                  ))}
+                  {((loyaltyTxData as any)?.transactions ?? []).length === 0 && (
+                    <tr>
+                      <td colSpan={5} className="px-3 py-8 text-center text-neutral-400">
+                        {t('loyalty.noTransactions')}
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
             {(loyaltyTxData as any)?.pagination && (loyaltyTxData as any).pagination.totalPages > 1 && (
               <div className="flex items-center justify-between border-t border-neutral-200 px-4 py-3">
                 <span className="text-body-sm text-neutral-500">
