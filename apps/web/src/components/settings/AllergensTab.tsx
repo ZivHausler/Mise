@@ -3,6 +3,11 @@ import { useTranslation } from 'react-i18next';
 import {
   Plus, Pencil, Trash2, Tag,
   Milk, Wheat, Nut,
+  Egg, Fish, Shell, Bean, Drumstick, Beef, Ham,
+  Leaf, Vegan, Sprout,
+  Apple, Cherry, Grape, Citrus, Carrot,
+  Candy, Cookie, Pizza, Coffee, Wine,
+  Droplet, Flame, Snowflake,
   type LucideIcon,
 } from 'lucide-react';
 import { Card, Stack } from '@/components/Layout';
@@ -25,7 +30,34 @@ const ICON_MAP: Record<string, LucideIcon> = {
   Milk,
   Wheat,
   Nut,
+  Egg,
+  Fish,
+  Shell,
+  Bean,
+  Drumstick,
+  Beef,
+  Ham,
+  Leaf,
+  Vegan,
+  Sprout,
+  Apple,
+  Cherry,
+  Grape,
+  Citrus,
+  Carrot,
+  Candy,
+  Cookie,
+  Pizza,
+  Coffee,
+  Wine,
+  Droplet,
+  Flame,
+  Snowflake,
 };
+
+export const ALLERGEN_ICONS: { name: string; Icon: LucideIcon }[] = Object.entries(ICON_MAP).map(
+  ([name, Icon]) => ({ name, Icon }),
+);
 
 function AllergenIcon({ icon, color, size = 14 }: { icon: string | null; color: string | null; size?: number }) {
   if (!icon) return <span className="h-3 w-3 shrink-0 rounded-full" style={{ backgroundColor: color || '#94A3B8' }} />;
@@ -52,7 +84,7 @@ export default function AllergensTab() {
 
   const [showModal, setShowModal] = useState(false);
   const [editingAllergen, setEditingAllergen] = useState<AllergenItem | null>(null);
-  const [form, setForm] = useState({ name: '', color: '' });
+  const [form, setForm] = useState({ name: '', color: '', icon: '' });
 
   const allergenList = (allergens ?? []) as AllergenItem[];
   const defaultAllergens = allergenList.filter((g) => g.isDefault);
@@ -60,18 +92,22 @@ export default function AllergensTab() {
 
   const openCreate = () => {
     setEditingAllergen(null);
-    setForm({ name: '', color: '' });
+    setForm({ name: '', color: '', icon: '' });
     setShowModal(true);
   };
 
   const openEdit = (allergen: AllergenItem) => {
     setEditingAllergen(allergen);
-    setForm({ name: allergen.name, color: allergen.color ?? '' });
+    setForm({ name: allergen.name, color: allergen.color ?? '', icon: allergen.icon ?? '' });
     setShowModal(true);
   };
 
   const handleSubmit = () => {
-    const payload = { name: form.name, ...(form.color ? { color: form.color } : {}) };
+    const payload = {
+      name: form.name,
+      ...(form.icon ? { icon: form.icon, color: null } : {}),
+      ...(form.color && !form.icon ? { color: form.color, icon: null } : {}),
+    };
     if (editingAllergen) {
       updateAllergen.mutate({ id: editingAllergen.id, ...payload }, { onSuccess: () => setShowModal(false) });
     } else {
@@ -118,10 +154,7 @@ export default function AllergensTab() {
             {userAllergens.map((allergen) => (
               <div key={String(allergen.id)} className="flex items-center justify-between rounded-md px-3 py-2.5 hover:bg-neutral-50">
                 <span className="flex items-center gap-3">
-                  <span
-                    className="h-3 w-3 shrink-0 rounded-full"
-                    style={{ backgroundColor: allergen.color || '#94A3B8' }}
-                  />
+                  <AllergenIcon icon={allergen.icon} color={allergen.color} />
                   <span className="text-body-sm font-medium text-neutral-800">{allergen.name}</span>
                 </span>
                 <span className="flex gap-1">
@@ -163,12 +196,27 @@ export default function AllergensTab() {
         <Stack gap={3}>
           <TextInput label={t('settings.allergens.name', 'Name')} value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} placeholder={t('settings.allergens.namePlaceholder', 'e.g. Dairy-free')} />
           <div>
+            <label className="mb-1 block text-body-sm font-semibold text-neutral-700">{t('settings.allergens.icon', 'Icon')}</label>
+            <div className="grid grid-cols-6 gap-1.5 max-h-40 overflow-y-auto">
+              {ALLERGEN_ICONS.map(({ name, Icon }) => (
+                <button
+                  key={name}
+                  type="button"
+                  onClick={() => setForm((f) => ({ ...f, icon: f.icon === name ? '' : name, color: '' }))}
+                  className={`flex items-center justify-center h-9 w-full rounded-md border-2 transition-colors ${form.icon === name ? 'border-neutral-800 bg-neutral-100' : 'border-transparent hover:bg-neutral-50'}`}
+                >
+                  <Icon className="h-4.5 w-4.5 text-neutral-600" size={18} />
+                </button>
+              ))}
+            </div>
+          </div>
+          <div>
             <label className="mb-1 block text-body-sm font-semibold text-neutral-700">{t('settings.allergens.color', 'Color')}</label>
             <div className="flex gap-2">
               {PRESET_COLORS.map((c) => (
                 <button
                   key={c}
-                  onClick={() => setForm((f) => ({ ...f, color: f.color === c ? '' : c }))}
+                  onClick={() => setForm((f) => ({ ...f, color: f.color === c ? '' : c, icon: '' }))}
                   className={`h-7 w-7 rounded-full border-2 transition-transform ${form.color === c ? 'border-neutral-800 scale-110' : 'border-transparent'}`}
                   style={{ backgroundColor: c }}
                 />
