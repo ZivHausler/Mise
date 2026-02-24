@@ -32,6 +32,7 @@ const pageImports = {
   inventory: () => import('@/pages/InventoryPage'),
   customers: () => import('@/pages/CustomersPage'),
   customerDetail: () => import('@/pages/CustomerDetailPage'),
+  customerForm: () => import('@/pages/CustomerFormPage'),
   payments: () => import('@/pages/PaymentsPage'),
   settings: () => import('@/pages/SettingsPage'),
   more: () => import('@/pages/MorePage'),
@@ -62,6 +63,7 @@ const RecipeFormPage = lazy(pageImports.recipeForm);
 const InventoryPage = lazy(pageImports.inventory);
 const CustomersPage = lazy(pageImports.customers);
 const CustomerDetailPage = lazy(pageImports.customerDetail);
+const CustomerFormPage = lazy(pageImports.customerForm);
 const PaymentsPage = lazy(pageImports.payments);
 const SettingsPage = lazy(pageImports.settings);
 const MorePage = lazy(pageImports.more);
@@ -193,6 +195,7 @@ export function App() {
                 <Route path="inventory/:id" element={<InventoryPage />} />
                 <Route path="customers" element={<CustomersPage />} />
                 <Route path="customers/:id" element={<CustomerDetailPage />} />
+                <Route path="customers/:id/edit" element={<CustomerFormPage />} />
                 <Route path="payments" element={<PaymentsPage />} />
                 <Route path="settings" element={<SettingsPage />} />
                 <Route path="more" element={<MorePage />} />
