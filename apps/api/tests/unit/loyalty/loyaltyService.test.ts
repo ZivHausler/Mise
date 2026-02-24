@@ -20,8 +20,15 @@ vi.mock('../../../src/modules/orders/order.repository.js', () => ({
   },
 }));
 
+vi.mock('../../../src/modules/customers/customer.repository.js', () => ({
+  PgCustomerRepository: {
+    findById: vi.fn(),
+  },
+}));
+
 import { LoyaltyCrud } from '../../../src/modules/loyalty/loyaltyCrud.js';
 import { PgOrderRepository } from '../../../src/modules/orders/order.repository.js';
+import { PgCustomerRepository } from '../../../src/modules/customers/customer.repository.js';
 
 const STORE_ID = 1;
 const CUSTOMER_ID = 1;
@@ -37,6 +44,7 @@ describe('LoyaltyService', () => {
   describe('awardPointsForPayment', () => {
     it('should do nothing when config is inactive', async () => {
       vi.mocked(PgOrderRepository.findByIdInternal).mockResolvedValue({ storeId: STORE_ID, customerId: CUSTOMER_ID });
+      vi.mocked(PgCustomerRepository.findById).mockResolvedValue({ loyaltyEnabled: true, loyaltyTier: 'bronze' } as any);
       vi.mocked(LoyaltyCrud.getConfig).mockResolvedValue(null);
 
       await service.awardPointsForPayment(1, 1, 100);
@@ -46,6 +54,7 @@ describe('LoyaltyService', () => {
 
     it('should award correct points when config is active', async () => {
       vi.mocked(PgOrderRepository.findByIdInternal).mockResolvedValue({ storeId: STORE_ID, customerId: CUSTOMER_ID });
+      vi.mocked(PgCustomerRepository.findById).mockResolvedValue({ loyaltyEnabled: true, loyaltyTier: 'bronze' } as any);
       vi.mocked(LoyaltyCrud.getConfig).mockResolvedValue({
         id: 1, storeId: STORE_ID, isActive: true, pointsPerShekel: 2, pointValue: 0.1, minRedeemPoints: 0,
         createdAt: new Date(), updatedAt: new Date(),

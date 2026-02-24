@@ -20,8 +20,15 @@ vi.mock('../../../src/modules/orders/order.repository.js', () => ({
   },
 }));
 
+vi.mock('../../../src/modules/customers/customer.repository.js', () => ({
+  PgCustomerRepository: {
+    findById: vi.fn(),
+  },
+}));
+
 import { LoyaltyCrud } from '../../../src/modules/loyalty/loyaltyCrud.js';
 import { PgOrderRepository } from '../../../src/modules/orders/order.repository.js';
+import { PgCustomerRepository } from '../../../src/modules/customers/customer.repository.js';
 
 const STORE_ID = 1;
 const CUSTOMER_ID = 1;
@@ -51,6 +58,7 @@ describe('LoyaltyService - extended', () => {
   describe('awardPointsForPayment - edge cases', () => {
     it('should award zero points when amount is sub-unit (e.g., 0.5 with 1 point/shekel)', async () => {
       vi.mocked(PgOrderRepository.findByIdInternal).mockResolvedValue({ storeId: STORE_ID, customerId: CUSTOMER_ID });
+      vi.mocked(PgCustomerRepository.findById).mockResolvedValue({ loyaltyEnabled: true, loyaltyTier: 'bronze' } as any);
       vi.mocked(LoyaltyCrud.getConfig).mockResolvedValue(makeConfig({ pointsPerShekel: 1 }));
 
       await service.awardPointsForPayment(1, 1, 0.5);
@@ -61,6 +69,7 @@ describe('LoyaltyService - extended', () => {
 
     it('should floor fractional points (e.g., 33 * 1.5 = 49.5 → 49)', async () => {
       vi.mocked(PgOrderRepository.findByIdInternal).mockResolvedValue({ storeId: STORE_ID, customerId: CUSTOMER_ID });
+      vi.mocked(PgCustomerRepository.findById).mockResolvedValue({ loyaltyEnabled: true, loyaltyTier: 'bronze' } as any);
       vi.mocked(LoyaltyCrud.getConfig).mockResolvedValue(makeConfig({ pointsPerShekel: 1.5 }));
       vi.mocked(LoyaltyCrud.updateCustomerBalance).mockResolvedValue(49);
       vi.mocked(LoyaltyCrud.createTransaction).mockResolvedValue({} as any);
@@ -72,6 +81,7 @@ describe('LoyaltyService - extended', () => {
 
     it('should handle very large payment amounts', async () => {
       vi.mocked(PgOrderRepository.findByIdInternal).mockResolvedValue({ storeId: STORE_ID, customerId: CUSTOMER_ID });
+      vi.mocked(PgCustomerRepository.findById).mockResolvedValue({ loyaltyEnabled: true, loyaltyTier: 'bronze' } as any);
       vi.mocked(LoyaltyCrud.getConfig).mockResolvedValue(makeConfig({ pointsPerShekel: 10 }));
       vi.mocked(LoyaltyCrud.updateCustomerBalance).mockResolvedValue(1000000);
       vi.mocked(LoyaltyCrud.createTransaction).mockResolvedValue({} as any);
@@ -83,6 +93,7 @@ describe('LoyaltyService - extended', () => {
 
     it('should not award points when amount is zero', async () => {
       vi.mocked(PgOrderRepository.findByIdInternal).mockResolvedValue({ storeId: STORE_ID, customerId: CUSTOMER_ID });
+      vi.mocked(PgCustomerRepository.findById).mockResolvedValue({ loyaltyEnabled: true, loyaltyTier: 'bronze' } as any);
       vi.mocked(LoyaltyCrud.getConfig).mockResolvedValue(makeConfig());
 
       await service.awardPointsForPayment(1, 1, 0);

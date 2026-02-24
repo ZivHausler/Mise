@@ -244,6 +244,7 @@
     "orderHistory": "Order History",
     "noOrders": "No orders yet.",
     "loyalty": "Loyalty",
+    "loyaltyTier": "Loyalty Tier",
     "noPayments": "Payment history will appear here.",
     "noNotes": "No notes or preferences.",
     "empty": "No customers yet",
@@ -295,6 +296,12 @@
     "points": "Points",
     "balanceAfter": "Balance After",
     "description": "Description",
+    "tiers": {
+      "bronze": "Bronze",
+      "silver": "Silver",
+      "gold": "Gold"
+    },
+    "tierMultiplier": "×{{multiplier}} points",
     "noTransactions": "No loyalty transactions yet.",
     "shekelEquivalent": "≈ ₪{{value}}",
     "types": {
