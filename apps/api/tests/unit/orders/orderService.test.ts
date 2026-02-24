@@ -34,6 +34,12 @@ vi.mock('../../../src/modules/orders/orderCrud.js', () => ({
   },
 }));
 
+vi.mock('../../../src/modules/customers/customerCrud.js', () => ({
+  CustomerCrud: {
+    getById: vi.fn().mockResolvedValue(null),
+  },
+}));
+
 vi.mock('../../../src/modules/orders/use-cases/updateOrderStatus.js', () => ({
   UpdateOrderStatusUseCase: vi.fn().mockImplementation(() => ({
     execute: vi.fn(),
