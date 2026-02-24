@@ -44,13 +44,15 @@ export class OrderController {
       .send(pdf);
   }
 
-  async getByCustomerId(request: FastifyRequest<{ Params: { customerId: string }; Querystring: { page?: string; limit?: string; status?: string; dateFrom?: string; dateTo?: string } }>, reply: FastifyReply) {
+  async getByCustomerId(request: FastifyRequest<{ Params: { customerId: string }; Querystring: { page?: string; limit?: string; status?: string; dateFrom?: string; dateTo?: string; sortBy?: string; sortDir?: string } }>, reply: FastifyReply) {
     const storeId = request.currentUser!.storeId!;
     const { page, limit, offset } = parsePaginationParams(request.query.page, request.query.limit);
-    const filters: { status?: number; dateFrom?: string; dateTo?: string } = {};
+    const filters: { status?: number; dateFrom?: string; dateTo?: string; sortBy?: 'created_at' | 'order_number'; sortDir?: 'asc' | 'desc' } = {};
     if (request.query.status !== undefined && request.query.status !== '') filters.status = Number(request.query.status);
     if (request.query.dateFrom) filters.dateFrom = request.query.dateFrom;
     if (request.query.dateTo) filters.dateTo = request.query.dateTo;
+    if (request.query.sortBy === 'created_at' || request.query.sortBy === 'order_number') filters.sortBy = request.query.sortBy;
+    if (request.query.sortDir === 'asc' || request.query.sortDir === 'desc') filters.sortDir = request.query.sortDir;
     const { orders, total } = await this.orderService.getByCustomerId(storeId, Number(request.params.customerId), { limit, offset }, Object.keys(filters).length ? filters : undefined);
     return reply.send({ success: true, data: orders, pagination: { page, limit, total, totalPages: Math.ceil(total / limit) } });
   }
