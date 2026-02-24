@@ -273,7 +273,6 @@ export default function CustomerDetailPage() {
               >
                 <option value="">{t('payments.allMethods', 'All methods')}</option>
                 <option value="cash">{t('payments.cash', 'Cash')}</option>
-                <option value="credit_card">{t('payments.card', 'Card')}</option>
               </select>
               {(paymentMethodFilter || paymentDateFrom || paymentDateTo) && (
                 <button

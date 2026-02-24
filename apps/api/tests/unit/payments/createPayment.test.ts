@@ -37,19 +37,6 @@ describe('PaymentCrud.create', () => {
     expect(PgPaymentRepository.create).toHaveBeenCalledOnce();
   });
 
-  it('should create a credit card payment', async () => {
-    const payment = createPayment({ method: 'credit_card' });
-    vi.mocked(PgPaymentRepository.create).mockResolvedValue(payment);
-
-    const result = await PaymentCrud.create(STORE_ID, {
-      orderId: 1,
-      amount: 100,
-      method: 'credit_card',
-    });
-
-    expect(result.method).toBe('credit_card');
-  });
-
   it('should create payment with notes', async () => {
     const payment = createPayment({ notes: 'Partial payment' });
     vi.mocked(PgPaymentRepository.create).mockResolvedValue(payment);

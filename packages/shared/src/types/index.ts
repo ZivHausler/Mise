@@ -21,5 +21,5 @@ export interface PaginatedResponse<T> extends ApiResponse<T[]> {
 
 export type OrderStatus = 0 | 1 | 2 | 3;
 export type PaymentStatus = 'unpaid' | 'partial' | 'paid';
-export type PaymentMethod = 'cash' | 'credit_card';
+export type PaymentMethod = 'cash';
 export type UserRole = 'admin' | 'staff' | 'viewer';

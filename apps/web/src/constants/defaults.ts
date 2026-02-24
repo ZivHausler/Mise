@@ -18,15 +18,13 @@ export const LANGUAGE_TO_ENUM: Record<Language, number> = { he: 0, en: 1, ar: 3 
 export const ENUM_TO_LANGUAGE: Record<number, Language> = { 0: 'he', 1: 'en', 3: 'ar' };
 
 // --- Payment methods -------------------------------------------------------
-export const PAYMENT_METHODS = ['cash', 'credit_card', 'bank_transfer'] as const;
+export const PAYMENT_METHODS = ['cash'] as const;
 export type PaymentMethod = (typeof PAYMENT_METHODS)[number];
 export const DEFAULT_PAYMENT_METHOD: PaymentMethod = 'cash';
 
 /** Maps payment method values to their i18n key suffixes under "payments.*". */
 export const PAYMENT_METHOD_I18N: Record<PaymentMethod, string> = {
   cash: 'cash',
-  credit_card: 'card',
-  bank_transfer: 'bankTransfer',
 };
 
 // --- Store roles -----------------------------------------------------------
