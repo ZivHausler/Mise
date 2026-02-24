@@ -4,7 +4,7 @@ import { appLogger } from '../../../core/logger/logger.js';
 import { Language } from '@mise/shared';
 
 const RESEND_API_KEY = process.env['RESEND_API_KEY'];
-const FROM_EMAIL = process.env['RESEND_FROM_EMAIL'] ?? 'Mise <onboarding@resend.dev>';
+const FROM_EMAIL = process.env['RESEND_FROM_EMAIL'] ?? 'Mise <no-reply@mise-en-place.shop>';
 
 const resend = RESEND_API_KEY ? new Resend(RESEND_API_KEY) : null;
 
