@@ -3,11 +3,7 @@ import { useTranslation } from 'react-i18next';
 import {
   Plus, Pencil, Trash2, Tag,
   Milk, Wheat, Nut,
-  Egg, Fish, Shell, Bean, Drumstick, Beef, Ham,
-  Leaf, Vegan, Sprout,
-  Apple, Cherry, Grape, Citrus, Carrot,
-  Candy, Cookie, Pizza, Coffee, Wine,
-  Droplet, Flame, Snowflake,
+  Egg, Bean, Coffee, Wine,
   type LucideIcon,
 } from 'lucide-react';
 import { Card, Stack } from '@/components/Layout';
@@ -31,33 +27,16 @@ const ICON_MAP: Record<string, LucideIcon> = {
   Wheat,
   Nut,
   Egg,
-  Fish,
-  Shell,
   Bean,
-  Drumstick,
-  Beef,
-  Ham,
-  Leaf,
-  Vegan,
-  Sprout,
-  Apple,
-  Cherry,
-  Grape,
-  Citrus,
-  Carrot,
-  Candy,
-  Cookie,
-  Pizza,
   Coffee,
   Wine,
-  Droplet,
-  Flame,
-  Snowflake,
 };
 
-export const ALLERGEN_ICONS: { name: string; Icon: LucideIcon }[] = Object.entries(ICON_MAP).map(
-  ([name, Icon]) => ({ name, Icon }),
-);
+const DEFAULT_ICON_NAMES = new Set(['Milk', 'Wheat', 'Nut']);
+
+export const ALLERGEN_ICONS: { name: string; Icon: LucideIcon }[] = Object.entries(ICON_MAP)
+  .filter(([name]) => !DEFAULT_ICON_NAMES.has(name))
+  .map(([name, Icon]) => ({ name, Icon }));
 
 function AllergenIcon({ icon, color, size = 14 }: { icon: string | null; color: string | null; size?: number }) {
   if (!icon) return <span className="h-3 w-3 shrink-0 rounded-full" style={{ backgroundColor: color || '#94A3B8' }} />;
