@@ -25,10 +25,10 @@ export class PgAllergensRepository {
   static async create(storeId: number, data: CreateAllergenDTO): Promise<Allergen> {
     const pool = getPool();
     const result = await pool.query(
-      `INSERT INTO allergens (store_id, name, color)
-       VALUES ($1, $2, $3)
+      `INSERT INTO allergens (store_id, name, color, icon)
+       VALUES ($1, $2, $3, $4)
        RETURNING ${SELECT_COLS}`,
-      [storeId, data.name, data.color || null],
+      [storeId, data.name, data.color || null, data.icon || null],
     );
     return this.mapRow(result.rows[0]);
   }
@@ -41,6 +41,7 @@ export class PgAllergensRepository {
 
     if (data.name !== undefined) { fields.push(`name = $${idx++}`); values.push(data.name); }
     if (data.color !== undefined) { fields.push(`color = $${idx++}`); values.push(data.color); }
+    if (data.icon !== undefined) { fields.push(`icon = $${idx++}`); values.push(data.icon); }
 
     fields.push('updated_at = NOW()');
     values.push(id);
