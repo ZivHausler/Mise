@@ -139,6 +139,7 @@ interface DataTableProps<T> {
   emptyDescription?: string;
   toolbar?: React.ReactNode;
   bare?: boolean;
+  defaultSearch?: string;
 }
 
 export function DataTable<T extends Record<string, unknown>>({
@@ -152,9 +153,10 @@ export function DataTable<T extends Record<string, unknown>>({
   emptyDescription,
   toolbar,
   bare,
+  defaultSearch = '',
 }: DataTableProps<T>) {
   const { t } = useTranslation();
-  const [search, setSearch] = useState('');
+  const [search, setSearch] = useState(defaultSearch);
   const debouncedSearch = useDebouncedValue(search);
   const [sortKey, setSortKey] = useState<string | null>(null);
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');

@@ -11,6 +11,7 @@ import type { RecipeService } from '../recipes/recipe.service.js';
 import type { InventoryService } from '../inventory/inventory.service.js';
 import { InventoryLogType, MAX_RECURRING_OCCURRENCES } from '@mise/shared';
 import { unitConversionFactor } from '../shared/unitConversion.js';
+import { CustomerCrud } from '../customers/customerCrud.js';
 
 export class OrderService {
   private updateOrderStatusUseCase = new UpdateOrderStatusUseCase();
@@ -58,9 +59,29 @@ export class OrderService {
 
     const order = await OrderCrud.create(storeId, { ...data, totalAmount });
 
+    const eventPayload: Record<string, unknown> = {
+      orderId: order.id,
+      orderNumber: order.orderNumber,
+      customerId: order.customerId,
+      customerName: order.customerName,
+      total: order.totalAmount,
+      storeId,
+      items: order.items.map((i) => ({
+        name: (i as any).recipeName || i.recipeId,
+        quantity: i.quantity,
+        unitPrice: i.unitPrice,
+      })),
+    };
+
+    const customer = await CustomerCrud.getById(order.customerId, storeId);
+    if (customer) {
+      eventPayload['customerPhone'] = customer.phone;
+      eventPayload['customerEmail'] = customer.email;
+    }
+
     await getEventBus().publish({
       eventName: EventNames.ORDER_CREATED,
-      payload: { orderId: order.id, customerId: order.customerId, storeId },
+      payload: eventPayload,
       timestamp: new Date(),
       correlationId,
     });

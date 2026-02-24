@@ -10,7 +10,7 @@ export class RecipeCrud {
     return MongoRecipeRepository.findById(storeId, id);
   }
 
-  static async getAll(storeId: number, filters?: { category?: string; search?: string }): Promise<Recipe[]> {
+  static async getAll(storeId: number, filters?: { tag?: string; search?: string }): Promise<Recipe[]> {
     return MongoRecipeRepository.findAll(storeId, filters);
   }
 

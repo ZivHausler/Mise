@@ -56,6 +56,12 @@ export class PgStoreRepository {
     return result.rows.map((row: Record<string, unknown>) => this.mapStoreRow(row));
   }
 
+  static async getStoreName(storeId: number): Promise<string | null> {
+    const pool = getPool();
+    const result = await pool.query('SELECT name FROM stores WHERE id = $1', [storeId]);
+    return result.rows[0] ? (result.rows[0]['name'] as string) : null;
+  }
+
   static async getUserStoreRole(userId: number, storeId: number): Promise<StoreRole | null> {
     const pool = getPool();
     const result = await pool.query(
@@ -154,8 +160,7 @@ export class PgStoreRepository {
   static async revokeInvitation(invitationId: number, storeId: number): Promise<boolean> {
     const pool = getPool();
     const result = await pool.query(
-      `UPDATE store_invitations SET revoked_at = NOW()
-       WHERE id = $1 AND store_id = $2 AND used_at IS NULL AND revoked_at IS NULL`,
+      `DELETE FROM store_invitations WHERE id = $1 AND store_id = $2`,
       [invitationId, storeId],
     );
     return (result.rowCount ?? 0) > 0;

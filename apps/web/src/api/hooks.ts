@@ -575,6 +575,44 @@ export function useDeleteAllergen() {
   });
 }
 
+// Settings — Tags
+export function useTags() {
+  return useQuery({ queryKey: ['tags'], queryFn: () => fetchApi<unknown[]>('/settings/tags') });
+}
+
+export function useCreateTag() {
+  const qc = useQueryClient();
+  const addToast = useToastStore((s) => s.addToast);
+  const { t } = useTranslation();
+  return useMutation({
+    mutationFn: (body: unknown) => postApi('/settings/tags', body),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['tags'] }); addToast('success', t('toasts.tagCreated')); },
+    onError: () => addToast('error', t('toasts.tagCreateFailed')),
+  });
+}
+
+export function useUpdateTag() {
+  const qc = useQueryClient();
+  const addToast = useToastStore((s) => s.addToast);
+  const { t } = useTranslation();
+  return useMutation({
+    mutationFn: ({ id, ...body }: { id: number } & Record<string, unknown>) => putApi(`/settings/tags/${id}`, body),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['tags'] }); addToast('success', t('toasts.tagUpdated')); },
+    onError: () => addToast('error', t('toasts.tagUpdateFailed')),
+  });
+}
+
+export function useDeleteTag() {
+  const qc = useQueryClient();
+  const addToast = useToastStore((s) => s.addToast);
+  const { t } = useTranslation();
+  return useMutation({
+    mutationFn: (id: number) => deleteApi(`/settings/tags/${id}`),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['tags'] }); addToast('success', t('toasts.tagDeleted')); },
+    onError: () => addToast('error', t('toasts.tagDeleteFailed')),
+  });
+}
+
 // Settings — Profile
 export function useProfile() {
   return useQuery({ queryKey: ['profile'], queryFn: () => fetchApi<unknown>('/settings/profile') });

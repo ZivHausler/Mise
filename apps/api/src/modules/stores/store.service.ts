@@ -8,6 +8,7 @@ import { appLogger } from '../../core/logger/logger.js';
 import { Language } from '@mise/shared';
 import { sendInviteEmail, buildStoreInviteEmail, buildCreateStoreInviteEmail } from '../notifications/channels/email.js';
 import type { AuthTokenPayload } from '../auth/auth.types.js';
+import { sendInvitationEmail } from '../notifications/channels/email.js';
 
 export class StoreService {
   constructor(

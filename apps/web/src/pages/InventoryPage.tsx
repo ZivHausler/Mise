@@ -215,7 +215,7 @@ export default function InventoryPage() {
     if (!showAdjust || adjustAmount === '') return;
     const typeMap: Record<string, InventoryLogType> = { add: InventoryLogType.ADDITION, use: InventoryLogType.USAGE };
     const pkgSize = showAdjust.packageSize ?? 1;
-    const realAmount = adjustInputMode === 'packages' && adjustType === 'add' ? (adjustAmount as number) * pkgSize : adjustAmount;
+    const realAmount = adjustInputMode === 'packages' ? (adjustAmount as number) * pkgSize : adjustAmount;
     const qty = adjustType === 'set' ? (realAmount as number) - (showAdjust.quantity ?? 0) : realAmount;
     const apiType = adjustType === 'set' ? ((qty as number) >= 0 ? InventoryLogType.ADDITION : InventoryLogType.USAGE) : (typeMap[adjustType] ?? InventoryLogType.ADJUSTMENT);
     adjustStock.mutate(
@@ -408,15 +408,15 @@ export default function InventoryPage() {
             <div className="mb-1 flex items-center justify-between">
               <label className="text-body-sm font-semibold text-neutral-700">{t('inventory.threshold', 'Low-Stock Threshold')}</label>
               {newItem.packageSize !== '' && (newItem.packageSize as number) > 0 && (
-                <div className="relative flex rounded-md bg-neutral-100 p-0.5">
+                <div className="relative grid grid-cols-2 rounded-lg bg-neutral-100 p-0.5">
                   <div
-                    className="absolute inset-y-0.5 rounded bg-white shadow-sm transition-[inset-inline-start] duration-200 ease-in-out"
-                    style={{ width: 'calc(50% - 2px)', insetInlineStart: thresholdMode === 'units' ? '2px' : 'calc(50% + 0px)' }}
+                    className="absolute inset-y-0.5 w-[calc(50%-2px)] rounded-md bg-white shadow-sm transition-[inset-inline-start] duration-200 ease-in-out"
+                    style={{ insetInlineStart: thresholdMode === 'units' ? '2px' : 'calc(50%)' }}
                   />
-                  <button type="button" onClick={() => setThresholdMode('units')} className={`relative z-10 flex-1 whitespace-nowrap rounded px-3 py-0.5 text-caption font-medium transition-colors duration-200 ${thresholdMode === 'units' ? 'text-neutral-900' : 'text-neutral-500 hover:text-neutral-700'}`}>
+                  <button type="button" onClick={() => setThresholdMode('units')} className={`relative z-10 flex items-center justify-center whitespace-nowrap rounded-md px-3 py-0.5 text-caption font-medium transition-colors duration-200 ${thresholdMode === 'units' ? 'text-neutral-900' : 'text-neutral-500 hover:text-neutral-700'}`}>
                     {t('inventory.perUnit', 'Per Unit')}
                   </button>
-                  <button type="button" onClick={() => setThresholdMode('packages')} className={`relative z-10 flex-1 whitespace-nowrap rounded px-3 py-0.5 text-caption font-medium transition-colors duration-200 ${thresholdMode === 'packages' ? 'text-neutral-900' : 'text-neutral-500 hover:text-neutral-700'}`}>
+                  <button type="button" onClick={() => setThresholdMode('packages')} className={`relative z-10 flex items-center justify-center whitespace-nowrap rounded-md px-3 py-0.5 text-caption font-medium transition-colors duration-200 ${thresholdMode === 'packages' ? 'text-neutral-900' : 'text-neutral-500 hover:text-neutral-700'}`}>
                     {t('inventory.perPackage', 'Per Package')}
                   </button>
                 </div>
@@ -474,33 +474,35 @@ export default function InventoryPage() {
             value={adjustType}
             onChange={(e) => { setAdjustType(e.target.value); setAdjustPrice(''); setAdjustInputMode('units'); setAdjustAmount(''); }}
           />
-          {adjustType === 'add' && showAdjust?.packageSize > 0 && (
-            <div className="relative flex rounded-lg bg-neutral-100 p-1">
-              <div
-                className="absolute inset-y-1 rounded-md bg-white shadow-sm transition-[inset-inline-start] duration-200 ease-in-out"
-                style={{ width: 'calc(50% - 4px)', insetInlineStart: adjustInputMode === 'units' ? '4px' : 'calc(50%)' }}
-              />
-              <button type="button" onClick={() => { setAdjustInputMode('units'); setAdjustAmount(''); }} className={`relative z-10 flex-1 rounded-md px-3 py-1.5 text-body-sm font-medium transition-colors duration-200 ${adjustInputMode === 'units' ? 'text-neutral-900' : 'text-neutral-500 hover:text-neutral-700'}`}>
-                {t('inventory.units', 'Units')}
-              </button>
-              <button type="button" onClick={() => { setAdjustInputMode('packages'); setAdjustAmount(''); }} className={`relative z-10 flex-1 rounded-md px-3 py-1.5 text-body-sm font-medium transition-colors duration-200 ${adjustInputMode === 'packages' ? 'text-neutral-900' : 'text-neutral-500 hover:text-neutral-700'}`}>
-                {t('inventory.packages', 'Packages')}
-              </button>
+          <div>
+            <div className="mb-1 flex items-center justify-between">
+              <label className="text-body-sm font-semibold text-neutral-700">{t('inventory.amount', 'Amount')}</label>
+              {showAdjust?.packageSize > 0 && (
+                <div className="relative grid grid-cols-2 rounded-lg bg-neutral-100 p-0.5">
+                  <div
+                    className="absolute inset-y-0.5 w-[calc(50%-2px)] rounded-md bg-white shadow-sm transition-[inset-inline-start] duration-200 ease-in-out"
+                    style={{ insetInlineStart: adjustInputMode === 'units' ? '2px' : 'calc(50%)' }}
+                  />
+                  <button type="button" onClick={() => { setAdjustInputMode('units'); setAdjustAmount(''); }} className={`relative z-10 flex items-center justify-center whitespace-nowrap rounded-md px-3 py-0.5 text-caption font-medium transition-colors duration-200 ${adjustInputMode === 'units' ? 'text-neutral-900' : 'text-neutral-500 hover:text-neutral-700'}`}>
+                    {t('inventory.perUnit', 'Per Unit')}
+                  </button>
+                  <button type="button" onClick={() => { setAdjustInputMode('packages'); setAdjustAmount(''); }} className={`relative z-10 flex items-center justify-center whitespace-nowrap rounded-md px-3 py-0.5 text-caption font-medium transition-colors duration-200 ${adjustInputMode === 'packages' ? 'text-neutral-900' : 'text-neutral-500 hover:text-neutral-700'}`}>
+                    {t('inventory.perPackage', 'Per Package')}
+                  </button>
+                </div>
+              )}
             </div>
-          )}
-          <div className={`grid gap-3 ${adjustType === 'add' ? 'grid-cols-2' : 'grid-cols-1'}`}>
             <NumberInput
-              label={adjustInputMode === 'packages' && adjustType === 'add' ? t('inventory.packages', 'Packages') : t('inventory.amount', 'Amount')}
               value={adjustAmount}
               onChange={setAdjustAmount}
               min={0}
-              hint={adjustInputMode === 'packages' && adjustType === 'add' && adjustAmount !== '' && showAdjust?.packageSize ? `= ${(adjustAmount as number) * showAdjust.packageSize} ${t(`common.units.${showAdjust?.unit}`, showAdjust?.unit ?? '')}` : undefined}
-              suffix={adjustInputMode !== 'packages' && showAdjust?.unit ? t(`common.units.${showAdjust.unit}`, showAdjust.unit) : undefined}
+              hint={adjustInputMode === 'packages' && adjustAmount !== '' && showAdjust?.packageSize ? `= ${(adjustAmount as number) * showAdjust.packageSize} ${t(`common.units.${showAdjust?.unit}`, showAdjust?.unit ?? '')}` : undefined}
+              suffix={adjustInputMode === 'packages' ? t('inventory.packages', 'Packages') : (showAdjust?.unit ? t(`common.units.${showAdjust.unit}`, showAdjust.unit) : undefined)}
             />
-            {adjustType === 'add' && (
-              <NumberInput label={t('inventory.pricePaid', 'Price Paid (₪)')} value={adjustPrice} onChange={setAdjustPrice} min={0} step={0.01} hint={adjustPrice !== '' && adjustAmount !== '' && (adjustAmount as number) > 0 ? (() => { const totalUnits = adjustInputMode === 'packages' ? (adjustAmount as number) * (showAdjust?.packageSize ?? 1) : (adjustAmount as number); return `= ${(Math.round(((adjustPrice as number) / totalUnits) * 100) / 100).toFixed(2)} ₪/${showAdjust?.unit ?? ''}`; })() : undefined} />
-            )}
           </div>
+          {adjustType === 'add' && (
+            <NumberInput label={t('inventory.pricePaid', 'Price Paid (₪)')} value={adjustPrice} onChange={setAdjustPrice} min={0} step={0.01} hint={adjustPrice !== '' && adjustAmount !== '' && (adjustAmount as number) > 0 ? (() => { const totalUnits = adjustInputMode === 'packages' ? (adjustAmount as number) * (showAdjust?.packageSize ?? 1) : (adjustAmount as number); return `= ${(Math.round(((adjustPrice as number) / totalUnits) * 100) / 100).toFixed(2)} ₪/${showAdjust?.unit ?? ''}`; })() : undefined} />
+          )}
         </Stack>
       </Modal>
     </Page>

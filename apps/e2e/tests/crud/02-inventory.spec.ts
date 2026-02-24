@@ -35,7 +35,8 @@ test.describe('Inventory CRUD', () => {
 
     // Modal opens - Type should default to "Add"
     await expect(page.getByText('Adjust: Flour')).toBeVisible();
-    await page.getByLabel('Amount').fill('100');
+    // Amount NumberInput has a standalone label without htmlFor, so use inputmode selector
+    await page.getByRole('dialog').locator('input[inputmode="decimal"]').first().fill('100');
 
     await page.getByRole('button', { name: 'Confirm' }).click();
 
@@ -87,7 +88,7 @@ test.describe('Inventory CRUD', () => {
 
     // Also adjust stock so recipes can use it
     await page.getByTitle('Adjust').click();
-    await page.getByLabel('Amount').fill('100');
+    await page.getByRole('dialog').locator('input[inputmode="decimal"]').first().fill('100');
     await page.getByRole('button', { name: 'Confirm' }).click();
     await expect(page.getByText('Stock adjusted')).toBeVisible();
   });

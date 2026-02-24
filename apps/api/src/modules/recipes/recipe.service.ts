@@ -27,7 +27,7 @@ export class RecipeService {
     return recipe;
   }
 
-  async getAll(storeId: number, filters?: { category?: string; search?: string }): Promise<Recipe[]> {
+  async getAll(storeId: number, filters?: { tag?: string; search?: string }): Promise<Recipe[]> {
     const recipes = await RecipeCrud.getAll(storeId, filters);
     for (const recipe of recipes) {
       await this.enrichIngredients(storeId, recipe);
@@ -39,7 +39,7 @@ export class RecipeService {
   private async enrichIngredients(storeId: number, recipe: Recipe): Promise<void> {
     if (!this.inventoryService || !recipe.ingredients) return;
     let totalCost = 0;
-    const allergensMap = new Map<string, { id: string; name: string; color: string | null; icon: string | null }>();
+    const allergensMap = new Map<string, { id: string; name: string; color: string | null; icon: string | null; isDefault: boolean }>();
     for (const ing of recipe.ingredients) {
       try {
         const item = await this.inventoryService.getById(storeId, Number(ing.ingredientId));
@@ -51,7 +51,7 @@ export class RecipeService {
         totalCost += (ing as any).totalCost;
         for (const g of item.allergens ?? []) {
           const gid = String(g.id);
-          if (!allergensMap.has(gid)) allergensMap.set(gid, { id: gid, name: g.name, color: g.color, icon: g.icon });
+          if (!allergensMap.has(gid)) allergensMap.set(gid, { id: gid, name: g.name, color: g.color, icon: g.icon, isDefault: !!g.isDefault });
         }
       } catch {
         ing.name = ing.name ?? 'Unknown';

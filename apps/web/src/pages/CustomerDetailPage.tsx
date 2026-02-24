@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Edit, Trash2, ChevronLeft, ChevronRight, ChevronUp, ChevronDown } from 'lucide-react';
@@ -62,6 +63,18 @@ export default function CustomerDetailPage() {
   const [showAdjust, setShowAdjust] = useState(false);
   const [showRedeem, setShowRedeem] = useState(false);
   const [activeTab, setActiveTab] = useState<'orders' | 'payments' | 'loyalty'>('orders');
+  const queryClient = useQueryClient();
+
+  // Refetch tab data when switching tabs
+  useEffect(() => {
+    if (activeTab === 'orders') {
+      queryClient.invalidateQueries({ queryKey: ['orders', 'customer', numId] });
+    } else if (activeTab === 'payments') {
+      queryClient.invalidateQueries({ queryKey: ['payments', 'customer', numId] });
+    } else if (activeTab === 'loyalty') {
+      queryClient.invalidateQueries({ queryKey: ['loyalty', numId] });
+    }
+  }, [activeTab, numId, queryClient]);
 
   const c = customer as any;
   const ordersData = customerOrders as any;
@@ -419,7 +432,7 @@ export default function CustomerDetailPage() {
                     <button
                       key={tier}
                       onClick={() => updateCustomer.mutate({ id: c.id, loyaltyTier: tier })}
-                      className={`flex items-center gap-1.5 rounded-full px-4 py-1.5 text-body-sm font-medium transition-all ${colors[tier]}`}
+                      className={`flex flex-col items-center gap-0.5 rounded-full px-4 py-1.5 text-body-sm font-medium transition-all sm:flex-row sm:gap-1.5 ${colors[tier]}`}
                     >
                       {t(`loyalty.tiers.${tier}`, tier)}
                       <span className="text-xs opacity-75">{t('loyalty.tierMultiplier', { multiplier: multipliers[tier] })}</span>

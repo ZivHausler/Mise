@@ -25,6 +25,10 @@ test.describe('Payments CRUD', () => {
     // Select method Cash
     await page.getByLabel('Method').selectOption('cash');
 
+    // Fill required date field
+    const today = new Date().toISOString().split('T')[0]!;
+    await page.getByLabel('Date').fill(today);
+
     // Click Log Payment button in modal footer
     await page.getByRole('dialog').getByRole('button', { name: 'Log Payment' }).click();
 

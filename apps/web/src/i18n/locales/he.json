@@ -205,7 +205,13 @@
     "uploadingPhoto": "מעלה...",
     "photoLimitReached": "הגעת למקסימום תמונות",
     "invalidFileType": "רק JPEG, PNG ו-WebP מותרים",
-    "fileTooLarge": "הקובץ חייב להיות מתחת ל-5 MB"
+    "fileTooLarge": "הקובץ חייב להיות מתחת ל-5 MB",
+    "tags": "תגיות",
+    "allTags": "כל התגיות",
+    "allergens": "אלרגנים",
+    "allAllergens": "כל האלרגנים",
+    "noResults": "אין מתכונים תואמים",
+    "noResultsDesc": "נסה לשנות או לנקות את המסננים."
   },
   "inventory": {
     "name": "שם",
@@ -447,6 +453,7 @@
       "team": "צוות",
       "units": "יחידות",
       "allergens": "אלרגנים",
+      "tags": "תגיות",
       "notifications": "התראות",
       "loyalty": "צבירת נקודות"
     },
@@ -486,6 +493,7 @@
       "add": "הוסף אלרגן",
       "edit": "ערוך אלרגן",
       "name": "שם",
+      "icon": "סמל",
       "color": "צבע",
       "namePlaceholder": "למשל ללא חלב",
       "defaults": "ברירת מחדל",
@@ -497,6 +505,15 @@
         "Gluten": "גלוטן",
         "Nuts": "אגוזים"
       }
+    },
+    "tags": {
+      "title": "תגיות מתכונים",
+      "add": "הוסף תגית",
+      "edit": "ערוך תגית",
+      "name": "שם",
+      "namePlaceholder": "למשל חלבי, עוגה, חם",
+      "empty": "אין תגיות עדיין.",
+      "emptyDesc": "צור תגיות לארגון המתכונים שלך."
     },
     "account": {
       "title": "חשבון",
@@ -578,6 +595,12 @@
     "allergenUpdateFailed": "עדכון האלרגן נכשל",
     "allergenDeleted": "האלרגן נמחק",
     "allergenDeleteFailed": "מחיקת האלרגן נכשלה",
+    "tagCreated": "התגית נוצרה",
+    "tagCreateFailed": "יצירת התגית נכשלה",
+    "tagUpdated": "התגית עודכנה",
+    "tagUpdateFailed": "עדכון התגית נכשל",
+    "tagDeleted": "התגית נמחקה",
+    "tagDeleteFailed": "מחיקת התגית נכשלה",
     "profileUpdated": "הפרופיל עודכן",
     "profileUpdateFailed": "עדכון הפרופיל נכשל",
     "notificationsUpdated": "העדפות ההתראות עודכנו",

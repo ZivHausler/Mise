@@ -28,7 +28,22 @@ interface Translations {
   amount: string;
   orderRef: string;
   method: string;
+  phone: string;
+  email: string;
+  quantity: string;
   defaultItem: string;
+  teamInviteSubject: string;
+  teamInviteBody: string;
+  storeInviteSubject: string;
+  storeInviteBody: string;
+  joinNow: string;
+  roleName: string;
+  storeName: string;
+  invitedBy: string;
+  asRole: string;
+  roleOwner: string;
+  roleManager: string;
+  roleEmployee: string;
 }
 
 const i18n: Record<Language, Translations> = {
@@ -48,7 +63,22 @@ const i18n: Record<Language, Translations> = {
     amount: 'סכום',
     orderRef: 'הזמנה',
     method: 'אמצעי תשלום',
+    phone: 'טלפון',
+    email: 'אימייל',
+    quantity: 'כמות',
     defaultItem: 'פריט',
+    teamInviteSubject: 'יש לך הזמנה חדשה!',
+    teamInviteBody: 'מישהו רוצה אותך בצוות שלו.',
+    storeInviteSubject: 'מוזמן/ת לפתוח חנות ב-Mise!',
+    storeInviteBody: 'קיבלת הזמנה בלעדית לפתוח חנות חדשה במערכת Mise — הכלי שיעזור לך לנהל הזמנות, מלאי ולקוחות במקום אחד.',
+    joinNow: 'בואו נתחיל',
+    roleName: 'תפקיד',
+    storeName: 'חנות',
+    invitedBy: 'הוזמנת להצטרף לצוות של',
+    asRole: 'בתור',
+    roleOwner: 'בעלים',
+    roleManager: 'מנהל/ת',
+    roleEmployee: 'חבר/ת צוות',
   },
   [Language.ENGLISH]: {
     orderCreatedSubject: 'New Order Received',
@@ -64,9 +94,24 @@ const i18n: Record<Language, Translations> = {
     currentQuantity: 'Current quantity',
     threshold: 'Threshold',
     amount: 'Amount',
-    orderRef: 'Order Reference',
+    orderRef: 'Order',
     method: 'Method',
+    phone: 'Phone',
+    email: 'Email',
+    quantity: 'Qty',
     defaultItem: 'An item',
+    teamInviteSubject: "You've got a new invitation!",
+    teamInviteBody: "Someone wants you on their team.",
+    storeInviteSubject: "You're invited to open a store on Mise!",
+    storeInviteBody: "You've received an exclusive invitation to create your own store on Mise — the tool that helps you manage orders, inventory, and customers all in one place.",
+    joinNow: "Let's Go",
+    roleName: 'Role',
+    storeName: 'Store',
+    invitedBy: "You've been invited to join the team at",
+    asRole: 'as',
+    roleOwner: 'Owner',
+    roleManager: 'Manager',
+    roleEmployee: 'Team Member',
   },
   [Language.ARABIC]: {
     orderCreatedSubject: 'تم استلام طلب جديد',
@@ -82,9 +127,24 @@ const i18n: Record<Language, Translations> = {
     currentQuantity: 'الكمية الحالية',
     threshold: 'الحد الأدنى',
     amount: 'المبلغ',
-    orderRef: 'مرجع الطلب',
+    orderRef: 'الطلب',
     method: 'طريقة الدفع',
+    phone: 'هاتف',
+    email: 'بريد إلكتروني',
+    quantity: 'الكمية',
     defaultItem: 'عنصر',
+    teamInviteSubject: 'لديك دعوة جديدة!',
+    teamInviteBody: 'أحدهم يريدك في فريقه.',
+    storeInviteSubject: 'أنت مدعو لفتح متجر على Mise!',
+    storeInviteBody: 'لقد تلقيت دعوة حصرية لإنشاء متجرك الخاص على Mise — الأداة التي تساعدك على إدارة الطلبات والمخزون والعملاء في مكان واحد.',
+    joinNow: 'هيا نبدأ',
+    roleName: 'الدور',
+    storeName: 'المتجر',
+    invitedBy: 'تمت دعوتك للانضمام إلى فريق',
+    asRole: 'بصفة',
+    roleOwner: 'مالك',
+    roleManager: 'مدير',
+    roleEmployee: 'عضو فريق',
   },
 };
 
@@ -119,14 +179,38 @@ function tableTemplate(lang: number, heading: string, headingColor: string, body
 
 function buildOrderCreated(t: Translations, lang: number, p: Record<string, unknown>): { subject: string; html: string } {
   let rows = '';
-  if (p['orderId']) rows += row(t.orderId, p['orderId'], true);
+  if (p['orderNumber']) rows += row(t.orderId, `#${p['orderNumber']}`, true);
   if (p['customerName']) rows += row(t.customer, p['customerName']);
+  if (p['customerPhone']) rows += row(t.phone, p['customerPhone']);
+  if (p['customerEmail']) rows += row(t.email, p['customerEmail']);
   if (p['total'] != null) rows += row(t.total, `₪${p['total']}`, true);
-  if (p['itemCount'] != null) rows += row(t.items, p['itemCount']);
+
+  // Render ordered items list
+  const items = p['items'] as Array<{ name: string; quantity: number; unitPrice: number }> | undefined;
+  let itemsHtml = '';
+  if (items && items.length > 0) {
+    const itemRows = items
+      .map((i) => `<tr><td style="padding:4px 8px;border-bottom:1px solid #eee">${i.name}</td><td style="padding:4px 8px;border-bottom:1px solid #eee;text-align:center">${i.quantity}</td><td style="padding:4px 8px;border-bottom:1px solid #eee;text-align:end">₪${i.unitPrice * i.quantity}</td></tr>`)
+      .join('');
+    itemsHtml = `
+      <table style="width:100%;border-collapse:collapse;margin-top:16px;border:1px solid #eee;border-radius:4px">
+        <thead><tr style="background:#f9fafb">
+          <th style="padding:6px 8px;text-align:start;font-weight:600">${t.items}</th>
+          <th style="padding:6px 8px;text-align:center;font-weight:600">${t.quantity}</th>
+          <th style="padding:6px 8px;text-align:end;font-weight:600">${t.total}</th>
+        </tr></thead>
+        <tbody>${itemRows}</tbody>
+      </table>`;
+  }
 
   return {
     subject: t.orderCreatedSubject,
-    html: tableTemplate(lang, t.orderCreatedSubject, '#333', t.orderCreatedBody, rows),
+    html: wrap(lang, `
+      <h2 style="color:#333">${t.orderCreatedSubject}</h2>
+      ${t.orderCreatedBody ? `<p>${t.orderCreatedBody}</p>` : ''}
+      <table style="width:100%;border-collapse:collapse;margin-top:12px">${rows}</table>
+      ${itemsHtml}
+    `),
   };
 }
 
@@ -151,8 +235,11 @@ function buildLowStock(t: Translations, lang: number, p: Record<string, unknown>
 function buildPaymentReceived(t: Translations, lang: number, p: Record<string, unknown>): { subject: string; html: string } {
   let rows = '';
   if (p['amount'] != null) rows += row(t.amount, `₪${p['amount']}`, true);
-  if (p['orderId']) rows += row(t.orderRef, p['orderId']);
+  if (p['orderNumber']) rows += row(t.orderRef, `#${p['orderNumber']}`);
   if (p['method']) rows += row(t.method, p['method']);
+  if (p['customerName']) rows += row(t.customer, p['customerName']);
+  if (p['customerPhone']) rows += row(t.phone, p['customerPhone']);
+  if (p['customerEmail']) rows += row(t.email, p['customerEmail']);
 
   return {
     subject: t.paymentReceivedSubject,
@@ -183,6 +270,98 @@ function buildEmail(context: NotificationContext, lang: number): { subject: stri
     default:                  return buildFallback(lang, context);
   }
 }
+
+// ---------------------------------------------------------------------------
+// Invitation email templates (bypass notification dispatcher)
+// ---------------------------------------------------------------------------
+
+function ctaButton(label: string, href: string): string {
+  return `<a href="${href}" style="display:inline-block;padding:12px 28px;background:#2563eb;color:#fff;text-decoration:none;border-radius:6px;font-weight:600;margin-top:16px">${label}</a>`;
+}
+
+function getRoleName(t: Translations, role: string | number): string {
+  const roleNum = typeof role === 'string' ? Number(role) : role;
+  switch (roleNum) {
+    case 1: return t.roleOwner;
+    case 2: return t.roleManager;
+    case 3: return t.roleEmployee;
+    default: return String(role);
+  }
+}
+
+function buildTeamInvite(t: Translations, lang: number, params: { storeName: string; role: string | number; inviteLink: string }): { subject: string; html: string } {
+  const roleName = getRoleName(t, params.role);
+  return {
+    subject: t.teamInviteSubject,
+    html: wrap(lang, `
+      <div style="text-align:center;padding:32px 0 16px">
+        <div style="font-size:48px;margin-bottom:8px">🎉</div>
+        <h2 style="color:#2563eb;margin:0">${t.teamInviteSubject}</h2>
+      </div>
+      <p style="font-size:16px;line-height:1.7;color:#374151;text-align:center">${t.invitedBy} <strong>${params.storeName}</strong> ${t.asRole} <strong>${roleName}</strong>.</p>
+      <div style="text-align:center;margin:32px 0">${ctaButton(t.joinNow, params.inviteLink)}</div>
+    `),
+  };
+}
+
+function buildStoreInvite(t: Translations, lang: number, params: { inviteLink: string }): { subject: string; html: string } {
+  return {
+    subject: t.storeInviteSubject,
+    html: wrap(lang, `
+      <div style="text-align:center;padding:32px 0 16px">
+        <div style="font-size:48px;margin-bottom:8px">🏪</div>
+        <h2 style="color:#2563eb;margin:0">${t.storeInviteSubject}</h2>
+      </div>
+      <p style="font-size:16px;line-height:1.7;color:#374151;text-align:center">${t.storeInviteBody}</p>
+      <div style="text-align:center;margin:32px 0">${ctaButton(t.joinNow, params.inviteLink)}</div>
+    `),
+  };
+}
+
+export async function sendInvitationEmail(params: {
+  to: string;
+  type: 'team_invite' | 'store_invite';
+  inviteLink: string;
+  storeName?: string;
+  role?: string | number;
+  lang?: number;
+}): Promise<void> {
+  if (!resend) {
+    appLogger.warn(
+      { to: params.to, type: params.type },
+      '[EMAIL] Invitation NOT sent — RESEND_API_KEY is not configured',
+    );
+    return;
+  }
+
+  const lang = params.lang ?? Language.HEBREW;
+  const t = getTranslations(lang);
+
+  const { subject, html } =
+    params.type === 'team_invite'
+      ? buildTeamInvite(t, lang, { storeName: params.storeName ?? '', role: String(params.role ?? ''), inviteLink: params.inviteLink })
+      : buildStoreInvite(t, lang, { inviteLink: params.inviteLink });
+
+  try {
+    const { data, error } = await resend.emails.send({
+      from: FROM_EMAIL,
+      to: params.to,
+      subject,
+      html,
+    });
+
+    if (error) {
+      appLogger.error({ to: params.to, type: params.type, error }, '[EMAIL] Failed to send invitation');
+      return;
+    }
+
+    appLogger.info({ to: params.to, type: params.type, emailId: data?.id }, '[EMAIL] Invitation sent successfully');
+  } catch (err) {
+    appLogger.error({ to: params.to, type: params.type, err }, '[EMAIL] Unexpected error sending invitation');
+  }
+}
+
+// ---------------------------------------------------------------------------
 
 export class EmailNotifier implements NotificationChannel {
   async send(recipient: NotificationRecipient, context: NotificationContext): Promise<void> {

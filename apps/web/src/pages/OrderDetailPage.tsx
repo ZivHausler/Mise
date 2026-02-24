@@ -8,6 +8,7 @@ import { StatusBadge } from '@/components/DataDisplay';
 import { Button } from '@/components/Button';
 import { PageSkeleton } from '@/components/Feedback';
 import { ConfirmModal } from '@/components/Modal';
+import { LogPaymentModal } from '@/components/LogPaymentModal';
 import { useOrder, useUpdateOrderStatus, useDeleteOrder, usePaymentStatuses, downloadPdf } from '@/api/hooks';
 import { ORDER_STATUS, getStatusLabel } from '@/utils/orderStatus';
 import { useFormatDate } from '@/utils/dateFormat';
@@ -25,6 +26,7 @@ export default function OrderDetailPage() {
   const deleteOrder = useDeleteOrder();
   const { data: paymentStatuses } = usePaymentStatuses();
   const [showDelete, setShowDelete] = React.useState(false);
+  const [showLogPayment, setShowLogPayment] = React.useState(false);
 
   const formatDate = useFormatDate();
   const storeName = useAuthStore((s) => s.stores[0]?.storeName ?? '');
@@ -77,7 +79,11 @@ export default function OrderDetailPage() {
             {t('orders.orderNum', 'Order')} #{o.orderNumber}
           </h1>
           <StatusBadge variant={getStatusLabel(o.status)} label={t(`orders.status.${getStatusLabel(o.status)}`, getStatusLabel(o.status))} />
-          {paymentStatuses?.[o.id] === 'paid' && <BadgeDollarSign className="h-6 w-6 text-green-600" />}
+          {paymentStatuses?.[o.id] === 'paid' && (
+            <Link to={`/payments?search=${encodeURIComponent(o.orderNumber)}`} title={t('payments.viewPayment', 'View payment')}>
+              <BadgeDollarSign className="h-6 w-6 text-green-600 transition-colors hover:text-green-800" />
+            </Link>
+          )}
         </div>
         <Row gap={2} className="flex-wrap">
           {o.status > ORDER_STATUS.RECEIVED && (
@@ -99,6 +105,11 @@ export default function OrderDetailPage() {
               loading={updateOrderStatus.isPending}
             >
               {t('orders.advance', 'Advance')}
+            </Button>
+          )}
+          {paymentStatuses?.[o.id] !== 'paid' && (
+            <Button variant="secondary" icon={<BadgeDollarSign className="h-4 w-4" />} onClick={() => setShowLogPayment(true)}>
+              {t('payments.logPayment', 'Log Payment')}
             </Button>
           )}
           {o.status <= ORDER_STATUS.IN_PROGRESS && paymentStatuses?.[o.id] !== 'paid' && (
@@ -191,6 +202,12 @@ export default function OrderDetailPage() {
         confirmText={t('common.delete')}
         cancelText={t('common.cancel')}
         loading={deleteOrder.isPending}
+      />
+
+      <LogPaymentModal
+        open={showLogPayment}
+        onClose={() => setShowLogPayment(false)}
+        preselectedOrderId={o.id}
       />
     </Page>
   );

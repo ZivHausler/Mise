@@ -7,6 +7,9 @@ import { UnitsController } from './units/units.controller.js';
 import { AllergensService } from './allergens/allergens.service.js';
 import { AllergensController } from './allergens/allergens.controller.js';
 
+import { TagsService } from './tags/tags.service.js';
+import { TagsController } from './tags/tags.controller.js';
+
 import { ProfileService } from './profile/profile.service.js';
 import { ProfileController } from './profile/profile.controller.js';
 
@@ -38,6 +41,15 @@ export default async function settingsRoutes(app: FastifyInstance) {
   app.post('/allergens', (req, reply) => allergensController.create(req, reply));
   app.put('/allergens/:id', (req, reply) => allergensController.update(req, reply));
   app.delete('/allergens/:id', (req, reply) => allergensController.delete(req, reply));
+
+  // Tags
+  const tagsService = new TagsService();
+  const tagsController = new TagsController(tagsService);
+
+  app.get('/tags', (req, reply) => tagsController.list(req, reply));
+  app.post('/tags', (req, reply) => tagsController.create(req, reply));
+  app.put('/tags/:id', (req, reply) => tagsController.update(req, reply));
+  app.delete('/tags/:id', (req, reply) => tagsController.delete(req, reply));
 
   // Profile
   const profileService = new ProfileService();

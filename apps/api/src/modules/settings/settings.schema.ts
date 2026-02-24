@@ -24,8 +24,8 @@ export type UpdateUnitDTO = z.infer<typeof updateUnitSchema>;
 
 export const createAllergenSchema = z.object({
   name: z.string().trim().min(1).max(200),
-  color: z.string().regex(/^#[0-9A-Fa-f]{6}$/).optional(),
-  icon: z.string().max(50).optional(),
+  color: z.string().regex(/^#[0-9A-Fa-f]{6}$/).nullable().optional(),
+  icon: z.string().max(50).nullable().optional(),
 });
 
 export type CreateAllergenDTO = z.infer<typeof createAllergenSchema>;
@@ -37,6 +37,14 @@ export const updateAllergenSchema = z.object({
 });
 
 export type UpdateAllergenDTO = z.infer<typeof updateAllergenSchema>;
+
+// ─── Tags ─────────────────────────────────────────────────────────────────
+
+export const createTagSchema = z.object({ name: z.string().trim().min(1).max(100) });
+export type CreateTagDTO = z.infer<typeof createTagSchema>;
+
+export const updateTagSchema = z.object({ name: z.string().trim().min(1).max(100) });
+export type UpdateTagDTO = z.infer<typeof updateTagSchema>;
 
 // ─── Profile ────────────────────────────────────────────────────────────────
 

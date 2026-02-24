@@ -3,6 +3,9 @@ import { PgAdminRepository } from './admin.repository.js';
 import { ForbiddenError, NotFoundError, ValidationError } from '../../core/errors/app-error.js';
 import type { AdminUser, AdminStore, AdminInvitation, AdminAuditEntry, AdminAnalytics } from './admin.types.js';
 import type { PaginatedResult } from '../../core/types/pagination.js';
+import { sendInvitationEmail } from '../notifications/channels/email.js';
+import { env } from '../../config/env.js';
+import { appLogger } from '../../core/logger/logger.js';
 
 export class AdminService {
   constructor(private app: FastifyInstance) {}
@@ -88,7 +91,17 @@ export class AdminService {
     if (!email || !email.includes('@')) {
       throw new ValidationError('Valid email is required');
     }
-    return PgAdminRepository.createCreateStoreInvitation(email);
+    const invitation = await PgAdminRepository.createCreateStoreInvitation(email);
+
+    // Fire-and-forget: send invitation email
+    const inviteLink = `${env.FRONTEND_URL}/invite/${invitation.token}`;
+    sendInvitationEmail({
+      to: email,
+      type: 'store_invite',
+      inviteLink,
+    }).catch((err) => appLogger.error({ err, email }, '[INVITE] Failed to send store invite email'));
+
+    return invitation;
   }
 
   async revokeInvitation(invitationId: number): Promise<void> {

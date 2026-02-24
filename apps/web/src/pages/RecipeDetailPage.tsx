@@ -59,7 +59,13 @@ export default function RecipeDetailPage() {
       <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="font-heading text-h1 text-neutral-800">{r.name}</h1>
-          {r.category && <p className="mt-1 text-body-sm text-neutral-500">{r.category}</p>}
+          {r.tags?.length > 0 && (
+            <div className="mt-1 flex flex-wrap gap-1">
+              {r.tags.map((tag: string) => (
+                <span key={tag} className="inline-block rounded-full bg-primary-50 px-2 py-0.5 text-body-sm font-medium text-primary-700">{tag}</span>
+              ))}
+            </div>
+          )}
         </div>
         <Row gap={2}>
           <Button variant="secondary" icon={<Edit className="h-4 w-4" />} onClick={() => navigate(`/recipes/${r.id}/edit`)}>

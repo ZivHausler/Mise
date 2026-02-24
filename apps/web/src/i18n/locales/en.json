@@ -205,7 +205,13 @@
     "uploadingPhoto": "Uploading...",
     "photoLimitReached": "Maximum photos reached",
     "invalidFileType": "Only JPEG, PNG, and WebP are allowed",
-    "fileTooLarge": "File must be under 5 MB"
+    "fileTooLarge": "File must be under 5 MB",
+    "tags": "Tags",
+    "allTags": "All Tags",
+    "allergens": "Allergens",
+    "allAllergens": "All Allergens",
+    "noResults": "No matching recipes",
+    "noResultsDesc": "Try changing or clearing your filters."
   },
   "inventory": {
     "name": "Name",
@@ -447,6 +453,7 @@
       "team": "Team",
       "units": "Units",
       "allergens": "Allergens",
+      "tags": "Tags",
       "notifications": "Notifications",
       "loyalty": "Loyalty"
     },
@@ -486,6 +493,7 @@
       "add": "Add Allergen",
       "edit": "Edit Allergen",
       "name": "Name",
+      "icon": "Icon",
       "color": "Color",
       "namePlaceholder": "e.g. Dairy-free",
       "defaults": "Defaults",
@@ -497,6 +505,15 @@
         "Gluten": "Gluten",
         "Nuts": "Nuts"
       }
+    },
+    "tags": {
+      "title": "Recipe Tags",
+      "add": "Add Tag",
+      "edit": "Edit Tag",
+      "name": "Name",
+      "namePlaceholder": "e.g. Dairy, Cake, Hot",
+      "empty": "No tags yet.",
+      "emptyDesc": "Create tags to organize your recipes."
     },
     "account": {
       "title": "Account",
@@ -578,6 +595,12 @@
     "allergenUpdateFailed": "Failed to update allergen",
     "allergenDeleted": "Allergen deleted",
     "allergenDeleteFailed": "Failed to delete allergen",
+    "tagCreated": "Tag created",
+    "tagCreateFailed": "Failed to create tag",
+    "tagUpdated": "Tag updated",
+    "tagUpdateFailed": "Failed to update tag",
+    "tagDeleted": "Tag deleted",
+    "tagDeleteFailed": "Failed to delete tag",
     "profileUpdated": "Profile updated",
     "profileUpdateFailed": "Failed to update profile",
     "notificationsUpdated": "Notification preferences updated",

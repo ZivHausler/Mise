@@ -8,24 +8,27 @@ class SSEManager {
   private clients = new Map<number, SSEClient[]>();
 
   addClient(storeId: number, reply: FastifyReply): void {
-    const storeClients = this.clients.get(storeId) ?? [];
+    const key = Number(storeId);
+    const storeClients = this.clients.get(key) ?? [];
     storeClients.push({ reply });
-    this.clients.set(storeId, storeClients);
+    this.clients.set(key, storeClients);
   }
 
   removeClient(storeId: number, reply: FastifyReply): void {
-    const storeClients = this.clients.get(storeId);
+    const key = Number(storeId);
+    const storeClients = this.clients.get(key);
     if (!storeClients) return;
     const filtered = storeClients.filter((c) => c.reply !== reply);
     if (filtered.length === 0) {
-      this.clients.delete(storeId);
+      this.clients.delete(key);
     } else {
-      this.clients.set(storeId, filtered);
+      this.clients.set(key, filtered);
     }
   }
 
   broadcast(storeId: number, event: string, data: unknown): void {
-    const storeClients = this.clients.get(storeId);
+    const key = Number(storeId);
+    const storeClients = this.clients.get(key);
     if (!storeClients) return;
 
     const message = `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`;
