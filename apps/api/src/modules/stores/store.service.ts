@@ -5,6 +5,8 @@ import { PgStoreRepository } from './store.repository.js';
 import { ForbiddenError, NotFoundError, ValidationError } from '../../core/errors/app-error.js';
 import { env } from '../../config/env.js';
 import { appLogger } from '../../core/logger/logger.js';
+import { Language } from '@mise/shared';
+import { sendInviteEmail, buildStoreInviteEmail, buildCreateStoreInviteEmail } from '../notifications/channels/email.js';
 import type { AuthTokenPayload } from '../auth/auth.types.js';
 
 export class StoreService {
@@ -124,6 +126,14 @@ export class StoreService {
     const inviteLink = `${env.FRONTEND_URL}/invite/${invitation.token}`;
     appLogger.info({ email }, 'Store invite link generated');
 
+    const store = await PgStoreRepository.findStoreById(storeId);
+    const storeName = store?.name ?? 'Mise';
+    const lang = Language.HEBREW;
+    const { subject, html } = buildStoreInviteEmail(storeName, inviteLink, String(inviteRole), invitation.expiresAt, lang);
+
+    sendInviteEmail(email, subject, html)
+      .catch((err) => appLogger.error({ err, email }, 'Failed to send store invite email'));
+
     return { ...invitation, inviteLink };
   }
 
@@ -161,6 +171,13 @@ export class StoreService {
     const invitation = await PgStoreRepository.createCreateStoreInvitation(email);
     const inviteLink = `${env.FRONTEND_URL}/invite/${invitation.token}`;
     appLogger.info({ email }, 'Create-store invite link generated');
+
+    const lang = Language.HEBREW;
+    const { subject, html } = buildCreateStoreInviteEmail(inviteLink, invitation.expiresAt, lang);
+
+    sendInviteEmail(email, subject, html)
+      .catch((err) => appLogger.error({ err, email }, 'Failed to send create-store invite email'));
+
     return { ...invitation, inviteLink };
   }
 
