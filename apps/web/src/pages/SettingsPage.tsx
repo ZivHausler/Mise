@@ -3,7 +3,8 @@ import { useTranslation } from 'react-i18next';
 import { Page, PageHeader } from '@/components/Layout';
 import Tabs from '@/components/Tabs';
 import UnitsTab from '@/components/settings/UnitsTab';
-import GroupsTab from '@/components/settings/GroupsTab';
+import AllergensTab from '@/components/settings/AllergensTab';
+import TagsTab from '@/components/settings/TagsTab';
 import AccountTab from '@/components/settings/AccountTab';
 import NotificationsTab from '@/components/settings/NotificationsTab';
 import TeamTab from '@/components/settings/TeamTab';
@@ -19,7 +20,8 @@ export default function SettingsPage() {
     { key: 'account' as const, label: t('settings.tabs.account', 'Account') },
     { key: 'team' as const, label: t('settings.tabs.team', 'Team') },
     { key: 'units' as const, label: t('settings.tabs.units', 'Units') },
-    { key: 'groups' as const, label: t('settings.tabs.groups', 'Groups') },
+    { key: 'allergens' as const, label: t('settings.tabs.allergens', 'Allergens') },
+    { key: 'tags' as const, label: t('settings.tabs.tags', 'Tags') },
     { key: 'notifications' as const, label: t('settings.tabs.notifications', 'Notifications') },
     { key: 'loyalty' as const, label: t('settings.tabs.loyalty', 'Loyalty') },
   ];
@@ -34,7 +36,8 @@ export default function SettingsPage() {
         {activeTab === 'account' && <AccountTab />}
         {activeTab === 'team' && <TeamTab />}
         {activeTab === 'units' && <UnitsTab />}
-        {activeTab === 'groups' && <GroupsTab />}
+        {activeTab === 'allergens' && <AllergensTab />}
+        {activeTab === 'tags' && <TagsTab />}
         {activeTab === 'notifications' && <NotificationsTab />}
         {activeTab === 'loyalty' && <LoyaltyTab />}
       </div>

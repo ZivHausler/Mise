@@ -1,3 +1,5 @@
+export type LoyaltyTier = 'bronze' | 'silver' | 'gold';
+
 export interface Customer {
   id: number;
   name: string;
@@ -6,6 +8,8 @@ export interface Customer {
   address?: string;
   notes?: string;
   preferences?: CustomerPreferences;
+  loyaltyEnabled: boolean;
+  loyaltyTier: LoyaltyTier;
   orderCount?: number;
   totalSpent?: number;
   createdAt: Date;
@@ -24,6 +28,8 @@ export interface CreateCustomerDTO {
   address?: string;
   notes?: string;
   preferences?: CustomerPreferences;
+  loyaltyEnabled?: boolean;
+  loyaltyTier?: LoyaltyTier;
 }
 
 export interface UpdateCustomerDTO extends Partial<CreateCustomerDTO> {}

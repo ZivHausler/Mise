@@ -7,6 +7,7 @@ import { PaymentCrud } from './paymentCrud.js';
 import { GetPaymentSummaryUseCase } from './use-cases/getPaymentSummary.js';
 import type { OrderService } from '../orders/order.service.js';
 import { NotFoundError } from '../../core/errors/app-error.js';
+import { CustomerCrud } from '../customers/customerCrud.js';
 
 export class PaymentService {
   private getPaymentSummaryUseCase = new GetPaymentSummaryUseCase();
@@ -56,9 +57,29 @@ export class PaymentService {
 
     const payment = await PaymentCrud.create(storeId, data);
 
+    // Enrich event payload with order & customer details for notifications
+    const eventPayload: Record<string, unknown> = {
+      paymentId: payment.id,
+      orderId: payment.orderId,
+      amount: payment.amount,
+      method: payment.method,
+    };
+
+    if (this.orderService) {
+      const order = await this.orderService.getById(storeId, data.orderId);
+      eventPayload['orderNumber'] = order.orderNumber;
+      eventPayload['customerName'] = order.customerName;
+
+      const customer = await CustomerCrud.getById(order.customerId, storeId);
+      if (customer) {
+        eventPayload['customerPhone'] = customer.phone;
+        eventPayload['customerEmail'] = customer.email;
+      }
+    }
+
     await getEventBus().publish({
       eventName: EventNames.PAYMENT_RECEIVED,
-      payload: { paymentId: payment.id, orderId: payment.orderId, amount: payment.amount },
+      payload: eventPayload,
       timestamp: new Date(),
       correlationId,
     });

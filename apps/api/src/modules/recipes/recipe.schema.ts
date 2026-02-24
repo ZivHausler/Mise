@@ -23,7 +23,6 @@ const recipeStepSchema = z.discriminatedUnion('type', [
 export const createRecipeSchema = z.object({
   name: z.string().min(1, 'Recipe name is required').max(200),
   description: z.string().max(5000).optional(),
-  category: z.string().max(100).optional(),
   tags: z.array(z.string().max(50)).max(20).optional(),
   ingredients: z.array(z.object({
     ingredientId: z.string().max(100),

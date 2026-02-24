@@ -69,23 +69,33 @@ setup('authenticate', async ({ page, request }) => {
   // Step 5: Wait for redirect to dashboard (authenticated state)
   await page.waitForURL('/', { timeout: 15_000 });
 
-  // Step 6: Complete onboarding using the browser's own auth token
-  // This ensures the token has the correct storeId from the auto-selected store
+  // Step 6: Complete onboarding and set language to English
   await page.evaluate(async () => {
-    const authState = localStorage.getItem('auth-storage');
-    if (authState) {
-      const parsed = JSON.parse(authState);
-      const token = parsed?.state?.token;
-      if (token) {
-        await fetch('/api/settings/onboarding/complete', {
-          method: 'PATCH',
-          headers: { Authorization: `Bearer ${token}` },
-        });
-      }
+    const token = localStorage.getItem('auth_token');
+    if (token) {
+      // Complete onboarding to dismiss the tour
+      await fetch('/api/settings/onboarding/complete', {
+        method: 'PATCH',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      // Set language to English for e2e tests
+      await fetch('/api/settings/profile', {
+        method: 'PATCH',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ language: 1 }),
+      });
+    }
+    localStorage.setItem('i18nextLng', 'en');
+    // Update cached user object to reflect English language
+    const user = localStorage.getItem('auth_user');
+    if (user) {
+      const parsed = JSON.parse(user);
+      parsed.language = 1;
+      localStorage.setItem('auth_user', JSON.stringify(parsed));
     }
   });
 
-  // Step 7: Reload so the tour state is refreshed
+  // Step 7: Reload so the tour state and language are refreshed
   await page.reload();
   await page.waitForURL('/', { timeout: 15_000 });
 

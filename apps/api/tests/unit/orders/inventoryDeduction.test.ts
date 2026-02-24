@@ -30,6 +30,13 @@ vi.mock('../../../src/modules/shared/unitConversion.js', () => ({
   unitConversionFactor: vi.fn().mockReturnValue(1),
 }));
 
+vi.mock('../../../src/core/events/event-names.js', () => ({
+  EventNames: {
+    ORDER_CREATED: 'order.created',
+    INVENTORY_LOW_STOCK: 'inventory.lowStock',
+  },
+}));
+
 import { OrderCrud } from '../../../src/modules/orders/orderCrud.js';
 import { getEventBus } from '../../../src/core/events/event-bus.js';
 import { unitConversionFactor } from '../../../src/modules/shared/unitConversion.js';
@@ -84,13 +91,13 @@ describe('OrderService – inventory deduction on status change', () => {
       type: InventoryLogType.USAGE,
       quantity: 6, // 2kg * 3 units
       reason: expect.stringContaining('Order'),
-    });
+    }, undefined, { suppressEvent: true });
     expect(mockInventoryService.adjustStock).toHaveBeenCalledWith(STORE_ID, {
       ingredientId: 2,
       type: InventoryLogType.USAGE,
       quantity: 3, // 1kg * 3 units
       reason: expect.stringContaining('Order'),
-    });
+    }, undefined, { suppressEvent: true });
   });
 
   it('should restore inventory when reverting from ready to in_progress', async () => {
@@ -109,13 +116,13 @@ describe('OrderService – inventory deduction on status change', () => {
       type: InventoryLogType.ADDITION,
       quantity: 6,
       reason: expect.stringContaining('Order'),
-    });
+    }, undefined, { suppressEvent: true });
     expect(mockInventoryService.adjustStock).toHaveBeenCalledWith(STORE_ID, {
       ingredientId: 2,
       type: InventoryLogType.ADDITION,
       quantity: 3,
       reason: expect.stringContaining('Order'),
-    });
+    }, undefined, { suppressEvent: true });
   });
 
   it('should NOT adjust inventory for other status transitions', async () => {
@@ -139,7 +146,7 @@ describe('OrderService – inventory deduction on status change', () => {
     expect(mockInventoryService.adjustStock).toHaveBeenCalledWith(STORE_ID, expect.objectContaining({
       ingredientId: 1,
       quantity: 6000,
-    }));
+    }), undefined, { suppressEvent: true });
   });
 
   it('should skip ingredients not found in inventory', async () => {
@@ -157,7 +164,7 @@ describe('OrderService – inventory deduction on status change', () => {
     expect(mockInventoryService.adjustStock).toHaveBeenCalledTimes(1);
     expect(mockInventoryService.adjustStock).toHaveBeenCalledWith(STORE_ID, expect.objectContaining({
       ingredientId: 1,
-    }));
+    }), undefined, { suppressEvent: true });
   });
 
   it('should skip recipes not found', async () => {
@@ -169,5 +176,52 @@ describe('OrderService – inventory deduction on status change', () => {
     await service.updateStatus(STORE_ID, 1, ORDER_STATUS.READY);
 
     expect(mockInventoryService.adjustStock).not.toHaveBeenCalled();
+  });
+
+  it('should publish a single batched INVENTORY_LOW_STOCK event for all low-stock ingredients', async () => {
+    const lowFlour = createIngredient({ id: 1, name: 'Flour', quantity: 2, lowStockThreshold: 10, unit: 'kg' });
+    const lowSugar = createIngredient({ id: 2, name: 'Sugar', quantity: 1, lowStockThreshold: 5, unit: 'kg' });
+
+    mockInventoryService.adjustStock
+      .mockResolvedValueOnce(lowFlour)
+      .mockResolvedValueOnce(lowSugar);
+
+    vi.mocked(OrderCrud.getById).mockResolvedValue(order);
+    vi.mocked(OrderCrud.updateStatus).mockResolvedValue(createOrder({ status: ORDER_STATUS.READY, items: order.items }));
+
+    await service.updateStatus(STORE_ID, 1, ORDER_STATUS.READY);
+
+    const mockEventBus = vi.mocked(getEventBus)();
+    // Should publish ORDER_STATUS_CHANGED (from updateOrderStatusUseCase) + 1 batched low-stock event
+    const lowStockCalls = vi.mocked(mockEventBus.publish).mock.calls.filter(
+      (call) => call[0].eventName === 'inventory.lowStock',
+    );
+    expect(lowStockCalls).toHaveLength(1);
+    expect(lowStockCalls[0][0].payload).toEqual({
+      items: [
+        { ingredientId: 1, name: 'Flour', currentQuantity: 2, threshold: 10, unit: 'kg' },
+        { ingredientId: 2, name: 'Sugar', currentQuantity: 1, threshold: 5, unit: 'kg' },
+      ],
+    });
+  });
+
+  it('should not publish low-stock event when no ingredients are below threshold', async () => {
+    const okFlour = createIngredient({ id: 1, name: 'Flour', quantity: 30, lowStockThreshold: 10, unit: 'kg' });
+    const okSugar = createIngredient({ id: 2, name: 'Sugar', quantity: 20, lowStockThreshold: 5, unit: 'kg' });
+
+    mockInventoryService.adjustStock
+      .mockResolvedValueOnce(okFlour)
+      .mockResolvedValueOnce(okSugar);
+
+    vi.mocked(OrderCrud.getById).mockResolvedValue(order);
+    vi.mocked(OrderCrud.updateStatus).mockResolvedValue(createOrder({ status: ORDER_STATUS.READY, items: order.items }));
+
+    await service.updateStatus(STORE_ID, 1, ORDER_STATUS.READY);
+
+    const mockEventBus = vi.mocked(getEventBus)();
+    const lowStockCalls = vi.mocked(mockEventBus.publish).mock.calls.filter(
+      (call) => call[0].eventName === 'inventory.lowStock',
+    );
+    expect(lowStockCalls).toHaveLength(0);
   });
 });

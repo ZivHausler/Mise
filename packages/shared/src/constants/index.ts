@@ -1,3 +1,9 @@
+export enum Language {
+  HEBREW = 0,
+  ENGLISH = 1,
+  ARABIC = 3,
+}
+
 export enum InventoryLogType {
   ADDITION = 0,
   USAGE = 1,
@@ -18,7 +24,7 @@ export const INVENTORY_LOG_TYPE_FROM_DB: Record<string, InventoryLogType> = {
 
 export const ORDER_STATUSES = ['received', 'in_progress', 'ready', 'delivered'] as const;
 export const PAYMENT_STATUSES = ['unpaid', 'partial', 'paid'] as const;
-export const PAYMENT_METHODS = ['cash', 'credit_card'] as const;
+export const PAYMENT_METHODS = ['cash'] as const;
 export const USER_ROLES = ['admin', 'staff', 'viewer'] as const;
 
 export const MAX_RECURRING_OCCURRENCES = 52;

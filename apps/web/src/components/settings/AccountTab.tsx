@@ -9,8 +9,9 @@ import { Spinner } from '@/components/Feedback';
 import { useAuthStore } from '@/store/auth';
 import { useAppStore } from '@/store/app';
 import { useProfile, useUpdateProfile, useResetOnboarding } from '@/api/hooks';
-import { DATE_FORMATS, LANGUAGES, WEEK_START_DAYS } from '@/constants/defaults';
-import type { DateFormat, WeekStartDay } from '@/constants/defaults';
+import { DATE_FORMATS, LANGUAGES, WEEK_START_DAYS, LANGUAGE_TO_ENUM, ENUM_TO_LANGUAGE } from '@/constants/defaults';
+import { languageDir } from '@/utils/language';
+import type { DateFormat, Language, WeekStartDay } from '@/constants/defaults';
 
 export default function AccountTab() {
   const { t, i18n } = useTranslation();
@@ -30,7 +31,8 @@ export default function AccountTab() {
   const { data: profile, isLoading } = useProfile();
   const updateProfile = useUpdateProfile();
 
-  const p = profile as { id: number; email: string; name: string; phone?: string } | undefined;
+  const initLanguageFromProfile = useAppStore((s) => s.initLanguageFromProfile);
+  const p = profile as { id: number; email: string; name: string; phone?: string; language: number } | undefined;
 
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
@@ -42,8 +44,14 @@ export default function AccountTab() {
       setName(p.name);
       setPhone(p.phone || '');
       setDirty(false);
+      // Initialize language from DB profile
+      const lang = ENUM_TO_LANGUAGE[p.language] ?? 'he';
+      i18n.changeLanguage(lang);
+      initLanguageFromProfile(p.language);
+      document.documentElement.dir = languageDir(lang);
+      document.documentElement.lang = lang;
     }
-  }, [p]);
+  }, [p, i18n, initLanguageFromProfile]);
 
   const validatePhone = (value: string): boolean => {
     if (!value) return true;
@@ -77,13 +85,17 @@ export default function AccountTab() {
 
   const handleLanguageChange = useCallback(
     (e: React.ChangeEvent<HTMLSelectElement>) => {
-      const newLang = e.target.value;
+      const newLang = e.target.value as Language;
       i18n.changeLanguage(newLang);
       setLanguage(newLang);
-      document.documentElement.dir = newLang === 'he' ? 'rtl' : 'ltr';
+      document.documentElement.dir = languageDir(newLang);
       document.documentElement.lang = newLang;
+      const enumValue = LANGUAGE_TO_ENUM[newLang];
+      if (enumValue !== undefined) {
+        updateProfile.mutate({ language: enumValue });
+      }
     },
-    [i18n, setLanguage],
+    [i18n, setLanguage, updateProfile],
   );
 
   const handleLogout = useCallback(() => {

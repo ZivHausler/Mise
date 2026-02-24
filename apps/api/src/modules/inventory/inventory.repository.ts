@@ -11,36 +11,36 @@ import { getPool } from '../../core/database/postgres.js';
 import { QueryBuilder } from '../../core/database/query-builder.js';
 
 export class PgInventoryRepository {
-  private static async attachGroups(ingredients: Ingredient[]): Promise<Ingredient[]> {
+  private static async attachAllergens(ingredients: Ingredient[]): Promise<Ingredient[]> {
     if (ingredients.length === 0) return ingredients;
     const pool = getPool();
     const ids = ingredients.map((i) => i.id);
     const result = await pool.query(
-      `SELECT ig.ingredient_id, g.id, g.name, g.color, g.icon, g.is_default
-       FROM ingredient_groups ig
-       JOIN groups g ON g.id = ig.group_id
-       WHERE ig.ingredient_id = ANY($1)
-       ORDER BY g.name`,
+      `SELECT ia.ingredient_id, a.id, a.name, a.color, a.icon, a.is_default
+       FROM ingredient_allergens ia
+       JOIN allergens a ON a.id = ia.allergen_id
+       WHERE ia.ingredient_id = ANY($1)
+       ORDER BY a.name`,
       [ids],
     );
-    const groupMap = new Map<number, { id: number; name: string; color: string | null; icon: string | null; isDefault: boolean }[]>();
+    const allergenMap = new Map<number, { id: number; name: string; color: string | null; icon: string | null; isDefault: boolean }[]>();
     for (const row of result.rows as Record<string, unknown>[]) {
       const iid = Number(row['ingredient_id']);
-      if (!groupMap.has(iid)) groupMap.set(iid, []);
-      groupMap.get(iid)!.push({ id: Number(row['id']), name: row['name'] as string, color: (row['color'] as string) || null, icon: (row['icon'] as string) || null, isDefault: row['is_default'] as boolean });
+      if (!allergenMap.has(iid)) allergenMap.set(iid, []);
+      allergenMap.get(iid)!.push({ id: Number(row['id']), name: row['name'] as string, color: (row['color'] as string) || null, icon: (row['icon'] as string) || null, isDefault: row['is_default'] as boolean });
     }
     for (const ingredient of ingredients) {
-      ingredient.groups = groupMap.get(ingredient.id) ?? [];
+      ingredient.allergens = allergenMap.get(ingredient.id) ?? [];
     }
     return ingredients;
   }
 
-  private static async syncGroups(ingredientId: number, groupIds: number[]): Promise<void> {
+  private static async syncAllergens(ingredientId: number, allergenIds: number[]): Promise<void> {
     const pool = getPool();
-    await pool.query('DELETE FROM ingredient_groups WHERE ingredient_id = $1', [ingredientId]);
-    if (groupIds.length > 0) {
-      const values = groupIds.map((_, i) => `($1, $${i + 2})`).join(', ');
-      await pool.query(`INSERT INTO ingredient_groups (ingredient_id, group_id) VALUES ${values}`, [ingredientId, ...groupIds]);
+    await pool.query('DELETE FROM ingredient_allergens WHERE ingredient_id = $1', [ingredientId]);
+    if (allergenIds.length > 0) {
+      const values = allergenIds.map((_, i) => `($1, $${i + 2})`).join(', ');
+      await pool.query(`INSERT INTO ingredient_allergens (ingredient_id, allergen_id) VALUES ${values}`, [ingredientId, ...allergenIds]);
     }
   }
 
@@ -48,7 +48,7 @@ export class PgInventoryRepository {
     const pool = getPool();
     const result = await pool.query('SELECT * FROM ingredients WHERE id = $1 AND store_id = $2', [id, storeId]);
     if (!result.rows[0]) return null;
-    const ingredients = await this.attachGroups([this.mapRow(result.rows[0])]);
+    const ingredients = await this.attachAllergens([this.mapRow(result.rows[0])]);
     return ingredients[0] ?? null;
   }
 
@@ -61,10 +61,10 @@ export class PgInventoryRepository {
     const query = `SELECT * FROM ingredients WHERE store_id = $1${qb.getWhereClause()} ORDER BY name ASC`;
     const result = await pool.query(query, qb.getParams());
     const ingredients = result.rows.map((r: Record<string, unknown>) => this.mapRow(r));
-    return this.attachGroups(ingredients);
+    return this.attachAllergens(ingredients);
   }
 
-  static async findAllPaginated(storeId: number, page: number, limit: number, search?: string, groupIds?: number[], statuses?: string[]): Promise<PaginatedResult<Ingredient>> {
+  static async findAllPaginated(storeId: number, page: number, limit: number, search?: string, allergenIds?: number[], statuses?: string[]): Promise<PaginatedResult<Ingredient>> {
     const pool = getPool();
     const offset = (page - 1) * limit;
     const conditions: string[] = [];
@@ -81,9 +81,9 @@ export class PgInventoryRepository {
       params.push(`%${escaped}%`);
       idx++;
     }
-    if (groupIds?.length) {
-      conditions.push(`id IN (SELECT ingredient_id FROM ingredient_groups WHERE group_id = ANY($${idx}))`);
-      params.push(groupIds);
+    if (allergenIds?.length) {
+      conditions.push(`id IN (SELECT ingredient_id FROM ingredient_allergens WHERE allergen_id = ANY($${idx}))`);
+      params.push(allergenIds);
       idx++;
     }
     if (statuses?.length) {
@@ -121,7 +121,7 @@ export class PgInventoryRepository {
     );
 
     const ingredients = dataResult.rows.map((r: Record<string, unknown>) => this.mapRow(r));
-    const items = await this.attachGroups(ingredients);
+    const items = await this.attachAllergens(ingredients);
     return { items, total, page, limit, totalPages: Math.ceil(total / limit) };
   }
 
@@ -132,7 +132,7 @@ export class PgInventoryRepository {
       [storeId],
     );
     const ingredients = result.rows.map((r: Record<string, unknown>) => this.mapRow(r));
-    return this.attachGroups(ingredients);
+    return this.attachAllergens(ingredients);
   }
 
   static async create(storeId: number, data: CreateIngredientDTO): Promise<Ingredient> {
@@ -144,7 +144,7 @@ export class PgInventoryRepository {
       [storeId, data.name, data.unit, data.quantity, data.costPerUnit, data.packageSize ?? null, data.lowStockThreshold, data.supplier ?? null, data.notes ?? null],
     );
     const id = Number(result.rows[0]['id']);
-    if (data.groupIds?.length) await this.syncGroups(id, data.groupIds);
+    if (data.allergenIds?.length) await this.syncAllergens(id, data.allergenIds);
     return (await this.findById(storeId, id))!;
   }
 
@@ -173,7 +173,7 @@ export class PgInventoryRepository {
       `UPDATE ingredients SET ${fields.join(', ')} WHERE id = $${idIdx} AND store_id = $${idx}`,
       values,
     );
-    if (data.groupIds !== undefined) await this.syncGroups(id, data.groupIds);
+    if (data.allergenIds !== undefined) await this.syncAllergens(id, data.allergenIds);
     return (await this.findById(storeId, id))!;
   }
 
@@ -279,7 +279,7 @@ export class PgInventoryRepository {
       lowStockThreshold: Number(row['low_stock_threshold']),
       supplier: row['supplier'] as string | undefined,
       notes: row['notes'] as string | undefined,
-      groups: [],
+      allergens: [],
       createdAt: new Date(row['created_at'] as string),
       updatedAt: new Date(row['updated_at'] as string),
     };

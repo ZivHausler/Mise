@@ -5,7 +5,10 @@ import { PgStoreRepository } from './store.repository.js';
 import { ForbiddenError, NotFoundError, ValidationError } from '../../core/errors/app-error.js';
 import { env } from '../../config/env.js';
 import { appLogger } from '../../core/logger/logger.js';
+import { Language } from '@mise/shared';
+import { sendInviteEmail, buildStoreInviteEmail, buildCreateStoreInviteEmail } from '../notifications/channels/email.js';
 import type { AuthTokenPayload } from '../auth/auth.types.js';
+import { sendInvitationEmail } from '../notifications/channels/email.js';
 
 export class StoreService {
   constructor(
@@ -73,12 +76,45 @@ export class StoreService {
   async getPendingInvitations(storeId: number) {
     const invitations = await PgStoreRepository.getPendingInvitations(storeId);
     return invitations.map((inv) => ({
+      id: inv.id,
       email: inv.email,
       role: inv.role,
       inviteLink: `${env.FRONTEND_URL}/invite/${inv.token}`,
       createdAt: inv.createdAt,
       expiresAt: inv.expiresAt,
     }));
+  }
+
+  async revokeInvitation(storeId: number, storeRole: StoreRole, invitationId: number, isAdmin?: boolean): Promise<void> {
+    if (storeRole !== StoreRole.OWNER && !isAdmin) {
+      throw new ForbiddenError('Only store owners can revoke invitations');
+    }
+
+    const revoked = await PgStoreRepository.revokeInvitation(invitationId, storeId);
+    if (!revoked) {
+      throw new NotFoundError('Invitation not found or already revoked');
+    }
+  }
+
+  async removeMember(storeId: number, storeRole: StoreRole, callerUserId: number, targetUserId: number, isAdmin?: boolean): Promise<void> {
+    if (storeRole !== StoreRole.OWNER && !isAdmin) {
+      throw new ForbiddenError('Only store owners can remove members');
+    }
+
+    if (callerUserId === targetUserId) {
+      throw new ForbiddenError('You cannot remove yourself');
+    }
+
+    const targetRole = await PgStoreRepository.getUserStoreRole(targetUserId, storeId);
+    if (!targetRole) {
+      throw new NotFoundError('User is not a member of this store');
+    }
+
+    if (targetRole === StoreRole.OWNER) {
+      throw new ForbiddenError('Cannot remove a store owner');
+    }
+
+    await PgStoreRepository.removeUserFromStore(targetUserId, storeId);
   }
 
   async sendInvite(storeId: number, storeRole: StoreRole, email: string, inviteRole: StoreRole, isAdmin?: boolean): Promise<StoreInvitation & { inviteLink: string }> {
@@ -90,6 +126,14 @@ export class StoreService {
 
     const inviteLink = `${env.FRONTEND_URL}/invite/${invitation.token}`;
     appLogger.info({ email }, 'Store invite link generated');
+
+    const store = await PgStoreRepository.findStoreById(storeId);
+    const storeName = store?.name ?? 'Mise';
+    const lang = Language.HEBREW;
+    const { subject, html } = buildStoreInviteEmail(storeName, inviteLink, String(inviteRole), invitation.expiresAt, lang);
+
+    sendInviteEmail(email, subject, html)
+      .catch((err) => appLogger.error({ err, email }, 'Failed to send store invite email'));
 
     return { ...invitation, inviteLink };
   }
@@ -128,6 +172,13 @@ export class StoreService {
     const invitation = await PgStoreRepository.createCreateStoreInvitation(email);
     const inviteLink = `${env.FRONTEND_URL}/invite/${invitation.token}`;
     appLogger.info({ email }, 'Create-store invite link generated');
+
+    const lang = Language.HEBREW;
+    const { subject, html } = buildCreateStoreInviteEmail(inviteLink, invitation.expiresAt, lang);
+
+    sendInviteEmail(email, subject, html)
+      .catch((err) => appLogger.error({ err, email }, 'Failed to send create-store invite email'));
+
     return { ...invitation, inviteLink };
   }
 

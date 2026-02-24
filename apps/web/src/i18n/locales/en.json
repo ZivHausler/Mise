@@ -110,6 +110,7 @@
     "notes": "Notes",
     "noItems": "No items",
     "orderNum": "Order",
+    "orderNumber": "Order Number",
     "advance": "Advance",
     "revert": "Back",
     "createdAt": "Created",
@@ -204,7 +205,13 @@
     "uploadingPhoto": "Uploading...",
     "photoLimitReached": "Maximum photos reached",
     "invalidFileType": "Only JPEG, PNG, and WebP are allowed",
-    "fileTooLarge": "File must be under 5 MB"
+    "fileTooLarge": "File must be under 5 MB",
+    "tags": "Tags",
+    "allTags": "All Tags",
+    "allergens": "Allergens",
+    "allAllergens": "All Allergens",
+    "noResults": "No matching recipes",
+    "noResultsDesc": "Try changing or clearing your filters."
   },
   "inventory": {
     "name": "Name",
@@ -239,7 +246,7 @@
     "pricePaid": "Price Paid (₪)",
     "packages": "Packages",
     "units": "Units",
-    "groups": "Groups",
+    "allergens": "Allergens",
     "editItem": "Edit Item",
     "deleteTitle": "Delete Item?",
     "deleteMsg": "This item will be permanently deleted.",
@@ -269,6 +276,9 @@
     "orderHistory": "Order History",
     "noOrders": "No orders yet.",
     "loyalty": "Loyalty",
+    "loyaltyEnabled": "Points accumulation active",
+    "loyaltyTier": "Loyalty Tier",
+    "loyaltyDisabledMsg": "Points accumulation is disabled for this customer.",
     "noPayments": "Payment history will appear here.",
     "noNotes": "No notes or preferences.",
     "empty": "No customers yet",
@@ -320,6 +330,12 @@
     "points": "Points",
     "balanceAfter": "Balance After",
     "description": "Description",
+    "tiers": {
+      "bronze": "Bronze",
+      "silver": "Silver",
+      "gold": "Gold"
+    },
+    "tierMultiplier": "×{{multiplier}} points",
     "noTransactions": "No loyalty transactions yet.",
     "shekelEquivalent": "≈ ₪{{value}}",
     "types": {
@@ -429,13 +445,15 @@
     "showSaturday": "Show Saturday",
     "languages": {
       "en": "English",
-      "he": "Hebrew"
+      "he": "Hebrew",
+      "ar": "Arabic"
     },
     "tabs": {
       "account": "Account",
       "team": "Team",
       "units": "Units",
-      "groups": "Groups",
+      "allergens": "Allergens",
+      "tags": "Tags",
       "notifications": "Notifications",
       "loyalty": "Loyalty"
     },
@@ -453,7 +471,10 @@
       "copyLink": "Copy invite link",
       "linkCopied": "Link copied!",
       "linkGenerated": "Invite link generated",
-      "inviteAnother": "Invite Another"
+      "inviteAnother": "Invite Another",
+      "revokeInvite": "Revoke invitation",
+      "revokeConfirm": "Are you sure you want to revoke this invitation?",
+      "removeMember": "Remove member"
     },
     "units": {
       "weight": "Weight",
@@ -468,21 +489,31 @@
       "factorHint": "Relative to base unit in category (e.g. gram, ml, piece)",
       "noUnits": "No units in this category."
     },
-    "groups": {
-      "add": "Add Group",
-      "edit": "Edit Group",
+    "allergens": {
+      "add": "Add Allergen",
+      "edit": "Edit Allergen",
       "name": "Name",
+      "icon": "Icon",
       "color": "Color",
       "namePlaceholder": "e.g. Dairy-free",
       "defaults": "Defaults",
       "custom": "Custom",
-      "empty": "No custom groups yet.",
-      "emptyDesc": "Create groups to tag and organize items.",
+      "empty": "No custom allergens yet.",
+      "emptyDesc": "Create allergens to tag and organize items.",
       "defaultNames": {
         "Dairy": "Dairy",
         "Gluten": "Gluten",
         "Nuts": "Nuts"
       }
+    },
+    "tags": {
+      "title": "Recipe Tags",
+      "add": "Add Tag",
+      "edit": "Edit Tag",
+      "name": "Name",
+      "namePlaceholder": "e.g. Dairy, Cake, Hot",
+      "empty": "No tags yet.",
+      "emptyDesc": "Create tags to organize your recipes."
     },
     "account": {
       "title": "Account",
@@ -558,12 +589,18 @@
     "unitUpdateFailed": "Failed to update unit",
     "unitDeleted": "Unit deleted",
     "unitDeleteFailed": "Failed to delete unit",
-    "groupCreated": "Group created",
-    "groupCreateFailed": "Failed to create group",
-    "groupUpdated": "Group updated",
-    "groupUpdateFailed": "Failed to update group",
-    "groupDeleted": "Group deleted",
-    "groupDeleteFailed": "Failed to delete group",
+    "allergenCreated": "Allergen created",
+    "allergenCreateFailed": "Failed to create allergen",
+    "allergenUpdated": "Allergen updated",
+    "allergenUpdateFailed": "Failed to update allergen",
+    "allergenDeleted": "Allergen deleted",
+    "allergenDeleteFailed": "Failed to delete allergen",
+    "tagCreated": "Tag created",
+    "tagCreateFailed": "Failed to create tag",
+    "tagUpdated": "Tag updated",
+    "tagUpdateFailed": "Failed to update tag",
+    "tagDeleted": "Tag deleted",
+    "tagDeleteFailed": "Failed to delete tag",
     "profileUpdated": "Profile updated",
     "profileUpdateFailed": "Failed to update profile",
     "notificationsUpdated": "Notification preferences updated",
@@ -604,7 +641,9 @@
     "batchSplit": "Batch split",
     "batchSplitFailed": "Failed to split batch",
     "batchesMerged": "Batches merged",
-    "batchesMergeFailed": "Failed to merge batches"
+    "batchesMergeFailed": "Failed to merge batches",
+    "memberRemoved": "Member removed",
+    "memberRemoveFailed": "Failed to remove member"
   },
   "store": {
     "setupTitle": "Set up your bakery",
@@ -654,7 +693,7 @@
       },
       "settings": {
         "title": "Settings",
-        "content": "Configure your profile, team, units, groups, and notification preferences."
+        "content": "Configure your profile, team, units, allergens, and notification preferences."
       },
       "language": {
         "title": "Language",

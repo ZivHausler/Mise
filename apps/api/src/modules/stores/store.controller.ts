@@ -55,6 +55,17 @@ export class StoreController {
     return reply.send({ success: true, data: invitations });
   }
 
+  async removeMember(request: FastifyRequest<{ Params: { userId: string } }>, reply: FastifyReply) {
+    const storeId = request.currentUser!.storeId!;
+    const storeRole = request.currentUser!.storeRole;
+    if (!storeRole) throw new ValidationError('No store role assigned');
+    const callerUserId = request.currentUser!.userId;
+    const targetUserId = Number(request.params.userId);
+    const isAdmin = request.currentUser!.isAdmin;
+    await this.storeService.removeMember(storeId, storeRole as StoreRole, callerUserId, targetUserId, isAdmin);
+    return reply.send({ success: true });
+  }
+
   async sendInvite(request: FastifyRequest, reply: FastifyReply) {
     const storeId = request.currentUser!.storeId!;
     const storeRole = request.currentUser!.storeRole;
@@ -64,6 +75,17 @@ export class StoreController {
     const isAdmin = request.currentUser!.isAdmin;
     const invitation = await this.storeService.sendInvite(storeId, storeRole as StoreRole, data.email, data.role as StoreRole, isAdmin);
     return reply.status(201).send({ success: true, data: { token: invitation.token, inviteLink: invitation.inviteLink } });
+  }
+
+  async revokeInvitation(request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) {
+    const storeId = request.currentUser!.storeId!;
+    const storeRole = request.currentUser!.storeRole;
+    if (!storeRole) throw new ValidationError('No store role assigned');
+
+    const isAdmin = request.currentUser!.isAdmin;
+    const invitationId = Number(request.params.id);
+    await this.storeService.revokeInvitation(storeId, storeRole as StoreRole, invitationId, isAdmin);
+    return reply.send({ success: true });
   }
 
   async validateInvite(request: FastifyRequest<{ Params: { token: string } }>, reply: FastifyReply) {

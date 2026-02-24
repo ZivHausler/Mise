@@ -37,13 +37,13 @@ CREATE TABLE store_invitations (
 ALTER TABLE customers ADD COLUMN store_id UUID REFERENCES stores(id) ON DELETE CASCADE;
 ALTER TABLE ingredients ADD COLUMN store_id UUID REFERENCES stores(id) ON DELETE CASCADE;
 ALTER TABLE orders ADD COLUMN store_id UUID REFERENCES stores(id) ON DELETE CASCADE;
-ALTER TABLE groups ADD COLUMN store_id UUID REFERENCES stores(id) ON DELETE CASCADE;
+ALTER TABLE allergens ADD COLUMN store_id UUID REFERENCES stores(id) ON DELETE CASCADE;
 ALTER TABLE units ADD COLUMN store_id UUID REFERENCES stores(id) ON DELETE CASCADE;
 
--- ─── Remove old role column from users, user_id from groups/units ───────────
+-- ─── Remove old role column from users, user_id from allergens/units ────────
 
 ALTER TABLE users DROP COLUMN IF EXISTS role;
-ALTER TABLE groups DROP COLUMN IF EXISTS user_id;
+ALTER TABLE allergens DROP COLUMN IF EXISTS user_id;
 ALTER TABLE units DROP COLUMN IF EXISTS user_id;
 
 -- ─── Indexes ────────────────────────────────────────────────────────────────
@@ -52,7 +52,7 @@ CREATE INDEX idx_users_stores_store ON users_stores(store_id);
 CREATE INDEX idx_customers_store ON customers(store_id);
 CREATE INDEX idx_ingredients_store ON ingredients(store_id);
 CREATE INDEX idx_orders_store ON orders(store_id);
-CREATE INDEX idx_groups_store ON groups(store_id);
+CREATE INDEX idx_allergens_store ON allergens(store_id);
 CREATE INDEX idx_units_store ON units(store_id);
 CREATE INDEX idx_store_invitations_token ON store_invitations(token);
 CREATE INDEX idx_store_invitations_email ON store_invitations(email);
@@ -62,9 +62,9 @@ CREATE INDEX idx_store_invitations_email ON store_invitations(email);
 
 DELETE FROM payments WHERE order_id IN (SELECT id FROM orders WHERE store_id IS NULL);
 DELETE FROM inventory_log WHERE ingredient_id IN (SELECT id FROM ingredients WHERE store_id IS NULL);
-DELETE FROM ingredient_groups WHERE ingredient_id IN (SELECT id FROM ingredients WHERE store_id IS NULL);
+DELETE FROM ingredient_allergens WHERE ingredient_id IN (SELECT id FROM ingredients WHERE store_id IS NULL);
 DELETE FROM orders WHERE store_id IS NULL;
 DELETE FROM customers WHERE store_id IS NULL;
 DELETE FROM ingredients WHERE store_id IS NULL;
-DELETE FROM groups WHERE is_default = false AND store_id IS NULL;
+DELETE FROM allergens WHERE is_default = false AND store_id IS NULL;
 DELETE FROM units WHERE is_default = false AND store_id IS NULL;

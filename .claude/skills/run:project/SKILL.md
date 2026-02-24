@@ -7,7 +7,15 @@ allowed-tools: Bash
 
 Run the Mise project dev servers using Turborepo.
 
-## 1. Start infrastructure services
+## 1. Kill existing dev processes
+
+Before starting, kill any processes already using the dev server ports to avoid EADDRINUSE errors:
+
+```
+lsof -ti:3001,5173,5174 | xargs kill -9 2>/dev/null || true
+```
+
+## 2. Start infrastructure services
 
 Start PostgreSQL, MongoDB, Redis, and RabbitMQ via Docker Compose.
 
@@ -19,7 +27,7 @@ IMPORTANT: The `docker` symlink at `/usr/local/bin/docker` is broken. Use the fu
 
 If this fails with "no such file or directory", Docker Desktop is not running. Ask the user to open Docker Desktop and wait for it to be ready, then retry.
 
-## 2. Start dev servers
+## 3. Start dev servers
 
 ```
 pnpm dev

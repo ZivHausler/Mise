@@ -10,7 +10,7 @@ export const createIngredientSchema = z.object({
   lowStockThreshold: z.number().min(0).max(1000000),
   supplier: z.string().max(200).optional(),
   notes: z.string().max(2000).optional(),
-  groupIds: z.array(z.coerce.number().int().positive()).optional(),
+  allergenIds: z.array(z.coerce.number().int().positive()).optional(),
 });
 
 export const updateIngredientSchema = createIngredientSchema.partial();

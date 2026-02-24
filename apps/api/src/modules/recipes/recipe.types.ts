@@ -2,7 +2,6 @@ export interface Recipe {
   id: string;
   name: string;
   description?: string;
-  category?: string;
   tags?: string[];
   ingredients: RecipeIngredient[];
   steps: RecipeStep[];
@@ -40,7 +39,6 @@ export interface RecipeStep {
 export interface CreateRecipeDTO {
   name: string;
   description?: string;
-  category?: string;
   tags?: string[];
   ingredients: Omit<RecipeIngredient, 'name' | 'costPerUnit'>[];
   steps: RecipeStep[];

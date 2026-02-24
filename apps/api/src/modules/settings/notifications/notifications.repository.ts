@@ -1,7 +1,7 @@
 import type { NotificationPreference } from '../settings.types.js';
 import { getPool } from '../../../core/database/postgres.js';
 
-export type NotificationRecipientRow = NotificationPreference & { email: string; name: string; phone?: string };
+export type NotificationRecipientRow = NotificationPreference & { email: string; name: string; phone?: string; language: number };
 
 export class PgNotifPrefsRepository {
   static async findAll(userId: number): Promise<NotificationPreference[]> {
@@ -33,7 +33,7 @@ export class PgNotifPrefsRepository {
     const pool = getPool();
     const result = await pool.query(
       `SELECT np.id, np.user_id, np.event_type, np.channel_email, np.channel_push, np.channel_sms,
-              np.created_at, np.updated_at, u.email, u.name, u.phone
+              np.created_at, np.updated_at, u.email, u.name, u.phone, u.language
        FROM notification_preferences np
        JOIN users u ON u.id = np.user_id
        WHERE np.event_type = $1
@@ -45,6 +45,7 @@ export class PgNotifPrefsRepository {
       email: row['email'] as string,
       name: row['name'] as string,
       phone: (row['phone'] as string) ?? undefined,
+      language: Number(row['language'] ?? 0),
     }));
   }
 

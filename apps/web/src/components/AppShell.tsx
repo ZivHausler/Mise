@@ -11,11 +11,31 @@ import { BottomTabs } from './BottomTabs';
 import { NavigationProgress, PageSkeleton } from './Feedback';
 import { TourProvider } from './tour/TourProvider';
 import { useAuthStore } from '@/store/auth';
-import { useSelectStore, useAllStores } from '@/api/hooks';
+import { useAppStore } from '@/store/app';
+import { useSelectStore, useAllStores, useProfile } from '@/api/hooks';
+import { ENUM_TO_LANGUAGE } from '@/constants/defaults';
+import { languageDir } from '@/utils/language';
 
 export const AppShell = React.memo(function AppShell() {
   const [drawerOpen, setDrawerOpen] = useState(false);
   useOrderSSE();
+
+  // Sync language from user profile (DB is source of truth)
+  const { i18n } = useTranslation();
+  const { data: profile } = useProfile();
+  const initLanguageFromProfile = useAppStore((s) => s.initLanguageFromProfile);
+  React.useEffect(() => {
+    const p = profile as { language?: number } | undefined;
+    if (p && p.language !== undefined) {
+      const lang = ENUM_TO_LANGUAGE[p.language] ?? 'he';
+      if (lang !== i18n.language) {
+        initLanguageFromProfile(p.language);
+        i18n.changeLanguage(lang);
+        document.documentElement.dir = languageDir(lang);
+        document.documentElement.lang = lang;
+      }
+    }
+  }, [profile, i18n, initLanguageFromProfile]);
 
   const handleMenuClick = useCallback(() => setDrawerOpen(true), []);
   const handleCloseDrawer = useCallback(() => setDrawerOpen(false), []);
@@ -66,6 +86,7 @@ const MobileNav = React.memo(function MobileNav({ onClose }: { onClose: () => vo
   const stores = useAuthStore((s) => s.stores);
   const isAdmin = useAuthStore((s) => s.isAdmin);
   const updateToken = useAuthStore((s) => s.updateToken);
+  const setActiveStore = useAuthStore((s) => s.setActiveStore);
   const selectStore = useSelectStore();
   const allStoresQuery = useAllStores(isAdmin);
   const qc = useQueryClient();
@@ -82,12 +103,13 @@ const MobileNav = React.memo(function MobileNav({ onClose }: { onClose: () => vo
         {
           onSuccess: (data: any) => {
             updateToken(data.token);
+            setActiveStore(storeId);
             qc.invalidateQueries();
           },
         },
       );
     },
-    [selectStore, updateToken, qc],
+    [selectStore, updateToken, setActiveStore, qc],
   );
 
   return (

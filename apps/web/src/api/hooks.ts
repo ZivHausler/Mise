@@ -361,14 +361,16 @@ export function useCustomer(id: number) {
   return useQuery({ queryKey: ['customers', id], queryFn: () => fetchApi<unknown>(`/customers/${id}`), enabled: !!id });
 }
 
-export function useCustomerOrders(customerId: number, page = 1, limit = 10, filters?: { status?: number; dateFrom?: string; dateTo?: string }) {
+export function useCustomerOrders(customerId: number, page = 1, limit = 10, filters?: { status?: number; dateFrom?: string; dateTo?: string }, sortBy?: string, sortDir?: string) {
   return useQuery({
-    queryKey: ['orders', 'customer', customerId, page, limit, filters],
+    queryKey: ['orders', 'customer', customerId, page, limit, filters, sortBy, sortDir],
     queryFn: async () => {
       const params = new URLSearchParams({ page: String(page), limit: String(limit) });
       if (filters?.status !== undefined) params.set('status', String(filters.status));
       if (filters?.dateFrom) params.set('dateFrom', filters.dateFrom);
       if (filters?.dateTo) params.set('dateTo', filters.dateTo);
+      if (sortBy) params.set('sortBy', sortBy);
+      if (sortDir) params.set('sortDir', sortDir);
       const { data } = await apiClient.get(`/orders/customer/${customerId}?${params}`);
       return { orders: data.data, pagination: data.pagination };
     },
@@ -535,41 +537,79 @@ export function useDeleteUnit() {
   });
 }
 
-// Settings — Groups
-export function useGroups() {
-  return useQuery({ queryKey: ['groups'], queryFn: () => fetchApi<unknown[]>('/settings/groups') });
+// Settings — Allergens
+export function useAllergens() {
+  return useQuery({ queryKey: ['allergens'], queryFn: () => fetchApi<unknown[]>('/settings/allergens') });
 }
 
-export function useCreateGroup() {
+export function useCreateAllergen() {
   const qc = useQueryClient();
   const addToast = useToastStore((s) => s.addToast);
   const { t } = useTranslation();
   return useMutation({
-    mutationFn: (body: unknown) => postApi('/settings/groups', body),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['groups'] }); addToast('success', t('toasts.groupCreated')); },
-    onError: () => addToast('error', t('toasts.groupCreateFailed')),
+    mutationFn: (body: unknown) => postApi('/settings/allergens', body),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['allergens'] }); addToast('success', t('toasts.allergenCreated')); },
+    onError: () => addToast('error', t('toasts.allergenCreateFailed')),
   });
 }
 
-export function useUpdateGroup() {
+export function useUpdateAllergen() {
   const qc = useQueryClient();
   const addToast = useToastStore((s) => s.addToast);
   const { t } = useTranslation();
   return useMutation({
-    mutationFn: ({ id, ...body }: { id: number } & Record<string, unknown>) => putApi(`/settings/groups/${id}`, body),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['groups'] }); addToast('success', t('toasts.groupUpdated')); },
-    onError: () => addToast('error', t('toasts.groupUpdateFailed')),
+    mutationFn: ({ id, ...body }: { id: number } & Record<string, unknown>) => putApi(`/settings/allergens/${id}`, body),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['allergens'] }); addToast('success', t('toasts.allergenUpdated')); },
+    onError: () => addToast('error', t('toasts.allergenUpdateFailed')),
   });
 }
 
-export function useDeleteGroup() {
+export function useDeleteAllergen() {
   const qc = useQueryClient();
   const addToast = useToastStore((s) => s.addToast);
   const { t } = useTranslation();
   return useMutation({
-    mutationFn: (id: number) => deleteApi(`/settings/groups/${id}`),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['groups'] }); addToast('success', t('toasts.groupDeleted')); },
-    onError: () => addToast('error', t('toasts.groupDeleteFailed')),
+    mutationFn: (id: number) => deleteApi(`/settings/allergens/${id}`),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['allergens'] }); addToast('success', t('toasts.allergenDeleted')); },
+    onError: () => addToast('error', t('toasts.allergenDeleteFailed')),
+  });
+}
+
+// Settings — Tags
+export function useTags() {
+  return useQuery({ queryKey: ['tags'], queryFn: () => fetchApi<unknown[]>('/settings/tags') });
+}
+
+export function useCreateTag() {
+  const qc = useQueryClient();
+  const addToast = useToastStore((s) => s.addToast);
+  const { t } = useTranslation();
+  return useMutation({
+    mutationFn: (body: unknown) => postApi('/settings/tags', body),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['tags'] }); addToast('success', t('toasts.tagCreated')); },
+    onError: () => addToast('error', t('toasts.tagCreateFailed')),
+  });
+}
+
+export function useUpdateTag() {
+  const qc = useQueryClient();
+  const addToast = useToastStore((s) => s.addToast);
+  const { t } = useTranslation();
+  return useMutation({
+    mutationFn: ({ id, ...body }: { id: number } & Record<string, unknown>) => putApi(`/settings/tags/${id}`, body),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['tags'] }); addToast('success', t('toasts.tagUpdated')); },
+    onError: () => addToast('error', t('toasts.tagUpdateFailed')),
+  });
+}
+
+export function useDeleteTag() {
+  const qc = useQueryClient();
+  const addToast = useToastStore((s) => s.addToast);
+  const { t } = useTranslation();
+  return useMutation({
+    mutationFn: (id: number) => deleteApi(`/settings/tags/${id}`),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['tags'] }); addToast('success', t('toasts.tagDeleted')); },
+    onError: () => addToast('error', t('toasts.tagDeleteFailed')),
   });
 }
 
@@ -630,7 +670,7 @@ export function useStoreMembers() {
 export function usePendingInvitations() {
   return useQuery({
     queryKey: ['pendingInvitations'],
-    queryFn: () => fetchApi<{ email: string; role: number; inviteLink: string; createdAt: string; expiresAt: string }[]>('/stores/invitations/pending'),
+    queryFn: () => fetchApi<{ id: number; email: string; role: number; inviteLink: string; createdAt: string; expiresAt: string }[]>('/stores/invitations/pending'),
   });
 }
 
@@ -642,6 +682,28 @@ export function useSendInvite() {
     mutationFn: (body: { email: string; role: number }) => postApi<{ token: string; inviteLink: string }>('/stores/invite', body),
     onSuccess: () => { addToast('success', t('toasts.inviteSent')); qc.invalidateQueries({ queryKey: ['storeMembers'] }); qc.invalidateQueries({ queryKey: ['pendingInvitations'] }); },
     onError: () => addToast('error', t('toasts.inviteFailed')),
+  });
+}
+
+export function useRevokeInvitation() {
+  const qc = useQueryClient();
+  const addToast = useToastStore((s) => s.addToast);
+  const { t } = useTranslation();
+  return useMutation({
+    mutationFn: (id: number) => patchApi(`/stores/invitations/${id}/revoke`, {}),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['pendingInvitations'] }); qc.invalidateQueries({ queryKey: ['storeMembers'] }); addToast('success', t('toasts.inviteRevoked')); },
+    onError: () => addToast('error', t('toasts.inviteRevokeFailed')),
+  });
+}
+
+export function useRemoveMember() {
+  const qc = useQueryClient();
+  const addToast = useToastStore((s) => s.addToast);
+  const { t } = useTranslation();
+  return useMutation({
+    mutationFn: (userId: number) => deleteApi(`/stores/members/${userId}`),
+    onSuccess: () => { addToast('success', t('toasts.memberRemoved')); qc.invalidateQueries({ queryKey: ['storeMembers'] }); },
+    onError: () => addToast('error', t('toasts.memberRemoveFailed')),
   });
 }
 

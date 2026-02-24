@@ -7,7 +7,7 @@ import { Page, Card, Stack, Row } from '@/components/Layout';
 import { Breadcrumbs } from '@/components/Breadcrumbs';
 import { TextInput, TextArea, NumberInput, Select } from '@/components/FormFields';
 import { Button } from '@/components/Button';
-import { useCreateRecipe, useUpdateRecipe, useRecipe, useRecipes, useInventory } from '@/api/hooks';
+import { useCreateRecipe, useUpdateRecipe, useRecipe, useRecipes, useInventory, useTags } from '@/api/hooks';
 import { RecipeImageUpload } from '@/components/RecipeImageUpload';
 import { cn } from '@/utils/cn';
 import { useToastStore } from '@/store/toast';
@@ -40,20 +40,12 @@ function convertUnit(from: string, to: string): number {
 }
 
 function getCompatibleUnits(ing: any, inventoryItems: any[], t: (key: string, fallback?: string) => string) {
-  const inventoryItem = ing.ingredientId ? inventoryItems.find((item: any) => item.id === ing.ingredientId) : null;
+  const inventoryItem = ing.ingredientId ? inventoryItems.find((item: any) => String(item.id) === String(ing.ingredientId)) : null;
   const allowed = inventoryItem ? (unitGroups[inventoryItem.unit] ?? allUnits) : allUnits;
   const options = allowed.map((u) => ({ value: u, label: t(`common.units.${u}`, u) }));
   if (!ing.unit) options.unshift({ value: '', label: '—' });
   return options;
 }
-
-const categoryOptions = [
-  { value: 'cakes', label: 'Cakes' },
-  { value: 'breads', label: 'Breads' },
-  { value: 'pastries', label: 'Pastries' },
-  { value: 'cookies', label: 'Cookies' },
-  { value: 'other', label: 'Other' },
-];
 
 let stepIdCounter = 0;
 const nextStepId = () => `step-${++stepIdCounter}`;
@@ -75,6 +67,7 @@ export default function RecipeFormPage() {
   const { data: inventory } = useInventory(1, 1000);
   const inventoryItems = ((inventory as any)?.items as any[] ?? []);
 
+  const { data: availableTags } = useTags();
   const { data: allRecipes } = useRecipes();
   const recipeOptions = ((allRecipes as any[]) ?? [])
     .filter((rec: any) => rec.id !== id)
@@ -84,7 +77,7 @@ export default function RecipeFormPage() {
 
   const [photos, setPhotos] = useState<string[]>(r?.photos ?? []);
   const [name, setName] = useState(r?.name ?? '');
-  const [category, setCategory] = useState(r?.category ?? '');
+  const [tags, setTags] = useState<string[]>(r?.tags ?? []);
   const [description, setDescription] = useState(r?.description ?? '');
   const [yieldAmount, setYieldAmount] = useState<number | ''>(r?.yield ?? '');
   const [price, setPrice] = useState<number | ''>(r?.sellingPrice ?? '');
@@ -108,7 +101,7 @@ export default function RecipeFormPage() {
     if (!r) return;
     setPhotos(r.photos ?? []);
     setName(r.name ?? '');
-    setCategory(r.category ?? '');
+    setTags(r.tags ?? []);
     setDescription(r.description ?? '');
     setYieldAmount(r.yield ?? '');
     setPrice(r.sellingPrice ?? '');
@@ -168,14 +161,14 @@ export default function RecipeFormPage() {
         addToast('error', t('recipes.stepsRequired', 'At least one step is required'));
         return;
       }
-      const body = { name, category, description: description || undefined, yield: yieldAmount === '' ? undefined : yieldAmount, sellingPrice: price === '' ? undefined : Number(price), ingredients, steps: formattedSteps, photos: photos.length ? photos : undefined };
+      const body = { name, tags: tags.length ? tags : undefined, description: description || undefined, yield: yieldAmount === '' ? undefined : yieldAmount, sellingPrice: price === '' ? undefined : Number(price), ingredients, steps: formattedSteps, photos: photos.length ? photos : undefined };
       if (isEdit) {
         updateRecipe.mutate({ id: id!, ...body }, { onSuccess: () => navigate(`/recipes/${id}`) });
       } else {
         createRecipe.mutate(body, { onSuccess: () => navigate('/recipes') });
       }
     },
-    [name, category, description, yieldAmount, price, ingredients, steps, photos, isEdit, id, createRecipe, updateRecipe, navigate]
+    [name, tags, description, yieldAmount, price, ingredients, steps, photos, isEdit, id, createRecipe, updateRecipe, navigate]
   );
 
   const isPending = createRecipe.isPending || updateRecipe.isPending;
@@ -194,7 +187,31 @@ export default function RecipeFormPage() {
           <Card>
             <Stack gap={4}>
               <TextInput label={t('recipes.name', 'Name')} value={name} onChange={(e) => setName(e.target.value)} required dir="auto" />
-              <Select label={t('recipes.category', 'Category')} options={categoryOptions} value={category} onChange={(e) => setCategory(e.target.value)} placeholder={t('common.select', 'Select...')} />
+              {(availableTags as any[])?.length > 0 && (
+                <div>
+                  <label className="mb-1 block text-body-sm font-semibold text-neutral-700">{t('recipes.tags', 'Tags')}</label>
+                  <div className="flex flex-wrap gap-2">
+                    {((availableTags as any[]) ?? []).map((tag: any) => {
+                      const selected = tags.includes(tag.name);
+                      return (
+                        <button
+                          key={tag.id}
+                          type="button"
+                          onClick={() => setTags((prev) => selected ? prev.filter((t) => t !== tag.name) : [...prev, tag.name])}
+                          className={cn(
+                            'rounded-full border px-3 py-1 text-body-sm font-medium transition-colors',
+                            selected
+                              ? 'border-primary-500 bg-primary-50 text-primary-700'
+                              : 'border-neutral-200 bg-white text-neutral-600 hover:border-neutral-300 hover:bg-neutral-50',
+                          )}
+                        >
+                          {tag.name}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
               <TextArea label={t('recipes.description', 'Description')} value={description} onChange={(e) => setDescription(e.target.value)} dir="auto" />
               <Row gap={4}>
                 <NumberInput label={t('recipes.yield', 'Yield')} value={yieldAmount} onChange={setYieldAmount} min={0} className="flex-1" />
@@ -215,10 +232,10 @@ export default function RecipeFormPage() {
                 <div key={i} className="flex flex-col gap-2 rounded-md border border-neutral-100 p-2 sm:flex-row sm:items-center sm:border-0 sm:p-0">
                   <Select
                     placeholder={t('recipes.ingredientName', 'Ingredient')}
-                    options={inventoryItems.filter((item: any) => item.id === ing.ingredientId || !ingredients.some((other, idx) => idx !== i && other.ingredientId === item.id)).map((item: any) => ({ value: item.id, label: item.name }))}
+                    options={inventoryItems.filter((item: any) => String(item.id) === String(ing.ingredientId) || !ingredients.some((other, idx) => idx !== i && String(other.ingredientId) === String(item.id))).map((item: any) => ({ value: item.id, label: item.name }))}
                     value={ing.ingredientId ?? ''}
                     onChange={(e) => {
-                      const selected = inventoryItems.find((item: any) => item.id === e.target.value);
+                      const selected = inventoryItems.find((item: any) => String(item.id) === String(e.target.value));
                       const baseUnit = selected?.unit ?? 'g';
                       const compatible = unitGroups[baseUnit] ?? allUnits;
                       setIngredients((prev) => prev.map((item, idx) => (idx === i ? { ...item, ingredientId: e.target.value, name: selected?.name ?? '', unit: compatible.includes(item.unit) ? item.unit : compatible[0] } : item)));

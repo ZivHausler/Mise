@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { Language } from '@mise/shared';
 
 // ─── Units ──────────────────────────────────────────────────────────────────
 
@@ -19,27 +20,38 @@ export const updateUnitSchema = z.object({
 
 export type UpdateUnitDTO = z.infer<typeof updateUnitSchema>;
 
-// ─── Groups ─────────────────────────────────────────────────────────────────
+// ─── Allergens ─────────────────────────────────────────────────────────────
 
-export const createGroupSchema = z.object({
+export const createAllergenSchema = z.object({
   name: z.string().trim().min(1).max(200),
-  color: z.string().regex(/^#[0-9A-Fa-f]{6}$/).optional(),
+  color: z.string().regex(/^#[0-9A-Fa-f]{6}$/).nullable().optional(),
+  icon: z.string().max(50).nullable().optional(),
 });
 
-export type CreateGroupDTO = z.infer<typeof createGroupSchema>;
+export type CreateAllergenDTO = z.infer<typeof createAllergenSchema>;
 
-export const updateGroupSchema = z.object({
+export const updateAllergenSchema = z.object({
   name: z.string().trim().min(1).max(200).optional(),
   color: z.string().regex(/^#[0-9A-Fa-f]{6}$/).nullable().optional(),
+  icon: z.string().max(50).nullable().optional(),
 });
 
-export type UpdateGroupDTO = z.infer<typeof updateGroupSchema>;
+export type UpdateAllergenDTO = z.infer<typeof updateAllergenSchema>;
+
+// ─── Tags ─────────────────────────────────────────────────────────────────
+
+export const createTagSchema = z.object({ name: z.string().trim().min(1).max(100) });
+export type CreateTagDTO = z.infer<typeof createTagSchema>;
+
+export const updateTagSchema = z.object({ name: z.string().trim().min(1).max(100) });
+export type UpdateTagDTO = z.infer<typeof updateTagSchema>;
 
 // ─── Profile ────────────────────────────────────────────────────────────────
 
 export const updateProfileSchema = z.object({
   name: z.string().trim().min(1).max(255).optional(),
   phone: z.string().regex(/^05\d{8}$/, 'Invalid phone number — e.g. 0541234567').optional().nullable(),
+  language: z.nativeEnum(Language).optional(),
 });
 
 export type UpdateProfileDTO = z.infer<typeof updateProfileSchema>;

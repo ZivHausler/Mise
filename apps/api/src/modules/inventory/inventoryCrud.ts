@@ -15,8 +15,8 @@ export class InventoryCrud {
     return PgInventoryRepository.findAll(storeId, search);
   }
 
-  static async getAllPaginated(storeId: number, page: number, limit: number, search?: string, groupIds?: number[], statuses?: string[]): Promise<PaginatedResult<Ingredient>> {
-    return PgInventoryRepository.findAllPaginated(storeId, page, limit, search, groupIds, statuses);
+  static async getAllPaginated(storeId: number, page: number, limit: number, search?: string, allergenIds?: number[], statuses?: string[]): Promise<PaginatedResult<Ingredient>> {
+    return PgInventoryRepository.findAllPaginated(storeId, page, limit, search, allergenIds, statuses);
   }
 
   static async getLowStock(storeId: number): Promise<Ingredient[]> {

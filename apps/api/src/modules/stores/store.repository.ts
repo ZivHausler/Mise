@@ -25,6 +25,12 @@ export class PgStoreRepository {
     );
   }
 
+  static async findStoreById(storeId: number): Promise<Store | null> {
+    const pool = getPool();
+    const result = await pool.query('SELECT * FROM stores WHERE id = $1', [storeId]);
+    return result.rows[0] ? this.mapStoreRow(result.rows[0]) : null;
+  }
+
   static async getUserStores(userId: number): Promise<UserStore[]> {
     const pool = getPool();
     const result = await pool.query(
@@ -48,6 +54,12 @@ export class PgStoreRepository {
     const pool = getPool();
     const result = await pool.query('SELECT * FROM stores ORDER BY name');
     return result.rows.map((row: Record<string, unknown>) => this.mapStoreRow(row));
+  }
+
+  static async getStoreName(storeId: number): Promise<string | null> {
+    const pool = getPool();
+    const result = await pool.query('SELECT name FROM stores WHERE id = $1', [storeId]);
+    return result.rows[0] ? (result.rows[0]['name'] as string) : null;
   }
 
   static async getUserStoreRole(userId: number, storeId: number): Promise<StoreRole | null> {
@@ -77,6 +89,15 @@ export class PgStoreRepository {
     }));
   }
 
+  static async removeUserFromStore(userId: number, storeId: number): Promise<boolean> {
+    const pool = getPool();
+    const result = await pool.query(
+      `DELETE FROM users_stores WHERE user_id = $1 AND store_id = $2`,
+      [userId, storeId],
+    );
+    return (result.rowCount ?? 0) > 0;
+  }
+
   static async createInvitation(storeId: number, email: string, role: StoreRole): Promise<StoreInvitation> {
     const pool = getPool();
     const token = crypto.randomBytes(32).toString('hex');
@@ -96,7 +117,7 @@ export class PgStoreRepository {
       `SELECT si.*, s.name as store_name
        FROM store_invitations si
        LEFT JOIN stores s ON s.id = si.store_id
-       WHERE si.token = $1 AND si.used_at IS NULL AND si.expires_at > NOW()`,
+       WHERE si.token = $1 AND si.used_at IS NULL AND si.revoked_at IS NULL AND si.expires_at > NOW()`,
       [token],
     );
     if (!result.rows[0]) return null;
@@ -117,22 +138,32 @@ export class PgStoreRepository {
     return this.mapInvitationRow(result.rows[0]);
   }
 
-  static async getPendingInvitations(storeId: number): Promise<{ email: string; role: StoreRole; token: string; createdAt: Date; expiresAt: Date }[]> {
+  static async getPendingInvitations(storeId: number): Promise<{ id: number; email: string; role: StoreRole; token: string; createdAt: Date; expiresAt: Date }[]> {
     const pool = getPool();
     const result = await pool.query(
-      `SELECT email, role, token, created_at, expires_at
+      `SELECT id, email, role, token, created_at, expires_at
        FROM store_invitations
        WHERE store_id = $1 AND used_at IS NULL AND revoked_at IS NULL AND expires_at > NOW()
        ORDER BY created_at DESC`,
       [storeId],
     );
     return result.rows.map((row: Record<string, unknown>) => ({
+      id: Number(row['id']),
       email: row['email'] as string,
       role: row['role'] as StoreRole,
       token: row['token'] as string,
       createdAt: new Date(row['created_at'] as string),
       expiresAt: new Date(row['expires_at'] as string),
     }));
+  }
+
+  static async revokeInvitation(invitationId: number, storeId: number): Promise<boolean> {
+    const pool = getPool();
+    const result = await pool.query(
+      `DELETE FROM store_invitations WHERE id = $1 AND store_id = $2`,
+      [invitationId, storeId],
+    );
+    return (result.rowCount ?? 0) > 0;
   }
 
   static async markInvitationUsed(token: string): Promise<void> {

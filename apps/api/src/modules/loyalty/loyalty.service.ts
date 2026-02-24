@@ -3,6 +3,7 @@ import { LOYALTY_TRANSACTION_TYPE } from './loyalty.types.js';
 import type { LoyaltyConfig, CustomerLoyaltySummary, LoyaltyTransaction, UpsertLoyaltyConfigDTO } from './loyalty.types.js';
 import type { PaginationOptions, PaginatedResult } from './loyalty.repository.js';
 import { PgOrderRepository } from '../orders/order.repository.js';
+import { PgCustomerRepository } from '../customers/customer.repository.js';
 import { ValidationError } from '../../core/errors/app-error.js';
 
 const DEFAULT_CONFIG: Omit<LoyaltyConfig, 'id' | 'storeId' | 'createdAt' | 'updatedAt'> = {
@@ -38,7 +39,18 @@ export class LoyaltyService {
     const config = await LoyaltyCrud.getConfig(order.storeId);
     if (!config || !config.isActive) return;
 
-    const points = Math.floor(amount * config.pointsPerShekel);
+    const TIER_MULTIPLIERS = { bronze: 1, silver: 1.5, gold: 2 } as const;
+    let multiplier = 1;
+
+    if (order.customerId) {
+      const customer = await PgCustomerRepository.findById(order.customerId, order.storeId);
+      if (customer && !customer.loyaltyEnabled) return;
+      if (customer) {
+        multiplier = TIER_MULTIPLIERS[customer.loyaltyTier] ?? 1;
+      }
+    }
+
+    const points = Math.floor(amount * config.pointsPerShekel * multiplier);
     if (points <= 0) return;
 
     const newBalance = await LoyaltyCrud.updateCustomerBalance(order.storeId, order.customerId, points);

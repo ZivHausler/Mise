@@ -6,7 +6,7 @@ import { getEventBus } from '../../../core/events/event-bus.js';
 import { EventNames } from '../../../core/events/event-names.js';
 
 export class AdjustStockUseCase implements UseCase<Ingredient, [number, AdjustStockDTO]> {
-  async execute(storeId: number, data: AdjustStockDTO, correlationId?: string): Promise<Ingredient> {
+  async execute(storeId: number, data: AdjustStockDTO, correlationId?: string, options?: { suppressEvent?: boolean }): Promise<Ingredient> {
     const existing = await InventoryCrud.getById(storeId, data.ingredientId);
     if (!existing) {
       throw new NotFoundError('Ingredient not found');
@@ -17,14 +17,17 @@ export class AdjustStockUseCase implements UseCase<Ingredient, [number, AdjustSt
 
     const ingredient = await InventoryCrud.adjustStock(storeId, data);
 
-    if (ingredient.quantity <= ingredient.lowStockThreshold) {
+    if (ingredient.quantity <= ingredient.lowStockThreshold && !options?.suppressEvent) {
       await getEventBus().publish({
         eventName: EventNames.INVENTORY_LOW_STOCK,
         payload: {
-          ingredientId: ingredient.id,
-          name: ingredient.name,
-          currentQuantity: ingredient.quantity,
-          threshold: ingredient.lowStockThreshold,
+          items: [{
+            ingredientId: ingredient.id,
+            name: ingredient.name,
+            currentQuantity: ingredient.quantity,
+            threshold: ingredient.lowStockThreshold,
+            unit: ingredient.unit,
+          }],
         },
         timestamp: new Date(),
         correlationId,

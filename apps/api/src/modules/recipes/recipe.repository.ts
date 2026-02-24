@@ -18,13 +18,12 @@ export class MongoRecipeRepository {
     return doc ? this.mapDoc(doc) : null;
   }
 
-  static async findAll(storeId: number, filters?: { category?: string; search?: string }): Promise<Recipe[]> {
+  static async findAll(storeId: number, filters?: { tag?: string; search?: string }): Promise<Recipe[]> {
     const query: Record<string, unknown> = {};
     query['storeId'] = storeId;
-    if (filters?.category) {
-      // Ensure category is a plain string, not an object (NoSQL injection prevention)
-      if (typeof filters.category !== 'string') throw new Error('Invalid category filter');
-      query['category'] = filters.category;
+    if (filters?.tag) {
+      if (typeof filters.tag !== 'string') throw new Error('Invalid tag filter');
+      query['tags'] = { $in: [filters.tag] };
     }
     if (filters?.search) {
       // Sanitize: escape regex special chars and ensure it's a plain string
@@ -73,7 +72,6 @@ export class MongoRecipeRepository {
       id: id instanceof ObjectId ? id.toHexString() : String(id),
       name: doc['name'] as string,
       description: doc['description'] as string | undefined,
-      category: doc['category'] as string | undefined,
       tags: doc['tags'] as string[] | undefined,
       ingredients: (doc['ingredients'] as Recipe['ingredients']) ?? [],
       steps: (doc['steps'] as Recipe['steps']) ?? [],
