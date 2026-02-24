@@ -53,11 +53,13 @@ export class PgCustomerRepository {
   static async create(storeId: number, data: CreateCustomerDTO): Promise<Customer> {
     const pool = getPool();
     const prefs = data.preferences ? JSON.stringify(data.preferences) : null;
+    const loyaltyEnabled = data.loyaltyEnabled ?? true;
+    const loyaltyTier = data.loyaltyTier ?? 'bronze';
     const result = await pool.query(
-      `INSERT INTO customers (store_id, name, phone, email, address, notes, preferences, created_at, updated_at)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, NOW(), NOW())
+      `INSERT INTO customers (store_id, name, phone, email, address, notes, preferences, loyalty_enabled, loyalty_tier, created_at, updated_at)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), NOW())
        RETURNING *`,
-      [storeId, data.name, data.phone ?? null, data.email ?? null, data.address ?? null, data.notes ?? null, prefs],
+      [storeId, data.name, data.phone ?? null, data.email ?? null, data.address ?? null, data.notes ?? null, prefs, loyaltyEnabled, loyaltyTier],
     );
     return this.mapRow(result.rows[0]);
   }
@@ -74,6 +76,8 @@ export class PgCustomerRepository {
     if (data.address !== undefined) { fields.push(`address = $${idx++}`); values.push(data.address); }
     if (data.notes !== undefined) { fields.push(`notes = $${idx++}`); values.push(data.notes); }
     if (data.preferences !== undefined) { fields.push(`preferences = $${idx++}`); values.push(JSON.stringify(data.preferences)); }
+    if (data.loyaltyEnabled !== undefined) { fields.push(`loyalty_enabled = $${idx++}`); values.push(data.loyaltyEnabled); }
+    if (data.loyaltyTier !== undefined) { fields.push(`loyalty_tier = $${idx++}`); values.push(data.loyaltyTier); }
 
     fields.push(`updated_at = NOW()`);
     values.push(id);
@@ -109,6 +113,8 @@ export class PgCustomerRepository {
       address: row['address'] as string | undefined,
       notes: row['notes'] as string | undefined,
       preferences,
+      loyaltyEnabled: row['loyalty_enabled'] !== false,
+      loyaltyTier: (row['loyalty_tier'] as string as Customer['loyaltyTier']) ?? 'bronze',
       ...(row['order_count'] !== undefined && { orderCount: Number(row['order_count']) }),
       ...(row['total_spent'] !== undefined && { totalSpent: Number(row['total_spent']) }),
       createdAt: new Date(row['created_at'] as string),

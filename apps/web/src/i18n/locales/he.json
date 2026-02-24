@@ -269,7 +269,10 @@
     "allergies": "אלרגיות",
     "orderHistory": "היסטוריית הזמנות",
     "noOrders": "אין הזמנות עדיין.",
-    "loyalty": "נאמנות",
+    "loyalty": "צבירת נקודות",
+    "loyaltyEnabled": "צבירת נקודות פעילה",
+    "loyaltyTier": "דרגת צבירה",
+    "loyaltyDisabledMsg": "צבירת נקודות מושבתת עבור לקוח זה.",
     "noPayments": "היסטוריית תשלומים תופיע כאן.",
     "noNotes": "אין הערות או העדפות.",
     "empty": "אין לקוחות עדיין",
@@ -321,7 +324,13 @@
     "points": "נקודות",
     "balanceAfter": "יתרה אחרי",
     "description": "תיאור",
-    "noTransactions": "אין עסקאות נאמנות עדיין.",
+    "tiers": {
+      "bronze": "ארד",
+      "silver": "כסף",
+      "gold": "זהב"
+    },
+    "tierMultiplier": "×{{multiplier}} נקודות",
+    "noTransactions": "אין עסקאות צבירת נקודות עדיין.",
     "shekelEquivalent": "≈ ₪{{value}}",
     "types": {
       "earned": "נצבר",
@@ -334,7 +343,7 @@
       "redeemed": "מומשו {{points}} נקודות תמורת ₪{{value}}"
     },
     "adjustModal": {
-      "title": "עדכון נקודות נאמנות",
+      "title": "עדכון נקודות",
       "points": "נקודות",
       "pointsHint": "חיובי להוספה, שלילי לניכוי",
       "description": "תיאור",
@@ -342,7 +351,7 @@
       "currentBalance": "יתרה נוכחית"
     },
     "redeemModal": {
-      "title": "מימוש נקודות נאמנות",
+      "title": "מימוש נקודות",
       "points": "נקודות למימוש",
       "discount": "ערך הנחה",
       "minPoints": "מינימום {{min}} נקודות נדרש",
@@ -439,7 +448,7 @@
       "units": "יחידות",
       "allergens": "אלרגנים",
       "notifications": "התראות",
-      "loyalty": "נאמנות"
+      "loyalty": "צבירת נקודות"
     },
     "team": {
       "title": "חברי צוות",
@@ -495,7 +504,7 @@
       "phoneError": "מספר טלפון לא תקין — לדוגמה 0541234567"
     },
     "loyalty": {
-      "title": "תוכנית נאמנות",
+      "title": "תוכנית צבירת נקודות",
       "isActive": "הפעל תוכנית",
       "pointsPerShekel": "נקודות ל-₪",
       "pointValue": "ערך נקודה (₪)",
@@ -592,8 +601,8 @@
     "inviteRevoked": "ההזמנה בוטלה",
     "inviteRevokeFailed": "ביטול ההזמנה נכשל",
     "tourRestarted": "הסיור הופעל מחדש — נווט ללוח הבקרה כדי להתחיל",
-    "loyaltyConfigUpdated": "הגדרות נאמנות עודכנו",
-    "loyaltyConfigUpdateFailed": "עדכון הגדרות נאמנות נכשל",
+    "loyaltyConfigUpdated": "הגדרות צבירת נקודות עודכנו",
+    "loyaltyConfigUpdateFailed": "עדכון הגדרות צבירת נקודות נכשל",
     "loyaltyAdjusted": "הנקודות עודכנו",
     "loyaltyAdjustFailed": "עדכון נקודות נכשל",
     "loyaltyRedeemed": "הנקודות מומשו",

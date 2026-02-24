@@ -8,7 +8,7 @@ import { Button } from '@/components/Button';
 import { StatusBadge } from '@/components/DataDisplay';
 import { PageSkeleton } from '@/components/Feedback';
 import { ConfirmModal } from '@/components/Modal';
-import { useCustomer, useCustomerOrders, useCustomerPayments, useDeleteCustomer, useCustomerLoyalty, useCustomerLoyaltyTransactions, useLoyaltyConfig } from '@/api/hooks';
+import { useCustomer, useCustomerOrders, useCustomerPayments, useDeleteCustomer, useUpdateCustomer, useCustomerLoyalty, useCustomerLoyaltyTransactions, useLoyaltyConfig } from '@/api/hooks';
 import { getStatusLabel, STATUS_LABELS } from '@/utils/orderStatus';
 import { useFormatDate } from '@/utils/dateFormat';
 import AdjustPointsModal from '@/components/loyalty/AdjustPointsModal';
@@ -51,6 +51,7 @@ export default function CustomerDetailPage() {
   const { data: customerOrders } = useCustomerOrders(numId, ordersPage, 10, Object.keys(orderFilters).length ? orderFilters : undefined, orderSortBy, orderSortDir);
   const { data: customerPayments } = useCustomerPayments(numId, paymentsPage, 10, Object.keys(paymentFilters).length ? paymentFilters : undefined);
   const deleteCustomer = useDeleteCustomer();
+  const updateCustomer = useUpdateCustomer();
   const formatDate = useFormatDate();
   const [loyaltyPage, setLoyaltyPage] = useState(1);
   const { data: loyaltySummary } = useCustomerLoyalty(numId);
@@ -385,6 +386,49 @@ export default function CustomerDetailPage() {
 
         {activeTab === 'loyalty' && (
           <div>
+            {/* Per-customer loyalty toggle */}
+            <div className="mb-4 flex items-center justify-between rounded-lg border border-neutral-200 p-3">
+              <span className="text-body-sm font-medium text-neutral-700">{t('customers.loyaltyEnabled', 'Points accumulation active')}</span>
+              <button
+                type="button"
+                role="switch"
+                aria-checked={c.loyaltyEnabled !== false}
+                onClick={() => updateCustomer.mutate({ id: c.id, loyaltyEnabled: c.loyaltyEnabled === false })}
+                className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${c.loyaltyEnabled !== false ? 'bg-primary-500' : 'bg-neutral-300'}`}
+              >
+                <span className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${c.loyaltyEnabled !== false ? 'ltr:translate-x-5 rtl:-translate-x-5' : 'translate-x-0'}`} />
+              </button>
+            </div>
+
+            {c.loyaltyEnabled === false ? (
+              <p className="py-8 text-center text-body-sm text-neutral-400">{t('customers.loyaltyDisabledMsg', 'Points accumulation is disabled for this customer.')}</p>
+            ) : (<>
+            {/* Tier selector */}
+            <div className="mb-4 rounded-lg border border-neutral-200 p-3">
+              <div className="mb-2 text-body-sm font-medium text-neutral-700">{t('customers.loyaltyTier', 'Loyalty Tier')}</div>
+              <div className="flex gap-2">
+                {(['bronze', 'silver', 'gold'] as const).map((tier) => {
+                  const isActive = (c.loyaltyTier ?? 'bronze') === tier;
+                  const colors = {
+                    bronze: isActive ? 'bg-orange-100 text-orange-800 ring-2 ring-orange-400' : 'bg-neutral-50 text-neutral-500 hover:bg-orange-50',
+                    silver: isActive ? 'bg-slate-200 text-slate-700 ring-2 ring-slate-400' : 'bg-neutral-50 text-neutral-500 hover:bg-slate-50',
+                    gold: isActive ? 'bg-amber-100 text-amber-800 ring-2 ring-amber-400' : 'bg-neutral-50 text-neutral-500 hover:bg-amber-50',
+                  };
+                  const multipliers = { bronze: 1, silver: 1.5, gold: 2 };
+                  return (
+                    <button
+                      key={tier}
+                      onClick={() => updateCustomer.mutate({ id: c.id, loyaltyTier: tier })}
+                      className={`flex items-center gap-1.5 rounded-full px-4 py-1.5 text-body-sm font-medium transition-all ${colors[tier]}`}
+                    >
+                      {t(`loyalty.tiers.${tier}`, tier)}
+                      <span className="text-xs opacity-75">{t('loyalty.tierMultiplier', { multiplier: multipliers[tier] })}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
             {/* Summary cards */}
             <div className="mb-4 grid grid-cols-3 gap-3">
               <div className="rounded-lg bg-primary-50 p-3 text-center">
@@ -487,6 +531,7 @@ export default function CustomerDetailPage() {
                 </div>
               </div>
             )}
+            </>)}
           </div>
         )}
       </Card>
