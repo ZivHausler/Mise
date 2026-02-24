@@ -9,7 +9,7 @@ import { RotatingImage } from '@/components/RotatingImage';
 import { PageSkeleton } from '@/components/Feedback';
 import { Caption } from '@/components/Typography';
 import { useRecipes } from '@/api/hooks';
-import { GroupIcon } from '@/components/settings/GroupsTab';
+import { AllergenIcon } from '@/components/settings/AllergensTab';
 import { useAppStore } from '@/store/app';
 
 export default function RecipesPage() {
@@ -29,10 +29,10 @@ export default function RecipesPage() {
     return Array.from(set).sort();
   }, [recipeList]);
 
-  const groups = useMemo(() => {
+  const allergenList = useMemo(() => {
     const map = new Map<string, { id: number; name: string; color: string | null; icon: string | null }>();
     recipeList.forEach((r: any) => {
-      (r.groups ?? []).forEach((g: any) => { if (!map.has(String(g.id))) map.set(String(g.id), g); });
+      (r.allergens ?? []).forEach((g: any) => { if (!map.has(String(g.id))) map.set(String(g.id), g); });
     });
     return Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name));
   }, [recipeList]);
@@ -40,7 +40,7 @@ export default function RecipesPage() {
   const filteredRecipes = useMemo(() => {
     let result = recipeList;
     if (categoryFilter) result = result.filter((r: any) => r.category === categoryFilter);
-    if (groupFilter) result = result.filter((r: any) => (r.groups ?? []).some((g: any) => String(g.id) === groupFilter));
+    if (groupFilter) result = result.filter((r: any) => (r.allergens ?? []).some((g: any) => String(g.id) === groupFilter));
     return result;
   }, [recipeList, categoryFilter, groupFilter]);
 
@@ -78,7 +78,7 @@ export default function RecipesPage() {
 
   if (isLoading) return <PageSkeleton />;
 
-  const filterToolbar = (categories.length > 0 || groups.length > 0) ? (
+  const filterToolbar = (categories.length > 0 || allergenList.length > 0) ? (
     <>
       {categories.length > 0 && (
         <select
@@ -92,14 +92,14 @@ export default function RecipesPage() {
           ))}
         </select>
       )}
-      {groups.length > 0 && (
+      {allergenList.length > 0 && (
         <select
           value={groupFilter}
           onChange={(e) => setGroupFilter(e.target.value)}
           className="h-9 rounded-md border border-neutral-200 bg-white px-3 text-body-sm text-neutral-700 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20"
         >
-          <option value="">{t('recipes.allGroups', 'All Groups')}</option>
-          {groups.map((g) => (
+          <option value="">{t('recipes.allAllergens', 'All Allergens')}</option>
+          {allergenList.map((g) => (
             <option key={String(g.id)} value={String(g.id)}>{g.name}</option>
           ))}
         </select>
@@ -185,11 +185,11 @@ export default function RecipesPage() {
                 <h3 className="font-heading text-h4 text-neutral-800">{recipe.name}</h3>
                 {recipe.category && <Caption>{recipe.category}</Caption>}
               </div>
-              {recipe.groups?.length > 0 && (
+              {recipe.allergens?.length > 0 && (
                 <div className="mt-2 flex flex-wrap gap-1">
-                  {recipe.groups.map((g: any) => (
+                  {recipe.allergens.map((g: any) => (
                     <span key={g.id} title={g.name} className="inline-flex items-center rounded-full bg-neutral-100 p-1">
-                      <GroupIcon icon={g.icon ?? null} color={g.color ?? null} size={12} />
+                      <AllergenIcon icon={g.icon ?? null} color={g.color ?? null} size={12} />
                     </span>
                   ))}
                 </div>

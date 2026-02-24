@@ -2,7 +2,7 @@ import { InventoryLogType } from '@mise/shared';
 
 export { InventoryLogType };
 
-export interface IngredientGroup {
+export interface IngredientAllergen {
   id: number;
   name: string;
   color: string | null;
@@ -20,7 +20,7 @@ export interface Ingredient {
   lowStockThreshold: number;
   supplier?: string;
   notes?: string;
-  groups: IngredientGroup[];
+  allergens: IngredientAllergen[];
   createdAt: Date;
   updatedAt: Date;
 }
@@ -44,7 +44,7 @@ export interface CreateIngredientDTO {
   lowStockThreshold: number;
   supplier?: string;
   notes?: string;
-  groupIds?: number[];
+  allergenIds?: number[];
 }
 
 export interface UpdateIngredientDTO extends Partial<CreateIngredientDTO> {}
@@ -56,4 +56,3 @@ export interface AdjustStockDTO {
   reason?: string;
   pricePaid?: number;
 }
-

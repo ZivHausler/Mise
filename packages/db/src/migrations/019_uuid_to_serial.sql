@@ -34,8 +34,8 @@ CREATE TEMP TABLE _map_unit_categories AS
 CREATE TEMP TABLE _map_units AS
   SELECT id AS old_id, ROW_NUMBER() OVER (ORDER BY created_at, id)::INTEGER AS new_id FROM units;
 
-CREATE TEMP TABLE _map_groups AS
-  SELECT id AS old_id, ROW_NUMBER() OVER (ORDER BY created_at, id)::INTEGER AS new_id FROM groups;
+CREATE TEMP TABLE _map_allergens AS
+  SELECT id AS old_id, ROW_NUMBER() OVER (ORDER BY created_at, id)::INTEGER AS new_id FROM allergens;
 
 CREATE TEMP TABLE _map_notification_preferences AS
   SELECT id AS old_id, ROW_NUMBER() OVER (ORDER BY created_at, id)::INTEGER AS new_id FROM notification_preferences;
@@ -101,9 +101,9 @@ ALTER TABLE admin_audit_log DROP CONSTRAINT IF EXISTS admin_audit_log_store_id_f
 -- notification_preferences FKs
 ALTER TABLE notification_preferences DROP CONSTRAINT IF EXISTS notification_preferences_user_id_fkey;
 
--- ingredient_groups FKs
-ALTER TABLE ingredient_groups DROP CONSTRAINT IF EXISTS ingredient_groups_ingredient_id_fkey;
-ALTER TABLE ingredient_groups DROP CONSTRAINT IF EXISTS ingredient_groups_group_id_fkey;
+-- ingredient_allergens FKs
+ALTER TABLE ingredient_allergens DROP CONSTRAINT IF EXISTS ingredient_allergens_ingredient_id_fkey;
+ALTER TABLE ingredient_allergens DROP CONSTRAINT IF EXISTS ingredient_allergens_allergen_id_fkey;
 
 -- payments FKs
 ALTER TABLE payments DROP CONSTRAINT IF EXISTS payments_order_id_fkey;
@@ -126,8 +126,8 @@ ALTER TABLE users_stores DROP CONSTRAINT IF EXISTS users_stores_store_id_fkey;
 ALTER TABLE units DROP CONSTRAINT IF EXISTS units_category_id_fkey;
 ALTER TABLE units DROP CONSTRAINT IF EXISTS units_store_id_fkey;
 
--- groups FKs
-ALTER TABLE groups DROP CONSTRAINT IF EXISTS groups_store_id_fkey;
+-- allergens FKs
+ALTER TABLE allergens DROP CONSTRAINT IF EXISTS allergens_store_id_fkey;
 
 -- ingredients FKs
 ALTER TABLE ingredients DROP CONSTRAINT IF EXISTS ingredients_store_id_fkey;
@@ -151,14 +151,14 @@ ALTER TABLE admin_audit_log_request_body DROP CONSTRAINT IF EXISTS admin_audit_l
 ALTER TABLE admin_audit_log_response_body DROP CONSTRAINT IF EXISTS admin_audit_log_response_body_pkey;
 ALTER TABLE admin_audit_log DROP CONSTRAINT IF EXISTS admin_audit_log_pkey;
 ALTER TABLE notification_preferences DROP CONSTRAINT IF EXISTS notification_preferences_pkey;
-ALTER TABLE ingredient_groups DROP CONSTRAINT IF EXISTS ingredient_groups_pkey;
+ALTER TABLE ingredient_allergens DROP CONSTRAINT IF EXISTS ingredient_allergens_pkey;
 ALTER TABLE payments DROP CONSTRAINT IF EXISTS payments_pkey;
 ALTER TABLE orders DROP CONSTRAINT IF EXISTS orders_pkey;
 ALTER TABLE inventory_log DROP CONSTRAINT IF EXISTS inventory_log_pkey;
 ALTER TABLE store_invitations DROP CONSTRAINT IF EXISTS store_invitations_pkey;
 ALTER TABLE users_stores DROP CONSTRAINT IF EXISTS users_stores_pkey;
 ALTER TABLE units DROP CONSTRAINT IF EXISTS units_pkey;
-ALTER TABLE groups DROP CONSTRAINT IF EXISTS groups_pkey;
+ALTER TABLE allergens DROP CONSTRAINT IF EXISTS allergens_pkey;
 ALTER TABLE unit_categories DROP CONSTRAINT IF EXISTS unit_categories_pkey;
 ALTER TABLE ingredients DROP CONSTRAINT IF EXISTS ingredients_pkey;
 ALTER TABLE customers DROP CONSTRAINT IF EXISTS customers_pkey;
@@ -168,8 +168,8 @@ ALTER TABLE users DROP CONSTRAINT IF EXISTS users_pkey;
 -- Drop unique constraints that reference UUID columns
 ALTER TABLE loyalty_config DROP CONSTRAINT IF EXISTS loyalty_config_store_id_key;
 ALTER TABLE units DROP CONSTRAINT IF EXISTS uq_units_user_abbrev;
-ALTER TABLE groups DROP CONSTRAINT IF EXISTS uq_groups_user_name;
-ALTER TABLE groups DROP CONSTRAINT IF EXISTS uq_groups_store_name;
+ALTER TABLE allergens DROP CONSTRAINT IF EXISTS uq_allergens_user_name;
+ALTER TABLE allergens DROP CONSTRAINT IF EXISTS uq_allergens_store_name;
 ALTER TABLE notification_preferences DROP CONSTRAINT IF EXISTS uq_notif_pref_user_event;
 
 -- ═══════════════════════════════════════════════════════════════════════════════
@@ -277,16 +277,16 @@ CREATE SEQUENCE units_id_seq OWNED BY units.id;
 SELECT setval('units_id_seq', GREATEST(COALESCE((SELECT MAX(id) FROM units), 0), 1), COALESCE((SELECT MAX(id) FROM units), 0) > 0);
 ALTER TABLE units ALTER COLUMN id SET DEFAULT nextval('units_id_seq');
 
--- groups
-ALTER TABLE groups ADD COLUMN new_id INTEGER;
-UPDATE groups SET new_id = m.new_id FROM _map_groups m WHERE groups.id = m.old_id;
-ALTER TABLE groups DROP COLUMN id;
-ALTER TABLE groups RENAME COLUMN new_id TO id;
-ALTER TABLE groups ALTER COLUMN id SET NOT NULL;
-ALTER TABLE groups ADD PRIMARY KEY (id);
-CREATE SEQUENCE groups_id_seq OWNED BY groups.id;
-SELECT setval('groups_id_seq', GREATEST(COALESCE((SELECT MAX(id) FROM groups), 0), 1), COALESCE((SELECT MAX(id) FROM groups), 0) > 0);
-ALTER TABLE groups ALTER COLUMN id SET DEFAULT nextval('groups_id_seq');
+-- allergens
+ALTER TABLE allergens ADD COLUMN new_id INTEGER;
+UPDATE allergens SET new_id = m.new_id FROM _map_allergens m WHERE allergens.id = m.old_id;
+ALTER TABLE allergens DROP COLUMN id;
+ALTER TABLE allergens RENAME COLUMN new_id TO id;
+ALTER TABLE allergens ALTER COLUMN id SET NOT NULL;
+ALTER TABLE allergens ADD PRIMARY KEY (id);
+CREATE SEQUENCE allergens_id_seq OWNED BY allergens.id;
+SELECT setval('allergens_id_seq', GREATEST(COALESCE((SELECT MAX(id) FROM allergens), 0), 1), COALESCE((SELECT MAX(id) FROM allergens), 0) > 0);
+ALTER TABLE allergens ALTER COLUMN id SET DEFAULT nextval('allergens_id_seq');
 
 -- notification_preferences
 ALTER TABLE notification_preferences ADD COLUMN new_id INTEGER;
@@ -439,11 +439,11 @@ UPDATE units SET new_store_id = m.new_id FROM _map_stores m WHERE units.store_id
 ALTER TABLE units DROP COLUMN store_id;
 ALTER TABLE units RENAME COLUMN new_store_id TO store_id;
 
--- groups.store_id
-ALTER TABLE groups ADD COLUMN new_store_id INTEGER;
-UPDATE groups SET new_store_id = m.new_id FROM _map_stores m WHERE groups.store_id = m.old_id;
-ALTER TABLE groups DROP COLUMN store_id;
-ALTER TABLE groups RENAME COLUMN new_store_id TO store_id;
+-- allergens.store_id
+ALTER TABLE allergens ADD COLUMN new_store_id INTEGER;
+UPDATE allergens SET new_store_id = m.new_id FROM _map_stores m WHERE allergens.store_id = m.old_id;
+ALTER TABLE allergens DROP COLUMN store_id;
+ALTER TABLE allergens RENAME COLUMN new_store_id TO store_id;
 
 -- notification_preferences.user_id
 ALTER TABLE notification_preferences ADD COLUMN new_user_id INTEGER;
@@ -470,17 +470,17 @@ ALTER TABLE users_stores RENAME COLUMN new_store_id TO store_id;
 ALTER TABLE users_stores ALTER COLUMN user_id SET NOT NULL;
 ALTER TABLE users_stores ALTER COLUMN store_id SET NOT NULL;
 
--- ingredient_groups: composite PK junction table
-ALTER TABLE ingredient_groups ADD COLUMN new_ingredient_id INTEGER;
-ALTER TABLE ingredient_groups ADD COLUMN new_group_id INTEGER;
-UPDATE ingredient_groups SET new_ingredient_id = m.new_id FROM _map_ingredients m WHERE ingredient_groups.ingredient_id = m.old_id;
-UPDATE ingredient_groups SET new_group_id = m.new_id FROM _map_groups m WHERE ingredient_groups.group_id = m.old_id;
-ALTER TABLE ingredient_groups DROP COLUMN ingredient_id;
-ALTER TABLE ingredient_groups DROP COLUMN group_id;
-ALTER TABLE ingredient_groups RENAME COLUMN new_ingredient_id TO ingredient_id;
-ALTER TABLE ingredient_groups RENAME COLUMN new_group_id TO group_id;
-ALTER TABLE ingredient_groups ALTER COLUMN ingredient_id SET NOT NULL;
-ALTER TABLE ingredient_groups ALTER COLUMN group_id SET NOT NULL;
+-- ingredient_allergens: composite PK junction table
+ALTER TABLE ingredient_allergens ADD COLUMN new_ingredient_id INTEGER;
+ALTER TABLE ingredient_allergens ADD COLUMN new_allergen_id INTEGER;
+UPDATE ingredient_allergens SET new_ingredient_id = m.new_id FROM _map_ingredients m WHERE ingredient_allergens.ingredient_id = m.old_id;
+UPDATE ingredient_allergens SET new_allergen_id = m.new_id FROM _map_allergens m WHERE ingredient_allergens.allergen_id = m.old_id;
+ALTER TABLE ingredient_allergens DROP COLUMN ingredient_id;
+ALTER TABLE ingredient_allergens DROP COLUMN allergen_id;
+ALTER TABLE ingredient_allergens RENAME COLUMN new_ingredient_id TO ingredient_id;
+ALTER TABLE ingredient_allergens RENAME COLUMN new_allergen_id TO allergen_id;
+ALTER TABLE ingredient_allergens ALTER COLUMN ingredient_id SET NOT NULL;
+ALTER TABLE ingredient_allergens ALTER COLUMN allergen_id SET NOT NULL;
 
 -- admin_audit_log.user_id
 ALTER TABLE admin_audit_log ADD COLUMN new_user_id INTEGER;
@@ -593,7 +593,7 @@ ALTER TABLE batch_prep_items ALTER COLUMN store_id SET NOT NULL;
 
 -- Junction table PKs
 ALTER TABLE users_stores ADD PRIMARY KEY (user_id, store_id);
-ALTER TABLE ingredient_groups ADD PRIMARY KEY (ingredient_id, group_id);
+ALTER TABLE ingredient_allergens ADD PRIMARY KEY (ingredient_id, allergen_id);
 
 -- Foreign keys
 ALTER TABLE customers ADD CONSTRAINT customers_store_id_fkey FOREIGN KEY (store_id) REFERENCES stores(id) ON DELETE CASCADE;
@@ -604,13 +604,13 @@ ALTER TABLE payments ADD CONSTRAINT payments_order_id_fkey FOREIGN KEY (order_id
 ALTER TABLE inventory_log ADD CONSTRAINT inventory_log_ingredient_id_fkey FOREIGN KEY (ingredient_id) REFERENCES ingredients(id) ON DELETE CASCADE;
 ALTER TABLE units ADD CONSTRAINT units_category_id_fkey FOREIGN KEY (category_id) REFERENCES unit_categories(id);
 ALTER TABLE units ADD CONSTRAINT units_store_id_fkey FOREIGN KEY (store_id) REFERENCES stores(id) ON DELETE CASCADE;
-ALTER TABLE groups ADD CONSTRAINT groups_store_id_fkey FOREIGN KEY (store_id) REFERENCES stores(id) ON DELETE CASCADE;
+ALTER TABLE allergens ADD CONSTRAINT allergens_store_id_fkey FOREIGN KEY (store_id) REFERENCES stores(id) ON DELETE CASCADE;
 ALTER TABLE notification_preferences ADD CONSTRAINT notification_preferences_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE;
 ALTER TABLE store_invitations ADD CONSTRAINT store_invitations_store_id_fkey FOREIGN KEY (store_id) REFERENCES stores(id) ON DELETE CASCADE;
 ALTER TABLE users_stores ADD CONSTRAINT users_stores_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE;
 ALTER TABLE users_stores ADD CONSTRAINT users_stores_store_id_fkey FOREIGN KEY (store_id) REFERENCES stores(id) ON DELETE CASCADE;
-ALTER TABLE ingredient_groups ADD CONSTRAINT ingredient_groups_ingredient_id_fkey FOREIGN KEY (ingredient_id) REFERENCES ingredients(id) ON DELETE CASCADE;
-ALTER TABLE ingredient_groups ADD CONSTRAINT ingredient_groups_group_id_fkey FOREIGN KEY (group_id) REFERENCES groups(id) ON DELETE CASCADE;
+ALTER TABLE ingredient_allergens ADD CONSTRAINT ingredient_allergens_ingredient_id_fkey FOREIGN KEY (ingredient_id) REFERENCES ingredients(id) ON DELETE CASCADE;
+ALTER TABLE ingredient_allergens ADD CONSTRAINT ingredient_allergens_allergen_id_fkey FOREIGN KEY (allergen_id) REFERENCES allergens(id) ON DELETE CASCADE;
 ALTER TABLE admin_audit_log ADD CONSTRAINT admin_audit_log_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE;
 ALTER TABLE admin_audit_log ADD CONSTRAINT admin_audit_log_store_id_fkey FOREIGN KEY (store_id) REFERENCES stores(id) ON DELETE CASCADE;
 ALTER TABLE admin_audit_log_request_body ADD CONSTRAINT admin_audit_log_request_body_audit_log_id_fkey FOREIGN KEY (audit_log_id) REFERENCES admin_audit_log(id) ON DELETE CASCADE;
@@ -642,10 +642,10 @@ CREATE INDEX IF NOT EXISTS idx_payments_order ON payments(order_id);
 CREATE INDEX IF NOT EXISTS idx_inventory_log_ingredient ON inventory_log(ingredient_id);
 CREATE INDEX IF NOT EXISTS idx_units_store ON units(store_id);
 CREATE INDEX IF NOT EXISTS idx_units_category ON units(category_id);
-CREATE INDEX IF NOT EXISTS idx_groups_store ON groups(store_id);
+CREATE INDEX IF NOT EXISTS idx_allergens_store ON allergens(store_id);
 CREATE INDEX IF NOT EXISTS idx_notif_pref_user ON notification_preferences(user_id);
 CREATE INDEX IF NOT EXISTS idx_users_stores_store ON users_stores(store_id);
-CREATE INDEX IF NOT EXISTS idx_ingredient_groups_group ON ingredient_groups(group_id);
+CREATE INDEX IF NOT EXISTS idx_ingredient_allergens_allergen ON ingredient_allergens(allergen_id);
 CREATE INDEX IF NOT EXISTS idx_admin_audit_log_user_id ON admin_audit_log(user_id);
 CREATE INDEX IF NOT EXISTS idx_store_invitations_token ON store_invitations(token);
 CREATE INDEX IF NOT EXISTS idx_store_invitations_email ON store_invitations(email);

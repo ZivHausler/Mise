@@ -535,41 +535,41 @@ export function useDeleteUnit() {
   });
 }
 
-// Settings — Groups
-export function useGroups() {
-  return useQuery({ queryKey: ['groups'], queryFn: () => fetchApi<unknown[]>('/settings/groups') });
+// Settings — Allergens
+export function useAllergens() {
+  return useQuery({ queryKey: ['allergens'], queryFn: () => fetchApi<unknown[]>('/settings/allergens') });
 }
 
-export function useCreateGroup() {
+export function useCreateAllergen() {
   const qc = useQueryClient();
   const addToast = useToastStore((s) => s.addToast);
   const { t } = useTranslation();
   return useMutation({
-    mutationFn: (body: unknown) => postApi('/settings/groups', body),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['groups'] }); addToast('success', t('toasts.groupCreated')); },
-    onError: () => addToast('error', t('toasts.groupCreateFailed')),
+    mutationFn: (body: unknown) => postApi('/settings/allergens', body),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['allergens'] }); addToast('success', t('toasts.allergenCreated')); },
+    onError: () => addToast('error', t('toasts.allergenCreateFailed')),
   });
 }
 
-export function useUpdateGroup() {
+export function useUpdateAllergen() {
   const qc = useQueryClient();
   const addToast = useToastStore((s) => s.addToast);
   const { t } = useTranslation();
   return useMutation({
-    mutationFn: ({ id, ...body }: { id: number } & Record<string, unknown>) => putApi(`/settings/groups/${id}`, body),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['groups'] }); addToast('success', t('toasts.groupUpdated')); },
-    onError: () => addToast('error', t('toasts.groupUpdateFailed')),
+    mutationFn: ({ id, ...body }: { id: number } & Record<string, unknown>) => putApi(`/settings/allergens/${id}`, body),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['allergens'] }); addToast('success', t('toasts.allergenUpdated')); },
+    onError: () => addToast('error', t('toasts.allergenUpdateFailed')),
   });
 }
 
-export function useDeleteGroup() {
+export function useDeleteAllergen() {
   const qc = useQueryClient();
   const addToast = useToastStore((s) => s.addToast);
   const { t } = useTranslation();
   return useMutation({
-    mutationFn: (id: number) => deleteApi(`/settings/groups/${id}`),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['groups'] }); addToast('success', t('toasts.groupDeleted')); },
-    onError: () => addToast('error', t('toasts.groupDeleteFailed')),
+    mutationFn: (id: number) => deleteApi(`/settings/allergens/${id}`),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['allergens'] }); addToast('success', t('toasts.allergenDeleted')); },
+    onError: () => addToast('error', t('toasts.allergenDeleteFailed')),
   });
 }
 

@@ -2,14 +2,14 @@ import React, { useMemo, useState, useCallback, useEffect, useRef } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Plus, Package, SlidersHorizontal, Trash2, Pencil, ChevronLeft, ChevronRight, Search, Download, ChevronDown, Filter } from 'lucide-react';
-import { GroupIcon, useGroupName } from '@/components/settings/GroupsTab';
+import { AllergenIcon, useAllergenName } from '@/components/settings/AllergensTab';
 import { Page, PageHeader, Stack } from '@/components/Layout';
 import { Button } from '@/components/Button';
 import { DataTable, StatusBadge, EmptyState, type Column } from '@/components/DataDisplay';
 import { PageSkeleton } from '@/components/Feedback';
 import { Modal } from '@/components/Modal';
 import { TextInput, NumberInput, Select } from '@/components/FormFields';
-import { useInventory, useCreateInventoryItem, useUpdateInventoryItem, useDeleteInventoryItem, useAdjustStock, useGroups, downloadPdf, type PaginationInfo } from '@/api/hooks';
+import { useInventory, useCreateInventoryItem, useUpdateInventoryItem, useDeleteInventoryItem, useAdjustStock, useAllergens, downloadPdf, type PaginationInfo } from '@/api/hooks';
 import { useAppStore } from '@/store/app';
 import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 import { InventoryLogType } from '@mise/shared';
@@ -65,29 +65,29 @@ function FilterDropdown({ label, count, children }: { label: string; count: numb
 
 export default function InventoryPage() {
   const { t } = useTranslation();
-  const getGroupName = useGroupName();
+  const getAllergenName = useAllergenName();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
   const debouncedSearch = useDebouncedValue(search, 500, () => setPage(1));
-  const [selectedGroupIds, setSelectedGroupIds] = useState<string[]>([]);
+  const [selectedAllergenIds, setSelectedAllergenIds] = useState<string[]>([]);
   const [selectedStatuses, setSelectedStatuses] = useState<string[]>(() => {
     const param = searchParams.get('status');
     return param ? param.split(',').filter(Boolean) : [];
   });
-  const { data: inventoryData, isLoading } = useInventory(page, 10, debouncedSearch || undefined, selectedGroupIds.length ? selectedGroupIds : undefined, selectedStatuses.length ? selectedStatuses : undefined);
+  const { data: inventoryData, isLoading } = useInventory(page, 10, debouncedSearch || undefined, selectedAllergenIds.length ? selectedAllergenIds : undefined, selectedStatuses.length ? selectedStatuses : undefined);
   const createItem = useCreateInventoryItem();
   const updateItem = useUpdateInventoryItem();
   const deleteItem = useDeleteInventoryItem();
   const adjustStock = useAdjustStock();
-  const { data: groups } = useGroups();
+  const { data: allergens } = useAllergens();
   const { dateFormat, language } = useAppStore();
   const [editingItem, setEditingItem] = useState<any>(null); // null = closed, 'new' = add, object = edit
   const [showAdjust, setShowAdjust] = useState<any>(null);
   const [showDelete, setShowDelete] = useState<any>(null);
 
-  const emptyItem = { name: '', category: '', unit: '', stock: '' as number | '', packageSize: '' as number | '', threshold: '' as number | '', costPerUnit: '' as number | '', groupIds: [] as string[] };
+  const emptyItem = { name: '', category: '', unit: '', stock: '' as number | '', packageSize: '' as number | '', threshold: '' as number | '', costPerUnit: '' as number | '', allergenIds: [] as string[] };
   const [newItem, setNewItem] = useState(emptyItem);
   const isEdit = editingItem !== null && editingItem !== 'new';
   const isModalOpen = editingItem !== null;
@@ -102,7 +102,7 @@ export default function InventoryPage() {
 
   useEffect(() => {
     setPage(1);
-  }, [selectedGroupIds]);
+  }, [selectedAllergenIds]);
 
   useEffect(() => {
     setPage(1);
@@ -123,8 +123,8 @@ export default function InventoryPage() {
     );
   }, []);
 
-  const toggleGroup = useCallback((groupId: string) => {
-    setSelectedGroupIds((prev) =>
+  const toggleAllergen = useCallback((groupId: string) => {
+    setSelectedAllergenIds((prev) =>
       prev.includes(groupId) ? prev.filter((id) => id !== groupId) : [...prev, groupId],
     );
   }, []);
@@ -139,13 +139,13 @@ export default function InventoryPage() {
   const columns: Column<any>[] = useMemo(
     () => [
       { key: 'name', header: t('inventory.name', 'Name'), sortable: true, sticky: true },
-      { key: 'groups', header: t('inventory.groups', 'Groups'), render: (row: any) => row.groups?.length > 0 ? (
+      { key: 'allergens', header: t('inventory.allergens', 'Allergens'), render: (row: any) => row.allergens?.length > 0 ? (
         <div className="flex flex-wrap gap-1">
-          {row.groups.map((g: any) => {
-            const name = getGroupName(g);
+          {row.allergens.map((g: any) => {
+            const name = getAllergenName(g);
             return (
               <span key={g.id} title={name} className={`inline-flex items-center gap-1 rounded-full bg-neutral-100 py-0.5 text-caption ${g.icon ? 'px-1.5' : 'px-2'}`}>
-                <GroupIcon icon={g.icon ?? null} color={g.color ?? null} size={g.icon ? 14 : 10} />
+                <AllergenIcon icon={g.icon ?? null} color={g.color ?? null} size={g.icon ? 14 : 10} />
                 {!g.icon && name}
               </span>
             );
@@ -171,7 +171,7 @@ export default function InventoryPage() {
         shrink: true,
         render: (row: any) => (
           <div className="flex items-center">
-            <Button size="sm" variant="ghost" onClick={(e: React.MouseEvent) => { e.stopPropagation(); setEditingItem(row); setNewItem({ name: row.name, category: row.category ?? '', groupIds: (row.groups ?? []).map((g: any) => g.id), threshold: row.lowStockThreshold ?? '', unit: row.unit ?? 'kg', costPerUnit: row.costPerUnit ?? '', stock: row.quantity ?? '', packageSize: row.packageSize ?? '' }); setPriceInput(row.packageSize && row.costPerUnit ? Math.round(row.costPerUnit * row.packageSize * 100) / 100 : row.costPerUnit ?? ''); setPriceMode('unit'); setThresholdMode('units'); }} title={t('common.edit')}>
+            <Button size="sm" variant="ghost" onClick={(e: React.MouseEvent) => { e.stopPropagation(); setEditingItem(row); setNewItem({ name: row.name, category: row.category ?? '', allergenIds: (row.allergens ?? []).map((g: any) => g.id), threshold: row.lowStockThreshold ?? '', unit: row.unit ?? 'kg', costPerUnit: row.costPerUnit ?? '', stock: row.quantity ?? '', packageSize: row.packageSize ?? '' }); setPriceInput(row.packageSize && row.costPerUnit ? Math.round(row.costPerUnit * row.packageSize * 100) / 100 : row.costPerUnit ?? ''); setPriceMode('unit'); setThresholdMode('units'); }} title={t('common.edit')}>
               <Pencil className="h-4 w-4" />
             </Button>
             <Button size="sm" variant="ghost" onClick={(e: React.MouseEvent) => { e.stopPropagation(); setShowAdjust(row); }} title={t('inventory.adjust', 'Adjust')}>
@@ -184,7 +184,7 @@ export default function InventoryPage() {
         ),
       },
     ],
-    [t, getGroupName]
+    [t, getAllergenName]
   );
 
   const closeModal = useCallback(() => {
@@ -199,13 +199,13 @@ export default function InventoryPage() {
     if (!newItem.name || newItem.packageSize === '' || priceInput === '') return;
     if (isEdit) {
       updateItem.mutate(
-        { id: editingItem.id, name: newItem.name, category: newItem.category || undefined, groupIds: newItem.groupIds, lowStockThreshold: newItem.threshold, unit: newItem.unit, costPerUnit: newItem.costPerUnit, packageSize: newItem.packageSize },
+        { id: editingItem.id, name: newItem.name, category: newItem.category || undefined, allergenIds: newItem.allergenIds, lowStockThreshold: newItem.threshold, unit: newItem.unit, costPerUnit: newItem.costPerUnit, packageSize: newItem.packageSize },
         { onSuccess: closeModal },
       );
     } else {
       if (!newItem.unit) return;
       createItem.mutate(
-        { name: newItem.name, category: newItem.category, unit: newItem.unit, quantity: 0, lowStockThreshold: newItem.threshold === '' ? 0 : newItem.threshold, costPerUnit: newItem.costPerUnit, packageSize: newItem.packageSize, groupIds: newItem.groupIds },
+        { name: newItem.name, category: newItem.category, unit: newItem.unit, quantity: 0, lowStockThreshold: newItem.threshold === '' ? 0 : newItem.threshold, costPerUnit: newItem.costPerUnit, packageSize: newItem.packageSize, allergenIds: newItem.allergenIds },
         { onSuccess: closeModal },
       );
     }
@@ -256,7 +256,7 @@ export default function InventoryPage() {
         }
       />
 
-      {items.length === 0 && page === 1 && !debouncedSearch && !selectedGroupIds.length && !selectedStatuses.length ? (
+      {items.length === 0 && page === 1 && !debouncedSearch && !selectedAllergenIds.length && !selectedStatuses.length ? (
         <EmptyState
           title={t('inventory.empty', 'No inventory items')}
           description={t('inventory.emptyDesc', 'Add ingredients and supplies to track stock levels.')}
@@ -281,21 +281,21 @@ export default function InventoryPage() {
               />
             </div>
             <div className="flex items-center gap-2">
-              {((groups ?? []) as { id: number; name: string; color?: string | null; icon?: string | null; isDefault?: boolean }[]).length > 0 && (
+              {((allergens ?? []) as { id: number; name: string; color?: string | null; icon?: string | null; isDefault?: boolean }[]).length > 0 && (
                 <FilterDropdown
-                  label={t('inventory.groups', 'Groups')}
-                  count={selectedGroupIds.length}
+                  label={t('inventory.allergens', 'Allergens')}
+                  count={selectedAllergenIds.length}
                 >
-                  {((groups ?? []) as { id: number; name: string; color?: string | null; icon?: string | null; isDefault?: boolean }[]).map((g) => {
-                    const selected = selectedGroupIds.includes(String(g.id));
+                  {((allergens ?? []) as { id: number; name: string; color?: string | null; icon?: string | null; isDefault?: boolean }[]).map((g) => {
+                    const selected = selectedAllergenIds.includes(String(g.id));
                     return (
-                      <button key={String(g.id)} type="button" onClick={() => toggleGroup(String(g.id))}
+                      <button key={String(g.id)} type="button" onClick={() => toggleAllergen(String(g.id))}
                         className={`flex w-full items-center gap-2 rounded-md px-3 py-2 text-body-sm transition-colors ${selected ? 'bg-primary-50 text-primary-700' : 'text-neutral-700 hover:bg-neutral-50'}`}>
                         <span className={`flex h-4 w-4 items-center justify-center rounded border ${selected ? 'border-primary-500 bg-primary-500 text-white' : 'border-neutral-300'}`}>
                           {selected && <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>}
                         </span>
-                        <GroupIcon icon={g.icon ?? null} color={g.color ?? null} size={g.icon ? 16 : 10} />
-                        <span>{getGroupName(g)}</span>
+                        <AllergenIcon icon={g.icon ?? null} color={g.color ?? null} size={g.icon ? 16 : 10} />
+                        <span>{getAllergenName(g)}</span>
                       </button>
                     );
                   })}
@@ -324,7 +324,7 @@ export default function InventoryPage() {
             columns={columns}
             data={items}
             keyExtractor={(row: any) => row.id}
-            onRowClick={(row: any) => { setEditingItem(row); setNewItem({ name: row.name, category: row.category ?? '', groupIds: (row.groups ?? []).map((g: any) => g.id), threshold: row.lowStockThreshold ?? '', unit: row.unit ?? 'kg', costPerUnit: row.costPerUnit ?? '', stock: row.quantity ?? '', packageSize: row.packageSize ?? '' }); setPriceInput(row.packageSize && row.costPerUnit ? Math.round(row.costPerUnit * row.packageSize * 100) / 100 : row.costPerUnit ?? ''); setPriceMode('unit'); setThresholdMode('units'); }}
+            onRowClick={(row: any) => { setEditingItem(row); setNewItem({ name: row.name, category: row.category ?? '', allergenIds: (row.allergens ?? []).map((g: any) => g.id), threshold: row.lowStockThreshold ?? '', unit: row.unit ?? 'kg', costPerUnit: row.costPerUnit ?? '', stock: row.quantity ?? '', packageSize: row.packageSize ?? '' }); setPriceInput(row.packageSize && row.costPerUnit ? Math.round(row.costPerUnit * row.packageSize * 100) / 100 : row.costPerUnit ?? ''); setPriceMode('unit'); setThresholdMode('units'); }}
             bare
           />
           {pagination && pagination.totalPages > 1 && (
@@ -374,17 +374,17 @@ export default function InventoryPage() {
         <Stack gap={4}>
           <TextInput label={t('inventory.name', 'Name')} value={newItem.name} onChange={(e) => setNewItem({ ...newItem, name: e.target.value })} required dir="auto" />
           <TextInput label={t('inventory.category', 'Category')} value={newItem.category} onChange={(e) => setNewItem({ ...newItem, category: e.target.value })} dir="auto" />
-          {((groups ?? []) as { id: number; name: string; color?: string | null; isDefault?: boolean }[]).length > 0 && (
+          {((allergens ?? []) as { id: number; name: string; color?: string | null; isDefault?: boolean }[]).length > 0 && (
             <div>
-              <label className="mb-1 block text-body-sm font-semibold text-neutral-700">{t('inventory.groups', 'Groups')}</label>
+              <label className="mb-1 block text-body-sm font-semibold text-neutral-700">{t('inventory.allergens', 'Allergens')}</label>
               <div className="flex flex-wrap gap-2">
-                {((groups ?? []) as { id: number; name: string; color?: string | null; icon?: string | null; isDefault?: boolean }[]).map((g) => {
-                  const selected = newItem.groupIds.includes(String(g.id));
+                {((allergens ?? []) as { id: number; name: string; color?: string | null; icon?: string | null; isDefault?: boolean }[]).map((g) => {
+                  const selected = newItem.allergenIds.includes(String(g.id));
                   return (
-                    <button key={String(g.id)} type="button" onClick={() => setNewItem((prev) => ({ ...prev, groupIds: selected ? prev.groupIds.filter((id) => id !== String(g.id)) : [...prev.groupIds, String(g.id)] }))}
+                    <button key={String(g.id)} type="button" onClick={() => setNewItem((prev) => ({ ...prev, allergenIds: selected ? prev.allergenIds.filter((id) => id !== String(g.id)) : [...prev.allergenIds, String(g.id)] }))}
                       className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-body-sm transition-colors ${selected ? 'border-primary-300 bg-primary-50 text-primary-700' : 'border-neutral-200 text-neutral-600 hover:bg-neutral-50'}`}>
-                      <GroupIcon icon={g.icon ?? null} color={g.color ?? null} size={12} />
-                      {getGroupName(g)}
+                      <AllergenIcon icon={g.icon ?? null} color={g.color ?? null} size={12} />
+                      {getAllergenName(g)}
                     </button>
                   );
                 })}
