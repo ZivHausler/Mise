@@ -269,3 +269,123 @@ export class EmailNotifier implements NotificationChannel {
     }
   }
 }
+
+// ---------------------------------------------------------------------------
+// Invitation email helpers (used by StoreService)
+// ---------------------------------------------------------------------------
+
+interface InviteTranslations {
+  joinSubject: (storeName: string) => string;
+  joinBody: (storeName: string, role: string) => string;
+  createSubject: string;
+  createBody: string;
+  acceptButton: string;
+  createButton: string;
+  copyLink: string;
+  expiresOn: (date: string) => string;
+  ignoreNotice: string;
+}
+
+const inviteI18n: Record<Language, InviteTranslations> = {
+  [Language.HEBREW]: {
+    joinSubject: (s) => `הוזמנת להצטרף ל-${s} ב-Mise`,
+    joinBody: (s, r) => `הוזמנת להצטרף ל-<strong>${s}</strong> ב-Mise כ-<strong>${r}</strong>.`,
+    createSubject: 'הוזמנת ליצור חנות ב-Mise',
+    createBody: 'הוזמנת ליצור חנות חדשה ב-<strong>Mise</strong>.',
+    acceptButton: 'קבל הזמנה',
+    createButton: 'צור את החנות שלך',
+    copyLink: 'או העתק את הקישור:',
+    expiresOn: (d) => `ההזמנה תפוג בתאריך ${d}.`,
+    ignoreNotice: 'אם לא ציפית להזמנה זו, ניתן להתעלם מהודעה זו.',
+  },
+  [Language.ENGLISH]: {
+    joinSubject: (s) => `You've been invited to join ${s} on Mise`,
+    joinBody: (s, r) => `You've been invited to join <strong>${s}</strong> on Mise as a <strong>${r}</strong>.`,
+    createSubject: "You've been invited to create a store on Mise",
+    createBody: "You've been invited to create a store on <strong>Mise</strong>.",
+    acceptButton: 'Accept Invitation',
+    createButton: 'Create Your Store',
+    copyLink: 'Or copy this link:',
+    expiresOn: (d) => `This invitation expires on ${d}.`,
+    ignoreNotice: "If you didn't expect this invitation, you can safely ignore this email.",
+  },
+  [Language.ARABIC]: {
+    joinSubject: (s) => `تمت دعوتك للانضمام إلى ${s} على Mise`,
+    joinBody: (s, r) => `تمت دعوتك للانضمام إلى <strong>${s}</strong> على Mise بصفة <strong>${r}</strong>.`,
+    createSubject: 'تمت دعوتك لإنشاء متجر على Mise',
+    createBody: 'تمت دعوتك لإنشاء متجر جديد على <strong>Mise</strong>.',
+    acceptButton: 'قبول الدعوة',
+    createButton: 'أنشئ متجرك',
+    copyLink: 'أو انسخ هذا الرابط:',
+    expiresOn: (d) => `تنتهي صلاحية هذه الدعوة في ${d}.`,
+    ignoreNotice: 'إذا لم تكن تتوقع هذه الدعوة، يمكنك تجاهل هذا البريد الإلكتروني.',
+  },
+};
+
+function getInviteTranslations(lang: number): InviteTranslations {
+  return inviteI18n[lang as Language] ?? inviteI18n[Language.HEBREW];
+}
+
+function formatExpiry(expiresAt: Date): string {
+  return expiresAt.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+}
+
+function inviteWrap(lang: number, content: string): string {
+  return `
+    <div dir="${dir(lang)}" style="font-family:sans-serif;max-width:560px;margin:0 auto;color:#1a1a1a;">
+      <div style="padding:24px 0;border-bottom:1px solid #e5e5e5;margin-bottom:20px;">
+        <strong style="font-size:18px;">Mise</strong>
+      </div>
+      ${content}
+    </div>`;
+}
+
+export function buildStoreInviteEmail(storeName: string, inviteLink: string, role: string, expiresAt: Date, lang: number): { subject: string; html: string } {
+  const t = getInviteTranslations(lang);
+  return {
+    subject: t.joinSubject(storeName),
+    html: inviteWrap(lang, `
+      <p>${t.joinBody(storeName, role)}</p>
+      <p style="margin:24px 0;">
+        <a href="${inviteLink}" style="background:#000;color:#fff;padding:12px 24px;border-radius:6px;text-decoration:none;display:inline-block;">${t.acceptButton}</a>
+      </p>
+      <p style="font-size:13px;color:#666;">${t.copyLink} ${inviteLink}</p>
+      <p style="font-size:13px;color:#666;">${t.expiresOn(formatExpiry(expiresAt))}</p>
+      <div style="margin-top:32px;padding-top:16px;border-top:1px solid #e5e5e5;font-size:12px;color:#888;">
+        ${t.ignoreNotice}
+      </div>`),
+  };
+}
+
+export function buildCreateStoreInviteEmail(inviteLink: string, expiresAt: Date, lang: number): { subject: string; html: string } {
+  const t = getInviteTranslations(lang);
+  return {
+    subject: t.createSubject,
+    html: inviteWrap(lang, `
+      <p>${t.createBody}</p>
+      <p style="margin:24px 0;">
+        <a href="${inviteLink}" style="background:#000;color:#fff;padding:12px 24px;border-radius:6px;text-decoration:none;display:inline-block;">${t.createButton}</a>
+      </p>
+      <p style="font-size:13px;color:#666;">${t.copyLink} ${inviteLink}</p>
+      <p style="font-size:13px;color:#666;">${t.expiresOn(formatExpiry(expiresAt))}</p>
+      <div style="margin-top:32px;padding-top:16px;border-top:1px solid #e5e5e5;font-size:12px;color:#888;">
+        ${t.ignoreNotice}
+      </div>`),
+  };
+}
+
+export async function sendInviteEmail(to: string, subject: string, html: string): Promise<void> {
+  if (!resend) {
+    appLogger.warn({ to, subject }, '[EMAIL] Invite NOT sent — RESEND_API_KEY is not configured');
+    return;
+  }
+
+  const { error } = await resend.emails.send({ from: FROM_EMAIL, to, subject, html });
+
+  if (error) {
+    appLogger.error({ to, subject, error }, '[EMAIL] Failed to send invite email');
+    throw new Error(`Failed to send invite email: ${error.message}`);
+  }
+
+  appLogger.info({ to, subject }, '[EMAIL] Invite email sent successfully');
+}

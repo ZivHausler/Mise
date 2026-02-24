@@ -25,6 +25,12 @@ export class PgStoreRepository {
     );
   }
 
+  static async findStoreById(storeId: number): Promise<Store | null> {
+    const pool = getPool();
+    const result = await pool.query('SELECT * FROM stores WHERE id = $1', [storeId]);
+    return result.rows[0] ? this.mapStoreRow(result.rows[0]) : null;
+  }
+
   static async getUserStores(userId: number): Promise<UserStore[]> {
     const pool = getPool();
     const result = await pool.query(
