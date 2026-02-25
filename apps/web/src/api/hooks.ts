@@ -228,7 +228,7 @@ export function useCreateRecipe() {
   return useMutation({
     mutationFn: (body: unknown) => postApi('/recipes', body),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['recipes'] }); addToast('success', t('toasts.recipeCreated')); },
-    onError: () => addToast('error', t('toasts.recipeCreateFailed')),
+    onError: (err: any) => addToast('error', err?.response?.data?.error?.message || t('toasts.recipeCreateFailed')),
   });
 }
 
@@ -239,7 +239,7 @@ export function useUpdateRecipe() {
   return useMutation({
     mutationFn: ({ id, ...body }: { id: string } & Record<string, unknown>) => putApi(`/recipes/${id}`, body),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['recipes'] }); addToast('success', t('toasts.recipeUpdated')); },
-    onError: () => addToast('error', t('toasts.recipeUpdateFailed')),
+    onError: (err: any) => addToast('error', err?.response?.data?.error?.message || t('toasts.recipeUpdateFailed')),
   });
 }
 

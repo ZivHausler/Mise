@@ -2,7 +2,7 @@ import type { CreateRecipeDTO, Recipe, UpdateRecipeDTO } from './recipe.types.js
 import { getEventBus } from '../../core/events/event-bus.js';
 import { RecipeCrud } from './recipeCrud.js';
 import { CalculateRecipeCostUseCase } from './use-cases/calculateRecipeCost.js';
-import { NotFoundError } from '../../core/errors/app-error.js';
+import { NotFoundError, ValidationError } from '../../core/errors/app-error.js';
 import type { InventoryService } from '../inventory/inventory.service.js';
 import { unitConversionFactor } from '../shared/unitConversion.js';
 import {
@@ -97,6 +97,53 @@ export class RecipeService {
     }
   }
 
+  /**
+   * Checks whether adding the given sub-recipe steps would create a cycle.
+   * Walks the sub-recipe graph starting from each referenced recipeId and
+   * checks if any path leads back to `rootRecipeId`.
+   */
+  private async detectSubRecipeCycle(
+    storeId: number,
+    rootRecipeId: string,
+    steps: { type: string; recipeId?: string }[],
+  ): Promise<void> {
+    const subRecipeIds = steps
+      .filter((s) => s.type === 'sub_recipe' && s.recipeId)
+      .map((s) => s.recipeId!);
+
+    if (subRecipeIds.length === 0) return;
+
+    // Direct self-reference
+    if (subRecipeIds.includes(rootRecipeId)) {
+      throw new ValidationError('A recipe cannot include itself as a sub-recipe');
+    }
+
+    // BFS to detect if any descendant references rootRecipeId
+    const visited = new Set<string>();
+    const queue = [...subRecipeIds];
+
+    while (queue.length > 0) {
+      const currentId = queue.shift()!;
+      if (visited.has(currentId)) continue;
+      visited.add(currentId);
+
+      const recipe = await RecipeCrud.getById(storeId, currentId);
+      if (!recipe?.steps) continue;
+
+      for (const step of recipe.steps) {
+        if (step.type !== 'sub_recipe' || !step.recipeId) continue;
+        if (step.recipeId === rootRecipeId) {
+          throw new ValidationError(
+            'Adding this sub-recipe would create a circular reference',
+          );
+        }
+        if (!visited.has(step.recipeId)) {
+          queue.push(step.recipeId);
+        }
+      }
+    }
+  }
+
   async create(storeId: number, data: CreateRecipeDTO): Promise<Recipe> {
     if (this.inventoryService && data.ingredients) {
       for (const ing of data.ingredients) {
@@ -160,6 +207,8 @@ export class RecipeService {
     }
 
     if (data.steps) {
+      await this.detectSubRecipeCycle(storeId, id, data.steps);
+
       for (const step of data.steps) {
         if (step.type !== 'sub_recipe' || !step.recipeId) continue;
         try {
