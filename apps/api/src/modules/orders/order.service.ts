@@ -9,7 +9,7 @@ import { NotFoundError, ValidationError } from '../../core/errors/app-error.js';
 import { getPool } from '../../core/database/postgres.js';
 import type { RecipeService } from '../recipes/recipe.service.js';
 import type { InventoryService } from '../inventory/inventory.service.js';
-import { InventoryLogType, MAX_RECURRING_OCCURRENCES } from '@mise/shared';
+import { ErrorCode, InventoryLogType, MAX_RECURRING_OCCURRENCES } from '@mise/shared';
 import { unitConversionFactor } from '../shared/unitConversion.js';
 import { CustomerCrud } from '../customers/customerCrud.js';
 
@@ -23,7 +23,7 @@ export class OrderService {
 
   async getById(storeId: number, id: number): Promise<Order> {
     const order = await OrderCrud.getById(storeId, id);
-    if (!order) throw new NotFoundError('Order not found');
+    if (!order) throw new NotFoundError('Order not found', ErrorCode.ORDER_NOT_FOUND);
     return order;
   }
 
@@ -109,7 +109,7 @@ export class OrderService {
     }
 
     if (occurrenceDates.length === 0) {
-      throw new ValidationError('No occurrences match the selected days within the date range');
+      throw new ValidationError('No occurrences match the selected days within the date range', ErrorCode.ORDER_NO_OCCURRENCES);
     }
 
     const pool = getPool();
@@ -200,7 +200,7 @@ export class OrderService {
 
   async update(storeId: number, id: number, data: UpdateOrderDTO): Promise<Order> {
     const existing = await OrderCrud.getById(storeId, id);
-    if (!existing) throw new NotFoundError('Order not found');
+    if (!existing) throw new NotFoundError('Order not found', ErrorCode.ORDER_NOT_FOUND);
 
     const updateData: Partial<Order> = {};
     if (data.notes !== undefined) updateData.notes = data.notes;
@@ -263,10 +263,10 @@ export class OrderService {
   async delete(storeId: number, id: number): Promise<void> {
     const existing = await OrderCrud.getById(storeId, id);
     if (!existing) {
-      throw new NotFoundError('Order not found');
+      throw new NotFoundError('Order not found', ErrorCode.ORDER_NOT_FOUND);
     }
     if (existing.status === ORDER_STATUS.RECEIVED) {
-      throw new ValidationError('Cannot delete orders with received status');
+      throw new ValidationError('Cannot delete orders with received status', ErrorCode.ORDER_CANNOT_DELETE_RECEIVED);
     }
     return OrderCrud.delete(storeId, id);
   }

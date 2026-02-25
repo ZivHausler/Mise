@@ -2,14 +2,16 @@ import type { AdjustStockDTO, CreateIngredientDTO, Ingredient, InventoryLog, Upd
 import type { PaginatedResult } from '../../core/types/pagination.js';
 import { InventoryCrud } from './inventoryCrud.js';
 import { AdjustStockUseCase } from './use-cases/adjustStock.js';
-import { NotFoundError } from '../../core/errors/app-error.js';
+import { RecipeCrud } from '../recipes/recipeCrud.js';
+import { ConflictError, NotFoundError } from '../../core/errors/app-error.js';
+import { ErrorCode } from '@mise/shared';
 
 export class InventoryService {
   constructor() {}
 
   async getById(storeId: number, id: number): Promise<Ingredient> {
     const ingredient = await InventoryCrud.getById(storeId, id);
-    if (!ingredient) throw new NotFoundError('Ingredient not found');
+    if (!ingredient) throw new NotFoundError('Ingredient not found', ErrorCode.INGREDIENT_NOT_FOUND);
     return ingredient;
   }
 
@@ -32,7 +34,7 @@ export class InventoryService {
   async update(storeId: number, id: number, data: UpdateIngredientDTO): Promise<Ingredient> {
     const existing = await InventoryCrud.getById(storeId, id);
     if (!existing) {
-      throw new NotFoundError('Ingredient not found');
+      throw new NotFoundError('Ingredient not found', ErrorCode.INGREDIENT_NOT_FOUND);
     }
     return InventoryCrud.update(storeId, id, data);
   }
@@ -49,7 +51,11 @@ export class InventoryService {
   async delete(storeId: number, id: number): Promise<void> {
     const existing = await InventoryCrud.getById(storeId, id);
     if (!existing) {
-      throw new NotFoundError('Ingredient not found');
+      throw new NotFoundError('Ingredient not found', ErrorCode.INGREDIENT_NOT_FOUND);
+    }
+    const recipeCount = await RecipeCrud.countByIngredient(storeId, id);
+    if (recipeCount > 0) {
+      throw new ConflictError('Ingredient is used in recipes', ErrorCode.INGREDIENT_IN_USE_BY_RECIPES);
     }
     return InventoryCrud.delete(storeId, id);
   }

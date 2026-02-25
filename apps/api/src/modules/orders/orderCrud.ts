@@ -46,4 +46,12 @@ export class OrderCrud {
   static async findFutureByRecurringGroup(storeId: number, recurringGroupId: number, afterDate: Date): Promise<Order[]> {
     return PgOrderRepository.findFutureByRecurringGroup(storeId, recurringGroupId, afterDate);
   }
+
+  static async countActiveByCustomer(storeId: number, customerId: number): Promise<number> {
+    return PgOrderRepository.countActiveByCustomer(storeId, customerId);
+  }
+
+  static async countActiveByRecipe(storeId: number, recipeId: string): Promise<number> {
+    return PgOrderRepository.countActiveByRecipe(storeId, recipeId);
+  }
 }

@@ -5,6 +5,7 @@ import type { PaginationOptions, PaginatedResult } from './loyalty.repository.js
 import { PgOrderRepository } from '../orders/order.repository.js';
 import { PgCustomerRepository } from '../customers/customer.repository.js';
 import { ValidationError } from '../../core/errors/app-error.js';
+import { ErrorCode } from '@mise/shared';
 
 const DEFAULT_CONFIG: Omit<LoyaltyConfig, 'id' | 'storeId' | 'createdAt' | 'updatedAt'> = {
   isActive: false,
@@ -90,7 +91,7 @@ export class LoyaltyService {
     if (points < 0) {
       const summary = await LoyaltyCrud.getCustomerBalance(storeId, customerId);
       if (summary.balance + points < 0) {
-        throw new ValidationError('Adjustment would result in negative balance');
+        throw new ValidationError('Adjustment would result in negative balance', ErrorCode.LOYALTY_NEGATIVE_BALANCE);
       }
     }
 
@@ -107,15 +108,15 @@ export class LoyaltyService {
   async redeemPoints(storeId: number, customerId: number, points: number): Promise<{ pointsRedeemed: number; shekelValue: number }> {
     const config = await LoyaltyCrud.getConfig(storeId);
     if (!config || !config.isActive) {
-      throw new ValidationError('Loyalty program is not active');
+      throw new ValidationError('Loyalty program is not active', ErrorCode.LOYALTY_NOT_ACTIVE);
     }
 
     const summary = await LoyaltyCrud.getCustomerBalance(storeId, customerId);
     if (summary.balance < points) {
-      throw new ValidationError('Insufficient points balance');
+      throw new ValidationError('Insufficient points balance', ErrorCode.LOYALTY_INSUFFICIENT_POINTS);
     }
     if (points < config.minRedeemPoints) {
-      throw new ValidationError(`Minimum ${config.minRedeemPoints} points required for redemption`);
+      throw new ValidationError(`Minimum ${config.minRedeemPoints} points required for redemption`, ErrorCode.LOYALTY_BELOW_MINIMUM);
     }
 
     const shekelValue = Number((points * config.pointValue).toFixed(2));
