@@ -20,7 +20,11 @@ export function RotatingImage({ photos, alt, className = '' }: RotatingImageProp
   if (!photos || photos.length === 0) return null;
 
   if (photos.length === 1) {
-    return <img src={photos[0]} alt={alt} className={className} />;
+    return (
+      <div className={`overflow-hidden ${className}`}>
+        <img src={photos[0]} alt={alt} className="h-full w-full object-cover" />
+      </div>
+    );
   }
 
   const prevIndex = (index - 1 + photos.length) % photos.length;
