@@ -104,6 +104,21 @@ export function useOrders(filters?: { excludePaid?: boolean }) {
   return useQuery({ queryKey: ['orders', filters], queryFn: () => fetchApi<unknown[]>(`/orders${qs ? `?${qs}` : ''}`) });
 }
 
+export function useOrdersPaginated(page = 1, limit = 20, filters?: { dateFrom?: string; dateTo?: string; search?: string }) {
+  return useQuery({
+    queryKey: ['orders', 'list', page, limit, filters],
+    queryFn: async () => {
+      const params = new URLSearchParams({ page: String(page), limit: String(limit) });
+      if (filters?.dateFrom) params.set('dateFrom', filters.dateFrom);
+      if (filters?.dateTo) params.set('dateTo', filters.dateTo);
+      if (filters?.search) params.set('search', filters.search);
+      const { data } = await apiClient.get(`/orders/list?${params}`);
+      return { orders: data.data, pagination: data.pagination };
+    },
+    placeholderData: keepPreviousData,
+  });
+}
+
 export function useOrder(id: number) {
   return useQuery({ queryKey: ['orders', id], queryFn: () => fetchApi<unknown>(`/orders/${id}`), enabled: !!id });
 }
@@ -417,13 +432,15 @@ export function useDeleteCustomer() {
 }
 
 // Payments
-export function usePayments(page = 1, limit = 10, filters?: { status?: string; method?: string }) {
+export function usePayments(page = 1, limit = 10, filters?: { status?: string; method?: string; dateFrom?: string; dateTo?: string }) {
   return useQuery({
     queryKey: ['payments', page, limit, filters],
     queryFn: async () => {
       const params = new URLSearchParams({ page: String(page), limit: String(limit) });
       if (filters?.status) params.set('status', filters.status);
       if (filters?.method) params.set('method', filters.method);
+      if (filters?.dateFrom) params.set('dateFrom', filters.dateFrom);
+      if (filters?.dateTo) params.set('dateTo', filters.dateTo);
       const { data } = await apiClient.get(`/payments?${params}`);
       return { payments: data.data, pagination: data.pagination };
     },

@@ -12,7 +12,7 @@ export default async function paymentRoutes(app: FastifyInstance) {
   app.addHook('preHandler', authMiddleware);
   app.addHook('preHandler', requireStoreMiddleware);
 
-  app.get<{ Querystring: { page?: string; limit?: string; status?: string; method?: string } }>('/', (req, reply) => controller.getAll(req, reply));
+  app.get<{ Querystring: { page?: string; limit?: string; status?: string; method?: string; dateFrom?: string; dateTo?: string } }>('/', (req, reply) => controller.getAll(req, reply));
   app.get('/statuses', (req, reply) => controller.getStatuses(req, reply));
   app.get<{ Params: { customerId: string }; Querystring: { page?: string; limit?: string; method?: string; dateFrom?: string; dateTo?: string } }>('/customer/:customerId', (req, reply) => controller.getByCustomerId(req, reply));
   app.get<{ Params: { orderId: string } }>('/order/:orderId', (req, reply) => controller.getByOrderId(req, reply));

@@ -1,7 +1,7 @@
 import React, { useMemo, useState, useCallback, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSearchParams } from 'react-router-dom';
-import { Plus, CreditCard, ChevronLeft, ChevronRight, RotateCcw, Filter, ChevronDown } from 'lucide-react';
+import { Plus, CreditCard, ChevronLeft, ChevronRight, RotateCcw, Filter, ChevronDown, X } from 'lucide-react';
 import { Page, PageHeader } from '@/components/Layout';
 import { Button } from '@/components/Button';
 import { DataTable, StatusBadge, EmptyState, type Column } from '@/components/DataDisplay';
@@ -11,6 +11,7 @@ import { LogPaymentModal } from '@/components/LogPaymentModal';
 import { usePayments, useRefundPayment } from '@/api/hooks';
 import { PAYMENT_METHODS, PAYMENT_METHOD_I18N } from '@/constants/defaults';
 import { useFormatDate } from '@/utils/dateFormat';
+import { DateFilterDropdown } from '@/components/DateFilterDropdown';
 
 function PaymentFilterDropdown({ label, count, children }: { label: string; count: number; children: React.ReactNode }) {
   const [open, setOpen] = useState(false);
@@ -58,19 +59,23 @@ export default function PaymentsPage() {
   const [page, setPage] = useState(1);
   const [filterStatus, setFilterStatus] = useState('');
   const [filterMethod, setFilterMethod] = useState('');
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
   const filters = useMemo(() => {
-    const f: { status?: string; method?: string } = {};
+    const f: { status?: string; method?: string; dateFrom?: string; dateTo?: string } = {};
     if (filterStatus) f.status = filterStatus;
     if (filterMethod) f.method = filterMethod;
+    if (dateFrom) f.dateFrom = dateFrom;
+    if (dateTo) f.dateTo = dateTo;
     return Object.keys(f).length ? f : undefined;
-  }, [filterStatus, filterMethod]);
+  }, [filterStatus, filterMethod, dateFrom, dateTo]);
   const { data: paymentsData, isLoading } = usePayments(page, 10, filters);
   const refundPayment = useRefundPayment();
   const [showAdd, setShowAdd] = useState(false);
   const [refundTarget, setRefundTarget] = useState<any>(null);
 
   // Reset page when filters change
-  useEffect(() => { setPage(1); }, [filterStatus, filterMethod]);
+  useEffect(() => { setPage(1); }, [filterStatus, filterMethod, dateFrom, dateTo]);
 
   const paymentsResult = paymentsData as any;
   const list = (paymentsResult?.payments as any[]) ?? [];
@@ -145,7 +150,7 @@ export default function PaymentsPage() {
         }
       />
 
-      {list.length === 0 && (!pagination || pagination.total === 0) && !filterStatus && !filterMethod ? (
+      {list.length === 0 && (!pagination || pagination.total === 0) && !filterStatus && !filterMethod && !dateFrom && !dateTo ? (
         <EmptyState
           title={t('payments.empty', 'No payments yet')}
           description={t('payments.emptyDesc', 'Log your first payment.')}
@@ -157,8 +162,8 @@ export default function PaymentsPage() {
           }
         />
       ) : (
-        <div className="overflow-hidden rounded-lg border border-neutral-200 bg-white">
-          <div className="flex items-center gap-2 border-b border-neutral-200 p-4">
+        <div className="rounded-lg border border-neutral-200 bg-white">
+          <div className="flex flex-wrap items-center gap-2 border-b border-neutral-200 p-4">
             <PaymentFilterDropdown
               label={t('payments.status', 'Status')}
               count={filterStatus ? 1 : 0}
@@ -197,6 +202,21 @@ export default function PaymentsPage() {
                 );
               })}
             </PaymentFilterDropdown>
+            <DateFilterDropdown
+              dateFrom={dateFrom}
+              dateTo={dateTo}
+              onDateFromChange={setDateFrom}
+              onDateToChange={setDateTo}
+            />
+            {(filterStatus || filterMethod || dateFrom || dateTo) && (
+              <button
+                onClick={() => { setFilterStatus(''); setFilterMethod(''); setDateFrom(''); setDateTo(''); }}
+                className="inline-flex items-center gap-1 text-body-sm text-neutral-500 hover:text-neutral-700"
+              >
+                <X className="h-3.5 w-3.5" />
+                {t('common.clearFilters', 'Clear')}
+              </button>
+            )}
           </div>
           <DataTable
             columns={columns}

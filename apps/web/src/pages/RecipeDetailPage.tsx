@@ -8,6 +8,7 @@ import { Button } from '@/components/Button';
 import { PageSkeleton } from '@/components/Feedback';
 import { RotatingImage } from '@/components/RotatingImage';
 import { ConfirmModal } from '@/components/Modal';
+import { TagBubbles } from '@/components/TagBubbles';
 import { useRecipe, useDeleteRecipe } from '@/api/hooks';
 
 type TabKey = 'ingredients' | 'steps' | 'cost';
@@ -59,7 +60,7 @@ export default function RecipeDetailPage() {
       <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="font-heading text-h1 text-neutral-800">{r.name}</h1>
-          {r.tags?.length > 0 && <TagBubbles tags={r.tags} />}
+          {r.tags?.length > 0 && <TagBubbles tags={r.tags} className="mt-2" />}
         </div>
         <Row gap={2}>
           <Button variant="secondary" icon={<Edit className="h-4 w-4" />} onClick={() => navigate(`/recipes/${r.id}/edit`)}>
@@ -344,37 +345,6 @@ function TotalIngredientsTable({ ingredients, t }: { ingredients: { name: string
   );
 }
 
-function TagBubbles({ tags }: { tags: string[] }) {
-  const isMobile = window.innerWidth < 640;
-  const maxVisible = isMobile ? 3 : 5;
-  const visible = tags.slice(0, maxVisible);
-  const hiddenCount = tags.length - visible.length;
-
-  return (
-    <div className="mt-2 flex items-center gap-2">
-      {visible.map((tag: string) => (
-        <span
-          key={tag}
-          className="shrink-0 rounded-full border border-primary-200 bg-primary-50 px-3 py-1 text-body-sm font-medium text-primary-700"
-        >
-          {tag}
-        </span>
-      ))}
-      {hiddenCount > 0 && (
-        <span className="group relative shrink-0 cursor-default rounded-full border border-neutral-200 bg-neutral-100 px-2.5 py-1 text-body-sm font-medium text-neutral-600">
-          +{hiddenCount}
-          <span className="pointer-events-none absolute start-1/2 top-full z-50 mt-2 -translate-x-1/2 rounded-lg border border-neutral-200 bg-white px-3 py-2 opacity-0 shadow-lg transition-opacity group-hover:opacity-100">
-            <span className="flex flex-col gap-1">
-              {tags.slice(maxVisible).map((tag: string) => (
-                <span key={tag} className="whitespace-nowrap text-body-sm text-neutral-700">{tag}</span>
-              ))}
-            </span>
-          </span>
-        </span>
-      )}
-    </div>
-  );
-}
 
 function StepRow({ step, index, t }: { step: any; index: number; t: (key: string, fallback?: string) => string }) {
   return (

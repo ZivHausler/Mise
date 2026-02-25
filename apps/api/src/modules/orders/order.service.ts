@@ -35,6 +35,10 @@ export class OrderService {
     return OrderCrud.getAll(storeId, filters);
   }
 
+  async getAllPaginated(storeId: number, options: { limit: number; offset: number }, filters?: { status?: OrderStatus; excludePaid?: boolean; dateFrom?: string; dateTo?: string; search?: string }): Promise<{ orders: Order[]; total: number }> {
+    return OrderCrud.getAllPaginated(storeId, options, filters);
+  }
+
   async create(storeId: number, data: CreateOrderDTO & { recurringGroupId?: number }, correlationId?: string): Promise<Order> {
     let totalAmount = 0;
 

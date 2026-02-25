@@ -9,6 +9,7 @@ import { RotatingImage } from '@/components/RotatingImage';
 import { PageSkeleton } from '@/components/Feedback';
 import { useRecipes } from '@/api/hooks';
 import { AllergenIcon, useAllergenName } from '@/components/settings/AllergensTab';
+import { TagBubbles } from '@/components/TagBubbles';
 import { useAppStore } from '@/store/app';
 
 function FilterDropdown({ label, count, children }: { label: string; count: number; children: React.ReactNode }) {
@@ -102,11 +103,7 @@ export default function RecipesPage() {
         header: t('recipes.tags', 'Tags'),
         render: (row: any) =>
           row.tags?.length > 0 ? (
-            <div className="flex flex-wrap gap-1">
-              {row.tags.map((tag: string) => (
-                <span key={tag} className="inline-block rounded-full bg-primary-50 px-2 py-0.5 text-caption font-medium text-primary-700">{tag}</span>
-              ))}
-            </div>
+            <TagBubbles tags={row.tags} maxVisible={3} size="sm" />
           ) : null,
       },
       {
@@ -242,11 +239,7 @@ export default function RecipesPage() {
                 )}
                 <h3 className="font-heading text-h4 text-neutral-800">{recipe.name}</h3>
                 {recipe.tags?.length > 0 && (
-                  <div className="mt-1 flex flex-wrap gap-1">
-                    {recipe.tags.map((tag: string) => (
-                      <span key={tag} className="inline-block rounded-full bg-primary-50 px-2 py-0.5 text-caption font-medium text-primary-700">{tag}</span>
-                    ))}
-                  </div>
+                  <TagBubbles tags={recipe.tags} maxVisible={2} size="sm" className="mt-1" />
                 )}
               </div>
               {recipe.allergens?.length > 0 && (
