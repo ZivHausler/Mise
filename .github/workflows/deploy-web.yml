@@ -36,7 +36,7 @@ jobs:
       - name: Build web (Vite only)
         run: cd apps/web && npx vite build
         env:
-          VITE_API_URL: https://mise-prod-app.web.app
+          VITE_API_URL: https://app.mise-en-place.shop
           VITE_GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
 
       - name: Deploy to Firebase Hosting
