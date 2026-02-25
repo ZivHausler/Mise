@@ -75,6 +75,7 @@ export default defineConfig({
       reuseExistingServer: !process.env.CI,
       cwd: '../..',
       timeout: 30_000,
+      env: { RESEND_API_KEY: '' },
     },
     {
       command: 'pnpm --filter @mise/web dev',
