@@ -3,6 +3,7 @@ import { getEventBus } from '../../core/events/event-bus.js';
 import { EventNames } from '../../core/events/event-names.js';
 import { EmailNotifier } from './channels/email.js';
 import { SmsNotifier } from './channels/sms.js';
+import { WhatsAppNotifier } from './channels/whatsapp.js';
 import { NotificationDispatcher } from './notification.dispatcher.js';
 
 const NOTIFICATION_EVENTS = [
@@ -17,6 +18,7 @@ export default async function notificationRoutes(app: FastifyInstance) {
   const dispatcher = new NotificationDispatcher(
     new EmailNotifier(),
     new SmsNotifier(),
+    new WhatsAppNotifier(),
     app.log,
   );
 

@@ -45,6 +45,7 @@ export interface NotificationPreference {
   channelEmail: boolean;
   channelPush: boolean;
   channelSms: boolean;
+  channelWhatsapp: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
