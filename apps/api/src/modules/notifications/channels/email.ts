@@ -455,47 +455,43 @@ export class EmailNotifier implements NotificationChannel {
 
 interface InviteTranslations {
   joinSubject: (storeName: string) => string;
-  joinBody: (storeName: string, role: string) => string;
+  joinBody: (storeName: string) => string;
   createSubject: string;
   createBody: string;
   acceptButton: string;
   createButton: string;
-  copyLink: string;
   expiresOn: (date: string) => string;
   ignoreNotice: string;
 }
 
 const inviteI18n: Record<Language, InviteTranslations> = {
   [Language.HEBREW]: {
-    joinSubject: (s) => `הוזמנת להצטרף ל-${s} ב-Mise`,
-    joinBody: (s, r) => `הוזמנת להצטרף ל-<strong>${s}</strong> ב-Mise כ-<strong>${r}</strong>.`,
+    joinSubject: (s) => `הוזמנת להצטרף לצוות ב-${s}`,
+    joinBody: (s) => `הוזמנת להצטרף לצוות שלנו ב-<strong>${s}</strong>.`,
     createSubject: 'הוזמנת ליצור חנות ב-Mise',
     createBody: 'הוזמנת ליצור חנות חדשה ב-<strong>Mise</strong>.',
-    acceptButton: 'קבל הזמנה',
+    acceptButton: 'הצטרף לצוות',
     createButton: 'צור את החנות שלך',
-    copyLink: 'או העתק את הקישור:',
-    expiresOn: (d) => `ההזמנה תפוג בתאריך ${d}.`,
+    expiresOn: (d) => `הזמנה זו תפוג בתאריך ${d}.`,
     ignoreNotice: 'אם לא ציפית להזמנה זו, ניתן להתעלם מהודעה זו.',
   },
   [Language.ENGLISH]: {
-    joinSubject: (s) => `You've been invited to join ${s} on Mise`,
-    joinBody: (s, r) => `You've been invited to join <strong>${s}</strong> on Mise as a <strong>${r}</strong>.`,
+    joinSubject: (s) => `You've been invited to join the team at ${s}`,
+    joinBody: (s) => `You've been invited to join our team at <strong>${s}</strong>.`,
     createSubject: "You've been invited to create a store on Mise",
     createBody: "You've been invited to create a store on <strong>Mise</strong>.",
-    acceptButton: 'Accept Invitation',
+    acceptButton: 'Join Team',
     createButton: 'Create Your Store',
-    copyLink: 'Or copy this link:',
     expiresOn: (d) => `This invitation expires on ${d}.`,
     ignoreNotice: "If you didn't expect this invitation, you can safely ignore this email.",
   },
   [Language.ARABIC]: {
-    joinSubject: (s) => `تمت دعوتك للانضمام إلى ${s} على Mise`,
-    joinBody: (s, r) => `تمت دعوتك للانضمام إلى <strong>${s}</strong> على Mise بصفة <strong>${r}</strong>.`,
+    joinSubject: (s) => `تمت دعوتك للانضمام إلى الفريق في ${s}`,
+    joinBody: (s) => `تمت دعوتك للانضمام إلى فريقنا في <strong>${s}</strong>.`,
     createSubject: 'تمت دعوتك لإنشاء متجر على Mise',
     createBody: 'تمت دعوتك لإنشاء متجر جديد على <strong>Mise</strong>.',
-    acceptButton: 'قبول الدعوة',
+    acceptButton: 'انضم إلى الفريق',
     createButton: 'أنشئ متجرك',
-    copyLink: 'أو انسخ هذا الرابط:',
     expiresOn: (d) => `تنتهي صلاحية هذه الدعوة في ${d}.`,
     ignoreNotice: 'إذا لم تكن تتوقع هذه الدعوة، يمكنك تجاهل هذا البريد الإلكتروني.',
   },
@@ -506,7 +502,10 @@ function getInviteTranslations(lang: number): InviteTranslations {
 }
 
 function formatExpiry(expiresAt: Date): string {
-  return expiresAt.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+  const d = String(expiresAt.getDate()).padStart(2, '0');
+  const m = String(expiresAt.getMonth() + 1).padStart(2, '0');
+  const y = expiresAt.getFullYear();
+  return `${d}.${m}.${y}`;
 }
 
 function inviteWrap(lang: number, content: string): string {
@@ -519,16 +518,15 @@ function inviteWrap(lang: number, content: string): string {
     </div>`;
 }
 
-export function buildStoreInviteEmail(storeName: string, inviteLink: string, role: string, expiresAt: Date, lang: number): { subject: string; html: string } {
+export function buildStoreInviteEmail(storeName: string, inviteLink: string, _role: string, expiresAt: Date, lang: number): { subject: string; html: string } {
   const t = getInviteTranslations(lang);
   return {
     subject: t.joinSubject(storeName),
     html: inviteWrap(lang, `
-      <p>${t.joinBody(storeName, role)}</p>
+      <p>${t.joinBody(storeName)}</p>
       <p style="margin:24px 0;">
         <a href="${inviteLink}" style="background:#000;color:#fff;padding:12px 24px;border-radius:6px;text-decoration:none;display:inline-block;">${t.acceptButton}</a>
       </p>
-      <p style="font-size:13px;color:#666;">${t.copyLink} ${inviteLink}</p>
       <p style="font-size:13px;color:#666;">${t.expiresOn(formatExpiry(expiresAt))}</p>
       <div style="margin-top:32px;padding-top:16px;border-top:1px solid #e5e5e5;font-size:12px;color:#888;">
         ${t.ignoreNotice}
@@ -545,7 +543,6 @@ export function buildCreateStoreInviteEmail(inviteLink: string, expiresAt: Date,
       <p style="margin:24px 0;">
         <a href="${inviteLink}" style="background:#000;color:#fff;padding:12px 24px;border-radius:6px;text-decoration:none;display:inline-block;">${t.createButton}</a>
       </p>
-      <p style="font-size:13px;color:#666;">${t.copyLink} ${inviteLink}</p>
       <p style="font-size:13px;color:#666;">${t.expiresOn(formatExpiry(expiresAt))}</p>
       <div style="margin-top:32px;padding-top:16px;border-top:1px solid #e5e5e5;font-size:12px;color:#888;">
         ${t.ignoreNotice}
