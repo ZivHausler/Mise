@@ -241,7 +241,7 @@ export class PgAdminRepository {
 
     const result = await pool.query(
       `INSERT INTO store_invitations (store_id, email, role, token, expires_at, created_at)
-       VALUES (NULL, $1, 1, $2, NOW() + INTERVAL '7 days', NOW())
+       VALUES (NULL, $1, 1, $2, NOW() + INTERVAL '1 day', NOW())
        RETURNING *`,
       [email, token],
     );

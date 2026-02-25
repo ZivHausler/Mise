@@ -101,7 +101,7 @@ export class PgStoreRepository {
   static async createInvitation(storeId: number, email: string, role: StoreRole): Promise<StoreInvitation> {
     const pool = getPool();
     const token = crypto.randomBytes(32).toString('hex');
-    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
+    const expiresAt = new Date(Date.now() + 1 * 24 * 60 * 60 * 1000); // 1 day
     const result = await pool.query(
       `INSERT INTO store_invitations (store_id, email, role, token, expires_at, created_at)
        VALUES ($1, $2, $3, $4, $5, NOW())
@@ -128,7 +128,7 @@ export class PgStoreRepository {
   static async createCreateStoreInvitation(email: string): Promise<StoreInvitation> {
     const pool = getPool();
     const token = crypto.randomBytes(32).toString('hex');
-    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
+    const expiresAt = new Date(Date.now() + 1 * 24 * 60 * 60 * 1000); // 1 day
     const result = await pool.query(
       `INSERT INTO store_invitations (store_id, email, role, token, expires_at, created_at)
        VALUES (NULL, $1, $2, $3, $4, NOW())
