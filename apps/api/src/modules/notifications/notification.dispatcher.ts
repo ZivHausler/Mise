@@ -14,7 +14,7 @@ export class NotificationDispatcher {
   constructor(
     private emailNotifier: NotificationChannel,
     private smsNotifier: NotificationChannel,
-    private whatsappNotifier: NotificationChannel,
+    private whatsAppNotifier: NotificationChannel,
     private logger: FastifyBaseLogger,
   ) {}
 
@@ -26,15 +26,10 @@ export class NotificationDispatcher {
     }
 
     const recipients = await PgNotifPrefsRepository.findByEventType(eventType);
-    const context = {
-      eventType,
-      eventName: event.eventName,
-      payload: event.payload,
-    };
 
     const emailRecipients: NotificationRecipient[] = [];
     const smsRecipients: NotificationRecipient[] = [];
-    const whatsappRecipients: NotificationRecipient[] = [];
+    const whatsAppRecipients: { recipient: NotificationRecipient; storeId: number }[] = [];
 
     for (const recipient of recipients) {
       const nr: NotificationRecipient = {
@@ -53,10 +48,16 @@ export class NotificationDispatcher {
         smsRecipients.push(nr);
       }
 
-      if (recipient.channelWhatsapp && recipient.phone) {
-        whatsappRecipients.push(nr);
+      if (recipient.channelWhatsapp && recipient.phone && recipient.storeId) {
+        whatsAppRecipients.push({ recipient: nr, storeId: recipient.storeId });
       }
     }
+
+    const context = {
+      eventType,
+      eventName: event.eventName,
+      payload: event.payload,
+    };
 
     if (emailRecipients.length > 0) {
       await this.emailNotifier.sendBatch(emailRecipients, context);
@@ -66,12 +67,19 @@ export class NotificationDispatcher {
       await this.smsNotifier.sendBatch(smsRecipients, context);
     }
 
-    if (whatsappRecipients.length > 0) {
-      await this.whatsappNotifier.sendBatch(whatsappRecipients, context);
+    // WhatsApp: group by storeId and send with store context
+    const byStore = new Map<number, NotificationRecipient[]>();
+    for (const { recipient, storeId } of whatsAppRecipients) {
+      const list = byStore.get(storeId) ?? [];
+      list.push(recipient);
+      byStore.set(storeId, list);
+    }
+    for (const [storeId, storeRecipients] of byStore) {
+      await this.whatsAppNotifier.sendBatch(storeRecipients, { ...context, storeId });
     }
 
     this.logger.info(
-      `Dispatched ${eventType} to ${recipients.length} user(s) (${emailRecipients.length} email, ${smsRecipients.length} sms, ${whatsappRecipients.length} whatsapp)`,
+      `Dispatched ${eventType} to ${recipients.length} user(s) (${emailRecipients.length} email, ${smsRecipients.length} sms, ${whatsAppRecipients.length} whatsapp)`,
     );
   }
 }

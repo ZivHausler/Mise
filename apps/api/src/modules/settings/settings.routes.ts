@@ -19,6 +19,9 @@ import { NotificationsController } from './notifications/notifications.controlle
 import { LoyaltyService } from '../loyalty/loyalty.service.js';
 import { LoyaltyController } from '../loyalty/loyalty.controller.js';
 
+import { WhatsAppService } from './whatsapp/whatsapp.service.js';
+import { WhatsAppController } from './whatsapp/whatsapp.controller.js';
+
 export default async function settingsRoutes(app: FastifyInstance) {
   app.addHook('preHandler', authMiddleware);
   app.addHook('preHandler', requireStoreMiddleware);
@@ -76,4 +79,12 @@ export default async function settingsRoutes(app: FastifyInstance) {
 
   app.get('/loyalty', (req, reply) => loyaltyController.getConfig(req, reply));
   app.patch('/loyalty', (req, reply) => loyaltyController.updateConfig(req, reply));
+
+  // WhatsApp
+  const whatsAppService = new WhatsAppService();
+  const whatsAppController = new WhatsAppController(whatsAppService);
+
+  app.get('/whatsapp', (req, reply) => whatsAppController.getConfig(req, reply));
+  app.post('/whatsapp/connect', (req, reply) => whatsAppController.connect(req, reply));
+  app.delete('/whatsapp', (req, reply) => whatsAppController.disconnect(req, reply));
 }

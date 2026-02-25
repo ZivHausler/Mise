@@ -1,9 +1,7 @@
 import type { NotificationChannel, NotificationRecipient, NotificationContext } from './channel.js';
+import { WhatsAppRepository } from '../../settings/whatsapp/whatsapp.repository.js';
 import { appLogger } from '../../../core/logger/logger.js';
 import { Language } from '@mise/shared';
-
-const WHATSAPP_PHONE_NUMBER_ID = process.env['WHATSAPP_PHONE_NUMBER_ID'] ?? '';
-const WHATSAPP_ACCESS_TOKEN = process.env['WHATSAPP_ACCESS_TOKEN'] ?? '';
 
 const API_BASE = 'https://graph.facebook.com/v22.0';
 
@@ -167,48 +165,25 @@ function buildMessage(context: NotificationContext, lang: number): string {
 }
 
 // ---------------------------------------------------------------------------
-// WhatsApp Cloud API call
-// ---------------------------------------------------------------------------
-
-async function sendWhatsAppMessage(to: string, body: string): Promise<void> {
-  const url = `${API_BASE}/${WHATSAPP_PHONE_NUMBER_ID}/messages`;
-
-  const res = await fetch(url, {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${WHATSAPP_ACCESS_TOKEN}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      messaging_product: 'whatsapp',
-      to,
-      type: 'text',
-      text: { body },
-    }),
-  });
-
-  if (!res.ok) {
-    const errorBody = await res.text();
-    throw new Error(`WhatsApp API error ${res.status}: ${errorBody}`);
-  }
-}
-
-// ---------------------------------------------------------------------------
-// WhatsAppNotifier
+// WhatsAppNotifier — uses per-store config from WhatsAppRepository
 // ---------------------------------------------------------------------------
 
 export class WhatsAppNotifier implements NotificationChannel {
-  async send(recipient: NotificationRecipient, context: NotificationContext): Promise<void> {
-    if (!WHATSAPP_PHONE_NUMBER_ID || !WHATSAPP_ACCESS_TOKEN) {
-      appLogger.warn(
-        { to: recipient.phone, eventType: context.eventType },
-        '[WHATSAPP] Notification NOT sent — WhatsApp is not configured',
-      );
+  async send(recipient: NotificationRecipient, context: NotificationContext & { storeId?: number }): Promise<void> {
+    if (!recipient.phone) {
+      appLogger.warn({ userId: recipient.userId, eventType: context.eventType }, '[WHATSAPP] No phone number for recipient');
       return;
     }
 
-    if (!recipient.phone) {
-      appLogger.warn({ userId: recipient.userId, eventType: context.eventType }, '[WHATSAPP] No phone number for recipient');
+    const storeId = context.storeId;
+    if (!storeId) {
+      appLogger.warn({ userId: recipient.userId, eventType: context.eventType }, '[WHATSAPP] No storeId in context');
+      return;
+    }
+
+    const config = await WhatsAppRepository.findByStoreId(storeId);
+    if (!config) {
+      appLogger.warn({ storeId, eventType: context.eventType }, '[WHATSAPP] Not configured for store — skipping');
       return;
     }
 
@@ -216,14 +191,33 @@ export class WhatsAppNotifier implements NotificationChannel {
     const body = buildMessage(context, recipient.language ?? Language.HEBREW);
 
     try {
-      await sendWhatsAppMessage(to, body);
-      appLogger.info({ to, eventType: context.eventType }, '[WHATSAPP] Notification sent successfully');
+      const res = await fetch(`${API_BASE}/${config.phoneNumberId}/messages`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${config.accessToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          messaging_product: 'whatsapp',
+          to,
+          type: 'text',
+          text: { body },
+        }),
+      });
+
+      if (!res.ok) {
+        const err = await res.text();
+        appLogger.error({ storeId, to, eventType: context.eventType, err }, '[WHATSAPP] Failed to send message');
+        return;
+      }
+
+      appLogger.info({ storeId, to, eventType: context.eventType }, '[WHATSAPP] Message sent');
     } catch (err) {
-      appLogger.error({ to, eventType: context.eventType, err }, '[WHATSAPP] Failed to send notification');
+      appLogger.error({ storeId, to, eventType: context.eventType, err }, '[WHATSAPP] Unexpected error');
     }
   }
 
-  async sendBatch(recipients: NotificationRecipient[], context: NotificationContext): Promise<void> {
+  async sendBatch(recipients: NotificationRecipient[], context: NotificationContext & { storeId?: number }): Promise<void> {
     for (const recipient of recipients) {
       await this.send(recipient, context);
     }

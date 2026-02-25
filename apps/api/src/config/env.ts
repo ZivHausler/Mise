@@ -57,6 +57,10 @@ const envSchema = z.object({
   WHATSAPP_PHONE_NUMBER_ID: z.string().default(''),
   WHATSAPP_ACCESS_TOKEN: z.string().default(''),
 
+  // Meta (WhatsApp Embedded Signup)
+  META_APP_ID: z.string().default(''),
+  META_APP_SECRET: z.string().default(''),
+
   // Feature flags — comma-separated store IDs that have the feature enabled, or '*' for all stores
   FEATURE_PRODUCTION: z.string().default(''),
 });
