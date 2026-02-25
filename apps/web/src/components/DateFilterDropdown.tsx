@@ -14,9 +14,9 @@ export function DateFilterDropdown({ dateFrom, dateTo, onDateFromChange, onDateT
   const [open, setOpen] = useState(false);
   const [alignEnd, setAlignEnd] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
-  const panelRef = useRef<HTMLDivElement>(null);
 
   const count = (dateFrom ? 1 : 0) + (dateTo ? 1 : 0);
+  const panelWidth = 220;
 
   useEffect(() => {
     if (!open) return;
@@ -27,20 +27,21 @@ export function DateFilterDropdown({ dateFrom, dateTo, onDateFromChange, onDateT
     return () => document.removeEventListener('mousedown', handler);
   }, [open]);
 
-  useEffect(() => {
-    if (!open || !panelRef.current) return;
-    const rect = panelRef.current.getBoundingClientRect();
-    const overflowRight = rect.right > window.innerWidth;
-    const overflowLeft = rect.left < 0;
-    if (overflowRight && !overflowLeft) setAlignEnd(true);
-    else if (overflowLeft && !overflowRight) setAlignEnd(false);
-  }, [open]);
+  const handleToggle = () => {
+    if (!open && ref.current) {
+      const rect = ref.current.getBoundingClientRect();
+      const spaceRight = window.innerWidth - rect.left;
+      const spaceLeft = rect.right;
+      setAlignEnd(spaceRight < panelWidth && spaceLeft >= panelWidth);
+    }
+    setOpen((v) => !v);
+  };
 
   return (
     <div ref={ref} className="relative">
       <button
         type="button"
-        onClick={() => setOpen((v) => !v)}
+        onClick={handleToggle}
         className={`inline-flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-body-sm font-medium transition-colors ${count > 0 ? 'border-primary-300 bg-primary-50 text-primary-700' : 'border-neutral-200 text-neutral-600 hover:bg-neutral-50'}`}
       >
         <Filter className="h-3.5 w-3.5" />
@@ -53,7 +54,7 @@ export function DateFilterDropdown({ dateFrom, dateTo, onDateFromChange, onDateT
         <ChevronDown className={`h-3.5 w-3.5 transition-transform ${open ? 'rotate-180' : ''}`} />
       </button>
       {open && (
-        <div ref={panelRef} className={`absolute top-full z-20 mt-1 rounded-lg border border-neutral-200 bg-white p-1 shadow-lg ${alignEnd ? 'end-0' : 'start-0'}`}>
+        <div className={`absolute top-full z-20 mt-1 rounded-lg border border-neutral-200 bg-white p-1 shadow-lg ${alignEnd ? 'end-0' : 'start-0'}`}>
           <div className="space-y-2 p-2" style={{ minWidth: 200 }}>
             <div>
               <label className="text-caption font-medium text-neutral-500">{t('common.from')}</label>
