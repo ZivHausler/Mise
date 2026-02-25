@@ -1,10 +1,14 @@
 import React, { useCallback, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { MessageSquare, Unplug, CheckCircle, XCircle } from 'lucide-react';
+import { MessageSquare, Unplug, CheckCircle, XCircle, Sparkles } from 'lucide-react';
 import { Card, Section, Stack } from '@/components/Layout';
+import { cn } from '@/utils/cn';
 import { Button } from '@/components/Button';
 import { Spinner } from '@/components/Feedback';
 import { useWhatsAppConfig, useConnectWhatsApp, useDisconnectWhatsApp } from '@/api/hooks';
+import { useAuthStore } from '@/store/auth';
+
+const INTEGRATIONS_STORE_IDS = (import.meta.env.VITE_INTEGRATIONS_STORE_IDS ?? '').split(',').filter(Boolean);
 
 declare global {
   interface Window {
@@ -29,6 +33,8 @@ const META_CONFIG_ID = import.meta.env.VITE_META_CONFIG_ID ?? '';
 
 export default function IntegrationsTab() {
   const { t } = useTranslation();
+  const activeStoreId = useAuthStore((s) => s.activeStoreId);
+  const isComingSoon = !activeStoreId || !INTEGRATIONS_STORE_IDS.includes(activeStoreId);
   const { data: config, isLoading } = useWhatsAppConfig();
   const connectMutation = useConnectWhatsApp();
   const disconnectMutation = useDisconnectWhatsApp();
@@ -93,13 +99,24 @@ export default function IntegrationsTab() {
     );
   }, [connectMutation]);
 
-  if (isLoading) return <div className="flex justify-center py-8"><Spinner /></div>;
+  if (!isComingSoon && isLoading) return <div className="flex justify-center py-8"><Spinner /></div>;
 
   return (
     <Stack gap={6}>
       <Card>
-        <Section title={t('settings.integrations.title', 'Integrations')}>
-          <div className="space-y-4">
+        <div className="mb-4 flex items-center gap-2">
+          <h2 className="font-heading text-h3 text-neutral-800">
+            {t('settings.integrations.title', 'Integrations')}
+          </h2>
+          {isComingSoon && (
+            <span className="inline-flex items-center gap-1 rounded-full bg-purple-50 px-2.5 py-0.5 text-xs font-medium text-purple-500">
+              <Sparkles className="h-3.5 w-3.5" />
+              {t('nav.comingSoon', 'Coming soon')}
+            </span>
+          )}
+        </div>
+        <Section>
+          <div className={cn('space-y-4', isComingSoon && 'opacity-60 pointer-events-none select-none')}>
             {/* WhatsApp Section */}
             <div className="flex flex-col gap-4 rounded-lg border border-neutral-200 p-4 sm:flex-row sm:items-start">
               <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-green-100 text-green-600">
