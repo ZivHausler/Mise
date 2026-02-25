@@ -8,6 +8,7 @@ import { Button } from '@/components/Button';
 import { PageSkeleton } from '@/components/Feedback';
 import { RotatingImage } from '@/components/RotatingImage';
 import { ConfirmModal } from '@/components/Modal';
+import { TagBubbles } from '@/components/TagBubbles';
 import { useRecipe, useDeleteRecipe } from '@/api/hooks';
 
 type TabKey = 'ingredients' | 'steps' | 'cost';
@@ -59,13 +60,7 @@ export default function RecipeDetailPage() {
       <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="font-heading text-h1 text-neutral-800">{r.name}</h1>
-          {r.tags?.length > 0 && (
-            <div className="mt-1 flex flex-wrap gap-1">
-              {r.tags.map((tag: string) => (
-                <span key={tag} className="inline-block rounded-full bg-primary-50 px-2 py-0.5 text-body-sm font-medium text-primary-700">{tag}</span>
-              ))}
-            </div>
-          )}
+          {r.tags?.length > 0 && <TagBubbles tags={r.tags} className="mt-2" />}
         </div>
         <Row gap={2}>
           <Button variant="secondary" icon={<Edit className="h-4 w-4" />} onClick={() => navigate(`/recipes/${r.id}/edit`)}>
@@ -349,6 +344,7 @@ function TotalIngredientsTable({ ingredients, t }: { ingredients: { name: string
     </>
   );
 }
+
 
 function StepRow({ step, index, t }: { step: any; index: number; t: (key: string, fallback?: string) => string }) {
   return (

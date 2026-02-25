@@ -75,6 +75,49 @@ export class PgOrderRepository {
     return result.rows.map((r: Record<string, unknown>) => this.mapRow(r));
   }
 
+  static async findAllPaginated(storeId: number, options: { limit: number; offset: number }, filters?: { status?: OrderStatus; excludePaid?: boolean; dateFrom?: string; dateTo?: string; search?: string }): Promise<{ orders: Order[]; total: number }> {
+    const pool = getPool();
+    let whereClause = 'WHERE o.store_id = $1';
+    const baseParams: unknown[] = [storeId];
+    let idx = 2;
+    if (filters?.status !== undefined) {
+      whereClause += ` AND o.status = $${idx++}`;
+      baseParams.push(filters.status);
+    }
+    if (filters?.excludePaid) {
+      whereClause += ` AND NOT EXISTS (SELECT 1 FROM payments p WHERE p.order_id = o.id AND p.status = 'completed')`;
+    }
+    if (filters?.dateFrom) {
+      whereClause += ` AND o.created_at >= $${idx++}`;
+      baseParams.push(filters.dateFrom);
+    }
+    if (filters?.dateTo) {
+      const nextDay = new Date(filters.dateTo);
+      nextDay.setDate(nextDay.getDate() + 1);
+      whereClause += ` AND o.created_at < $${idx++}`;
+      baseParams.push(nextDay.toISOString().split('T')[0]);
+    }
+    if (filters?.search) {
+      const escaped = filters.search.replace(/[%_\\]/g, '\\$&');
+      whereClause += ` AND (c.name ILIKE $${idx} ESCAPE '\\\\' OR o.order_number::text ILIKE $${idx} ESCAPE '\\\\')`;
+      baseParams.push(`%${escaped}%`);
+      idx++;
+    }
+
+    const countResult = await pool.query(
+      `SELECT COUNT(*) FROM orders o LEFT JOIN customers c ON o.customer_id = c.id ${whereClause}`,
+      baseParams,
+    );
+    const total = Number(countResult.rows[0].count);
+
+    const params = [...baseParams];
+    let query = `SELECT o.*, c.name as customer_name FROM orders o LEFT JOIN customers c ON o.customer_id = c.id ${whereClause} ORDER BY o.created_at DESC`;
+    query += ` LIMIT $${idx++} OFFSET $${idx++}`;
+    params.push(options.limit, options.offset);
+    const result = await pool.query(query, params);
+    return { orders: result.rows.map((r: Record<string, unknown>) => this.mapRow(r)), total };
+  }
+
   static async create(storeId: number, data: CreateOrderDTO & { totalAmount: number; recurringGroupId?: number }): Promise<Order> {
     const pool = getPool();
     const items = JSON.stringify(data.items);

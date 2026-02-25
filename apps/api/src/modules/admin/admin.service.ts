@@ -1,5 +1,6 @@
 import type { FastifyInstance } from 'fastify';
 import { PgAdminRepository } from './admin.repository.js';
+import { ProfileCrud } from '../settings/profile/profileCrud.js';
 import { ForbiddenError, NotFoundError, ValidationError } from '../../core/errors/app-error.js';
 import type { AdminUser, AdminStore, AdminInvitation, AdminAuditEntry, AdminAnalytics } from './admin.types.js';
 import type { PaginatedResult } from '../../core/types/pagination.js';
@@ -49,6 +50,12 @@ export class AdminService {
       throw new ForbiddenError('Cannot delete an admin user', ErrorCode.ADMIN_CANNOT_DELETE_ADMIN);
     }
     await PgAdminRepository.deleteUser(targetUserId);
+  }
+
+  async resetOnboarding(userId: number): Promise<void> {
+    const user = await PgAdminRepository.findUserById(userId);
+    if (!user) throw new NotFoundError('User not found', ErrorCode.USER_NOT_FOUND);
+    await ProfileCrud.resetOnboarding(userId);
   }
 
   async deleteStore(storeId: number): Promise<void> {

@@ -6,12 +6,14 @@ import { parsePaginationParams } from '../../core/types/pagination.js';
 export class PaymentController {
   constructor(private paymentService: PaymentService) {}
 
-  async getAll(request: FastifyRequest<{ Querystring: { page?: string; limit?: string; status?: string; method?: string } }>, reply: FastifyReply) {
+  async getAll(request: FastifyRequest<{ Querystring: { page?: string; limit?: string; status?: string; method?: string; dateFrom?: string; dateTo?: string } }>, reply: FastifyReply) {
     const storeId = request.currentUser!.storeId!;
     const { page, limit, offset } = parsePaginationParams(request.query.page, request.query.limit);
-    const filters: { status?: string; method?: string } = {};
+    const filters: { status?: string; method?: string; dateFrom?: string; dateTo?: string } = {};
     if (request.query.status) filters.status = request.query.status;
     if (request.query.method) filters.method = request.query.method;
+    if (request.query.dateFrom) filters.dateFrom = request.query.dateFrom;
+    if (request.query.dateTo) filters.dateTo = request.query.dateTo;
     const { items, total } = await this.paymentService.getAll(storeId, { limit, offset }, Object.keys(filters).length ? filters : undefined);
     return reply.send({ success: true, data: items, pagination: { page, limit, total, totalPages: Math.ceil(total / limit) } });
   }

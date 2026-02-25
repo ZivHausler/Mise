@@ -1,7 +1,7 @@
-import React, { useMemo, useState, useCallback, useEffect, useRef } from 'react';
+import React, { useMemo, useState, useCallback, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSearchParams } from 'react-router-dom';
-import { Plus, CreditCard, ChevronLeft, ChevronRight, RotateCcw, Filter, ChevronDown } from 'lucide-react';
+import { Plus, CreditCard, ChevronLeft, ChevronRight, RotateCcw, X } from 'lucide-react';
 import { Page, PageHeader } from '@/components/Layout';
 import { Button } from '@/components/Button';
 import { DataTable, StatusBadge, EmptyState, type Column } from '@/components/DataDisplay';
@@ -11,44 +11,8 @@ import { LogPaymentModal } from '@/components/LogPaymentModal';
 import { usePayments, useRefundPayment } from '@/api/hooks';
 import { PAYMENT_METHODS, PAYMENT_METHOD_I18N } from '@/constants/defaults';
 import { useFormatDate } from '@/utils/dateFormat';
-
-function PaymentFilterDropdown({ label, count, children }: { label: string; count: number; children: React.ReactNode }) {
-  const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!open) return;
-    const handler = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
-    };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
-  }, [open]);
-
-  return (
-    <div ref={ref} className="relative">
-      <button
-        type="button"
-        onClick={() => setOpen((v) => !v)}
-        className={`inline-flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-body-sm font-medium transition-colors ${count > 0 ? 'border-primary-300 bg-primary-50 text-primary-700' : 'border-neutral-200 text-neutral-600 hover:bg-neutral-50'}`}
-      >
-        <Filter className="h-3.5 w-3.5" />
-        {label}
-        {count > 0 && (
-          <span className="flex h-5 min-w-[20px] items-center justify-center rounded-full bg-primary-500 px-1.5 text-[11px] font-semibold text-white">
-            {count}
-          </span>
-        )}
-        <ChevronDown className={`h-3.5 w-3.5 transition-transform ${open ? 'rotate-180' : ''}`} />
-      </button>
-      {open && (
-        <div className="absolute start-0 top-full z-20 mt-1 min-w-[140px] rounded-lg border border-neutral-200 bg-white p-1 shadow-lg">
-          {children}
-        </div>
-      )}
-    </div>
-  );
-}
+import { DateFilterDropdown } from '@/components/DateFilterDropdown';
+import { FilterDropdown, FilterOption } from '@/components/FilterDropdown';
 
 export default function PaymentsPage() {
   const { t } = useTranslation();
@@ -58,19 +22,23 @@ export default function PaymentsPage() {
   const [page, setPage] = useState(1);
   const [filterStatus, setFilterStatus] = useState('');
   const [filterMethod, setFilterMethod] = useState('');
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
   const filters = useMemo(() => {
-    const f: { status?: string; method?: string } = {};
+    const f: { status?: string; method?: string; dateFrom?: string; dateTo?: string } = {};
     if (filterStatus) f.status = filterStatus;
     if (filterMethod) f.method = filterMethod;
+    if (dateFrom) f.dateFrom = dateFrom;
+    if (dateTo) f.dateTo = dateTo;
     return Object.keys(f).length ? f : undefined;
-  }, [filterStatus, filterMethod]);
+  }, [filterStatus, filterMethod, dateFrom, dateTo]);
   const { data: paymentsData, isLoading } = usePayments(page, 10, filters);
   const refundPayment = useRefundPayment();
   const [showAdd, setShowAdd] = useState(false);
   const [refundTarget, setRefundTarget] = useState<any>(null);
 
   // Reset page when filters change
-  useEffect(() => { setPage(1); }, [filterStatus, filterMethod]);
+  useEffect(() => { setPage(1); }, [filterStatus, filterMethod, dateFrom, dateTo]);
 
   const paymentsResult = paymentsData as any;
   const list = (paymentsResult?.payments as any[]) ?? [];
@@ -145,7 +113,7 @@ export default function PaymentsPage() {
         }
       />
 
-      {list.length === 0 && (!pagination || pagination.total === 0) && !filterStatus && !filterMethod ? (
+      {list.length === 0 && (!pagination || pagination.total === 0) && !filterStatus && !filterMethod && !dateFrom && !dateTo ? (
         <EmptyState
           title={t('payments.empty', 'No payments yet')}
           description={t('payments.emptyDesc', 'Log your first payment.')}
@@ -157,9 +125,9 @@ export default function PaymentsPage() {
           }
         />
       ) : (
-        <div className="overflow-hidden rounded-lg border border-neutral-200 bg-white">
-          <div className="flex items-center gap-2 border-b border-neutral-200 p-4">
-            <PaymentFilterDropdown
+        <div className="rounded-lg border border-neutral-200 bg-white">
+          <div className="flex flex-wrap items-center gap-2 border-b border-neutral-200 p-4">
+            <FilterDropdown
               label={t('payments.status', 'Status')}
               count={filterStatus ? 1 : 0}
             >
@@ -167,17 +135,13 @@ export default function PaymentsPage() {
                 { value: '', label: t('common.allStatuses', 'All statuses') },
                 { value: 'completed', label: t('payments.completed', 'Completed') },
                 { value: 'refunded', label: t('payments.refunded', 'Refunded') },
-              ].map((opt) => {
-                const selected = filterStatus === opt.value;
-                return (
-                  <button key={opt.value} type="button" onClick={() => setFilterStatus(opt.value)}
-                    className={`flex w-full items-center gap-2 rounded-md px-3 py-2 text-body-sm transition-colors ${selected ? 'bg-primary-50 text-primary-700' : 'text-neutral-700 hover:bg-neutral-50'}`}>
-                    {opt.label}
-                  </button>
-                );
-              })}
-            </PaymentFilterDropdown>
-            <PaymentFilterDropdown
+              ].map((opt) => (
+                <FilterOption key={opt.value} selected={filterStatus === opt.value} onClick={() => setFilterStatus(opt.value)}>
+                  {opt.label}
+                </FilterOption>
+              ))}
+            </FilterDropdown>
+            <FilterDropdown
               label={t('payments.method', 'Method')}
               count={filterMethod ? 1 : 0}
             >
@@ -187,16 +151,27 @@ export default function PaymentsPage() {
                   value: m,
                   label: t(`payments.${PAYMENT_METHOD_I18N[m]}`, m),
                 })),
-              ].map((opt) => {
-                const selected = filterMethod === opt.value;
-                return (
-                  <button key={opt.value} type="button" onClick={() => setFilterMethod(opt.value)}
-                    className={`flex w-full items-center gap-2 rounded-md px-3 py-2 text-body-sm transition-colors ${selected ? 'bg-primary-50 text-primary-700' : 'text-neutral-700 hover:bg-neutral-50'}`}>
-                    {opt.label}
-                  </button>
-                );
-              })}
-            </PaymentFilterDropdown>
+              ].map((opt) => (
+                <FilterOption key={opt.value} selected={filterMethod === opt.value} onClick={() => setFilterMethod(opt.value)}>
+                  {opt.label}
+                </FilterOption>
+              ))}
+            </FilterDropdown>
+            <DateFilterDropdown
+              dateFrom={dateFrom}
+              dateTo={dateTo}
+              onDateFromChange={setDateFrom}
+              onDateToChange={setDateTo}
+            />
+            {(filterStatus || filterMethod || dateFrom || dateTo) && (
+              <button
+                onClick={() => { setFilterStatus(''); setFilterMethod(''); setDateFrom(''); setDateTo(''); }}
+                className="inline-flex items-center gap-1 text-body-sm text-neutral-500 hover:text-neutral-700"
+              >
+                <X className="h-3.5 w-3.5" />
+                {t('common.clearFilters', 'Clear')}
+              </button>
+            )}
           </div>
           <DataTable
             columns={columns}

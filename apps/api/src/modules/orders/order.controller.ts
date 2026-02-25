@@ -21,6 +21,19 @@ export class OrderController {
     return reply.send({ success: true, data: orders });
   }
 
+  async getAllPaginated(request: FastifyRequest<{ Querystring: { page?: string; limit?: string; status?: string; excludePaid?: string; dateFrom?: string; dateTo?: string; search?: string } }>, reply: FastifyReply) {
+    const storeId = request.currentUser!.storeId!;
+    const { page, limit, offset } = parsePaginationParams(request.query.page, request.query.limit);
+    const filters: { status?: OrderStatus; excludePaid?: boolean; dateFrom?: string; dateTo?: string; search?: string } = {};
+    if (request.query.status !== undefined) filters.status = Number(request.query.status) as OrderStatus;
+    if (request.query.excludePaid === 'true') filters.excludePaid = true;
+    if (request.query.dateFrom) filters.dateFrom = request.query.dateFrom;
+    if (request.query.dateTo) filters.dateTo = request.query.dateTo;
+    if (request.query.search) filters.search = request.query.search;
+    const { orders, total } = await this.orderService.getAllPaginated(storeId, { limit, offset }, Object.keys(filters).length ? filters : undefined);
+    return reply.send({ success: true, data: orders, pagination: { page, limit, total, totalPages: Math.ceil(total / limit) } });
+  }
+
   async getById(request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) {
     const storeId = request.currentUser!.storeId!;
     const order = await this.orderService.getById(storeId, Number(request.params.id));

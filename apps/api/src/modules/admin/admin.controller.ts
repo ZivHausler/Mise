@@ -30,6 +30,12 @@ export class AdminController {
     return reply.send({ success: true });
   }
 
+  async resetOnboarding(request: FastifyRequest, reply: FastifyReply) {
+    const { id } = request.params as { id: string };
+    await this.service.resetOnboarding(Number(id));
+    return reply.send({ success: true });
+  }
+
   async deleteStore(request: FastifyRequest, reply: FastifyReply) {
     const { id } = request.params as { id: string };
     await this.service.deleteStore(Number(id));

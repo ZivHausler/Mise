@@ -15,6 +15,10 @@ export class OrderCrud {
     return PgOrderRepository.findAll(storeId, filters);
   }
 
+  static async getAllPaginated(storeId: number, options: { limit: number; offset: number }, filters?: { status?: OrderStatus; excludePaid?: boolean; dateFrom?: string; dateTo?: string; search?: string }): Promise<{ orders: Order[]; total: number }> {
+    return PgOrderRepository.findAllPaginated(storeId, options, filters);
+  }
+
   static async update(storeId: number, id: number, data: Partial<Order>): Promise<Order> {
     return PgOrderRepository.update(storeId, id, data);
   }

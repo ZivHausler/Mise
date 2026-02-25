@@ -15,6 +15,7 @@ export default async function orderRoutes(app: FastifyInstance) {
   app.addHook('preHandler', requireStoreMiddleware);
 
   app.get<{ Querystring: { status?: string; excludePaid?: string } }>('/', (req, reply) => controller.getAll(req, reply));
+  app.get<{ Querystring: { page?: string; limit?: string; status?: string; excludePaid?: string; dateFrom?: string; dateTo?: string; search?: string } }>('/list', (req, reply) => controller.getAllPaginated(req, reply));
   app.get<{ Querystring: { from: string; to: string; status?: string } }>('/calendar/range', (req, reply) => controller.getCalendarRange(req, reply));
   app.get<{ Querystring: { from: string; to: string } }>('/calendar/aggregates', (req, reply) => controller.getCalendarAggregates(req, reply));
   app.get<{ Querystring: { date: string; status?: string; page?: string; limit?: string } }>('/calendar/day', (req, reply) => controller.getCalendarDay(req, reply));

@@ -4,6 +4,7 @@ import {
   Plus, Pencil, Trash2, Tag,
   Milk, Wheat, Nut,
   Egg, Bean, Coffee, Wine,
+  Fish, Shell,
   type LucideIcon,
 } from 'lucide-react';
 import { Card, Stack } from '@/components/Layout';
@@ -28,6 +29,7 @@ const ICON_MAP: Record<string, LucideIcon> = {
   Nut,
   Egg,
   Bean,
+  Fish, Shell,
   Coffee,
   Wine,
 };
@@ -84,8 +86,8 @@ export default function AllergensTab() {
   const handleSubmit = () => {
     const payload = {
       name: form.name,
-      ...(form.icon ? { icon: form.icon, color: null } : {}),
-      ...(form.color && !form.icon ? { color: form.color, icon: null } : {}),
+      icon: form.icon || null,
+      color: form.color || null,
     };
     if (editingAllergen) {
       updateAllergen.mutate({ id: editingAllergen.id, ...payload }, { onSuccess: () => setShowModal(false) });
@@ -161,6 +163,7 @@ export default function AllergensTab() {
       <Modal
         open={showModal}
         onClose={() => setShowModal(false)}
+        onConfirm={handleSubmit}
         title={editingAllergen ? t('settings.allergens.edit', 'Edit Allergen') : t('settings.allergens.add', 'Add Allergen')}
         size="sm"
         footer={
@@ -181,7 +184,7 @@ export default function AllergensTab() {
                 <button
                   key={name}
                   type="button"
-                  onClick={() => setForm((f) => ({ ...f, icon: f.icon === name ? '' : name, color: '' }))}
+                  onClick={() => setForm((f) => ({ ...f, icon: f.icon === name ? '' : name }))}
                   className={`flex items-center justify-center h-9 w-full rounded-md border-2 transition-colors ${form.icon === name ? 'border-neutral-800 bg-neutral-100' : 'border-transparent hover:bg-neutral-50'}`}
                 >
                   <Icon className="h-4.5 w-4.5 text-neutral-600" size={18} />
@@ -195,7 +198,7 @@ export default function AllergensTab() {
               {PRESET_COLORS.map((c) => (
                 <button
                   key={c}
-                  onClick={() => setForm((f) => ({ ...f, color: f.color === c ? '' : c, icon: '' }))}
+                  onClick={() => setForm((f) => ({ ...f, color: f.color === c ? '' : c }))}
                   className={`h-7 w-7 rounded-full border-2 transition-transform ${form.color === c ? 'border-neutral-800 scale-110' : 'border-transparent'}`}
                   style={{ backgroundColor: c }}
                 />

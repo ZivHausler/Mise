@@ -6,7 +6,9 @@ interface StoreNameProps {
 
 export function StoreName({ className }: StoreNameProps) {
   const stores = useAuthStore((s) => s.stores);
-  const storeName = stores.length > 0 ? stores[0].storeName : null;
+  const activeStoreId = useAuthStore((s) => s.activeStoreId);
+  const activeStore = stores.find((s) => String(s.storeId) === String(activeStoreId));
+  const storeName = activeStore?.storeName ?? (stores.length > 0 ? stores[0].storeName : null);
 
   if (!storeName) return null;
 

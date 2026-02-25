@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - "grafana/**"
+      - ".github/workflows/deploy-grafana.yml"
 
 env:
   PROJECT_ID: mise-prod-app
@@ -57,7 +58,7 @@ jobs:
             --port=8080
           env_vars: |
             GF_SERVER_ROOT_URL=https://app.mise-en-place.shop/grafana
-            GF_DS_URL=127.0.0.1:5432
+            GF_DS_URL=/cloudsql/mise-prod-app:me-west1:mise-pg
             GF_DS_DATABASE=mise
             GF_DS_USER=mise
             GF_DS_SSLMODE=disable

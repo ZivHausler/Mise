@@ -13,6 +13,7 @@ const sizeClasses = {
 interface ModalProps {
   open: boolean;
   onClose: () => void;
+  onConfirm?: () => void;
   title?: string;
   size?: 'sm' | 'md' | 'lg' | 'full';
   children: React.ReactNode;
@@ -22,6 +23,7 @@ interface ModalProps {
 export const Modal = React.memo(function Modal({
   open,
   onClose,
+  onConfirm,
   title,
   size = 'md',
   children,
@@ -30,8 +32,14 @@ export const Modal = React.memo(function Modal({
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
+      if (e.key === 'Enter' && onConfirm) {
+        const active = document.activeElement;
+        if (active instanceof HTMLTextAreaElement) return;
+        e.preventDefault();
+        onConfirm();
+      }
     },
-    [onClose]
+    [onClose, onConfirm]
   );
 
   useEffect(() => {
@@ -107,6 +115,7 @@ export const ConfirmModal = React.memo(function ConfirmModal({
     <Modal
       open={open}
       onClose={onClose}
+      onConfirm={onConfirm}
       title={title}
       size="sm"
       footer={

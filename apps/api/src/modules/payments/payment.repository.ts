@@ -40,6 +40,8 @@ export interface CustomerPaymentFilters {
 export interface PaymentFilters {
   status?: string;
   method?: string;
+  dateFrom?: string;
+  dateTo?: string;
 }
 
 export class PgPaymentRepository {
@@ -53,6 +55,14 @@ export class PgPaymentRepository {
     }
     if (filters?.method) {
       qb.addCondition('p.method', '=', filters.method);
+    }
+    if (filters?.dateFrom) {
+      qb.addCondition('p.created_at', '>=', filters.dateFrom);
+    }
+    if (filters?.dateTo) {
+      const nextDay = new Date(filters.dateTo);
+      nextDay.setDate(nextDay.getDate() + 1);
+      qb.addCondition('p.created_at', '<', nextDay.toISOString().split('T')[0]);
     }
 
     const whereClause = `WHERE o2.store_id = $1${qb.getWhereClause()}`;
