@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { RecipeService } from '../../../src/modules/recipes/recipe.service.js';
 import { createRecipe } from '../helpers/mock-factories.js';
-import { NotFoundError } from '../../../src/core/errors/app-error.js';
+import { NotFoundError, ValidationError } from '../../../src/core/errors/app-error.js';
 
 vi.mock('../../../src/core/events/event-bus.js', async (importOriginal) => {
   const original = await importOriginal<typeof import('../../../src/core/events/event-bus.js')>();
@@ -134,6 +134,89 @@ describe('RecipeService', () => {
       const result = await service.calculateCost(STORE_ID, 'recipe-1');
       expect(result.totalCost).toBe(30);
       expect(result.costPerUnit).toBe(30);
+    });
+  });
+
+  describe('circular sub-recipe detection', () => {
+    it('should reject self-referencing sub-recipe on update', async () => {
+      const recipe = createRecipe({ id: 'recipe-1' });
+      vi.mocked(RecipeCrud.getById).mockResolvedValue(recipe);
+
+      await expect(
+        service.update(STORE_ID, 'recipe-1', {
+          steps: [{ order: 1, type: 'sub_recipe', recipeId: 'recipe-1', quantity: 1 }],
+        }),
+      ).rejects.toThrow(ValidationError);
+    });
+
+    it('should reject indirect circular reference (A -> B -> A)', async () => {
+      const recipeA = createRecipe({
+        id: 'a',
+        steps: [{ order: 1, type: 'step', instruction: 'Mix' }],
+      });
+      const recipeB = createRecipe({
+        id: 'b',
+        steps: [{ order: 1, type: 'sub_recipe', recipeId: 'a', name: 'A', quantity: 1 }],
+      });
+
+      vi.mocked(RecipeCrud.getById).mockImplementation(async (_storeId, id) => {
+        if (id === 'a') return recipeA;
+        if (id === 'b') return recipeB;
+        return null;
+      });
+
+      // Updating recipe A to include B as sub-recipe should fail because B -> A
+      await expect(
+        service.update(STORE_ID, 'a', {
+          steps: [{ order: 1, type: 'sub_recipe', recipeId: 'b', quantity: 1 }],
+        }),
+      ).rejects.toThrow(ValidationError);
+    });
+
+    it('should reject deep circular reference (A -> B -> C -> A)', async () => {
+      const recipeA = createRecipe({ id: 'a', steps: [] });
+      const recipeB = createRecipe({
+        id: 'b',
+        steps: [{ order: 1, type: 'sub_recipe', recipeId: 'c', name: 'C', quantity: 1 }],
+      });
+      const recipeC = createRecipe({
+        id: 'c',
+        steps: [{ order: 1, type: 'sub_recipe', recipeId: 'a', name: 'A', quantity: 1 }],
+      });
+
+      vi.mocked(RecipeCrud.getById).mockImplementation(async (_storeId, id) => {
+        if (id === 'a') return recipeA;
+        if (id === 'b') return recipeB;
+        if (id === 'c') return recipeC;
+        return null;
+      });
+
+      await expect(
+        service.update(STORE_ID, 'a', {
+          steps: [{ order: 1, type: 'sub_recipe', recipeId: 'b', quantity: 1 }],
+        }),
+      ).rejects.toThrow(ValidationError);
+    });
+
+    it('should allow valid non-circular sub-recipe references', async () => {
+      const recipeA = createRecipe({ id: 'a', steps: [] });
+      const recipeB = createRecipe({
+        id: 'b',
+        steps: [{ order: 1, type: 'step', instruction: 'Whip' }],
+      });
+
+      vi.mocked(RecipeCrud.getById).mockImplementation(async (_storeId, id) => {
+        if (id === 'a') return recipeA;
+        if (id === 'b') return recipeB;
+        return null;
+      });
+      vi.mocked(RecipeCrud.update).mockResolvedValue({ ...recipeA, steps: [{ order: 1, type: 'sub_recipe' as const, recipeId: 'b', name: 'B', quantity: 1 }] });
+
+      await expect(
+        service.update(STORE_ID, 'a', {
+          steps: [{ order: 1, type: 'sub_recipe', recipeId: 'b', quantity: 1 }],
+        }),
+      ).resolves.toBeDefined();
     });
   });
 

@@ -7,6 +7,11 @@ export class MongoRecipeRepository {
     return mongoClient.getDb().collection('recipes');
   }
 
+  /** Match storeId regardless of whether it was stored as number or string */
+  private static storeFilter(storeId: number) {
+    return { $in: [storeId, String(storeId)] };
+  }
+
   static async findById(storeId: number, id: string): Promise<Recipe | null> {
     let objectId: ObjectId;
     try {
@@ -14,13 +19,13 @@ export class MongoRecipeRepository {
     } catch {
       return null;
     }
-    const doc = await this.collection.findOne({ _id: objectId, storeId });
+    const doc = await this.collection.findOne({ _id: objectId, storeId: this.storeFilter(storeId) });
     return doc ? this.mapDoc(doc) : null;
   }
 
   static async findAll(storeId: number, filters?: { tag?: string; search?: string }): Promise<Recipe[]> {
     const query: Record<string, unknown> = {};
-    query['storeId'] = storeId;
+    query['storeId'] = this.storeFilter(storeId);
     if (filters?.tag) {
       if (typeof filters.tag !== 'string') throw new Error('Invalid tag filter');
       query['tags'] = { $in: [filters.tag] };
@@ -54,16 +59,16 @@ export class MongoRecipeRepository {
     const objectId = new ObjectId(id);
     const updateFields: Record<string, unknown> = { ...data, updatedAt: new Date() };
     await this.collection.updateOne(
-      { _id: objectId, storeId },
+      { _id: objectId, storeId: this.storeFilter(storeId) },
       { $set: updateFields },
     );
-    const doc = await this.collection.findOne({ _id: objectId, storeId });
+    const doc = await this.collection.findOne({ _id: objectId, storeId: this.storeFilter(storeId) });
     return this.mapDoc(doc!);
   }
 
   static async delete(storeId: number, id: string): Promise<void> {
     const objectId = new ObjectId(id);
-    await this.collection.deleteOne({ _id: objectId, storeId });
+    await this.collection.deleteOne({ _id: objectId, storeId: this.storeFilter(storeId) });
   }
 
   private static mapDoc(doc: Record<string, unknown>): Recipe {
