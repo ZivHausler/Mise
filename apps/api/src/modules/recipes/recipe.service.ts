@@ -1,8 +1,9 @@
 import type { CreateRecipeDTO, Recipe, UpdateRecipeDTO } from './recipe.types.js';
 import { getEventBus } from '../../core/events/event-bus.js';
 import { RecipeCrud } from './recipeCrud.js';
+import { OrderCrud } from '../orders/orderCrud.js';
 import { CalculateRecipeCostUseCase } from './use-cases/calculateRecipeCost.js';
-import { NotFoundError, ValidationError } from '../../core/errors/app-error.js';
+import { ConflictError, NotFoundError, ValidationError } from '../../core/errors/app-error.js';
 import type { InventoryService } from '../inventory/inventory.service.js';
 import { unitConversionFactor } from '../shared/unitConversion.js';
 import {
@@ -11,6 +12,7 @@ import {
   deleteRecipeImages,
   isTempUrl,
 } from '../../core/storage/gcs.js';
+import { ErrorCode } from '@mise/shared';
 
 export class RecipeService {
   private calculateCostUseCase: CalculateRecipeCostUseCase;
@@ -21,7 +23,7 @@ export class RecipeService {
 
   async getById(storeId: number, id: string): Promise<Recipe> {
     const recipe = await RecipeCrud.getById(storeId, id);
-    if (!recipe) throw new NotFoundError('Recipe not found');
+    if (!recipe) throw new NotFoundError('Recipe not found', ErrorCode.RECIPE_NOT_FOUND);
     await this.enrichIngredients(storeId, recipe);
     await this.enrichSubRecipeSteps(storeId, recipe);
     return recipe;
@@ -115,7 +117,7 @@ export class RecipeService {
 
     // Direct self-reference
     if (subRecipeIds.includes(rootRecipeId)) {
-      throw new ValidationError('A recipe cannot include itself as a sub-recipe');
+      throw new ValidationError('A recipe cannot include itself as a sub-recipe', ErrorCode.RECIPE_CIRCULAR_REFERENCE);
     }
 
     // BFS to detect if any descendant references rootRecipeId
@@ -135,6 +137,7 @@ export class RecipeService {
         if (step.recipeId === rootRecipeId) {
           throw new ValidationError(
             'Adding this sub-recipe would create a circular reference',
+            ErrorCode.RECIPE_CIRCULAR_REFERENCE,
           );
         }
         if (!visited.has(step.recipeId)) {
@@ -191,7 +194,7 @@ export class RecipeService {
 
   async update(storeId: number, id: string, data: UpdateRecipeDTO): Promise<Recipe> {
     const existing = await RecipeCrud.getById(storeId, id);
-    if (!existing) throw new NotFoundError('Recipe not found');
+    if (!existing) throw new NotFoundError('Recipe not found', ErrorCode.RECIPE_NOT_FOUND);
 
     if (this.inventoryService && data.ingredients) {
       for (const ing of data.ingredients) {
@@ -262,7 +265,11 @@ export class RecipeService {
 
   async delete(storeId: number, id: string): Promise<void> {
     const existing = await RecipeCrud.getById(storeId, id);
-    if (!existing) throw new NotFoundError('Recipe not found');
+    if (!existing) throw new NotFoundError('Recipe not found', ErrorCode.RECIPE_NOT_FOUND);
+    const activeOrders = await OrderCrud.countActiveByRecipe(storeId, id);
+    if (activeOrders > 0) {
+      throw new ConflictError('Recipe is used in active orders', ErrorCode.RECIPE_IN_USE_BY_ORDERS);
+    }
     await deleteRecipeImages(storeId, id);
     return RecipeCrud.delete(storeId, id);
   }

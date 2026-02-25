@@ -3,6 +3,7 @@ import type { StoreService } from './store.service.js';
 import { StoreRole } from './store.types.js';
 import { createStoreSchema, inviteSchema } from './store.schema.js';
 import { ValidationError } from '../../core/errors/app-error.js';
+import { ErrorCode } from '@mise/shared';
 
 export class StoreController {
   constructor(private storeService: StoreService) {}
@@ -18,7 +19,7 @@ export class StoreController {
 
   async adminCreateStoreInvite(request: FastifyRequest, reply: FastifyReply) {
     const { email } = request.body as { email: string };
-    if (!email) throw new ValidationError('Email is required');
+    if (!email) throw new ValidationError('Email is required', ErrorCode.STORE_EMAIL_REQUIRED);
     const result = await this.storeService.createCreateStoreInvitation(email);
     return reply.status(201).send({ success: true, data: { token: result.token, inviteLink: result.inviteLink } });
   }
@@ -58,7 +59,7 @@ export class StoreController {
   async removeMember(request: FastifyRequest<{ Params: { userId: string } }>, reply: FastifyReply) {
     const storeId = request.currentUser!.storeId!;
     const storeRole = request.currentUser!.storeRole;
-    if (!storeRole) throw new ValidationError('No store role assigned');
+    if (!storeRole) throw new ValidationError('No store role assigned', ErrorCode.STORE_NO_ROLE);
     const callerUserId = request.currentUser!.userId;
     const targetUserId = Number(request.params.userId);
     const isAdmin = request.currentUser!.isAdmin;
@@ -69,7 +70,7 @@ export class StoreController {
   async sendInvite(request: FastifyRequest, reply: FastifyReply) {
     const storeId = request.currentUser!.storeId!;
     const storeRole = request.currentUser!.storeRole;
-    if (!storeRole) throw new ValidationError('No store role assigned');
+    if (!storeRole) throw new ValidationError('No store role assigned', ErrorCode.STORE_NO_ROLE);
 
     const data = inviteSchema.parse(request.body);
     const isAdmin = request.currentUser!.isAdmin;
@@ -80,7 +81,7 @@ export class StoreController {
   async revokeInvitation(request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) {
     const storeId = request.currentUser!.storeId!;
     const storeRole = request.currentUser!.storeRole;
-    if (!storeRole) throw new ValidationError('No store role assigned');
+    if (!storeRole) throw new ValidationError('No store role assigned', ErrorCode.STORE_NO_ROLE);
 
     const isAdmin = request.currentUser!.isAdmin;
     const invitationId = Number(request.params.id);

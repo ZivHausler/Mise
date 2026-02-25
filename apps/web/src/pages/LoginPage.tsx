@@ -10,6 +10,7 @@ import { useToastStore } from '@/store/toast';
 import { useGoogleAuth } from '@/hooks/useGoogleAuth';
 import { Logo } from '@/components/Logo';
 import { MergeAccountDialog } from '@/components/MergeAccountDialog';
+import { getApiErrorCode } from '@/utils/getApiError';
 
 export default function LoginPage() {
   const { t } = useTranslation();
@@ -72,14 +73,14 @@ export default function LoginPage() {
             }
           },
           onError: (error: any) => {
-            const msg = error?.response?.data?.error?.message;
-            if (msg === 'MERGE_REQUIRED_GOOGLE') {
+            const code = getApiErrorCode(error);
+            if (code === 'AUTH_MERGE_REQUIRED_GOOGLE') {
               setMergeIdToken(idToken);
               setShowMerge(true);
-            } else if (msg === 'NO_ACCOUNT_FOUND') {
+            } else if (code === 'AUTH_NO_ACCOUNT_FOUND') {
               addToast('error', t('auth.noAccountFound'));
             } else {
-              addToast('error', msg || t('toasts.loginFailed'));
+              addToast('error', t('toasts.loginFailed'));
             }
           },
         },
@@ -134,10 +135,10 @@ export default function LoginPage() {
             }
           },
           onError: (error: any) => {
-            const msg = error?.response?.data?.error?.message;
-            if (msg === 'MERGE_REQUIRED_EMAIL') {
+            const code = getApiErrorCode(error);
+            if (code === 'AUTH_MERGE_REQUIRED_EMAIL') {
               setShowGoogleHint(true);
-            } else if (msg === 'NO_ACCOUNT_FOUND') {
+            } else if (code === 'AUTH_NO_ACCOUNT_FOUND') {
               addToast('error', t('auth.noAccountFound'));
             } else {
               addToast('error', t('toasts.loginFailed'));

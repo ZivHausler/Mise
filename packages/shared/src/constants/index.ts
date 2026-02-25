@@ -1,3 +1,6 @@
+export { ErrorCode } from './errorCodes.js';
+export type { ErrorCodeType } from './errorCodes.js';
+
 export enum Language {
   HEBREW = 0,
   ENGLISH = 1,

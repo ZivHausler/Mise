@@ -3,6 +3,7 @@ import { PgNotifPrefsRepository } from '../notifications.repository.js';
 import { PgAuthRepository } from '../../../auth/auth.repository.js';
 import type { NotificationPreference, UpdateNotificationPrefsDTO } from '../../settings.types.js';
 import { ValidationError } from '../../../../core/errors/app-error.js';
+import { ErrorCode } from '@mise/shared';
 
 export class UpdateNotificationPreferencesUseCase implements UseCase<NotificationPreference[], [number, UpdateNotificationPrefsDTO]> {
   async execute(userId: number, data: UpdateNotificationPrefsDTO): Promise<NotificationPreference[]> {
@@ -11,7 +12,7 @@ export class UpdateNotificationPreferencesUseCase implements UseCase<Notificatio
     if (hasSmsEnabled) {
       const user = await PgAuthRepository.findById(userId);
       if (!user?.phone) {
-        throw new ValidationError('Cannot enable SMS notifications without a phone number');
+        throw new ValidationError('Cannot enable SMS notifications without a phone number', ErrorCode.NOTIFICATION_SMS_NO_PHONE);
       }
     }
 

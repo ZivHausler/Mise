@@ -21,4 +21,8 @@ export class RecipeCrud {
   static async delete(storeId: number, id: string): Promise<void> {
     return MongoRecipeRepository.delete(storeId, id);
   }
+
+  static async countByIngredient(storeId: number, ingredientId: number): Promise<number> {
+    return MongoRecipeRepository.countByIngredient(storeId, ingredientId);
+  }
 }

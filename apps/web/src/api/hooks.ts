@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tansta
 import { useTranslation } from 'react-i18next';
 import { apiClient } from './client';
 import { useToastStore } from '@/store/toast';
+import { getApiErrorMessage, getApiErrorCode } from '@/utils/getApiError';
 
 // PDF download helper
 export async function downloadPdf(url: string, filename: string) {
@@ -64,7 +65,7 @@ export function useRegister() {
   return useMutation({
     mutationFn: (body: { name: string; email: string; password: string; inviteToken?: string }) =>
       postApi<{ user: unknown; token: string; hasStore: boolean }>('/auth/register', body),
-    onError: () => addToast('error', t('toasts.registrationFailed')),
+    onError: (error) => addToast('error', getApiErrorMessage(error, 'toasts.registrationFailed')),
   });
 }
 
@@ -143,7 +144,7 @@ export function useCreateOrder() {
   return useMutation({
     mutationFn: (body: unknown) => postApi('/orders', body),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['orders'] }); qc.invalidateQueries({ queryKey: ['dashboard'] }); addToast('success', t('toasts.orderCreated')); },
-    onError: () => addToast('error', t('toasts.orderCreateFailed')),
+    onError: (error) => addToast('error', getApiErrorMessage(error, 'toasts.orderCreateFailed')),
   });
 }
 
@@ -159,7 +160,7 @@ export function useCreateRecurringOrder() {
       qc.invalidateQueries({ queryKey: ['inventory'] });
       addToast('success', t('toasts.recurringOrderCreated', { count: data.generatedCount }));
     },
-    onError: () => addToast('error', t('toasts.orderCreateFailed')),
+    onError: (error) => addToast('error', getApiErrorMessage(error, 'toasts.orderCreateFailed')),
   });
 }
 
@@ -170,7 +171,7 @@ export function useUpdateOrder() {
   return useMutation({
     mutationFn: ({ id, ...body }: { id: number } & Record<string, unknown>) => putApi(`/orders/${id}`, body),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['orders'] }); qc.invalidateQueries({ queryKey: ['dashboard'] }); addToast('success', t('toasts.orderUpdated')); },
-    onError: () => addToast('error', t('toasts.orderUpdateFailed')),
+    onError: (error) => addToast('error', getApiErrorMessage(error, 'toasts.orderUpdateFailed')),
   });
 }
 
@@ -186,7 +187,7 @@ export function useUpdateRecurringOrders() {
       qc.invalidateQueries({ queryKey: ['dashboard'] });
       addToast('success', t('toasts.recurringOrdersUpdated', { count: data.futureUpdated + 1 }));
     },
-    onError: () => addToast('error', t('toasts.orderUpdateFailed')),
+    onError: (error) => addToast('error', getApiErrorMessage(error, 'toasts.orderUpdateFailed')),
   });
 }
 
@@ -197,7 +198,7 @@ export function useUpdateOrderStatus() {
   return useMutation({
     mutationFn: ({ id, status }: { id: number; status: number }) => patchApi(`/orders/${id}/status`, { status }),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['orders'] }); qc.invalidateQueries({ queryKey: ['inventory'] }); qc.invalidateQueries({ queryKey: ['dashboard'] }); addToast('success', t('toasts.orderUpdated')); },
-    onError: () => addToast('error', t('toasts.orderUpdateFailed')),
+    onError: (error) => addToast('error', getApiErrorMessage(error, 'toasts.orderUpdateFailed')),
   });
 }
 
@@ -208,7 +209,7 @@ export function useDeleteOrder() {
   return useMutation({
     mutationFn: (id: number) => deleteApi(`/orders/${id}`),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['orders'] }); qc.invalidateQueries({ queryKey: ['dashboard'] }); addToast('success', t('toasts.orderDeleted')); },
-    onError: () => addToast('error', t('toasts.orderDeleteFailed')),
+    onError: (error) => addToast('error', getApiErrorMessage(error, 'toasts.orderDeleteFailed')),
   });
 }
 
@@ -228,7 +229,7 @@ export function useCreateRecipe() {
   return useMutation({
     mutationFn: (body: unknown) => postApi('/recipes', body),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['recipes'] }); addToast('success', t('toasts.recipeCreated')); },
-    onError: (err: any) => addToast('error', err?.response?.data?.error?.message || t('toasts.recipeCreateFailed')),
+    onError: (error) => addToast('error', getApiErrorMessage(error, 'toasts.recipeCreateFailed')),
   });
 }
 
@@ -239,7 +240,7 @@ export function useUpdateRecipe() {
   return useMutation({
     mutationFn: ({ id, ...body }: { id: string } & Record<string, unknown>) => putApi(`/recipes/${id}`, body),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['recipes'] }); addToast('success', t('toasts.recipeUpdated')); },
-    onError: (err: any) => addToast('error', err?.response?.data?.error?.message || t('toasts.recipeUpdateFailed')),
+    onError: (error) => addToast('error', getApiErrorMessage(error, 'toasts.recipeUpdateFailed')),
   });
 }
 
@@ -250,7 +251,7 @@ export function useDeleteRecipe() {
   return useMutation({
     mutationFn: (id: string) => deleteApi(`/recipes/${id}`),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['recipes'] }); addToast('success', t('toasts.recipeDeleted')); },
-    onError: () => addToast('error', t('toasts.recipeDeleteFailed')),
+    onError: (error) => addToast('error', getApiErrorMessage(error, 'toasts.recipeDeleteFailed')),
   });
 }
 
@@ -315,7 +316,7 @@ export function useCreateInventoryItem() {
   return useMutation({
     mutationFn: (body: unknown) => postApi('/inventory', body),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['inventory'] }); addToast('success', t('toasts.itemAdded')); },
-    onError: () => addToast('error', t('toasts.itemAddFailed')),
+    onError: (error) => addToast('error', getApiErrorMessage(error, 'toasts.itemAddFailed')),
   });
 }
 
@@ -326,7 +327,7 @@ export function useUpdateInventoryItem() {
   return useMutation({
     mutationFn: ({ id, ...body }: { id: number } & Record<string, unknown>) => putApi(`/inventory/${id}`, body),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['inventory'] }); addToast('success', t('toasts.itemUpdated')); },
-    onError: () => addToast('error', t('toasts.itemUpdateFailed')),
+    onError: (error) => addToast('error', getApiErrorMessage(error, 'toasts.itemUpdateFailed')),
   });
 }
 
@@ -337,7 +338,7 @@ export function useAdjustStock() {
   return useMutation({
     mutationFn: (body: { ingredientId: number; type: string; quantity: number; pricePaid?: number }) => postApi('/inventory/adjust', body),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['inventory'] }); addToast('success', t('toasts.stockAdjusted')); },
-    onError: () => addToast('error', t('toasts.stockAdjustFailed')),
+    onError: (error) => addToast('error', getApiErrorMessage(error, 'toasts.stockAdjustFailed')),
   });
 }
 
@@ -348,7 +349,7 @@ export function useDeleteInventoryItem() {
   return useMutation({
     mutationFn: (id: number) => deleteApi(`/inventory/${id}`),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['inventory'] }); addToast('success', t('toasts.itemDeleted')); },
-    onError: () => addToast('error', t('toasts.itemDeleteFailed')),
+    onError: (error) => addToast('error', getApiErrorMessage(error, 'toasts.itemDeleteFailed')),
   });
 }
 
@@ -386,9 +387,9 @@ export function useCreateCustomer() {
     mutationFn: (body: unknown) => postApi('/customers', body),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['customers'] }); addToast('success', t('toasts.customerCreated')); },
     onError: (error: any) => {
-      const code = error?.response?.data?.error?.code;
+      const code = getApiErrorCode(error);
       if (code === 'CUSTOMER_CONFLICT' || code === 'CUSTOMER_PHONE_EXISTS' || code === 'CUSTOMER_EMAIL_EXISTS') return;
-      addToast('error', t('toasts.customerCreateFailed'));
+      addToast('error', getApiErrorMessage(error, 'toasts.customerCreateFailed'));
     },
   });
 }
@@ -400,7 +401,7 @@ export function useUpdateCustomer() {
   return useMutation({
     mutationFn: ({ id, ...body }: { id: number } & Record<string, unknown>) => putApi(`/customers/${id}`, body),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['customers'] }); addToast('success', t('toasts.customerUpdated')); },
-    onError: () => addToast('error', t('toasts.customerUpdateFailed')),
+    onError: (error) => addToast('error', getApiErrorMessage(error, 'toasts.customerUpdateFailed')),
   });
 }
 
@@ -411,7 +412,7 @@ export function useDeleteCustomer() {
   return useMutation({
     mutationFn: (id: number) => deleteApi(`/customers/${id}`),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['customers'] }); addToast('success', t('toasts.customerDeleted')); },
-    onError: () => addToast('error', t('toasts.customerDeleteFailed')),
+    onError: (error) => addToast('error', getApiErrorMessage(error, 'toasts.customerDeleteFailed')),
   });
 }
 
@@ -459,7 +460,7 @@ export function useCreatePayment() {
       qc.invalidateQueries({ queryKey: ['dashboard'] });
       addToast('success', t('toasts.paymentLogged'));
     },
-    onError: () => addToast('error', t('toasts.paymentLogFailed')),
+    onError: (error) => addToast('error', getApiErrorMessage(error, 'toasts.paymentLogFailed')),
   });
 }
 
@@ -476,7 +477,7 @@ export function useRefundPayment() {
       qc.invalidateQueries({ queryKey: ['dashboard'] });
       addToast('success', t('toasts.paymentRefunded'));
     },
-    onError: () => addToast('error', t('toasts.paymentRefundFailed')),
+    onError: (error) => addToast('error', getApiErrorMessage(error, 'toasts.paymentRefundFailed')),
   });
 }
 
@@ -511,7 +512,7 @@ export function useCreateUnit() {
   return useMutation({
     mutationFn: (body: unknown) => postApi('/settings/units', body),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['units'] }); addToast('success', t('toasts.unitCreated')); },
-    onError: () => addToast('error', t('toasts.unitCreateFailed')),
+    onError: (error) => addToast('error', getApiErrorMessage(error, 'toasts.unitCreateFailed')),
   });
 }
 
@@ -522,7 +523,7 @@ export function useUpdateUnit() {
   return useMutation({
     mutationFn: ({ id, ...body }: { id: number } & Record<string, unknown>) => putApi(`/settings/units/${id}`, body),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['units'] }); addToast('success', t('toasts.unitUpdated')); },
-    onError: () => addToast('error', t('toasts.unitUpdateFailed')),
+    onError: (error) => addToast('error', getApiErrorMessage(error, 'toasts.unitUpdateFailed')),
   });
 }
 
@@ -533,7 +534,7 @@ export function useDeleteUnit() {
   return useMutation({
     mutationFn: (id: number) => deleteApi(`/settings/units/${id}`),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['units'] }); addToast('success', t('toasts.unitDeleted')); },
-    onError: () => addToast('error', t('toasts.unitDeleteFailed')),
+    onError: (error) => addToast('error', getApiErrorMessage(error, 'toasts.unitDeleteFailed')),
   });
 }
 
@@ -549,7 +550,7 @@ export function useCreateAllergen() {
   return useMutation({
     mutationFn: (body: unknown) => postApi('/settings/allergens', body),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['allergens'] }); addToast('success', t('toasts.allergenCreated')); },
-    onError: () => addToast('error', t('toasts.allergenCreateFailed')),
+    onError: (error) => addToast('error', getApiErrorMessage(error, 'toasts.allergenCreateFailed')),
   });
 }
 
@@ -560,7 +561,7 @@ export function useUpdateAllergen() {
   return useMutation({
     mutationFn: ({ id, ...body }: { id: number } & Record<string, unknown>) => putApi(`/settings/allergens/${id}`, body),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['allergens'] }); addToast('success', t('toasts.allergenUpdated')); },
-    onError: () => addToast('error', t('toasts.allergenUpdateFailed')),
+    onError: (error) => addToast('error', getApiErrorMessage(error, 'toasts.allergenUpdateFailed')),
   });
 }
 
@@ -571,7 +572,7 @@ export function useDeleteAllergen() {
   return useMutation({
     mutationFn: (id: number) => deleteApi(`/settings/allergens/${id}`),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['allergens'] }); addToast('success', t('toasts.allergenDeleted')); },
-    onError: () => addToast('error', t('toasts.allergenDeleteFailed')),
+    onError: (error) => addToast('error', getApiErrorMessage(error, 'toasts.allergenDeleteFailed')),
   });
 }
 
@@ -587,7 +588,7 @@ export function useCreateTag() {
   return useMutation({
     mutationFn: (body: unknown) => postApi('/settings/tags', body),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['tags'] }); addToast('success', t('toasts.tagCreated')); },
-    onError: () => addToast('error', t('toasts.tagCreateFailed')),
+    onError: (error) => addToast('error', getApiErrorMessage(error, 'toasts.tagCreateFailed')),
   });
 }
 
@@ -598,7 +599,7 @@ export function useUpdateTag() {
   return useMutation({
     mutationFn: ({ id, ...body }: { id: number } & Record<string, unknown>) => putApi(`/settings/tags/${id}`, body),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['tags'] }); addToast('success', t('toasts.tagUpdated')); },
-    onError: () => addToast('error', t('toasts.tagUpdateFailed')),
+    onError: (error) => addToast('error', getApiErrorMessage(error, 'toasts.tagUpdateFailed')),
   });
 }
 
@@ -609,7 +610,7 @@ export function useDeleteTag() {
   return useMutation({
     mutationFn: (id: number) => deleteApi(`/settings/tags/${id}`),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['tags'] }); addToast('success', t('toasts.tagDeleted')); },
-    onError: () => addToast('error', t('toasts.tagDeleteFailed')),
+    onError: (error) => addToast('error', getApiErrorMessage(error, 'toasts.tagDeleteFailed')),
   });
 }
 
@@ -625,7 +626,7 @@ export function useUpdateProfile() {
   return useMutation({
     mutationFn: (body: unknown) => patchApi('/settings/profile', body),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['profile'] }); addToast('success', t('toasts.profileUpdated')); },
-    onError: () => addToast('error', t('toasts.profileUpdateFailed')),
+    onError: (error) => addToast('error', getApiErrorMessage(error, 'toasts.profileUpdateFailed')),
   });
 }
 
@@ -681,7 +682,7 @@ export function useSendInvite() {
   return useMutation({
     mutationFn: (body: { email: string; role: number }) => postApi<{ token: string; inviteLink: string }>('/stores/invite', body),
     onSuccess: () => { addToast('success', t('toasts.inviteSent')); qc.invalidateQueries({ queryKey: ['storeMembers'] }); qc.invalidateQueries({ queryKey: ['pendingInvitations'] }); },
-    onError: () => addToast('error', t('toasts.inviteFailed')),
+    onError: (error) => addToast('error', getApiErrorMessage(error, 'toasts.inviteFailed')),
   });
 }
 
@@ -692,7 +693,7 @@ export function useRevokeInvitation() {
   return useMutation({
     mutationFn: (id: number) => patchApi(`/stores/invitations/${id}/revoke`, {}),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['pendingInvitations'] }); qc.invalidateQueries({ queryKey: ['storeMembers'] }); addToast('success', t('toasts.inviteRevoked')); },
-    onError: () => addToast('error', t('toasts.inviteRevokeFailed')),
+    onError: (error) => addToast('error', getApiErrorMessage(error, 'toasts.inviteRevokeFailed')),
   });
 }
 
@@ -703,7 +704,7 @@ export function useRemoveMember() {
   return useMutation({
     mutationFn: (userId: number) => deleteApi(`/stores/members/${userId}`),
     onSuccess: () => { addToast('success', t('toasts.memberRemoved')); qc.invalidateQueries({ queryKey: ['storeMembers'] }); },
-    onError: () => addToast('error', t('toasts.memberRemoveFailed')),
+    onError: (error) => addToast('error', getApiErrorMessage(error, 'toasts.memberRemoveFailed')),
   });
 }
 
@@ -746,7 +747,7 @@ export function useAdminToggleAdmin() {
   return useMutation({
     mutationFn: ({ userId, isAdmin }: { userId: number; isAdmin: boolean }) => patchApi(`/admin/users/${userId}/admin`, { isAdmin }),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['admin', 'users'] }); addToast('success', t('toasts.adminToggled')); },
-    onError: () => addToast('error', t('toasts.adminToggleFailed')),
+    onError: (error) => addToast('error', getApiErrorMessage(error, 'toasts.adminToggleFailed')),
   });
 }
 
@@ -757,7 +758,7 @@ export function useAdminToggleDisabled() {
   return useMutation({
     mutationFn: ({ userId, disabled }: { userId: number; disabled: boolean }) => patchApi(`/admin/users/${userId}/disabled`, { disabled }),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['admin', 'users'] }); addToast('success', t('toasts.userStatusUpdated')); },
-    onError: () => addToast('error', t('toasts.userStatusUpdateFailed')),
+    onError: (error) => addToast('error', getApiErrorMessage(error, 'toasts.userStatusUpdateFailed')),
   });
 }
 
@@ -768,7 +769,7 @@ export function useAdminDeleteUser() {
   return useMutation({
     mutationFn: (userId: number) => deleteApi(`/admin/users/${userId}`),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['admin', 'users'] }); addToast('success', t('toasts.userDeleted')); },
-    onError: () => addToast('error', t('toasts.userDeleteFailed')),
+    onError: (error) => addToast('error', getApiErrorMessage(error, 'toasts.userDeleteFailed')),
   });
 }
 
@@ -779,7 +780,7 @@ export function useAdminDeleteStore() {
   return useMutation({
     mutationFn: (storeId: number) => deleteApi(`/admin/stores/${storeId}`),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['admin', 'stores'] }); addToast('success', t('toasts.storeDeleted')); },
-    onError: () => addToast('error', t('toasts.storeDeleteFailed')),
+    onError: (error) => addToast('error', getApiErrorMessage(error, 'toasts.storeDeleteFailed')),
   });
 }
 
@@ -811,7 +812,7 @@ export function useAdminUpdateStore() {
   return useMutation({
     mutationFn: ({ storeId, ...body }: { storeId: number; name?: string; address?: string }) => patchApi(`/admin/stores/${storeId}`, body),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['admin', 'stores'] }); addToast('success', t('toasts.storeUpdated')); },
-    onError: () => addToast('error', t('toasts.storeUpdateFailed')),
+    onError: (error) => addToast('error', getApiErrorMessage(error, 'toasts.storeUpdateFailed')),
   });
 }
 
@@ -849,7 +850,7 @@ export function useAdminCreateStoreInvite() {
   return useMutation({
     mutationFn: ({ email }: { email: string }) => postApi('/admin/invitations/create-store', { email }),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['admin', 'invitations'] }); addToast('success', t('toasts.inviteCreated')); },
-    onError: () => addToast('error', t('toasts.inviteCreateFailed')),
+    onError: (error) => addToast('error', getApiErrorMessage(error, 'toasts.inviteCreateFailed')),
   });
 }
 
@@ -860,7 +861,7 @@ export function useAdminRevokeInvitation() {
   return useMutation({
     mutationFn: (id: number) => patchApi(`/admin/invitations/${id}/revoke`, {}),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['admin', 'invitations'] }); addToast('success', t('toasts.inviteRevoked')); },
-    onError: () => addToast('error', t('toasts.inviteRevokeFailed')),
+    onError: (error) => addToast('error', getApiErrorMessage(error, 'toasts.inviteRevokeFailed')),
   });
 }
 
@@ -974,7 +975,7 @@ export function useUpdateLoyaltyConfig() {
   return useMutation({
     mutationFn: (body: unknown) => patchApi('/settings/loyalty', body),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['loyaltyConfig'] }); addToast('success', t('toasts.loyaltyConfigUpdated')); },
-    onError: () => addToast('error', t('toasts.loyaltyConfigUpdateFailed')),
+    onError: (error) => addToast('error', getApiErrorMessage(error, 'toasts.loyaltyConfigUpdateFailed')),
   });
 }
 
@@ -1011,7 +1012,7 @@ export function useAdjustLoyalty() {
       qc.invalidateQueries({ queryKey: ['customers'] });
       addToast('success', t('toasts.loyaltyAdjusted'));
     },
-    onError: () => addToast('error', t('toasts.loyaltyAdjustFailed')),
+    onError: (error) => addToast('error', getApiErrorMessage(error, 'toasts.loyaltyAdjustFailed')),
   });
 }
 
@@ -1026,7 +1027,7 @@ export function useRedeemLoyalty() {
       qc.invalidateQueries({ queryKey: ['customers'] });
       addToast('success', t('toasts.loyaltyRedeemed'));
     },
-    onError: () => addToast('error', t('toasts.loyaltyRedeemFailed')),
+    onError: (error) => addToast('error', getApiErrorMessage(error, 'toasts.loyaltyRedeemFailed')),
   });
 }
 
@@ -1054,7 +1055,7 @@ export function useGenerateBatches() {
   return useMutation({
     mutationFn: (body: { date: string }) => postApi('/production/batches/generate', body),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['production'] }); addToast('success', t('toasts.batchesGenerated')); },
-    onError: () => addToast('error', t('toasts.batchesGenerateFailed')),
+    onError: (error) => addToast('error', getApiErrorMessage(error, 'toasts.batchesGenerateFailed')),
   });
 }
 
@@ -1065,7 +1066,7 @@ export function useCreateBatch() {
   return useMutation({
     mutationFn: (body: unknown) => postApi('/production/batches', body),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['production'] }); addToast('success', t('toasts.batchCreated')); },
-    onError: () => addToast('error', t('toasts.batchCreateFailed')),
+    onError: (error) => addToast('error', getApiErrorMessage(error, 'toasts.batchCreateFailed')),
   });
 }
 
@@ -1086,7 +1087,7 @@ export function useUpdateBatch() {
   return useMutation({
     mutationFn: ({ id, ...body }: { id: number } & Record<string, unknown>) => putApi(`/production/batches/${id}`, body),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['production'] }); addToast('success', t('toasts.batchUpdated')); },
-    onError: () => addToast('error', t('toasts.batchUpdateFailed')),
+    onError: (error) => addToast('error', getApiErrorMessage(error, 'toasts.batchUpdateFailed')),
   });
 }
 
@@ -1097,7 +1098,7 @@ export function useDeleteBatch() {
   return useMutation({
     mutationFn: (id: number) => deleteApi(`/production/batches/${id}`),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['production'] }); addToast('success', t('toasts.batchDeleted')); },
-    onError: () => addToast('error', t('toasts.batchDeleteFailed')),
+    onError: (error) => addToast('error', getApiErrorMessage(error, 'toasts.batchDeleteFailed')),
   });
 }
 
@@ -1108,7 +1109,7 @@ export function useSplitBatch() {
   return useMutation({
     mutationFn: ({ id, splitQuantity }: { id: number; splitQuantity: number }) => postApi(`/production/batches/${id}/split`, { splitQuantity }),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['production'] }); addToast('success', t('toasts.batchSplit')); },
-    onError: () => addToast('error', t('toasts.batchSplitFailed')),
+    onError: (error) => addToast('error', getApiErrorMessage(error, 'toasts.batchSplitFailed')),
   });
 }
 
@@ -1119,7 +1120,7 @@ export function useMergeBatches() {
   return useMutation({
     mutationFn: (body: { batchIds: number[] }) => postApi('/production/batches/merge', body),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['production'] }); addToast('success', t('toasts.batchesMerged')); },
-    onError: () => addToast('error', t('toasts.batchesMergeFailed')),
+    onError: (error) => addToast('error', getApiErrorMessage(error, 'toasts.batchesMergeFailed')),
   });
 }
 
@@ -1159,6 +1160,6 @@ export function useUpdateNotificationPreferences() {
   return useMutation({
     mutationFn: (body: unknown) => putApi('/settings/notifications', body),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['notificationPrefs'] }); addToast('success', t('toasts.notificationsUpdated')); },
-    onError: () => addToast('error', t('toasts.notificationsUpdateFailed')),
+    onError: (error) => addToast('error', getApiErrorMessage(error, 'toasts.notificationsUpdateFailed')),
   });
 }

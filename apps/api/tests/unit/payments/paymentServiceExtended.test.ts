@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { PaymentService } from '../../../src/modules/payments/payment.service.js';
 import { createMockEventBus, createPayment } from '../helpers/mock-factories.js';
-import { NotFoundError } from '../../../src/core/errors/app-error.js';
+import { NotFoundError, ConflictError } from '../../../src/core/errors/app-error.js';
 import type { EventBus } from '../../../src/core/events/event-bus.js';
 
 vi.mock('../../../src/core/events/event-bus.js', async (importOriginal) => {
@@ -108,10 +108,10 @@ describe('PaymentService - extended', () => {
       await expect(service.refund(STORE_ID, 999)).rejects.toThrow(NotFoundError);
     });
 
-    it('should throw NotFoundError when payment already refunded', async () => {
+    it('should throw ConflictError when payment already refunded', async () => {
       vi.mocked(PaymentCrud.getById).mockResolvedValue(createPayment({ status: 'refunded' as any }));
 
-      await expect(service.refund(STORE_ID, 1)).rejects.toThrow(NotFoundError);
+      await expect(service.refund(STORE_ID, 1)).rejects.toThrow(ConflictError);
     });
   });
 });
