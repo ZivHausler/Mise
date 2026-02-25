@@ -7,22 +7,22 @@ export class PgNotifPrefsRepository {
   static async findAll(userId: number): Promise<NotificationPreference[]> {
     const pool = getPool();
     const result = await pool.query(
-      'SELECT id, user_id, event_type, channel_email, channel_push, channel_sms, created_at, updated_at FROM notification_preferences WHERE user_id = $1 ORDER BY event_type',
+      'SELECT id, user_id, event_type, channel_email, channel_push, channel_sms, channel_whatsapp, created_at, updated_at FROM notification_preferences WHERE user_id = $1 ORDER BY event_type',
       [userId],
     );
     return result.rows.map(this.mapRow);
   }
 
-  static async upsert(userId: number, prefs: { eventType: string; email: boolean; push: boolean; sms: boolean }[]): Promise<NotificationPreference[]> {
+  static async upsert(userId: number, prefs: { eventType: string; email: boolean; push: boolean; sms: boolean; whatsapp: boolean }[]): Promise<NotificationPreference[]> {
     const pool = getPool();
 
     for (const pref of prefs) {
       await pool.query(
-        `INSERT INTO notification_preferences (user_id, event_type, channel_email, channel_push, channel_sms)
-         VALUES ($1, $2, $3, $4, $5)
+        `INSERT INTO notification_preferences (user_id, event_type, channel_email, channel_push, channel_sms, channel_whatsapp)
+         VALUES ($1, $2, $3, $4, $5, $6)
          ON CONFLICT (user_id, event_type)
-         DO UPDATE SET channel_email = $3, channel_push = $4, channel_sms = $5, updated_at = NOW()`,
-        [userId, pref.eventType, pref.email, pref.push, pref.sms],
+         DO UPDATE SET channel_email = $3, channel_push = $4, channel_sms = $5, channel_whatsapp = $6, updated_at = NOW()`,
+        [userId, pref.eventType, pref.email, pref.push, pref.sms, pref.whatsapp],
       );
     }
 
@@ -32,12 +32,12 @@ export class PgNotifPrefsRepository {
   static async findByEventType(eventType: string): Promise<NotificationRecipientRow[]> {
     const pool = getPool();
     const result = await pool.query(
-      `SELECT np.id, np.user_id, np.event_type, np.channel_email, np.channel_push, np.channel_sms,
+      `SELECT np.id, np.user_id, np.event_type, np.channel_email, np.channel_push, np.channel_sms, np.channel_whatsapp,
               np.created_at, np.updated_at, u.email, u.name, u.phone, u.language
        FROM notification_preferences np
        JOIN users u ON u.id = np.user_id
        WHERE np.event_type = $1
-         AND (np.channel_email = true OR np.channel_sms = true)`,
+         AND (np.channel_email = true OR np.channel_sms = true OR np.channel_whatsapp = true)`,
       [eventType],
     );
     return result.rows.map((row: Record<string, unknown>) => ({
@@ -57,6 +57,7 @@ export class PgNotifPrefsRepository {
       channelEmail: row['channel_email'] as boolean,
       channelPush: row['channel_push'] as boolean,
       channelSms: row['channel_sms'] as boolean,
+      channelWhatsapp: row['channel_whatsapp'] as boolean,
       createdAt: new Date(row['created_at'] as string),
       updatedAt: new Date(row['updated_at'] as string),
     };

@@ -537,6 +537,8 @@
       "comingSoon": "Coming Soon",
       "addPhone": "Add phone number in Account tab",
       "smsHint": "Add a phone number in the Account tab to enable SMS notifications.",
+      "whatsapp": "WhatsApp",
+      "phoneHint": "Add a phone number in the Account tab to enable SMS and WhatsApp notifications.",
       "orderCreated": "Order Created",
       "lowStock": "Low Stock Alert",
       "paymentReceived": "Payment Received"

@@ -7,12 +7,12 @@ import { ErrorCode } from '@mise/shared';
 
 export class UpdateNotificationPreferencesUseCase implements UseCase<NotificationPreference[], [number, UpdateNotificationPrefsDTO]> {
   async execute(userId: number, data: UpdateNotificationPrefsDTO): Promise<NotificationPreference[]> {
-    // Check if user has phone before allowing SMS
-    const hasSmsEnabled = data.preferences.some((p) => p.sms);
-    if (hasSmsEnabled) {
+    // Check if user has phone before allowing SMS or WhatsApp
+    const needsPhone = data.preferences.some((p) => p.sms || p.whatsapp);
+    if (needsPhone) {
       const user = await PgAuthRepository.findById(userId);
       if (!user?.phone) {
-        throw new ValidationError('Cannot enable SMS notifications without a phone number', ErrorCode.NOTIFICATION_SMS_NO_PHONE);
+        throw new ValidationError('Cannot enable SMS or WhatsApp notifications without a phone number', ErrorCode.NOTIFICATION_SMS_NO_PHONE);
       }
     }
 
@@ -21,6 +21,7 @@ export class UpdateNotificationPreferencesUseCase implements UseCase<Notificatio
       email: p.email,
       push: p.push,
       sms: p.sms,
+      whatsapp: p.whatsapp,
     }));
 
     return PgNotifPrefsRepository.upsert(userId, prefs);
