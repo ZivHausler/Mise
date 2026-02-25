@@ -14,6 +14,7 @@ export class NotificationDispatcher {
   constructor(
     private emailNotifier: NotificationChannel,
     private smsNotifier: NotificationChannel,
+    private whatsappNotifier: NotificationChannel,
     private logger: FastifyBaseLogger,
   ) {}
 
@@ -33,6 +34,7 @@ export class NotificationDispatcher {
 
     const emailRecipients: NotificationRecipient[] = [];
     const smsRecipients: NotificationRecipient[] = [];
+    const whatsappRecipients: NotificationRecipient[] = [];
 
     for (const recipient of recipients) {
       const nr: NotificationRecipient = {
@@ -50,6 +52,10 @@ export class NotificationDispatcher {
       if (recipient.channelSms && recipient.phone) {
         smsRecipients.push(nr);
       }
+
+      if (recipient.channelWhatsapp && recipient.phone) {
+        whatsappRecipients.push(nr);
+      }
     }
 
     if (emailRecipients.length > 0) {
@@ -60,8 +66,12 @@ export class NotificationDispatcher {
       await this.smsNotifier.sendBatch(smsRecipients, context);
     }
 
+    if (whatsappRecipients.length > 0) {
+      await this.whatsappNotifier.sendBatch(whatsappRecipients, context);
+    }
+
     this.logger.info(
-      `Dispatched ${eventType} to ${recipients.length} user(s) (${emailRecipients.length} email, ${smsRecipients.length} sms)`,
+      `Dispatched ${eventType} to ${recipients.length} user(s) (${emailRecipients.length} email, ${smsRecipients.length} sms, ${whatsappRecipients.length} whatsapp)`,
     );
   }
 }

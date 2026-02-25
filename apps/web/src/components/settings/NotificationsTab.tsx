@@ -12,6 +12,7 @@ interface PrefRow {
   email: boolean;
   push: boolean;
   sms: boolean;
+  whatsapp: boolean;
 }
 
 export default function NotificationsTab() {
@@ -27,7 +28,7 @@ export default function NotificationsTab() {
   const [dirty, setDirty] = useState(false);
 
   useEffect(() => {
-    const existing = (prefs ?? []) as { eventType: string; channelEmail: boolean; channelPush: boolean; channelSms: boolean }[];
+    const existing = (prefs ?? []) as { eventType: string; channelEmail: boolean; channelPush: boolean; channelSms: boolean; channelWhatsapp: boolean }[];
     const mapped = NOTIFICATION_EVENTS.map((et) => {
       const found = existing.find((e) => e.eventType === et);
       return {
@@ -35,13 +36,14 @@ export default function NotificationsTab() {
         email: found?.channelEmail ?? true,
         push: found?.channelPush ?? false,
         sms: found?.channelSms ?? false,
+        whatsapp: found?.channelWhatsapp ?? false,
       };
     });
     setRows(mapped);
     setDirty(false);
   }, [prefs]);
 
-  const toggle = (eventType: string, channel: 'email' | 'push' | 'sms') => {
+  const toggle = (eventType: string, channel: 'email' | 'push' | 'sms' | 'whatsapp') => {
     setRows((prev) => prev.map((r) => r.eventType === eventType ? { ...r, [channel]: !r[channel] } : r));
     setDirty(true);
   };
@@ -68,7 +70,7 @@ export default function NotificationsTab() {
           <table className="w-full text-body-sm">
             <thead>
               <tr className="border-b bg-neutral-50">
-                <th className="px-3 py-2 text-start font-semibold">{t('settings.notifications.event', 'Event')}</th>
+                <th className="sticky start-0 z-10 bg-neutral-50 px-3 py-2 text-start font-semibold">{t('settings.notifications.event', 'Event')}</th>
                 <th className="px-3 py-2 text-center font-semibold">{t('settings.notifications.email', 'Email')}</th>
                 <th className="px-3 py-2 text-center font-semibold">
                   <span className="text-neutral-400">{t('settings.notifications.app', 'App')}</span>
@@ -76,12 +78,15 @@ export default function NotificationsTab() {
                 <th className="px-3 py-2 text-center font-semibold">
                   {t('settings.notifications.sms', 'SMS')}
                 </th>
+                <th className="px-3 py-2 text-center font-semibold">
+                  {t('settings.notifications.whatsapp', 'WhatsApp')}
+                </th>
               </tr>
             </thead>
             <tbody>
               {rows.map((row) => (
                 <tr key={row.eventType} className="border-b border-neutral-100">
-                  <td className="px-3 py-3 font-medium text-neutral-700">{eventLabel(row.eventType)}</td>
+                  <td className="sticky start-0 z-10 bg-white px-3 py-3 font-medium text-neutral-700">{eventLabel(row.eventType)}</td>
                   <td className="px-3 py-3 text-center">
                     <input
                       type="checkbox"
@@ -109,6 +114,20 @@ export default function NotificationsTab() {
                       </span>
                     )}
                   </td>
+                  <td className="px-3 py-3 text-center">
+                    {hasPhone ? (
+                      <input
+                        type="checkbox"
+                        checked={row.whatsapp}
+                        onChange={() => toggle(row.eventType, 'whatsapp')}
+                        className="h-4 w-4 rounded border-neutral-300 text-primary-500 focus:ring-primary-500"
+                      />
+                    ) : (
+                      <span className="text-caption text-neutral-400" title={t('settings.notifications.addPhone', 'Add phone number in Account tab')}>
+                        --
+                      </span>
+                    )}
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -116,7 +135,7 @@ export default function NotificationsTab() {
         </div>
         {!hasPhone && (
           <p className="mt-3 text-caption text-neutral-400">
-            {t('settings.notifications.smsHint', 'Add a phone number in the Account tab to enable SMS notifications.')}
+            {t('settings.notifications.phoneHint', 'Add a phone number in the Account tab to enable SMS and WhatsApp notifications.')}
           </p>
         )}
         {dirty && (

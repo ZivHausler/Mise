@@ -53,6 +53,10 @@ const envSchema = z.object({
   // Resend (email)
   RESEND_API_KEY: z.string().default(''),
 
+  // WhatsApp Business Cloud API
+  WHATSAPP_PHONE_NUMBER_ID: z.string().default(''),
+  WHATSAPP_ACCESS_TOKEN: z.string().default(''),
+
   // Feature flags — comma-separated store IDs that have the feature enabled, or '*' for all stores
   FEATURE_PRODUCTION: z.string().default(''),
 });

@@ -71,6 +71,7 @@ export const notificationPrefItemSchema = z.object({
   email: z.boolean(),
   push: z.boolean(),
   sms: z.boolean(),
+  whatsapp: z.boolean(),
 });
 
 export const updateNotificationPrefsSchema = z.object({
