@@ -196,17 +196,18 @@ function MobileStoreDropdown({ stores, activeStoreId, isAdmin, onSwitch }: {
     : '';
 
   return (
-    <div ref={ref} className="relative mb-4 border-b border-primary-800 pb-4">
-      <button
-        type="button"
-        onClick={() => setOpen((v) => !v)}
-        className="flex w-full items-center justify-between rounded-md bg-primary-800 px-3 py-2 text-body-sm text-white outline-none focus:ring-2 focus:ring-primary-500"
-      >
-        <span className="truncate">{label}</span>
-        <ChevronDown className={`h-4 w-4 shrink-0 text-primary-400 transition-transform ${open ? 'rotate-180' : ''}`} />
-      </button>
-      {open && (
-        <div className="absolute start-0 end-0 top-full z-20 mt-1 max-h-60 overflow-y-auto rounded-lg border border-primary-700 bg-primary-800 p-1 shadow-lg">
+    <div ref={ref} className="mb-4 border-b border-primary-800 pb-4">
+      <div className="relative">
+        <button
+          type="button"
+          onClick={() => setOpen((v) => !v)}
+          className="flex w-full items-center justify-between rounded-md bg-primary-800 px-3 py-2 text-body-sm text-white outline-none focus:ring-2 focus:ring-primary-500"
+        >
+          <span className="truncate">{label}</span>
+          <ChevronDown className={`h-4 w-4 shrink-0 text-primary-400 transition-transform ${open ? 'rotate-180' : ''}`} />
+        </button>
+        {open && (
+          <div className="absolute start-0 end-0 top-full z-20 mt-1 max-h-60 overflow-y-auto rounded-lg border border-primary-700 bg-primary-800 p-1 shadow-lg">
           {stores.map((s: any) => {
             const selected = s.storeId === activeStoreId;
             return (
@@ -220,8 +221,9 @@ function MobileStoreDropdown({ stores, activeStoreId, isAdmin, onSwitch }: {
               </button>
             );
           })}
-        </div>
-      )}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
