@@ -85,6 +85,7 @@ const MobileNav = React.memo(function MobileNav({ onClose }: { onClose: () => vo
   const { t } = useTranslation();
   const stores = useAuthStore((s) => s.stores);
   const isAdmin = useAuthStore((s) => s.isAdmin);
+  const activeStoreId = useAuthStore((s) => s.activeStoreId);
   const updateToken = useAuthStore((s) => s.updateToken);
   const setActiveStore = useAuthStore((s) => s.setActiveStore);
   const selectStore = useSelectStore();
@@ -126,7 +127,7 @@ const MobileNav = React.memo(function MobileNav({ onClose }: { onClose: () => vo
           <div className="relative">
             <select
               onChange={handleStoreSwitch}
-              defaultValue={displayStores[0]?.storeId}
+              value={activeStoreId || displayStores[0]?.storeId || ''}
               className="w-full appearance-none rounded-md bg-primary-800 px-3 py-2 pe-8 text-body-sm text-white outline-none focus:ring-2 focus:ring-primary-500"
             >
               {isAdmin && <option value="" disabled>{t('nav.selectStore', 'Select a store')}</option>}
