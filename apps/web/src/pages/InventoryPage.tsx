@@ -87,7 +87,7 @@ export default function InventoryPage() {
   const [showAdjust, setShowAdjust] = useState<any>(null);
   const [showDelete, setShowDelete] = useState<any>(null);
 
-  const emptyItem = { name: '', category: '', unit: '', stock: '' as number | '', packageSize: '' as number | '', threshold: '' as number | '', costPerUnit: '' as number | '', allergenIds: [] as string[] };
+  const emptyItem = { name: '', unit: '', stock: '' as number | '', packageSize: '' as number | '', threshold: '' as number | '', costPerUnit: '' as number | '', allergenIds: [] as string[] };
   const [newItem, setNewItem] = useState(emptyItem);
   const isEdit = editingItem !== null && editingItem !== 'new';
   const isModalOpen = editingItem !== null;
@@ -171,7 +171,7 @@ export default function InventoryPage() {
         shrink: true,
         render: (row: any) => (
           <div className="flex items-center">
-            <Button size="sm" variant="ghost" onClick={(e: React.MouseEvent) => { e.stopPropagation(); setEditingItem(row); setNewItem({ name: row.name, category: row.category ?? '', allergenIds: (row.allergens ?? []).map((g: any) => g.id), threshold: row.lowStockThreshold ?? '', unit: row.unit ?? 'kg', costPerUnit: row.costPerUnit ?? '', stock: row.quantity ?? '', packageSize: row.packageSize ?? '' }); setPriceInput(row.packageSize && row.costPerUnit ? Math.round(row.costPerUnit * row.packageSize * 100) / 100 : row.costPerUnit ?? ''); setPriceMode('unit'); setThresholdMode('units'); }} title={t('common.edit')}>
+            <Button size="sm" variant="ghost" onClick={(e: React.MouseEvent) => { e.stopPropagation(); setEditingItem(row); setNewItem({ name: row.name, allergenIds: (row.allergens ?? []).map((g: any) => String(g.id)), threshold: row.lowStockThreshold ?? '', unit: row.unit ?? 'kg', costPerUnit: row.costPerUnit ?? '', stock: row.quantity ?? '', packageSize: row.packageSize ?? '' }); setPriceInput(row.packageSize && row.costPerUnit ? Math.round(row.costPerUnit * row.packageSize * 100) / 100 : row.costPerUnit ?? ''); setPriceMode('unit'); setThresholdMode('units'); }} title={t('common.edit')}>
               <Pencil className="h-4 w-4" />
             </Button>
             <Button size="sm" variant="ghost" onClick={(e: React.MouseEvent) => { e.stopPropagation(); setShowAdjust(row); }} title={t('inventory.adjust', 'Adjust')}>
@@ -199,13 +199,13 @@ export default function InventoryPage() {
     if (!newItem.name || newItem.packageSize === '' || priceInput === '') return;
     if (isEdit) {
       updateItem.mutate(
-        { id: editingItem.id, name: newItem.name, category: newItem.category || undefined, allergenIds: newItem.allergenIds, lowStockThreshold: newItem.threshold, unit: newItem.unit, costPerUnit: newItem.costPerUnit, packageSize: newItem.packageSize },
+        { id: editingItem.id, name: newItem.name, allergenIds: newItem.allergenIds, lowStockThreshold: newItem.threshold, unit: newItem.unit, costPerUnit: newItem.costPerUnit, packageSize: newItem.packageSize },
         { onSuccess: closeModal },
       );
     } else {
       if (!newItem.unit) return;
       createItem.mutate(
-        { name: newItem.name, category: newItem.category, unit: newItem.unit, quantity: 0, lowStockThreshold: newItem.threshold === '' ? 0 : newItem.threshold, costPerUnit: newItem.costPerUnit, packageSize: newItem.packageSize, allergenIds: newItem.allergenIds },
+        { name: newItem.name, unit: newItem.unit, quantity: 0, lowStockThreshold: newItem.threshold === '' ? 0 : newItem.threshold, costPerUnit: newItem.costPerUnit, packageSize: newItem.packageSize, allergenIds: newItem.allergenIds },
         { onSuccess: closeModal },
       );
     }
@@ -324,7 +324,7 @@ export default function InventoryPage() {
             columns={columns}
             data={items}
             keyExtractor={(row: any) => row.id}
-            onRowClick={(row: any) => { setEditingItem(row); setNewItem({ name: row.name, category: row.category ?? '', allergenIds: (row.allergens ?? []).map((g: any) => g.id), threshold: row.lowStockThreshold ?? '', unit: row.unit ?? 'kg', costPerUnit: row.costPerUnit ?? '', stock: row.quantity ?? '', packageSize: row.packageSize ?? '' }); setPriceInput(row.packageSize && row.costPerUnit ? Math.round(row.costPerUnit * row.packageSize * 100) / 100 : row.costPerUnit ?? ''); setPriceMode('unit'); setThresholdMode('units'); }}
+            onRowClick={(row: any) => { setEditingItem(row); setNewItem({ name: row.name, allergenIds: (row.allergens ?? []).map((g: any) => String(g.id)), threshold: row.lowStockThreshold ?? '', unit: row.unit ?? 'kg', costPerUnit: row.costPerUnit ?? '', stock: row.quantity ?? '', packageSize: row.packageSize ?? '' }); setPriceInput(row.packageSize && row.costPerUnit ? Math.round(row.costPerUnit * row.packageSize * 100) / 100 : row.costPerUnit ?? ''); setPriceMode('unit'); setThresholdMode('units'); }}
             bare
           />
           {pagination && pagination.totalPages > 1 && (
@@ -363,7 +363,7 @@ export default function InventoryPage() {
       )}
 
       {/* Add / Edit Item Modal */}
-      <Modal open={isModalOpen} onClose={closeModal} title={isEdit ? t('inventory.editItem', 'Edit Item') : t('inventory.addItem', 'Add Item')} size="md"
+      <Modal open={isModalOpen} onClose={closeModal} onConfirm={handleSaveItem} title={isEdit ? t('inventory.editItem', 'Edit Item') : t('inventory.addItem', 'Add Item')} size="md"
         footer={
           <>
             <Button variant="secondary" onClick={closeModal}>{t('common.cancel')}</Button>
@@ -373,7 +373,6 @@ export default function InventoryPage() {
       >
         <Stack gap={4}>
           <TextInput label={t('inventory.name', 'Name')} value={newItem.name} onChange={(e) => setNewItem({ ...newItem, name: e.target.value })} required dir="auto" />
-          <TextInput label={t('inventory.category', 'Category')} value={newItem.category} onChange={(e) => setNewItem({ ...newItem, category: e.target.value })} dir="auto" />
           {((allergens ?? []) as { id: number; name: string; color?: string | null; isDefault?: boolean }[]).length > 0 && (
             <div>
               <label className="mb-1 block text-body-sm font-semibold text-neutral-700">{t('inventory.allergens', 'Allergens')}</label>
@@ -447,7 +446,7 @@ export default function InventoryPage() {
       </Modal>
 
       {/* Delete Confirmation Modal */}
-      <Modal open={!!showDelete} onClose={() => setShowDelete(null)} title={t('inventory.deleteTitle', 'Delete Item?')} size="sm"
+      <Modal open={!!showDelete} onClose={() => setShowDelete(null)} onConfirm={() => { deleteItem.mutate(showDelete?.id, { onSuccess: () => setShowDelete(null) }); }} title={t('inventory.deleteTitle', 'Delete Item?')} size="sm"
         footer={
           <>
             <Button variant="secondary" onClick={() => setShowDelete(null)}>{t('common.cancel')}</Button>
@@ -459,7 +458,7 @@ export default function InventoryPage() {
       </Modal>
 
       {/* Adjust Stock Modal */}
-      <Modal open={!!showAdjust} onClose={() => { setShowAdjust(null); setAdjustAmount(''); setAdjustPrice(''); setAdjustType('add'); setAdjustInputMode('units'); }} title={`${t('inventory.adjust', 'Adjust Stock')}: ${showAdjust?.name ?? ''}`} size="sm"
+      <Modal open={!!showAdjust} onClose={() => { setShowAdjust(null); setAdjustAmount(''); setAdjustPrice(''); setAdjustType('add'); setAdjustInputMode('units'); }} onConfirm={handleAdjust} title={`${t('inventory.adjust', 'Adjust Stock')}: ${showAdjust?.name ?? ''}`} size="sm"
         footer={
           <>
             <Button variant="secondary" onClick={() => { setShowAdjust(null); setAdjustAmount(''); setAdjustPrice(''); setAdjustType('add'); setAdjustInputMode('units'); }}>{t('common.cancel')}</Button>
