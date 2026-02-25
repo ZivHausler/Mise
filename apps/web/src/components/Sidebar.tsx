@@ -110,7 +110,7 @@ export function Sidebar() {
         )}
         <ul className="flex flex-col gap-1 px-2">
           {navItems.map((item) => {
-            const isLocked = item.featureFlag && !featureFlags?.[item.featureFlag] && !isAdmin;
+            const isLocked = item.featureFlag && !featureFlags?.[item.featureFlag];
             if (isLocked) {
               return (
                 <li key={item.path}>

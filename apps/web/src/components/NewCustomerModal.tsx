@@ -83,7 +83,7 @@ export function NewCustomerModal({ open, onClose, onCreated, allowUseExisting = 
 
   return (
     <>
-      <Modal open={open} onClose={resetAndClose} title={t('customers.create', 'New Customer')} size="md"
+      <Modal open={open} onClose={resetAndClose} onConfirm={handleCreate} title={t('customers.create', 'New Customer')} size="md"
         footer={
           <>
             <Button variant="secondary" onClick={resetAndClose}>{t('common.cancel')}</Button>
@@ -103,6 +103,7 @@ export function NewCustomerModal({ open, onClose, onCreated, allowUseExisting = 
       <Modal
         open={showConflictModal}
         onClose={() => setConflicts([])}
+        onConfirm={handleUseExisting}
         title={t('customers.existingFound', 'Customer Already Exists')}
         size={hasMultipleConflicts ? 'md' : 'sm'}
         footer={
