@@ -1,11 +1,13 @@
 import type { CreateCustomerDTO, Customer, UpdateCustomerDTO } from './customer.types.js';
 import { CustomerCrud } from './customerCrud.js';
+import { OrderCrud } from '../orders/orderCrud.js';
 import { ConflictError, NotFoundError } from '../../core/errors/app-error.js';
+import { ErrorCode } from '@mise/shared';
 
 export class CustomerService {
   async getById(id: number, storeId: number): Promise<Customer> {
     const customer = await CustomerCrud.getById(id, storeId);
-    if (!customer) throw new NotFoundError('Customer not found');
+    if (!customer) throw new NotFoundError('Customer not found', ErrorCode.CUSTOMER_NOT_FOUND);
     return customer;
   }
 
@@ -32,7 +34,7 @@ export class CustomerService {
     if (conflicts.length > 0) {
       throw new ConflictError(
         'A customer with this contact info already exists',
-        'CUSTOMER_CONFLICT',
+        ErrorCode.CUSTOMER_CONFLICT,
         { conflicts },
       );
     }
@@ -43,7 +45,7 @@ export class CustomerService {
   async update(id: number, storeId: number, data: UpdateCustomerDTO): Promise<Customer> {
     const existing = await CustomerCrud.getById(id, storeId);
     if (!existing) {
-      throw new NotFoundError('Customer not found');
+      throw new NotFoundError('Customer not found', ErrorCode.CUSTOMER_NOT_FOUND);
     }
     // Uniqueness checks – collect all conflicts before throwing
     const conflicts: { field: 'phone' | 'email'; customerId: number }[] = [];
@@ -64,7 +66,7 @@ export class CustomerService {
     if (conflicts.length > 0) {
       throw new ConflictError(
         'A customer with this contact info already exists',
-        'CUSTOMER_CONFLICT',
+        ErrorCode.CUSTOMER_CONFLICT,
         { conflicts },
       );
     }
@@ -74,7 +76,11 @@ export class CustomerService {
   async delete(id: number, storeId: number): Promise<void> {
     const existing = await CustomerCrud.getById(id, storeId);
     if (!existing) {
-      throw new NotFoundError('Customer not found');
+      throw new NotFoundError('Customer not found', ErrorCode.CUSTOMER_NOT_FOUND);
+    }
+    const openOrders = await OrderCrud.countActiveByCustomer(storeId, id);
+    if (openOrders > 0) {
+      throw new ConflictError('Customer has open orders', ErrorCode.CUSTOMER_HAS_OPEN_ORDERS);
     }
     return CustomerCrud.delete(id, storeId);
   }

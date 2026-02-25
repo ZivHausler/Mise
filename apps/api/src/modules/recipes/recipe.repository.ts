@@ -71,6 +71,13 @@ export class MongoRecipeRepository {
     await this.collection.deleteOne({ _id: objectId, storeId: this.storeFilter(storeId) });
   }
 
+  static async countByIngredient(storeId: number, ingredientId: number): Promise<number> {
+    return this.collection.countDocuments({
+      storeId,
+      'ingredients.ingredientId': String(ingredientId),
+    });
+  }
+
   private static mapDoc(doc: Record<string, unknown>): Recipe {
     const id = doc['_id'];
     return {

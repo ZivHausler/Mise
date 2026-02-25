@@ -8,6 +8,7 @@ import { InventoryService } from '../inventory/inventory.service.js';
 import { UnauthorizedError } from '../../core/errors/app-error.js';
 import type { AuthTokenPayload } from '../auth/auth.types.js';
 import { isTokenBlacklisted } from '../../core/auth/token-blacklist.js';
+import { ErrorCode } from '@mise/shared';
 
 export default async function orderSSERoutes(app: FastifyInstance) {
   const inventoryService = new InventoryService();
@@ -31,23 +32,23 @@ export default async function orderSSERoutes(app: FastifyInstance) {
     // Authenticate via query param token (EventSource can't set headers)
     const token = request.query.token;
     if (!token) {
-      throw new UnauthorizedError('Missing token');
+      throw new UnauthorizedError('Missing token', ErrorCode.AUTH_MISSING_TOKEN);
     }
 
     let payload: AuthTokenPayload;
     try {
       payload = app.jwt.verify<AuthTokenPayload>(token);
     } catch {
-      throw new UnauthorizedError('Invalid or expired token');
+      throw new UnauthorizedError('Invalid or expired token', ErrorCode.AUTH_TOKEN_EXPIRED);
     }
 
     if (payload.jti && await isTokenBlacklisted(payload.jti)) {
-      throw new UnauthorizedError('Token has been revoked');
+      throw new UnauthorizedError('Token has been revoked', ErrorCode.AUTH_TOKEN_REVOKED);
     }
 
     const storeId = payload.storeId;
     if (!storeId) {
-      throw new UnauthorizedError('No store selected');
+      throw new UnauthorizedError('No store selected', ErrorCode.STORE_NO_STORE_SELECTED);
     }
 
     // Hijack the response so Fastify won't auto-close it

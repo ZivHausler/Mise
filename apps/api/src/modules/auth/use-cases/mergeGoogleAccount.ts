@@ -5,6 +5,7 @@ import { PgAuthRepository } from '../auth.repository.js';
 import type { User } from '../auth.types.js';
 import { UnauthorizedError, ValidationError } from '../../../core/errors/app-error.js';
 import { env } from '../../../config/env.js';
+import { ErrorCode } from '@mise/shared';
 
 export class MergeGoogleAccountUseCase implements UseCase<User, [string, string]> {
   private client: OAuth2Client;
@@ -20,19 +21,19 @@ export class MergeGoogleAccountUseCase implements UseCase<User, [string, string]
     });
     const payload = ticket.getPayload();
     if (!payload || !payload.email || !payload.sub) {
-      throw new ValidationError('Invalid Google token');
+      throw new ValidationError('Invalid Google token', ErrorCode.AUTH_INVALID_GOOGLE_TOKEN);
     }
 
     const { email, sub: googleId } = payload;
 
     const user = await PgAuthRepository.findByEmail(email);
     if (!user || !user.passwordHash) {
-      throw new UnauthorizedError('Invalid email or password');
+      throw new UnauthorizedError('Invalid email or password', ErrorCode.AUTH_INVALID_CREDENTIALS);
     }
 
     const passwordValid = await bcrypt.compare(password, user.passwordHash);
     if (!passwordValid) {
-      throw new UnauthorizedError('Invalid email or password');
+      throw new UnauthorizedError('Invalid email or password', ErrorCode.AUTH_INVALID_CREDENTIALS);
     }
 
     return PgAuthRepository.linkGoogle(user.id, googleId);

@@ -10,6 +10,7 @@ import { useAuthStore } from '@/store/auth';
 import { useToastStore } from '@/store/toast';
 import { Logo } from '@/components/Logo';
 import { useGoogleAuth } from '@/hooks/useGoogleAuth';
+import { getApiErrorCode } from '@/utils/getApiError';
 
 export default function RegisterPage() {
   const { t } = useTranslation();
@@ -71,8 +72,12 @@ export default function RegisterPage() {
             }
           },
           onError: (error: any) => {
-            const msg = error?.response?.data?.error?.message;
-            addToast('error', msg || t('toasts.registrationFailed'));
+            const code = getApiErrorCode(error);
+            if (code === 'AUTH_ACCOUNT_EXISTS_GOOGLE') {
+              addToast('error', t('auth.accountExistsGoogle'));
+            } else {
+              addToast('error', t('toasts.registrationFailed'));
+            }
           },
         },
       );
@@ -108,8 +113,8 @@ export default function RegisterPage() {
             }
           },
           onError: (error: any) => {
-            const msg = error?.response?.data?.error?.message;
-            if (msg === 'ACCOUNT_EXISTS_GOOGLE') {
+            const code = getApiErrorCode(error);
+            if (code === 'AUTH_ACCOUNT_EXISTS_GOOGLE') {
               addToast('error', t('auth.accountExistsGoogle'));
             } else {
               addToast('error', t('toasts.registrationFailed'));

@@ -4,7 +4,8 @@ import { createOrder } from '../helpers/mock-factories.js';
 import { NotFoundError, ValidationError } from '../../../src/core/errors/app-error.js';
 import { ORDER_STATUS } from '../../../src/modules/orders/order.types.js';
 
-vi.mock('@mise/shared/src/constants/index.js', () => ({
+vi.mock('@mise/shared/src/constants/index.js', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@mise/shared/src/constants/index.js')>()),
   ORDER_STATUS_FLOW: {
     0: [1],    // received → in_progress
     1: [0, 2], // in_progress → received, ready
