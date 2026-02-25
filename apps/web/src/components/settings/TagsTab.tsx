@@ -90,6 +90,7 @@ export default function TagsTab() {
       <Modal
         open={showModal}
         onClose={() => setShowModal(false)}
+        onConfirm={handleSubmit}
         title={editingTag ? t('settings.tags.edit', 'Edit Tag') : t('settings.tags.add', 'Add Tag')}
         size="sm"
         footer={

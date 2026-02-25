@@ -133,6 +133,7 @@ export default function UnitsTab() {
       <Modal
         open={showModal}
         onClose={() => setShowModal(false)}
+        onConfirm={handleSubmit}
         title={editingUnit ? t('settings.units.edit', 'Edit Unit') : t('settings.units.add', 'Add Unit')}
         size="sm"
         footer={

@@ -11,17 +11,10 @@ import TeamTab from '@/components/settings/TeamTab';
 import LoyaltyTab from '@/components/settings/LoyaltyTab';
 import IntegrationsTab from '@/components/settings/IntegrationsTab';
 import { useAppStore } from '@/store/app';
-import { useAuthStore } from '@/store/auth';
-import { STORE_ROLES } from '@/constants/defaults';
-
 export default function SettingsPage() {
   const { t } = useTranslation();
   const activeTab = useAppStore((s) => s.settingsTab);
   const setActiveTab = useAppStore((s) => s.setSettingsTab);
-  const stores = useAuthStore((s) => s.stores);
-  const isAdmin = useAuthStore((s) => s.isAdmin);
-
-  const isOwner = stores[0]?.role === STORE_ROLES.OWNER || isAdmin;
 
   const tabs = [
     { key: 'account' as const, label: t('settings.tabs.account', 'Account') },
@@ -31,7 +24,7 @@ export default function SettingsPage() {
     { key: 'tags' as const, label: t('settings.tabs.tags', 'Tags') },
     { key: 'notifications' as const, label: t('settings.tabs.notifications', 'Notifications') },
     { key: 'loyalty' as const, label: t('settings.tabs.loyalty', 'Loyalty') },
-    ...(isOwner ? [{ key: 'integrations' as const, label: t('settings.tabs.integrations', 'Integrations') }] : []),
+    { key: 'integrations' as const, label: t('settings.tabs.integrations', 'Integrations') },
   ];
 
   return (
@@ -48,7 +41,7 @@ export default function SettingsPage() {
         {activeTab === 'tags' && <TagsTab />}
         {activeTab === 'notifications' && <NotificationsTab />}
         {activeTab === 'loyalty' && <LoyaltyTab />}
-        {activeTab === 'integrations' && isOwner && <IntegrationsTab />}
+        {activeTab === 'integrations' && <IntegrationsTab />}
       </div>
     </Page>
   );
