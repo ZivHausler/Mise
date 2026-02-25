@@ -153,7 +153,7 @@ export default function CustomerDetailPage() {
         </div>
 
         {activeTab === 'orders' && (
-          <div className="overflow-x-auto">
+          <div>
             <div className="mb-3 mt-1 flex flex-wrap items-end gap-4 px-1">
               <label className="flex flex-col gap-1">
                 <span className="text-body-sm font-semibold text-neutral-700">{t('common.from')}</span>
@@ -192,6 +192,7 @@ export default function CustomerDetailPage() {
                 </button>
               )}
             </div>
+            <div className="overflow-x-auto">
             <table className="w-full text-body-sm">
               <thead>
                 <tr className="border-b bg-neutral-50">
@@ -292,11 +293,12 @@ export default function CustomerDetailPage() {
                 </div>
               </div>
             )}
+            </div>
           </div>
         )}
 
         {activeTab === 'payments' && (
-          <div className="overflow-x-auto">
+          <div>
             <div className="mb-3 mt-1 flex flex-wrap items-end gap-4 px-1">
               <label className="flex flex-col gap-1">
                 <span className="text-body-sm font-semibold text-neutral-700">{t('common.from')}</span>
@@ -333,6 +335,7 @@ export default function CustomerDetailPage() {
                 </button>
               )}
             </div>
+            <div className="overflow-x-auto">
             <table className="w-full text-body-sm">
               <thead>
                 <tr className="border-b bg-neutral-50">
@@ -394,6 +397,7 @@ export default function CustomerDetailPage() {
                 </div>
               </div>
             )}
+            </div>
           </div>
         )}
 
