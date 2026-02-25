@@ -31,10 +31,17 @@ export function DateFilterDropdown({ dateFrom, dateTo, onDateFromChange, onDateT
   const handleToggle = () => {
     if (!open && ref.current) {
       const rect = ref.current.getBoundingClientRect();
-      const spaceRight = window.innerWidth - rect.left;
-      const spaceLeft = rect.right;
-      // Open toward whichever physical side has more room
-      setPanelSide(spaceRight >= panelWidth ? 'left' : spaceLeft >= panelWidth ? 'right' : 'left');
+      const isRtl = document.documentElement.dir === 'rtl';
+      const spaceOnRight = window.innerWidth - rect.left;
+      const spaceOnLeft = rect.right;
+
+      if (isRtl) {
+        // RTL: default open to left (right-0), if no space switch to right (left-0)
+        setPanelSide(spaceOnLeft >= panelWidth ? 'right' : 'left');
+      } else {
+        // LTR: default open to right (left-0), if no space switch to left (right-0)
+        setPanelSide(spaceOnRight >= panelWidth ? 'left' : 'right');
+      }
     }
     setOpen((v) => !v);
   };

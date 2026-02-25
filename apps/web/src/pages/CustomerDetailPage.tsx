@@ -13,6 +13,8 @@ import { useCustomer, useCustomerOrders, useCustomerPayments, useDeleteCustomer,
 import { getStatusLabel, STATUS_LABELS } from '@/utils/orderStatus';
 import { useFormatDate } from '@/utils/dateFormat';
 import { DateFilterDropdown } from '@/components/DateFilterDropdown';
+import { FilterDropdown, FilterOption } from '@/components/FilterDropdown';
+import { PAYMENT_METHODS, PAYMENT_METHOD_I18N } from '@/constants/defaults';
 import AdjustPointsModal from '@/components/loyalty/AdjustPointsModal';
 import RedeemPointsModal from '@/components/loyalty/RedeemPointsModal';
 
@@ -162,16 +164,19 @@ export default function CustomerDetailPage() {
                 onDateFromChange={(v) => { setOrderDateFrom(v); setOrdersPage(1); }}
                 onDateToChange={(v) => { setOrderDateTo(v); setOrdersPage(1); }}
               />
-              <select
-                className="h-9 rounded-md border border-neutral-300 bg-white px-2 text-body-sm text-neutral-700"
-                value={orderStatusFilter ?? ''}
-                onChange={(e) => { setOrderStatusFilter(e.target.value === '' ? undefined : Number(e.target.value)); setOrdersPage(1); }}
+              <FilterDropdown
+                label={t('orders.statusLabel', 'Status')}
+                count={orderStatusFilter !== undefined ? 1 : 0}
               >
-                <option value="">{t('common.allStatuses', 'All statuses')}</option>
+                <FilterOption selected={orderStatusFilter === undefined} onClick={() => { setOrderStatusFilter(undefined); setOrdersPage(1); }}>
+                  {t('common.allStatuses', 'All statuses')}
+                </FilterOption>
                 {STATUS_LABELS.map((label, idx) => (
-                  <option key={idx} value={idx}>{t(`orders.status.${label}`, label)}</option>
+                  <FilterOption key={idx} selected={orderStatusFilter === idx} onClick={() => { setOrderStatusFilter(idx); setOrdersPage(1); }}>
+                    {t(`orders.status.${label}`, label)}
+                  </FilterOption>
                 ))}
-              </select>
+              </FilterDropdown>
               {(orderStatusFilter !== undefined || orderDateFrom || orderDateTo) && (
                 <button
                   onClick={() => { setOrderStatusFilter(undefined); setOrderDateFrom(''); setOrderDateTo(''); setOrdersPage(1); }}
@@ -296,14 +301,19 @@ export default function CustomerDetailPage() {
                 onDateFromChange={(v) => { setPaymentDateFrom(v); setPaymentsPage(1); }}
                 onDateToChange={(v) => { setPaymentDateTo(v); setPaymentsPage(1); }}
               />
-              <select
-                className="h-9 rounded-md border border-neutral-300 bg-white px-2 text-body-sm text-neutral-700"
-                value={paymentMethodFilter ?? ''}
-                onChange={(e) => { setPaymentMethodFilter(e.target.value || undefined); setPaymentsPage(1); }}
+              <FilterDropdown
+                label={t('payments.method', 'Method')}
+                count={paymentMethodFilter ? 1 : 0}
               >
-                <option value="">{t('payments.allMethods', 'All methods')}</option>
-                <option value="cash">{t('payments.cash', 'Cash')}</option>
-              </select>
+                <FilterOption selected={!paymentMethodFilter} onClick={() => { setPaymentMethodFilter(undefined); setPaymentsPage(1); }}>
+                  {t('payments.allMethods', 'All methods')}
+                </FilterOption>
+                {PAYMENT_METHODS.map((m) => (
+                  <FilterOption key={m} selected={paymentMethodFilter === m} onClick={() => { setPaymentMethodFilter(m); setPaymentsPage(1); }}>
+                    {t(`payments.${PAYMENT_METHOD_I18N[m]}`, m)}
+                  </FilterOption>
+                ))}
+              </FilterDropdown>
               {(paymentMethodFilter || paymentDateFrom || paymentDateTo) && (
                 <button
                   onClick={() => { setPaymentMethodFilter(undefined); setPaymentDateFrom(''); setPaymentDateTo(''); setPaymentsPage(1); }}

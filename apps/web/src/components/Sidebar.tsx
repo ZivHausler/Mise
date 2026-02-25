@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useState, useRef, useEffect } from 'react';
 import { Logo } from './Logo';
 import { NavLink } from 'react-router-dom';
 import {
@@ -53,14 +53,13 @@ export function Sidebar() {
 
   // For admins, show all stores in the system; for non-admins, show their stores
   const displayStores = isAdmin && allStoresQuery.data
-    ? allStoresQuery.data.map((s) => ({ storeId: s.id, storeName: s.name, role: -1 }))
+    ? allStoresQuery.data.map((s) => ({ storeId: String(s.id), storeName: s.name, role: -1 }))
     : stores;
 
   const handleToggle = useCallback(() => toggleSidebar(), [toggleSidebar]);
 
   const handleStoreSwitch = useCallback(
-    (e: React.ChangeEvent<HTMLSelectElement>) => {
-      const storeId = e.target.value;
+    (storeId: string) => {
       selectStore.mutate(
         { storeId },
         {
@@ -94,19 +93,12 @@ export function Sidebar() {
 
       <nav className="flex-1 overflow-y-auto py-4">
         {!collapsed && (isAdmin ? displayStores.length > 0 : displayStores.length > 1) && (
-          <div className="relative mb-3 px-3">
-            <select
-              onChange={handleStoreSwitch}
-              value={activeStoreId || displayStores[0]?.storeId || ''}
-              className="w-full appearance-none rounded-md bg-primary-800 px-3 py-2 pe-8 text-body-sm text-white outline-none focus:ring-2 focus:ring-primary-500"
-            >
-              {isAdmin && <option value="" disabled>{t('nav.selectStore', 'Select a store')}</option>}
-              {displayStores.map((s) => (
-                <option key={s.storeId} value={s.storeId}>{isAdmin ? `${s.storeId}  |  ` : ''}{s.storeName}</option>
-              ))}
-            </select>
-            <ChevronDown className="pointer-events-none absolute end-5 top-1/2 h-4 w-4 -translate-y-1/2 text-primary-400" />
-          </div>
+          <StoreDropdown
+            stores={displayStores}
+            activeStoreId={activeStoreId}
+            isAdmin={isAdmin}
+            onSwitch={handleStoreSwitch}
+          />
         )}
         <ul className="flex flex-col gap-1 px-2">
           {navItems.map((item) => {
@@ -196,5 +188,60 @@ export function Sidebar() {
         ))}
       </div>
     </aside>
+  );
+}
+
+function StoreDropdown({ stores, activeStoreId, isAdmin, onSwitch }: {
+  stores: { storeId: string; storeName: string }[];
+  activeStoreId: string | null;
+  isAdmin: boolean;
+  onSwitch: (storeId: string) => void;
+}) {
+  const { t } = useTranslation();
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [open]);
+
+  const activeStore = stores.find((s) => s.storeId === activeStoreId) ?? stores[0];
+  const label = activeStore
+    ? (isAdmin ? `${activeStore.storeId}  |  ${activeStore.storeName}` : activeStore.storeName)
+    : '';
+
+  return (
+    <div ref={ref} className="relative mb-3 px-3">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="flex w-full items-center justify-between rounded-md bg-primary-800 px-3 py-2 text-body-sm text-white outline-none focus:ring-2 focus:ring-primary-500"
+      >
+        <span className="truncate">{label}</span>
+        <ChevronDown className={`h-4 w-4 shrink-0 text-primary-400 transition-transform ${open ? 'rotate-180' : ''}`} />
+      </button>
+      {open && (
+        <div className="absolute start-3 end-3 top-full z-20 mt-1 max-h-60 overflow-y-auto rounded-lg border border-primary-700 bg-primary-800 p-1 shadow-lg">
+          {stores.map((s) => {
+            const selected = s.storeId === activeStoreId;
+            return (
+              <button
+                key={s.storeId}
+                type="button"
+                onClick={() => { onSwitch(s.storeId); setOpen(false); }}
+                className={`flex w-full items-center rounded-md px-3 py-2 text-body-sm transition-colors ${selected ? 'bg-primary-700 text-white' : 'text-primary-200 hover:bg-primary-700 hover:text-white'}`}
+              >
+                {isAdmin ? `${s.storeId}  |  ${s.storeName}` : s.storeName}
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </div>
   );
 }
