@@ -455,7 +455,8 @@
       "allergens": "Allergens",
       "tags": "Tags",
       "notifications": "Notifications",
-      "loyalty": "Loyalty"
+      "loyalty": "Loyalty",
+      "integrations": "Integrations"
     },
     "team": {
       "title": "Team Members",
@@ -528,6 +529,19 @@
       "minRedeemPoints": "Min. Redeem Points",
       "preview": "₪{{purchase}} purchase = {{points}} points = ₪{{value}} on redemption"
     },
+    "integrations": {
+      "title": "Integrations",
+      "whatsapp": {
+        "title": "WhatsApp Business",
+        "description": "Connect your WhatsApp Business number to send order notifications to customers.",
+        "connect": "Connect WhatsApp",
+        "disconnect": "Disconnect",
+        "connected": "Connected",
+        "notConnected": "Not connected",
+        "phoneNumber": "Phone Number",
+        "ownersOnly": "Only store owners can manage integrations."
+      }
+    },
     "notifications": {
       "title": "Notification Preferences",
       "event": "Event",
@@ -536,7 +550,7 @@
       "sms": "SMS",
       "comingSoon": "Coming Soon",
       "addPhone": "Add phone number in Account tab",
-      "smsHint": "Add a phone number in the Account tab to enable SMS notifications.",
+      "smsHint": "Add a phone number in the Account tab to enable SMS and WhatsApp notifications.",
       "whatsapp": "WhatsApp",
       "phoneHint": "Add a phone number in the Account tab to enable SMS and WhatsApp notifications.",
       "orderCreated": "Order Created",
@@ -645,7 +659,11 @@
     "batchesMerged": "Batches merged",
     "batchesMergeFailed": "Failed to merge batches",
     "memberRemoved": "Member removed",
-    "memberRemoveFailed": "Failed to remove member"
+    "memberRemoveFailed": "Failed to remove member",
+    "whatsappConnected": "WhatsApp connected",
+    "whatsappConnectFailed": "Failed to connect WhatsApp",
+    "whatsappDisconnected": "WhatsApp disconnected",
+    "whatsappDisconnectFailed": "Failed to disconnect WhatsApp"
   },
   "store": {
     "setupTitle": "Set up your bakery",
