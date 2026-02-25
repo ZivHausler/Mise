@@ -81,7 +81,7 @@ describe('NotificationDispatcher', () => {
 
   it('should send whatsapp when channelWhatsapp is true and phone exists', async () => {
     vi.mocked(PgNotifPrefsRepository.findByEventType).mockResolvedValue([
-      { userId: 'u1', name: 'User', email: 'u@test.com', phone: '054-1234567', language: 0, channelEmail: false, channelSms: false, channelWhatsapp: true },
+      { userId: 'u1', name: 'User', email: 'u@test.com', phone: '054-1234567', language: 0, channelEmail: false, channelSms: false, channelWhatsapp: true, storeId: 1 },
     ]);
 
     const event: DomainEvent = { eventName: 'order.created', payload: { orderId: 1 }, timestamp: new Date() };
@@ -90,7 +90,7 @@ describe('NotificationDispatcher', () => {
     expect(mockWhatsappNotifier.sendBatch).toHaveBeenCalledOnce();
     expect(mockWhatsappNotifier.sendBatch).toHaveBeenCalledWith(
       [{ userId: 'u1', name: 'User', email: 'u@test.com', phone: '054-1234567', language: 0 }],
-      expect.objectContaining({ eventType: 'order_created' }),
+      expect.objectContaining({ eventType: 'order_created', storeId: 1 }),
     );
     expect(mockEmailNotifier.sendBatch).not.toHaveBeenCalled();
     expect(mockSmsNotifier.sendBatch).not.toHaveBeenCalled();
@@ -122,7 +122,7 @@ describe('NotificationDispatcher', () => {
 
   it('should send all three channels when all are enabled', async () => {
     vi.mocked(PgNotifPrefsRepository.findByEventType).mockResolvedValue([
-      { userId: 'u1', name: 'User', email: 'u@test.com', phone: '054-1234567', language: 0, channelEmail: true, channelSms: true, channelWhatsapp: true },
+      { userId: 'u1', name: 'User', email: 'u@test.com', phone: '054-1234567', language: 0, channelEmail: true, channelSms: true, channelWhatsapp: true, storeId: 1 },
     ]);
 
     const event: DomainEvent = { eventName: 'payment.received', payload: {}, timestamp: new Date() };
@@ -131,6 +131,10 @@ describe('NotificationDispatcher', () => {
     expect(mockEmailNotifier.sendBatch).toHaveBeenCalledOnce();
     expect(mockSmsNotifier.sendBatch).toHaveBeenCalledOnce();
     expect(mockWhatsappNotifier.sendBatch).toHaveBeenCalledOnce();
+    expect(mockWhatsappNotifier.sendBatch).toHaveBeenCalledWith(
+      [{ userId: 'u1', name: 'User', email: 'u@test.com', phone: '054-1234567', language: 0 }],
+      expect.objectContaining({ eventType: 'payment_received', storeId: 1 }),
+    );
   });
 
   it('should log warning for unmapped event names', async () => {
@@ -144,7 +148,7 @@ describe('NotificationDispatcher', () => {
   it('should dispatch to multiple recipients', async () => {
     vi.mocked(PgNotifPrefsRepository.findByEventType).mockResolvedValue([
       { userId: 'u1', name: 'User1', email: 'u1@test.com', phone: null, language: 0, channelEmail: true, channelSms: false, channelWhatsapp: false },
-      { userId: 'u2', name: 'User2', email: 'u2@test.com', phone: '054-0000000', language: 1, channelEmail: true, channelSms: true, channelWhatsapp: true },
+      { userId: 'u2', name: 'User2', email: 'u2@test.com', phone: '054-0000000', language: 1, channelEmail: true, channelSms: true, channelWhatsapp: true, storeId: 1 },
     ]);
 
     const event: DomainEvent = { eventName: 'order.created', payload: {}, timestamp: new Date() };
@@ -166,7 +170,7 @@ describe('NotificationDispatcher', () => {
     expect(mockWhatsappNotifier.sendBatch).toHaveBeenCalledOnce();
     expect(mockWhatsappNotifier.sendBatch).toHaveBeenCalledWith(
       [{ userId: 'u2', name: 'User2', email: 'u2@test.com', phone: '054-0000000', language: 1 }],
-      expect.objectContaining({ eventType: 'order_created' }),
+      expect.objectContaining({ eventType: 'order_created', storeId: 1 }),
     );
   });
 });
