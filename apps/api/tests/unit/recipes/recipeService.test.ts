@@ -26,8 +26,21 @@ vi.mock('../../../src/modules/recipes/recipeCrud.js', () => ({
   },
 }));
 
+vi.mock('../../../src/modules/orders/orderCrud.js', () => ({
+  OrderCrud: {
+    countActiveByRecipe: vi.fn().mockResolvedValue(0),
+  },
+}));
+
 vi.mock('../../../src/modules/shared/unitConversion.js', () => ({
   unitConversionFactor: vi.fn().mockReturnValue(1),
+}));
+
+vi.mock('../../../src/core/storage/gcs.js', () => ({
+  deleteRecipeImages: vi.fn().mockResolvedValue(undefined),
+  movePhotosToRecipe: vi.fn(),
+  deleteImage: vi.fn(),
+  isTempUrl: vi.fn(),
 }));
 
 import { RecipeCrud } from '../../../src/modules/recipes/recipeCrud.js';
