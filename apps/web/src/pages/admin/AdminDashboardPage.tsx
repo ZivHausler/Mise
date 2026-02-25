@@ -6,7 +6,7 @@ import { useAppStore } from '@/store/app';
 
 type Range = 'week' | 'month' | 'year';
 
-const GRAFANA_URL = import.meta.env.VITE_GRAFANA_URL || '/grafana';
+const GRAFANA_URL = import.meta.env['VITE_GRAFANA_URL'] || '/grafana';
 
 const rangeToGrafana: Record<Range, string> = {
   week: 'now-7d',

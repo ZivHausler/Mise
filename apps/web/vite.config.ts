@@ -38,6 +38,7 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff,woff2,ttf}'],
+        navigateFallbackDenylist: [/^\/grafana/, /^\/api/],
         runtimeCaching: [
           {
             urlPattern: /^https?:\/\/.*\/api\/.*/i,
