@@ -773,6 +773,16 @@ export function useAdminDeleteUser() {
   });
 }
 
+export function useAdminResetOnboarding() {
+  const addToast = useToastStore((s) => s.addToast);
+  const { t } = useTranslation();
+  return useMutation({
+    mutationFn: (userId: number) => patchApi(`/admin/users/${userId}/reset-onboarding`, {}),
+    onSuccess: () => { addToast('success', t('toasts.onboardingReset', 'Tour reset successfully')); },
+    onError: (error) => addToast('error', getApiErrorMessage(error, 'toasts.onboardingResetFailed')),
+  });
+}
+
 export function useAdminDeleteStore() {
   const qc = useQueryClient();
   const addToast = useToastStore((s) => s.addToast);
