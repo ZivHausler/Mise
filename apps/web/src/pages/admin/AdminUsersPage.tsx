@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Search, Shield, ShieldOff, Ban, CheckCircle, ChevronLeft, ChevronRight, Trash2 } from 'lucide-react';
-import { useAdminUsers, useAdminToggleAdmin, useAdminToggleDisabled, useAdminDeleteUser } from '@/api/hooks';
+import { Search, Shield, ShieldOff, Ban, CheckCircle, ChevronLeft, ChevronRight, Trash2, RotateCcw } from 'lucide-react';
+import { useAdminUsers, useAdminToggleAdmin, useAdminToggleDisabled, useAdminDeleteUser, useAdminResetOnboarding } from '@/api/hooks';
 import { Button } from '@/components/Button';
 import { ConfirmModal } from '@/components/Modal';
 import { useDebouncedValue } from '@/hooks/useDebouncedValue';
@@ -22,6 +22,7 @@ export default function AdminUsersPage() {
   const toggleAdmin = useAdminToggleAdmin();
   const toggleDisabled = useAdminToggleDisabled();
   const deleteUser = useAdminDeleteUser();
+  const resetOnboarding = useAdminResetOnboarding();
 
   const handleConfirm = () => {
     if (!confirmAction) return;
@@ -147,6 +148,13 @@ export default function AdminUsersPage() {
                           title={user.disabledAt ? t('admin.users.enable') : t('admin.users.disable')}
                         >
                           {user.disabledAt ? <CheckCircle className="w-4 h-4 text-green-600" /> : <Ban className="w-4 h-4 text-red-600" />}
+                        </button>
+                        <button
+                          onClick={() => resetOnboarding.mutate(user.id)}
+                          className="p-1.5 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-700 transition-colors"
+                          title={t('tour.restartTour')}
+                        >
+                          <RotateCcw className="w-4 h-4 text-neutral-600" />
                         </button>
                         <button
                           onClick={() => setConfirmAction({ type: 'delete', userId: user.id, userName: user.name })}

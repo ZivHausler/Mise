@@ -23,6 +23,7 @@ export default async function adminRoutes(app: FastifyInstance) {
   app.patch('/users/:id/admin', adminPreHandler, (req, reply) => controller.toggleAdmin(req, reply));
   app.patch('/users/:id/disabled', adminPreHandler, (req, reply) => controller.toggleDisabled(req, reply));
   app.delete('/users/:id', adminPreHandler, (req, reply) => controller.deleteUser(req, reply));
+  app.patch('/users/:id/reset-onboarding', adminPreHandler, (req, reply) => controller.resetOnboarding(req, reply));
 
   // Stores
   app.get('/stores', adminPreHandler, (req, reply) => controller.getStores(req, reply));
