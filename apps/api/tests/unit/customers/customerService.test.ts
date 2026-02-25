@@ -15,7 +15,14 @@ vi.mock('../../../src/modules/customers/customerCrud.js', () => ({
   },
 }));
 
+vi.mock('../../../src/modules/orders/orderCrud.js', () => ({
+  OrderCrud: {
+    countActiveByCustomer: vi.fn(),
+  },
+}));
+
 import { CustomerCrud } from '../../../src/modules/customers/customerCrud.js';
+import { OrderCrud } from '../../../src/modules/orders/orderCrud.js';
 
 const STORE_ID = 1;
 
@@ -142,6 +149,7 @@ describe('CustomerService', () => {
   describe('delete', () => {
     it('should delete an existing customer', async () => {
       vi.mocked(CustomerCrud.getById).mockResolvedValue(createCustomer());
+      vi.mocked(OrderCrud.countActiveByCustomer).mockResolvedValue(0);
       vi.mocked(CustomerCrud.delete).mockResolvedValue(undefined);
 
       await expect(service.delete(1, STORE_ID)).resolves.toBeUndefined();

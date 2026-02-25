@@ -5,7 +5,7 @@ import { PgStoreRepository } from './store.repository.js';
 import { ForbiddenError, NotFoundError, ValidationError } from '../../core/errors/app-error.js';
 import { env } from '../../config/env.js';
 import { appLogger } from '../../core/logger/logger.js';
-import { Language } from '@mise/shared';
+import { ErrorCode, Language } from '@mise/shared';
 import { sendInviteEmail, buildStoreInviteEmail, buildCreateStoreInviteEmail } from '../notifications/channels/email.js';
 import type { AuthTokenPayload } from '../auth/auth.types.js';
 import { sendInvitationEmail } from '../notifications/channels/email.js';
@@ -17,24 +17,22 @@ export class StoreService {
 
   async createStore(userId: number, email: string, data: CreateStoreDTO, inviteToken?: string): Promise<{ store: Store; token: string }> {
     if (!data.name.trim()) {
-      throw new ValidationError('Store name is required');
+      throw new ValidationError('Store name is required', ErrorCode.STORE_NAME_REQUIRED);
     }
 
-    // Require a create-store invitation token
     if (!inviteToken) {
-      throw new ForbiddenError('A create-store invitation is required');
+      throw new ForbiddenError('A create-store invitation is required', ErrorCode.STORE_CREATE_INVITATION_REQUIRED);
     }
 
     const invitation = await PgStoreRepository.findInvitationByToken(inviteToken);
     if (!invitation || invitation.storeId !== null) {
-      throw new ForbiddenError('Invalid or expired create-store invitation');
+      throw new ForbiddenError('Invalid or expired create-store invitation', ErrorCode.STORE_CREATE_INVITATION_INVALID);
     }
 
     const store = await PgStoreRepository.createStore(data);
     await PgStoreRepository.addUserToStore(userId, store.id, StoreRole.OWNER);
     await PgStoreRepository.markInvitationUsed(inviteToken);
 
-    // Generate new JWT with storeId
     const token = this.generateTokenWithStore(userId, email, store.id, StoreRole.OWNER);
 
     return { store, token };
@@ -46,11 +44,10 @@ export class StoreService {
 
   async selectStore(userId: number, email: string, storeId: number, isAdmin?: boolean): Promise<{ token: string }> {
     if (isAdmin) {
-      // Admins can select any store — verify store exists
       const pool = (await import('../../core/database/postgres.js')).getPool();
       const storeResult = await pool.query('SELECT id FROM stores WHERE id = $1', [storeId]);
       if (!storeResult.rows[0]) {
-        throw new NotFoundError('Store not found');
+        throw new NotFoundError('Store not found', ErrorCode.STORE_NOT_FOUND);
       }
       const token = this.generateTokenWithStore(userId, email, storeId, StoreRole.ADMIN, true);
       return { token };
@@ -58,7 +55,7 @@ export class StoreService {
 
     const role = await PgStoreRepository.getUserStoreRole(userId, storeId);
     if (!role) {
-      throw new ForbiddenError('You do not belong to this store');
+      throw new ForbiddenError('You do not belong to this store', ErrorCode.STORE_NO_ACCESS);
     }
 
     const token = this.generateTokenWithStore(userId, email, storeId, role);
@@ -87,31 +84,31 @@ export class StoreService {
 
   async revokeInvitation(storeId: number, storeRole: StoreRole, invitationId: number, isAdmin?: boolean): Promise<void> {
     if (storeRole !== StoreRole.OWNER && !isAdmin) {
-      throw new ForbiddenError('Only store owners can revoke invitations');
+      throw new ForbiddenError('Only store owners can revoke invitations', ErrorCode.STORE_ONLY_OWNER_CAN_REVOKE);
     }
 
     const revoked = await PgStoreRepository.revokeInvitation(invitationId, storeId);
     if (!revoked) {
-      throw new NotFoundError('Invitation not found or already revoked');
+      throw new NotFoundError('Invitation not found or already revoked', ErrorCode.STORE_INVITE_ALREADY_REVOKED);
     }
   }
 
   async removeMember(storeId: number, storeRole: StoreRole, callerUserId: number, targetUserId: number, isAdmin?: boolean): Promise<void> {
     if (storeRole !== StoreRole.OWNER && !isAdmin) {
-      throw new ForbiddenError('Only store owners can remove members');
+      throw new ForbiddenError('Only store owners can remove members', ErrorCode.STORE_ONLY_OWNER_CAN_REMOVE);
     }
 
     if (callerUserId === targetUserId) {
-      throw new ForbiddenError('You cannot remove yourself');
+      throw new ForbiddenError('You cannot remove yourself', ErrorCode.STORE_CANNOT_REMOVE_SELF);
     }
 
     const targetRole = await PgStoreRepository.getUserStoreRole(targetUserId, storeId);
     if (!targetRole) {
-      throw new NotFoundError('User is not a member of this store');
+      throw new NotFoundError('User is not a member of this store', ErrorCode.STORE_MEMBER_NOT_FOUND);
     }
 
     if (targetRole === StoreRole.OWNER) {
-      throw new ForbiddenError('Cannot remove a store owner');
+      throw new ForbiddenError('Cannot remove a store owner', ErrorCode.STORE_CANNOT_REMOVE_OWNER);
     }
 
     await PgStoreRepository.removeUserFromStore(targetUserId, storeId);
@@ -119,7 +116,7 @@ export class StoreService {
 
   async sendInvite(storeId: number, storeRole: StoreRole, email: string, inviteRole: StoreRole, isAdmin?: boolean): Promise<StoreInvitation & { inviteLink: string }> {
     if (storeRole !== StoreRole.OWNER && !isAdmin) {
-      throw new ForbiddenError('Only store owners can send invitations');
+      throw new ForbiddenError('Only store owners can send invitations', ErrorCode.STORE_ONLY_OWNER_CAN_INVITE);
     }
 
     const invitation = await PgStoreRepository.createInvitation(storeId, email, inviteRole);
@@ -141,7 +138,7 @@ export class StoreService {
   async validateInvite(token: string): Promise<{ storeName: string | null; email: string; role: StoreRole; type: 'join_store' | 'create_store' }> {
     const invitation = await PgStoreRepository.findInvitationByToken(token);
     if (!invitation) {
-      throw new NotFoundError('Invalid or expired invitation');
+      throw new NotFoundError('Invalid or expired invitation', ErrorCode.STORE_INVITE_INVALID);
     }
 
     return {
@@ -155,11 +152,11 @@ export class StoreService {
   async acceptInvite(userId: number, token: string): Promise<{ storeId: number; role: StoreRole }> {
     const invitation = await PgStoreRepository.findInvitationByToken(token);
     if (!invitation) {
-      throw new NotFoundError('Invalid or expired invitation');
+      throw new NotFoundError('Invalid or expired invitation', ErrorCode.STORE_INVITE_INVALID);
     }
 
     if (invitation.storeId === null) {
-      throw new ValidationError('Create-store invitations cannot be accepted this way. Use the store setup flow instead.');
+      throw new ValidationError('Create-store invitations cannot be accepted this way. Use the store setup flow instead.', ErrorCode.STORE_INVITE_WRONG_TYPE);
     }
 
     await PgStoreRepository.addUserToStore(userId, invitation.storeId, invitation.role);

@@ -8,6 +8,7 @@ import type { RecipeService } from '../recipes/recipe.service.js';
 import type { InventoryService } from '../inventory/inventory.service.js';
 import { OrderCrud } from '../orders/orderCrud.js';
 import { ORDER_STATUS } from '../orders/order.types.js';
+import { ErrorCode } from '@mise/shared';
 
 export class ProductionService {
   constructor(
@@ -21,7 +22,7 @@ export class ProductionService {
 
   async getBatchById(storeId: number, id: number): Promise<ProductionBatch> {
     const batch = await ProductionCrud.findById(storeId, id);
-    if (!batch) throw new NotFoundError('Production batch not found');
+    if (!batch) throw new NotFoundError('Production batch not found', ErrorCode.BATCH_NOT_FOUND);
     return batch;
   }
 
@@ -132,7 +133,7 @@ export class ProductionService {
 
   async updateStage(storeId: number, id: number, stage: ProductionStage): Promise<ProductionBatch> {
     const existing = await ProductionCrud.findById(storeId, id);
-    if (!existing) throw new NotFoundError('Production batch not found');
+    if (!existing) throw new NotFoundError('Production batch not found', ErrorCode.BATCH_NOT_FOUND);
 
     const batch = await ProductionCrud.updateStage(storeId, id, stage);
 
@@ -155,22 +156,22 @@ export class ProductionService {
 
   async updateBatch(storeId: number, id: number, data: UpdateBatchDTO): Promise<ProductionBatch> {
     const existing = await ProductionCrud.findById(storeId, id);
-    if (!existing) throw new NotFoundError('Production batch not found');
+    if (!existing) throw new NotFoundError('Production batch not found', ErrorCode.BATCH_NOT_FOUND);
     return ProductionCrud.update(storeId, id, data);
   }
 
   async deleteBatch(storeId: number, id: number): Promise<void> {
     const existing = await ProductionCrud.findById(storeId, id);
-    if (!existing) throw new NotFoundError('Production batch not found');
+    if (!existing) throw new NotFoundError('Production batch not found', ErrorCode.BATCH_NOT_FOUND);
     return ProductionCrud.delete(storeId, id);
   }
 
   async splitBatch(storeId: number, id: number, splitQuantity: number): Promise<{ original: ProductionBatch; newBatch: ProductionBatch }> {
     const existing = await ProductionCrud.findById(storeId, id);
-    if (!existing) throw new NotFoundError('Production batch not found');
+    if (!existing) throw new NotFoundError('Production batch not found', ErrorCode.BATCH_NOT_FOUND);
 
     if (splitQuantity >= existing.quantity) {
-      throw new ValidationError('Split quantity must be less than current batch quantity');
+      throw new ValidationError('Split quantity must be less than current batch quantity', ErrorCode.BATCH_SPLIT_QUANTITY_TOO_HIGH);
     }
 
     // Reduce original batch
@@ -203,7 +204,7 @@ export class ProductionService {
     const batches: ProductionBatch[] = [];
     for (const bId of batchIds) {
       const b = await ProductionCrud.findById(storeId, bId);
-      if (!b) throw new NotFoundError(`Production batch ${bId} not found`);
+      if (!b) throw new NotFoundError(`Production batch ${bId} not found`, ErrorCode.BATCH_NOT_FOUND);
       batches.push(b);
     }
 
@@ -213,7 +214,7 @@ export class ProductionService {
     const productionDate = first.productionDate;
     for (const b of batches) {
       if (b.recipeId !== recipeId || b.productionDate !== productionDate) {
-        throw new ValidationError('Can only merge batches with the same recipe and production date');
+        throw new ValidationError('Can only merge batches with the same recipe and production date', ErrorCode.BATCH_MERGE_MISMATCH);
       }
     }
 
@@ -269,7 +270,7 @@ export class ProductionService {
 
   async togglePrepItem(storeId: number, id: number, isPrepped: boolean) {
     const existing = await ProductionCrud.getPrepItemById(storeId, id);
-    if (!existing) throw new NotFoundError('Prep item not found');
+    if (!existing) throw new NotFoundError('Prep item not found', ErrorCode.PREP_ITEM_NOT_FOUND);
     return ProductionCrud.togglePrepItem(storeId, id, isPrepped);
   }
 

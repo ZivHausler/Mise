@@ -23,7 +23,14 @@ vi.mock('../../../src/modules/inventory/use-cases/adjustStock.js', () => ({
   },
 }));
 
+vi.mock('../../../src/modules/recipes/recipeCrud.js', () => ({
+  RecipeCrud: {
+    countByIngredient: vi.fn(),
+  },
+}));
+
 import { InventoryCrud } from '../../../src/modules/inventory/inventoryCrud.js';
+import { RecipeCrud } from '../../../src/modules/recipes/recipeCrud.js';
 
 const STORE_ID = 1;
 
@@ -100,6 +107,7 @@ describe('InventoryService - extended', () => {
   describe('delete', () => {
     it('should delete an existing ingredient', async () => {
       vi.mocked(InventoryCrud.getById).mockResolvedValue(createIngredient());
+      vi.mocked(RecipeCrud.countByIngredient).mockResolvedValue(0);
       vi.mocked(InventoryCrud.delete).mockResolvedValue(undefined);
 
       await expect(service.delete(STORE_ID, 1)).resolves.toBeUndefined();

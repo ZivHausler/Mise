@@ -2,6 +2,7 @@ import type { FastifyError, FastifyReply, FastifyRequest } from 'fastify';
 
 import { AppError } from './app-error.js';
 import { env } from '../../config/env.js';
+import { ErrorCode } from '@mise/shared';
 
 export function globalErrorHandler(
   error: FastifyError | AppError | Error,
@@ -33,7 +34,7 @@ export function globalErrorHandler(
     return reply.status(400).send({
       success: false,
       error: {
-        code: 'VALIDATION_ERROR',
+        code: ErrorCode.VALIDATION_ERROR,
         message: error.message,
       },
       requestId,
@@ -45,7 +46,7 @@ export function globalErrorHandler(
     return reply.status(429).send({
       success: false,
       error: {
-        code: 'RATE_LIMIT_EXCEEDED',
+        code: ErrorCode.RATE_LIMIT_EXCEEDED,
         message: 'Too many requests. Please try again later.',
       },
       requestId,
@@ -57,7 +58,7 @@ export function globalErrorHandler(
   return reply.status(500).send({
     success: false,
     error: {
-      code: 'INTERNAL_ERROR',
+      code: ErrorCode.INTERNAL_ERROR,
       message: 'An unexpected error occurred',
       // Only include stack trace in development for debugging
       ...(isProduction ? {} : { detail: error.message }),

@@ -6,6 +6,7 @@ import type { PaginatedResult } from '../../core/types/pagination.js';
 import { sendInvitationEmail } from '../notifications/channels/email.js';
 import { env } from '../../config/env.js';
 import { appLogger } from '../../core/logger/logger.js';
+import { ErrorCode } from '@mise/shared';
 
 export class AdminService {
   constructor(private app: FastifyInstance) {}
@@ -16,36 +17,36 @@ export class AdminService {
 
   async toggleAdmin(currentUserId: number, targetUserId: number, isAdmin: boolean): Promise<void> {
     if (currentUserId === targetUserId) {
-      throw new ForbiddenError('Cannot change your own admin status');
+      throw new ForbiddenError('Cannot change your own admin status', ErrorCode.ADMIN_CANNOT_CHANGE_OWN_STATUS);
     }
     const user = await PgAdminRepository.findUserById(targetUserId);
-    if (!user) throw new NotFoundError('User not found');
+    if (!user) throw new NotFoundError('User not found', ErrorCode.USER_NOT_FOUND);
     if (user.isAdmin) {
-      throw new ForbiddenError('Cannot modify admin status of another admin');
+      throw new ForbiddenError('Cannot modify admin status of another admin', ErrorCode.ADMIN_CANNOT_MODIFY_ADMIN);
     }
     await PgAdminRepository.toggleAdmin(targetUserId, isAdmin);
   }
 
   async toggleDisabled(currentUserId: number, targetUserId: number, disabled: boolean): Promise<void> {
     if (currentUserId === targetUserId) {
-      throw new ForbiddenError('Cannot disable your own account');
+      throw new ForbiddenError('Cannot disable your own account', ErrorCode.ADMIN_CANNOT_DISABLE_SELF);
     }
     const user = await PgAdminRepository.findUserById(targetUserId);
-    if (!user) throw new NotFoundError('User not found');
+    if (!user) throw new NotFoundError('User not found', ErrorCode.USER_NOT_FOUND);
     if (user.isAdmin) {
-      throw new ForbiddenError('Cannot disable another admin');
+      throw new ForbiddenError('Cannot disable another admin', ErrorCode.ADMIN_CANNOT_DISABLE_ADMIN);
     }
     await PgAdminRepository.toggleDisabled(targetUserId, disabled);
   }
 
   async deleteUser(currentUserId: number, targetUserId: number): Promise<void> {
     if (currentUserId === targetUserId) {
-      throw new ForbiddenError('Cannot delete your own account');
+      throw new ForbiddenError('Cannot delete your own account', ErrorCode.ADMIN_CANNOT_DELETE_SELF);
     }
     const user = await PgAdminRepository.findUserById(targetUserId);
-    if (!user) throw new NotFoundError('User not found');
+    if (!user) throw new NotFoundError('User not found', ErrorCode.USER_NOT_FOUND);
     if (user.isAdmin) {
-      throw new ForbiddenError('Cannot delete an admin user');
+      throw new ForbiddenError('Cannot delete an admin user', ErrorCode.ADMIN_CANNOT_DELETE_ADMIN);
     }
     await PgAdminRepository.deleteUser(targetUserId);
   }
@@ -53,7 +54,7 @@ export class AdminService {
   async deleteStore(storeId: number): Promise<void> {
     const pool = (await import('../../core/database/postgres.js')).getPool();
     const result = await pool.query('SELECT id FROM stores WHERE id = $1', [storeId]);
-    if (!result.rows[0]) throw new NotFoundError('Store not found');
+    if (!result.rows[0]) throw new NotFoundError('Store not found', ErrorCode.STORE_NOT_FOUND);
     await PgAdminRepository.deleteStore(storeId);
   }
 
@@ -67,7 +68,7 @@ export class AdminService {
 
   async updateStore(storeId: number, data: { name?: string; address?: string }): Promise<void> {
     if (!data.name && !data.address) {
-      throw new ValidationError('At least one field must be provided');
+      throw new ValidationError('At least one field must be provided', ErrorCode.ADMIN_FIELD_REQUIRED);
     }
     await PgAdminRepository.updateStore(storeId, data);
   }
@@ -78,7 +79,7 @@ export class AdminService {
     filters: { status?: string; search?: string; storeId?: number; userId?: number; email?: string; role?: string; dateFrom?: string; dateTo?: string },
   ): Promise<PaginatedResult<AdminInvitation>> {
     if (filters.status && !['pending', 'used', 'expired', 'revoked'].includes(filters.status)) {
-      throw new ValidationError('Invalid status filter');
+      throw new ValidationError('Invalid status filter', ErrorCode.ADMIN_INVALID_STATUS_FILTER);
     }
     return PgAdminRepository.getInvitations(page, limit, filters);
   }
@@ -89,11 +90,10 @@ export class AdminService {
 
   async createStoreInvitation(email: string): Promise<AdminInvitation> {
     if (!email || !email.includes('@')) {
-      throw new ValidationError('Valid email is required');
+      throw new ValidationError('Valid email is required', ErrorCode.ADMIN_EMAIL_REQUIRED);
     }
     const invitation = await PgAdminRepository.createCreateStoreInvitation(email);
 
-    // Fire-and-forget: send invitation email
     const inviteLink = `${env.FRONTEND_URL}/invite/${invitation.token}`;
     sendInvitationEmail({
       to: email,
@@ -106,9 +106,9 @@ export class AdminService {
 
   async revokeInvitation(invitationId: number): Promise<void> {
     const invitation = await PgAdminRepository.findInvitationById(invitationId);
-    if (!invitation) throw new NotFoundError('Invitation not found');
-    if (invitation.usedAt) throw new ValidationError('Cannot revoke a used invitation');
-    if (invitation.revokedAt) throw new ValidationError('Invitation already revoked');
+    if (!invitation) throw new NotFoundError('Invitation not found', ErrorCode.ADMIN_INVITE_NOT_FOUND);
+    if (invitation.usedAt) throw new ValidationError('Cannot revoke a used invitation', ErrorCode.ADMIN_INVITE_USED);
+    if (invitation.revokedAt) throw new ValidationError('Invitation already revoked', ErrorCode.ADMIN_INVITE_ALREADY_REVOKED);
     await PgAdminRepository.revokeInvitation(invitationId);
   }
 

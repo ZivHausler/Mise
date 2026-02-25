@@ -6,8 +6,9 @@ import { PAYMENT_STATUS } from './payment.types.js';
 import { PaymentCrud } from './paymentCrud.js';
 import { GetPaymentSummaryUseCase } from './use-cases/getPaymentSummary.js';
 import type { OrderService } from '../orders/order.service.js';
-import { NotFoundError } from '../../core/errors/app-error.js';
+import { ConflictError, NotFoundError } from '../../core/errors/app-error.js';
 import { CustomerCrud } from '../customers/customerCrud.js';
+import { ErrorCode } from '@mise/shared';
 
 export class PaymentService {
   private getPaymentSummaryUseCase = new GetPaymentSummaryUseCase();
@@ -89,8 +90,8 @@ export class PaymentService {
 
   async refund(storeId: number, id: number, correlationId?: string): Promise<Payment> {
     const payment = await PaymentCrud.getById(storeId, id);
-    if (!payment) throw new NotFoundError('Payment not found');
-    if (payment.status === 'refunded') throw new NotFoundError('Payment already refunded');
+    if (!payment) throw new NotFoundError('Payment not found', ErrorCode.PAYMENT_NOT_FOUND);
+    if (payment.status === 'refunded') throw new ConflictError('Payment already refunded', ErrorCode.PAYMENT_ALREADY_REFUNDED);
 
     const refunded = await PaymentCrud.refund(storeId, id);
 
@@ -106,7 +107,7 @@ export class PaymentService {
 
   async delete(storeId: number, id: number): Promise<void> {
     const payment = await PaymentCrud.getById(storeId, id);
-    if (!payment) throw new NotFoundError('Payment not found');
+    if (!payment) throw new NotFoundError('Payment not found', ErrorCode.PAYMENT_NOT_FOUND);
     return PaymentCrud.delete(storeId, id);
   }
 }

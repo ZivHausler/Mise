@@ -12,6 +12,7 @@ import { PgStoreRepository } from '../stores/store.repository.js';
 import { StoreRole, type StoreInvitation } from '../stores/store.types.js';
 import { ForbiddenError } from '../../core/errors/app-error.js';
 import { env } from '../../config/env.js';
+import { ErrorCode } from '@mise/shared';
 import { blacklistToken } from '../../core/auth/token-blacklist.js';
 
 export class AuthService {
@@ -81,7 +82,7 @@ export class AuthService {
 
     // Validate after Google auth since the email comes from the token
     if (invitation.email.toLowerCase() !== user.email.toLowerCase()) {
-      throw new ForbiddenError('Email does not match the invitation');
+      throw new ForbiddenError('Email does not match the invitation', ErrorCode.AUTH_INVITATION_EMAIL_MISMATCH);
     }
 
     // Join-store invite: add user to store immediately
@@ -181,16 +182,16 @@ export class AuthService {
 
   private async validateInvitation(inviteToken: string | undefined, email?: string): Promise<{ invitation: StoreInvitation; token: string }> {
     if (!inviteToken) {
-      throw new ForbiddenError('Registration requires an invitation');
+      throw new ForbiddenError('Registration requires an invitation', ErrorCode.AUTH_INVITATION_REQUIRED);
     }
 
     const invitation = await PgStoreRepository.findInvitationByToken(inviteToken);
     if (!invitation) {
-      throw new ForbiddenError('Invalid or expired invitation');
+      throw new ForbiddenError('Invalid or expired invitation', ErrorCode.AUTH_INVITATION_INVALID);
     }
 
     if (email && invitation.email.toLowerCase() !== email.toLowerCase()) {
-      throw new ForbiddenError('Email does not match the invitation');
+      throw new ForbiddenError('Email does not match the invitation', ErrorCode.AUTH_INVITATION_EMAIL_MISMATCH);
     }
 
     return { invitation, token: inviteToken };

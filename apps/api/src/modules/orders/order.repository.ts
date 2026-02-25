@@ -228,6 +228,24 @@ export class PgOrderRepository {
     };
   }
 
+  static async countActiveByCustomer(storeId: number, customerId: number): Promise<number> {
+    const pool = getPool();
+    const result = await pool.query(
+      `SELECT COUNT(*)::int AS count FROM orders WHERE store_id = $1 AND customer_id = $2 AND status != 3`,
+      [storeId, customerId],
+    );
+    return result.rows[0]?.count ?? 0;
+  }
+
+  static async countActiveByRecipe(storeId: number, recipeId: string): Promise<number> {
+    const pool = getPool();
+    const result = await pool.query(
+      `SELECT COUNT(*)::int AS count FROM orders WHERE store_id = $1 AND status != 3 AND items::jsonb @> $2::jsonb`,
+      [storeId, JSON.stringify([{ recipeId }])],
+    );
+    return result.rows[0]?.count ?? 0;
+  }
+
   private static mapRow(row: Record<string, unknown>): Order {
     let items: OrderItem[] = [];
     const rawItems = row['items'];

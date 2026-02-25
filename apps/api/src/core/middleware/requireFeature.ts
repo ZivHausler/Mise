@@ -1,6 +1,7 @@
 import type { FastifyRequest, FastifyReply } from 'fastify';
 import { env } from '../../config/env.js';
 import { ForbiddenError } from '../errors/app-error.js';
+import { ErrorCode } from '@mise/shared';
 
 type FeatureFlag = 'production';
 
@@ -19,7 +20,7 @@ export function requireFeature(flag: FeatureFlag) {
     if (request.currentUser?.isAdmin) return;
     const storeId = request.currentUser?.storeId;
     if (!storeId || !isEnabled(featureFlagEnvMap[flag], storeId)) {
-      throw new ForbiddenError('This feature is not available for your store', 'FEATURE_DISABLED');
+      throw new ForbiddenError('This feature is not available for your store', ErrorCode.FEATURE_DISABLED);
     }
   };
 }
