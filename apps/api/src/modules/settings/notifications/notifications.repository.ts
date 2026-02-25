@@ -1,7 +1,7 @@
 import type { NotificationPreference } from '../settings.types.js';
 import { getPool } from '../../../core/database/postgres.js';
 
-export type NotificationRecipientRow = NotificationPreference & { email: string; name: string; phone?: string; language: number };
+export type NotificationRecipientRow = NotificationPreference & { email: string; name: string; phone?: string; language: number; storeId?: number };
 
 export class PgNotifPrefsRepository {
   static async findAll(userId: number): Promise<NotificationPreference[]> {
@@ -33,9 +33,10 @@ export class PgNotifPrefsRepository {
     const pool = getPool();
     const result = await pool.query(
       `SELECT np.id, np.user_id, np.event_type, np.channel_email, np.channel_push, np.channel_sms, np.channel_whatsapp,
-              np.created_at, np.updated_at, u.email, u.name, u.phone, u.language
+              np.created_at, np.updated_at, u.email, u.name, u.phone, u.language, us.store_id
        FROM notification_preferences np
        JOIN users u ON u.id = np.user_id
+       LEFT JOIN users_stores us ON us.user_id = np.user_id
        WHERE np.event_type = $1
          AND (np.channel_email = true OR np.channel_sms = true OR np.channel_whatsapp = true)`,
       [eventType],
@@ -46,6 +47,7 @@ export class PgNotifPrefsRepository {
       name: row['name'] as string,
       phone: (row['phone'] as string) ?? undefined,
       language: Number(row['language'] ?? 0),
+      storeId: row['store_id'] != null ? Number(row['store_id']) : undefined,
     }));
   }
 

@@ -1163,3 +1163,33 @@ export function useUpdateNotificationPreferences() {
     onError: (error) => addToast('error', getApiErrorMessage(error, 'toasts.notificationsUpdateFailed')),
   });
 }
+
+// Settings — WhatsApp
+export function useWhatsAppConfig() {
+  return useQuery({
+    queryKey: ['whatsappConfig'],
+    queryFn: () => fetchApi<{ connected: boolean; phoneNumberId: string; businessAccountId: string; createdAt: string } | null>('/settings/whatsapp'),
+  });
+}
+
+export function useConnectWhatsApp() {
+  const qc = useQueryClient();
+  const addToast = useToastStore((s) => s.addToast);
+  const { t } = useTranslation();
+  return useMutation({
+    mutationFn: (body: { code: string; phoneNumberId: string; wabaId: string }) => postApi('/settings/whatsapp/connect', body),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['whatsappConfig'] }); addToast('success', t('toasts.whatsappConnected', 'WhatsApp connected')); },
+    onError: () => addToast('error', t('toasts.whatsappConnectFailed', 'Failed to connect WhatsApp')),
+  });
+}
+
+export function useDisconnectWhatsApp() {
+  const qc = useQueryClient();
+  const addToast = useToastStore((s) => s.addToast);
+  const { t } = useTranslation();
+  return useMutation({
+    mutationFn: () => deleteApi('/settings/whatsapp'),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['whatsappConfig'] }); addToast('success', t('toasts.whatsappDisconnected', 'WhatsApp disconnected')); },
+    onError: () => addToast('error', t('toasts.whatsappDisconnectFailed', 'Failed to disconnect WhatsApp')),
+  });
+}

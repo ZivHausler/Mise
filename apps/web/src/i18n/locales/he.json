@@ -455,7 +455,8 @@
       "allergens": "אלרגנים",
       "tags": "תגיות",
       "notifications": "התראות",
-      "loyalty": "צבירת נקודות"
+      "loyalty": "צבירת נקודות",
+      "integrations": "אינטגרציות"
     },
     "team": {
       "title": "חברי צוות",
@@ -528,6 +529,19 @@
       "minRedeemPoints": "מינימום נקודות למימוש",
       "preview": "רכישה של ₪{{purchase}} = {{points}} נקודות = ₪{{value}} בעת מימוש"
     },
+    "integrations": {
+      "title": "אינטגרציות",
+      "whatsapp": {
+        "title": "WhatsApp Business",
+        "description": "חבר את מספר WhatsApp Business שלך כדי לשלוח התראות הזמנות ללקוחות.",
+        "connect": "חבר WhatsApp",
+        "disconnect": "נתק",
+        "connected": "מחובר",
+        "notConnected": "לא מחובר",
+        "phoneNumber": "מספר טלפון",
+        "ownersOnly": "רק בעלי חנויות יכולים לנהל אינטגרציות."
+      }
+    },
     "notifications": {
       "title": "העדפות התראות",
       "event": "אירוע",
@@ -536,7 +550,7 @@
       "sms": "SMS",
       "comingSoon": "בקרוב",
       "addPhone": "הוסף מספר טלפון בלשונית חשבון",
-      "smsHint": "הוסף מספר טלפון בלשונית חשבון כדי לאפשר התראות SMS.",
+      "smsHint": "הוסף מספר טלפון בלשונית חשבון כדי לאפשר התראות SMS ו-WhatsApp.",
       "whatsapp": "וואטסאפ",
       "phoneHint": "הוסף מספר טלפון בלשונית חשבון כדי לאפשר התראות SMS ו-WhatsApp.",
       "orderCreated": "הזמנה נוצרה",
@@ -645,7 +659,11 @@
     "batchesMerged": "מקבצים מוזגו",
     "batchesMergeFailed": "מיזוג מקבצים נכשל",
     "memberRemoved": "החבר הוסר",
-    "memberRemoveFailed": "הסרת החבר נכשלה"
+    "memberRemoveFailed": "הסרת החבר נכשלה",
+    "whatsappConnected": "WhatsApp חובר בהצלחה",
+    "whatsappConnectFailed": "חיבור WhatsApp נכשל",
+    "whatsappDisconnected": "WhatsApp נותק",
+    "whatsappDisconnectFailed": "ניתוק WhatsApp נכשל"
   },
   "store": {
     "setupTitle": "הקם את המאפייה שלך",

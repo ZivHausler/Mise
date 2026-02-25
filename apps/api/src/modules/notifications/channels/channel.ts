@@ -10,6 +10,7 @@ export interface NotificationContext {
   eventType: string;
   eventName: string;
   payload: Record<string, unknown>;
+  storeId?: number;
 }
 
 export interface NotificationChannel {
