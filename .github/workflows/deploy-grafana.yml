@@ -56,7 +56,7 @@ jobs:
             --max-instances=1
             --port=8080
           env_vars: |
-            GF_SERVER_ROOT_URL=https://mise-prod-app.web.app/grafana
+            GF_SERVER_ROOT_URL=https://app.mise-en-place.shop/grafana
             GF_DS_URL=127.0.0.1:5432
             GF_DS_DATABASE=mise
             GF_DS_USER=mise
