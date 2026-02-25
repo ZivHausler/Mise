@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Edit, Trash2, ChevronLeft, ChevronRight, ChevronUp, ChevronDown } from 'lucide-react';
+import { Edit, Trash2, ChevronLeft, ChevronRight, ChevronUp, ChevronDown, X } from 'lucide-react';
 import { Page, Card, Section, Stack, Row } from '@/components/Layout';
 import { Breadcrumbs } from '@/components/Breadcrumbs';
 import { Button } from '@/components/Button';
@@ -12,6 +12,9 @@ import { ConfirmModal } from '@/components/Modal';
 import { useCustomer, useCustomerOrders, useCustomerPayments, useDeleteCustomer, useUpdateCustomer, useCustomerLoyalty, useCustomerLoyaltyTransactions, useLoyaltyConfig } from '@/api/hooks';
 import { getStatusLabel, STATUS_LABELS } from '@/utils/orderStatus';
 import { useFormatDate } from '@/utils/dateFormat';
+import { DateFilterDropdown } from '@/components/DateFilterDropdown';
+import { FilterDropdown, FilterOption } from '@/components/FilterDropdown';
+import { PAYMENT_METHODS, PAYMENT_METHOD_I18N } from '@/constants/defaults';
 import AdjustPointsModal from '@/components/loyalty/AdjustPointsModal';
 import RedeemPointsModal from '@/components/loyalty/RedeemPointsModal';
 
@@ -153,45 +156,38 @@ export default function CustomerDetailPage() {
         </div>
 
         {activeTab === 'orders' && (
-          <div className="overflow-x-auto">
-            <div className="mb-3 mt-1 flex flex-wrap items-end gap-4 px-1">
-              <label className="flex flex-col gap-1">
-                <span className="text-body-sm font-semibold text-neutral-700">{t('common.from')}</span>
-                <input
-                  type="date"
-                  className="h-9 rounded-md border border-neutral-300 bg-white px-2 text-body-sm text-neutral-700"
-                  value={orderDateFrom}
-                  onChange={(e) => { setOrderDateFrom(e.target.value); setOrdersPage(1); }}
-                />
-              </label>
-              <label className="flex flex-col gap-1">
-                <span className="text-body-sm font-semibold text-neutral-700">{t('common.to')}</span>
-                <input
-                  type="date"
-                  className="h-9 rounded-md border border-neutral-300 bg-white px-2 text-body-sm text-neutral-700"
-                  value={orderDateTo}
-                  onChange={(e) => { setOrderDateTo(e.target.value); setOrdersPage(1); }}
-                />
-              </label>
-              <select
-                className="h-9 rounded-md border border-neutral-300 bg-white px-2 text-body-sm text-neutral-700"
-                value={orderStatusFilter ?? ''}
-                onChange={(e) => { setOrderStatusFilter(e.target.value === '' ? undefined : Number(e.target.value)); setOrdersPage(1); }}
+          <div>
+            <div className="mb-3 mt-1 flex flex-wrap items-center gap-2 px-1">
+              <DateFilterDropdown
+                dateFrom={orderDateFrom}
+                dateTo={orderDateTo}
+                onDateFromChange={(v) => { setOrderDateFrom(v); setOrdersPage(1); }}
+                onDateToChange={(v) => { setOrderDateTo(v); setOrdersPage(1); }}
+              />
+              <FilterDropdown
+                label={t('orders.statusLabel', 'Status')}
+                count={orderStatusFilter !== undefined ? 1 : 0}
               >
-                <option value="">{t('common.allStatuses', 'All statuses')}</option>
+                <FilterOption selected={orderStatusFilter === undefined} onClick={() => { setOrderStatusFilter(undefined); setOrdersPage(1); }}>
+                  {t('common.allStatuses', 'All statuses')}
+                </FilterOption>
                 {STATUS_LABELS.map((label, idx) => (
-                  <option key={idx} value={idx}>{t(`orders.status.${label}`, label)}</option>
+                  <FilterOption key={idx} selected={orderStatusFilter === idx} onClick={() => { setOrderStatusFilter(idx); setOrdersPage(1); }}>
+                    {t(`orders.status.${label}`, label)}
+                  </FilterOption>
                 ))}
-              </select>
+              </FilterDropdown>
               {(orderStatusFilter !== undefined || orderDateFrom || orderDateTo) && (
                 <button
-                  className="text-body-sm text-primary-600 hover:text-primary-700"
                   onClick={() => { setOrderStatusFilter(undefined); setOrderDateFrom(''); setOrderDateTo(''); setOrdersPage(1); }}
+                  className="inline-flex items-center gap-1 text-body-sm text-neutral-500 hover:text-neutral-700"
                 >
+                  <X className="h-3.5 w-3.5" />
                   {t('common.clearFilters', 'Clear')}
                 </button>
               )}
             </div>
+            <div className="overflow-x-auto">
             <table className="w-full text-body-sm">
               <thead>
                 <tr className="border-b bg-neutral-50">
@@ -292,47 +288,43 @@ export default function CustomerDetailPage() {
                 </div>
               </div>
             )}
+            </div>
           </div>
         )}
 
         {activeTab === 'payments' && (
-          <div className="overflow-x-auto">
-            <div className="mb-3 mt-1 flex flex-wrap items-end gap-4 px-1">
-              <label className="flex flex-col gap-1">
-                <span className="text-body-sm font-semibold text-neutral-700">{t('common.from')}</span>
-                <input
-                  type="date"
-                  className="h-9 rounded-md border border-neutral-300 bg-white px-2 text-body-sm text-neutral-700"
-                  value={paymentDateFrom}
-                  onChange={(e) => { setPaymentDateFrom(e.target.value); setPaymentsPage(1); }}
-                />
-              </label>
-              <label className="flex flex-col gap-1">
-                <span className="text-body-sm font-semibold text-neutral-700">{t('common.to')}</span>
-                <input
-                  type="date"
-                  className="h-9 rounded-md border border-neutral-300 bg-white px-2 text-body-sm text-neutral-700"
-                  value={paymentDateTo}
-                  onChange={(e) => { setPaymentDateTo(e.target.value); setPaymentsPage(1); }}
-                />
-              </label>
-              <select
-                className="h-9 rounded-md border border-neutral-300 bg-white px-2 text-body-sm text-neutral-700"
-                value={paymentMethodFilter ?? ''}
-                onChange={(e) => { setPaymentMethodFilter(e.target.value || undefined); setPaymentsPage(1); }}
+          <div>
+            <div className="mb-3 mt-1 flex flex-wrap items-center gap-2 px-1">
+              <DateFilterDropdown
+                dateFrom={paymentDateFrom}
+                dateTo={paymentDateTo}
+                onDateFromChange={(v) => { setPaymentDateFrom(v); setPaymentsPage(1); }}
+                onDateToChange={(v) => { setPaymentDateTo(v); setPaymentsPage(1); }}
+              />
+              <FilterDropdown
+                label={t('payments.method', 'Method')}
+                count={paymentMethodFilter ? 1 : 0}
               >
-                <option value="">{t('payments.allMethods', 'All methods')}</option>
-                <option value="cash">{t('payments.cash', 'Cash')}</option>
-              </select>
+                <FilterOption selected={!paymentMethodFilter} onClick={() => { setPaymentMethodFilter(undefined); setPaymentsPage(1); }}>
+                  {t('payments.allMethods', 'All methods')}
+                </FilterOption>
+                {PAYMENT_METHODS.map((m) => (
+                  <FilterOption key={m} selected={paymentMethodFilter === m} onClick={() => { setPaymentMethodFilter(m); setPaymentsPage(1); }}>
+                    {t(`payments.${PAYMENT_METHOD_I18N[m]}`, m)}
+                  </FilterOption>
+                ))}
+              </FilterDropdown>
               {(paymentMethodFilter || paymentDateFrom || paymentDateTo) && (
                 <button
-                  className="text-body-sm text-primary-600 hover:text-primary-700"
                   onClick={() => { setPaymentMethodFilter(undefined); setPaymentDateFrom(''); setPaymentDateTo(''); setPaymentsPage(1); }}
+                  className="inline-flex items-center gap-1 text-body-sm text-neutral-500 hover:text-neutral-700"
                 >
+                  <X className="h-3.5 w-3.5" />
                   {t('common.clearFilters', 'Clear')}
                 </button>
               )}
             </div>
+            <div className="overflow-x-auto">
             <table className="w-full text-body-sm">
               <thead>
                 <tr className="border-b bg-neutral-50">
@@ -394,6 +386,7 @@ export default function CustomerDetailPage() {
                 </div>
               </div>
             )}
+            </div>
           </div>
         )}
 

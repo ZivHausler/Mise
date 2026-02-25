@@ -4,7 +4,6 @@ import { useTranslation } from 'react-i18next';
 import { Users, CreditCard, Settings, Factory, ChevronRight, Sparkles } from 'lucide-react';
 import { Page, PageHeader } from '@/components/Layout';
 import { useFeatureFlags } from '@/api/hooks';
-import { useAuthStore } from '@/store/auth';
 
 const moreItems = [
   { path: '/customers', icon: Users, labelKey: 'nav.customers' },
@@ -17,14 +16,13 @@ export default function MorePage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { data: featureFlags } = useFeatureFlags();
-  const isAdmin = useAuthStore((s) => s.isAdmin);
 
   return (
     <Page>
       <PageHeader title={t('nav.more', 'More')} />
       <div className="flex flex-col gap-1">
         {moreItems.map((item) => {
-          const isLocked = item.featureFlag && !featureFlags?.[item.featureFlag] && !isAdmin;
+          const isLocked = item.featureFlag && !featureFlags?.[item.featureFlag];
           if (isLocked) {
             return (
               <div

@@ -3,8 +3,12 @@ import { useTranslation } from 'react-i18next';
 import { Card, Section } from '@/components/Layout';
 import { Button } from '@/components/Button';
 import { Spinner } from '@/components/Feedback';
-import { useNotificationPreferences, useUpdateNotificationPreferences, useProfile } from '@/api/hooks';
-import { Save } from 'lucide-react';
+import { useNotificationPreferences, useUpdateNotificationPreferences, useProfile, useWhatsAppConfig } from '@/api/hooks';
+import { useAppStore } from '@/store/app';
+import { Save, Sparkles } from 'lucide-react';
+import { useAuthStore } from '@/store/auth';
+
+const PUSH_NOTIFICATIONS_STORE_IDS = (import.meta.env.VITE_PUSH_NOTIFICATIONS_STORE_IDS ?? '').split(',').filter(Boolean);
 import { NOTIFICATION_EVENTS } from '@/constants/defaults';
 
 interface PrefRow {
@@ -20,9 +24,15 @@ export default function NotificationsTab() {
   const { data: prefs, isLoading } = useNotificationPreferences();
   const { data: profile } = useProfile();
   const updatePrefs = useUpdateNotificationPreferences();
+  const { data: whatsappConfig } = useWhatsAppConfig();
+  const setSettingsTab = useAppStore((s) => s.setSettingsTab);
+
+  const activeStoreId = useAuthStore((s) => s.activeStoreId);
 
   const p = profile as { phone?: string } | undefined;
   const hasPhone = !!p?.phone;
+  const hasWhatsApp = !!whatsappConfig?.connected;
+  const hasPush = !!activeStoreId && PUSH_NOTIFICATIONS_STORE_IDS.includes(activeStoreId);
 
   const [rows, setRows] = useState<PrefRow[]>([]);
   const [dirty, setDirty] = useState(false);
@@ -73,14 +83,26 @@ export default function NotificationsTab() {
                 <th className="sticky start-0 z-10 bg-neutral-50 px-3 py-2 text-start font-semibold">{t('settings.notifications.event', 'Event')}</th>
                 <th className="px-3 py-2 text-center font-semibold">{t('settings.notifications.email', 'Email')}</th>
                 <th className="px-3 py-2 text-center font-semibold">
-                  <span className="text-neutral-400">{t('settings.notifications.app', 'App')}</span>
+                  <div className="flex items-center justify-center gap-1.5">
+                    <span className={hasPush ? '' : 'text-neutral-400'}>{t('settings.notifications.app', 'App')}</span>
+                    {!hasPush && (
+                      <span className="inline-flex items-center gap-0.5 rounded-full bg-purple-50 px-1.5 py-0.5 text-[10px] font-medium text-purple-500">
+                        <Sparkles className="h-3 w-3" />
+                        {t('nav.comingSoon', 'Coming soon')}
+                      </span>
+                    )}
+                  </div>
                 </th>
-                <th className="px-3 py-2 text-center font-semibold">
-                  {t('settings.notifications.sms', 'SMS')}
-                </th>
-                <th className="px-3 py-2 text-center font-semibold">
-                  {t('settings.notifications.whatsapp', 'WhatsApp')}
-                </th>
+                {hasPhone && (
+                  <th className="px-3 py-2 text-center font-semibold">
+                    {t('settings.notifications.sms', 'SMS')}
+                  </th>
+                )}
+                {hasWhatsApp && (
+                  <th className="px-3 py-2 text-center font-semibold">
+                    {t('settings.notifications.whatsapp', 'WhatsApp')}
+                  </th>
+                )}
               </tr>
             </thead>
             <tbody>
@@ -96,47 +118,66 @@ export default function NotificationsTab() {
                     />
                   </td>
                   <td className="px-3 py-3 text-center">
-                    <span className="inline-block rounded bg-neutral-100 px-2 py-0.5 text-caption text-neutral-400">
-                      {t('settings.notifications.comingSoon', 'Coming Soon')}
-                    </span>
+                    <input
+                      type="checkbox"
+                      checked={hasPush && row.push}
+                      onChange={() => toggle(row.eventType, 'push')}
+                      disabled={!hasPush}
+                      className="h-4 w-4 rounded border-neutral-300 text-primary-500 focus:ring-primary-500 disabled:opacity-40 disabled:cursor-not-allowed"
+                    />
                   </td>
-                  <td className="px-3 py-3 text-center">
-                    {hasPhone ? (
+                  {hasPhone && (
+                    <td className="px-3 py-3 text-center">
                       <input
                         type="checkbox"
                         checked={row.sms}
                         onChange={() => toggle(row.eventType, 'sms')}
                         className="h-4 w-4 rounded border-neutral-300 text-primary-500 focus:ring-primary-500"
                       />
-                    ) : (
-                      <span className="text-caption text-neutral-400" title={t('settings.notifications.addPhone', 'Add phone number in Account tab')}>
-                        --
-                      </span>
-                    )}
-                  </td>
-                  <td className="px-3 py-3 text-center">
-                    {hasPhone ? (
+                    </td>
+                  )}
+                  {hasWhatsApp && (
+                    <td className="px-3 py-3 text-center">
                       <input
                         type="checkbox"
                         checked={row.whatsapp}
                         onChange={() => toggle(row.eventType, 'whatsapp')}
                         className="h-4 w-4 rounded border-neutral-300 text-primary-500 focus:ring-primary-500"
                       />
-                    ) : (
-                      <span className="text-caption text-neutral-400" title={t('settings.notifications.addPhone', 'Add phone number in Account tab')}>
-                        --
-                      </span>
-                    )}
-                  </td>
+                    </td>
+                  )}
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
-        {!hasPhone && (
-          <p className="mt-3 text-caption text-neutral-400">
-            {t('settings.notifications.phoneHint', 'Add a phone number in the Account tab to enable SMS and WhatsApp notifications.')}
-          </p>
+        {(!hasPhone || !hasWhatsApp) && (
+          <ul className="mt-3 space-y-1 text-caption text-neutral-400">
+            {!hasPhone && (
+              <li className="flex items-start gap-1.5">
+                <span>&#8226;</span>
+                <span>
+                  {t('settings.notifications.phoneHintPrefix', 'Add a phone number in the')}{' '}
+                  <button type="button" onClick={() => setSettingsTab('account')} className="underline hover:text-neutral-600">
+                    {t('settings.notifications.phoneHintLink', 'Account tab')}
+                  </button>{' '}
+                  {t('settings.notifications.phoneHintSuffix', 'to enable SMS notifications.')}
+                </span>
+              </li>
+            )}
+            {!hasWhatsApp && (
+              <li className="flex items-start gap-1.5">
+                <span>&#8226;</span>
+                <span>
+                  {t('settings.notifications.whatsappHintPrefix', 'Connect WhatsApp in the')}{' '}
+                  <button type="button" onClick={() => setSettingsTab('integrations')} className="underline hover:text-neutral-600">
+                    {t('settings.notifications.whatsappHintLink', 'Integrations tab')}
+                  </button>{' '}
+                  {t('settings.notifications.whatsappHintSuffix', 'to enable WhatsApp notifications.')}
+                </span>
+              </li>
+            )}
+          </ul>
         )}
         {dirty && (
           <div className="mt-4 flex justify-center">

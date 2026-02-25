@@ -1,4 +1,4 @@
-import React, { useState, useCallback, Suspense } from 'react';
+import React, { useState, useCallback, useRef, useEffect, Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Outlet } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
@@ -93,12 +93,11 @@ const MobileNav = React.memo(function MobileNav({ onClose }: { onClose: () => vo
   const qc = useQueryClient();
 
   const displayStores = isAdmin && allStoresQuery.data
-    ? allStoresQuery.data.map((s: any) => ({ storeId: s.id, storeName: s.name, role: -1 }))
+    ? allStoresQuery.data.map((s: any) => ({ storeId: String(s.id), storeName: s.name, role: -1 }))
     : stores;
 
   const handleStoreSwitch = useCallback(
-    (e: React.ChangeEvent<HTMLSelectElement>) => {
-      const storeId = e.target.value;
+    (storeId: string) => {
       selectStore.mutate(
         { storeId },
         {
@@ -123,21 +122,12 @@ const MobileNav = React.memo(function MobileNav({ onClose }: { onClose: () => vo
       </div>
 
       {(isAdmin ? displayStores.length > 0 : displayStores.length > 1) && (
-        <div className="mb-4 border-b border-primary-800 pb-4">
-          <div className="relative">
-            <select
-              onChange={handleStoreSwitch}
-              value={activeStoreId || displayStores[0]?.storeId || ''}
-              className="w-full appearance-none rounded-md bg-primary-800 px-3 py-2 pe-8 text-body-sm text-white outline-none focus:ring-2 focus:ring-primary-500"
-            >
-              {isAdmin && <option value="" disabled>{t('nav.selectStore', 'Select a store')}</option>}
-              {displayStores.map((s: any) => (
-                <option key={s.storeId} value={s.storeId}>{isAdmin ? `${s.storeId}  |  ` : ''}{s.storeName}</option>
-              ))}
-            </select>
-            <ChevronDown className="pointer-events-none absolute end-2 top-1/2 h-4 w-4 -translate-y-1/2 text-primary-400" />
-          </div>
-        </div>
+        <MobileStoreDropdown
+          stores={displayStores}
+          activeStoreId={activeStoreId}
+          isAdmin={isAdmin}
+          onSwitch={handleStoreSwitch}
+        />
       )}
 
       <nav className="flex-1">
@@ -180,3 +170,58 @@ const MobileNav = React.memo(function MobileNav({ onClose }: { onClose: () => vo
     </div>
   );
 });
+
+function MobileStoreDropdown({ stores, activeStoreId, isAdmin, onSwitch }: {
+  stores: { storeId: string; storeName: string }[];
+  activeStoreId: string | null;
+  isAdmin: boolean;
+  onSwitch: (storeId: string) => void;
+}) {
+  const { t } = useTranslation();
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [open]);
+
+  const activeStore = stores.find((s) => s.storeId === activeStoreId) ?? stores[0];
+  const label = activeStore
+    ? (isAdmin ? `${activeStore.storeId}  |  ${activeStore.storeName}` : activeStore.storeName)
+    : '';
+
+  return (
+    <div ref={ref} className="relative mb-4 border-b border-primary-800 pb-4">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="flex w-full items-center justify-between rounded-md bg-primary-800 px-3 py-2 text-body-sm text-white outline-none focus:ring-2 focus:ring-primary-500"
+      >
+        <span className="truncate">{label}</span>
+        <ChevronDown className={`h-4 w-4 shrink-0 text-primary-400 transition-transform ${open ? 'rotate-180' : ''}`} />
+      </button>
+      {open && (
+        <div className="absolute start-0 end-0 top-full z-20 mt-1 max-h-60 overflow-y-auto rounded-lg border border-primary-700 bg-primary-800 p-1 shadow-lg">
+          {stores.map((s: any) => {
+            const selected = s.storeId === activeStoreId;
+            return (
+              <button
+                key={s.storeId}
+                type="button"
+                onClick={() => { onSwitch(s.storeId); setOpen(false); }}
+                className={`flex w-full items-center rounded-md px-3 py-2 text-body-sm transition-colors ${selected ? 'bg-primary-700 text-white' : 'text-primary-200 hover:bg-primary-700 hover:text-white'}`}
+              >
+                {isAdmin ? `${s.storeId}  |  ${s.storeName}` : s.storeName}
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}

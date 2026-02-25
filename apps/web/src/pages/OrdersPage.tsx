@@ -1,16 +1,17 @@
-import React, { useMemo, useCallback } from 'react';
+import React, { useMemo, useCallback, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Plus, LayoutGrid, List, Calendar, ChevronRight, BadgeDollarSign } from 'lucide-react';
+import { Plus, LayoutGrid, List, Calendar, ChevronRight, ChevronLeft, BadgeDollarSign, X } from 'lucide-react';
 import OrderCalendar from '@/components/OrderCalendar';
 import { Page, PageHeader } from '@/components/Layout';
 import { Button } from '@/components/Button';
 import { DataTable, StatusBadge, EmptyState, type Column } from '@/components/DataDisplay';
 import { PageSkeleton } from '@/components/Feedback';
-import { useOrders, useUpdateOrderStatus, usePaymentStatuses } from '@/api/hooks';
+import { useOrders, useOrdersPaginated, useUpdateOrderStatus, usePaymentStatuses } from '@/api/hooks';
 import { ORDER_STATUS, STATUS_LABELS, getStatusLabel } from '@/utils/orderStatus';
 import { useFormatDate } from '@/utils/dateFormat';
 import { useAppStore } from '@/store/app';
+import { DateFilterDropdown } from '@/components/DateFilterDropdown';
 
 const STATUS_DISPLAY: Record<string, string> = {
   received: 'Received',
@@ -22,12 +23,37 @@ const STATUS_DISPLAY: Record<string, string> = {
 export default function OrdersPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { data: orders, isLoading } = useOrders();
   const updateOrderStatus = useUpdateOrderStatus();
   const { data: paymentStatuses } = usePaymentStatuses();
   const formatDate = useFormatDate();
   const viewMode = useAppStore((s) => s.ordersViewMode);
   const setViewMode = useAppStore((s) => s.setOrdersViewMode);
+
+  // List view state (paginated, backend)
+  const [page, setPage] = useState(1);
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
+
+  // Reset page when filters change
+  useEffect(() => { setPage(1); }, [dateFrom, dateTo]);
+
+  const listFilters = useMemo(() => {
+    const f: { dateFrom?: string; dateTo?: string } = {};
+    if (dateFrom) f.dateFrom = dateFrom;
+    if (dateTo) f.dateTo = dateTo;
+    return Object.keys(f).length ? f : undefined;
+  }, [dateFrom, dateTo]);
+
+  // Pipeline view uses all orders (no pagination)
+  const { data: orders, isLoading: ordersLoading } = useOrders();
+  // List view uses paginated endpoint
+  const { data: paginatedData, isLoading: listLoading } = useOrdersPaginated(page, 20, listFilters);
+
+  const paginatedResult = paginatedData as any;
+  const listOrders = (paginatedResult?.orders as any[]) ?? [];
+  const pagination = paginatedResult?.pagination;
+
+  const isLoading = viewMode === 'list' ? listLoading : ordersLoading;
 
   const handleAdvance = useCallback(
     (order: any) => {
@@ -88,6 +114,26 @@ export default function OrdersPage() {
   );
 
   if (isLoading) return <PageSkeleton />;
+
+  const dateFilterToolbar = (
+    <div className="flex flex-wrap items-center gap-2">
+      <DateFilterDropdown
+        dateFrom={dateFrom}
+        dateTo={dateTo}
+        onDateFromChange={setDateFrom}
+        onDateToChange={setDateTo}
+      />
+      {(dateFrom || dateTo) && (
+        <button
+          onClick={() => { setDateFrom(''); setDateTo(''); }}
+          className="inline-flex items-center gap-1 text-body-sm text-neutral-500 hover:text-neutral-700"
+        >
+          <X className="h-3.5 w-3.5" />
+          {t('common.clearFilters', 'Clear')}
+        </button>
+      )}
+    </div>
+  );
 
   return (
     <Page>
@@ -169,16 +215,52 @@ export default function OrdersPage() {
           })}
         </div>
       ) : (
-        <DataTable
-          columns={columns}
-          data={(orders as any[]) ?? []}
-          keyExtractor={(row: any) => String(row.id)}
-          onRowClick={(row: any) => navigate(`/orders/${row.id}`)}
-          searchable
-          searchPlaceholder={t('orders.searchPlaceholder', 'Search orders...')}
-          emptyTitle={t('orders.empty', 'No orders yet')}
-          emptyDescription={t('orders.emptyDesc', 'Create your first order to get started.')}
-        />
+        <div className="rounded-lg border border-neutral-200 bg-white">
+          <DataTable
+            columns={columns}
+            data={listOrders}
+            keyExtractor={(row: any) => String(row.id)}
+            onRowClick={(row: any) => navigate(`/orders/${row.id}`)}
+            searchable
+            searchPlaceholder={t('orders.searchPlaceholder', 'Search orders...')}
+            emptyTitle={t('orders.empty', 'No orders yet')}
+            emptyDescription={t('orders.emptyDesc', 'Create your first order to get started.')}
+            toolbar={dateFilterToolbar}
+            bare
+          />
+          {pagination && pagination.totalPages > 1 && (
+            <div className="flex items-center justify-between border-t border-neutral-200 px-4 py-3">
+              <span className="text-body-sm text-neutral-500">
+                {t('common.showingOf', '{{from}}-{{to}} of {{total}}', {
+                  from: (pagination.page - 1) * pagination.limit + 1,
+                  to: Math.min(pagination.page * pagination.limit, pagination.total),
+                  total: pagination.total,
+                })}
+              </span>
+              <div className="flex items-center gap-2">
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  onClick={() => setPage((p) => p - 1)}
+                  disabled={pagination.page <= 1}
+                >
+                  <ChevronLeft className="h-4 w-4 rtl:scale-x-[-1]" />
+                </Button>
+                <span className="text-body-sm text-neutral-700">
+                  {pagination.page} / {pagination.totalPages}
+                </span>
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  onClick={() => setPage((p) => p + 1)}
+                  disabled={pagination.page >= pagination.totalPages}
+                >
+                  <ChevronRight className="h-4 w-4 rtl:scale-x-[-1]" />
+                </Button>
+              </div>
+            </div>
+          )}
+        </div>
       )}
     </Page>
   );
