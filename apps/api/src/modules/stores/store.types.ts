@@ -5,11 +5,14 @@ export enum StoreRole {
   EMPLOYEE = 3,
 }
 
+export type AppTheme = 'cream' | 'white' | 'stone' | 'rose' | 'mint' | 'sky' | 'lavender';
+
 export interface Store {
   id: number;
   name: string;
   code: string | null;
   address: string | null;
+  theme: AppTheme;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -20,6 +23,7 @@ export interface UserStore {
   role: StoreRole;
   storeName: string;
   storeCode: string | null;
+  theme: AppTheme;
 }
 
 export interface StoreInvitation {

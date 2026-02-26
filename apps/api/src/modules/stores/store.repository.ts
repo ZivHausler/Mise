@@ -1,6 +1,6 @@
 import crypto from 'crypto';
 import { getPool } from '../../core/database/postgres.js';
-import type { Store, UserStore, StoreInvitation, CreateStoreDTO } from './store.types.js';
+import type { Store, UserStore, StoreInvitation, CreateStoreDTO, AppTheme } from './store.types.js';
 import { StoreRole } from './store.types.js';
 
 export class PgStoreRepository {
@@ -34,7 +34,7 @@ export class PgStoreRepository {
   static async getUserStores(userId: number): Promise<UserStore[]> {
     const pool = getPool();
     const result = await pool.query(
-      `SELECT us.user_id, us.store_id, us.role, s.name as store_name, s.code as store_code
+      `SELECT us.user_id, us.store_id, us.role, s.name as store_name, s.code as store_code, s.theme
        FROM users_stores us
        JOIN stores s ON s.id = us.store_id
        WHERE us.user_id = $1
@@ -47,6 +47,7 @@ export class PgStoreRepository {
       role: row['role'] as StoreRole,
       storeName: row['store_name'] as string,
       storeCode: (row['store_code'] as string) || null,
+      theme: (row['theme'] as AppTheme) || 'cream',
     }));
   }
 
@@ -174,12 +175,21 @@ export class PgStoreRepository {
     );
   }
 
+  static async updateTheme(storeId: number, theme: AppTheme): Promise<void> {
+    const pool = getPool();
+    await pool.query(
+      `UPDATE stores SET theme = $1, updated_at = NOW() WHERE id = $2`,
+      [theme, storeId],
+    );
+  }
+
   private static mapStoreRow(row: Record<string, unknown>): Store {
     return {
       id: Number(row['id']),
       name: row['name'] as string,
       code: (row['code'] as string) || null,
       address: (row['address'] as string) || null,
+      theme: (row['theme'] as AppTheme) || 'cream',
       createdAt: new Date(row['created_at'] as string),
       updatedAt: new Date(row['updated_at'] as string),
     };

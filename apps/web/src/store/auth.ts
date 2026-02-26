@@ -12,6 +12,7 @@ interface StoreInfo {
   storeId: string;
   storeName: string;
   role: number;
+  theme?: string;
 }
 
 interface AuthState {
