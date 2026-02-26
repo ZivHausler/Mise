@@ -19,6 +19,8 @@ const envSchema = z.object({
 
   // RabbitMQ
   RABBITMQ_URL: z.string().default('amqp://localhost:5672'),
+  RABBITMQ_RETRY_TTL: z.coerce.number().default(5000),
+  RABBITMQ_MAX_RETRIES: z.coerce.number().default(3),
 
   // JWT
   JWT_SECRET: z.string().min(32, 'JWT_SECRET must be at least 32 characters').default('dev-secret-change-in-production'),
