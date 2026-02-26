@@ -7,16 +7,16 @@ const config: Config = {
     extend: {
       colors: {
         primary: {
-          50: '#FDF8F3',
-          100: '#FAF0E4',
-          200: '#F3DCC5',
-          300: '#E8C49A',
-          400: '#D4A06A',
-          500: '#C4823E',
-          600: '#A66A2E',
-          700: '#7A4D20',
-          800: '#5C3A18',
-          900: '#3D2610',
+          50:  'var(--primary-50)',
+          100: 'var(--primary-100)',
+          200: 'var(--primary-200)',
+          300: 'var(--primary-300)',
+          400: 'var(--primary-400)',
+          500: 'var(--primary-500)',
+          600: 'var(--primary-600)',
+          700: 'var(--primary-700)',
+          800: 'var(--primary-800)',
+          900: 'var(--primary-900)',
         },
         accent: {
           400: '#C2616B',

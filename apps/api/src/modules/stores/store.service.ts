@@ -1,5 +1,5 @@
 import type { FastifyInstance } from 'fastify';
-import type { CreateStoreDTO, Store, UserStore, StoreInvitation } from './store.types.js';
+import type { CreateStoreDTO, Store, UserStore, StoreInvitation, AppTheme } from './store.types.js';
 import { StoreRole } from './store.types.js';
 import { PgStoreRepository } from './store.repository.js';
 import { ForbiddenError, NotFoundError, ValidationError } from '../../core/errors/app-error.js';
@@ -60,6 +60,10 @@ export class StoreService {
 
     const token = this.generateTokenWithStore(userId, email, storeId, role);
     return { token };
+  }
+
+  async updateTheme(storeId: number, theme: AppTheme): Promise<void> {
+    await PgStoreRepository.updateTheme(storeId, theme);
   }
 
   async getAllStores(): Promise<import('./store.types.js').Store[]> {

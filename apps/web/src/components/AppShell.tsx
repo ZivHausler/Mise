@@ -13,7 +13,8 @@ import { TourProvider } from './tour/TourProvider';
 import { useAuthStore } from '@/store/auth';
 import { useAppStore } from '@/store/app';
 import { useSelectStore, useAllStores, useProfile } from '@/api/hooks';
-import { ENUM_TO_LANGUAGE } from '@/constants/defaults';
+import { ENUM_TO_LANGUAGE, DEFAULT_THEME, applyThemePalette } from '@/constants/defaults';
+import type { AppTheme } from '@/constants/defaults';
 import { languageDir } from '@/utils/language';
 
 export const AppShell = React.memo(function AppShell() {
@@ -36,6 +37,15 @@ export const AppShell = React.memo(function AppShell() {
       }
     }
   }, [profile, i18n, initLanguageFromProfile]);
+
+  // Apply store theme palette
+  const stores = useAuthStore((s) => s.stores);
+  const activeStoreId = useAuthStore((s) => s.activeStoreId);
+  React.useEffect(() => {
+    const activeStore = stores.find((s) => String(s.storeId) === String(activeStoreId));
+    const theme = (activeStore?.theme as AppTheme) || DEFAULT_THEME;
+    applyThemePalette(theme);
+  }, [stores, activeStoreId]);
 
   const handleMenuClick = useCallback(() => setDrawerOpen(true), []);
   const handleCloseDrawer = useCallback(() => setDrawerOpen(false), []);
