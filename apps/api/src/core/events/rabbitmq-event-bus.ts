@@ -2,12 +2,13 @@ import amqplib from 'amqplib';
 import type { ChannelModel, Channel, ConsumeMessage } from 'amqplib';
 import type { DomainEvent, EventHandler, EventBus } from './event-bus.js';
 import { appLogger } from '../logger/logger.js';
+import { env } from '../../config/env.js';
 
 const EXCHANGE = 'mise.events';
 const DLX_EXCHANGE = 'mise.events.dlx';
 const RETRY_QUEUE = 'mise.retry';
-const RETRY_TTL = 5000;
-const MAX_RETRIES = 3;
+const RETRY_TTL = env.RABBITMQ_RETRY_TTL;
+const MAX_RETRIES = env.RABBITMQ_MAX_RETRIES;
 
 export class RabbitMQEventBus implements EventBus {
   private connection: ChannelModel | null = null;

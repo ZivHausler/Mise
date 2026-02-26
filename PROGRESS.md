@@ -157,7 +157,7 @@
 - [x] Event-driven: order.created, order.statusChanged, inventory.lowStock, payment.received
 - [x] Notification preferences UI (per-channel toggles)
 - [x] SSE endpoint — real-time server-sent events for pushing notifications to connected clients
-- [ ] Actual email delivery (currently logs to console)
+- [x] Actual email delivery via Resend API (localized HTML templates, graceful degradation without API key)
 - [ ] Actual SMS delivery (currently logs to console)
 - [ ] App push notifications (UI shows "Coming Soon")
 
@@ -236,6 +236,15 @@
 - [x] Added Zod schemas per module (customer.schema, inventory.schema, order.schema, etc.)
 - [x] Redis caching layer (`redis-client.ts`)
 
+### Store Theme Customization
+- [x] Per-store background theme stored in DB (`theme` column on stores table)
+- [x] 7 preset themes: Cream (default), White, Stone, Rose, Mint, Sky, Lavender
+- [x] `PATCH /stores/theme` endpoint (owner/admin only)
+- [x] CSS variable `--app-bg` applied on store load
+- [x] Appearance section in Account settings with mini preview cards
+- [x] Full i18n support (English + Hebrew)
+- [x] Database migration (`025_store_theme.sql`)
+
 ### UI/UX Improvements
 - [x] New customer modal (inline creation)
 - [x] Drag-and-drop recipe steps (desktop: grip handle, mobile: long-press)
@@ -304,6 +313,7 @@
 | 15 | `015_user_onboarding.sql` | Adds `onboarding_completed_at` to users for product tour tracking |
 | 16 | `016_loyalty.sql` | Loyalty system: `loyalty_config` (per-store settings), `loyalty_transactions` (append-only ledger), `loyalty_points` column on customers |
 | 17 | `017_production_batches.sql` | Production batches, batch-order links, batch prep items for production planning |
+| 25 | `025_store_theme.sql` | Adds `theme` column to stores table for per-store background theme |
 
 ---
 
@@ -319,7 +329,7 @@
 | Orders (CRUD, status pipeline, numbering) | Done | Done | Complete |
 | Payments (CRUD, summary, refunds, filtering) | Done | Done | Complete |
 | Analytics (revenue, popular, stats) | Done | Done | Complete |
-| Notifications (dispatcher, preferences) | Partial | Done | Email/SMS stubbed |
+| Notifications (dispatcher, preferences) | Partial | Done | Email done, SMS stubbed |
 | Settings (groups, units, profile, notifications) | Done | Done | Complete |
 | Store Management (multi-tenancy) | Done | Done | Complete |
 | Invitation System (join-store + create-store) | Done | Done | Complete |
@@ -328,6 +338,7 @@
 | Admin Audit Log (with body capture) | Done | Done | Complete |
 | Loyalty System (points rewards) | Done | Done | Complete |
 | Production (batch planning, kanban, prep list) | Done | Done | Complete |
+| Store Theme Customization (7 presets) | Done | Done | Complete |
 | Server-Side Pagination | Done | Done | Complete |
 | i18n (Hebrew RTL + English LTR) | — | Done | Complete |
 | Security Hardening | Done | — | Complete |
@@ -362,14 +373,14 @@
 ## Known Bugs & Issues
 
 ### Stubbed / Incomplete
-1. **Email notifications** — `channels/email.ts` logs to console instead of sending actual emails (no SMTP/SendGrid configured)
+1. ~~**Email notifications**~~ — **Done**: Resend API integration with localized HTML templates (Hebrew/English/Arabic)
 2. **SMS notifications** — `channels/sms.ts` logs to console instead of sending actual SMS (no Twilio configured)
-3. **Store invites** — invite links are printed to console, not emailed to recipients
+3. ~~**Store invites**~~ — **Done**: sent via Resend email (team invites + store creation invites)
 4. **App push notifications** — UI shows "Coming Soon" badge, no backend implementation
 
 ### Configuration Gaps
 5. ~~**Rate limiting values** are hardcoded~~ — **Fixed**: now configurable via `RATE_LIMIT_MAX`, `RATE_LIMIT_WINDOW`, `AUTH_RATE_LIMIT_MAX`, `AUTH_RATE_LIMIT_WINDOW` env vars
-6. **RabbitMQ retry config** hardcoded (5s TTL, 3 retries) — should be configurable
+6. ~~**RabbitMQ retry config**~~ — **Fixed**: now configurable via `RABBITMQ_RETRY_TTL` and `RABBITMQ_MAX_RETRIES` env vars
 7. ~~**No frontend `.env.example`**~~ — **Fixed**: added `VITE_API_URL` and `VITE_GOOGLE_CLIENT_ID`
 8. ~~**`FRONTEND_URL`** has inline fallback to `localhost:5173`~~ — **Fixed**: now fails explicitly in production, dead `??` fallbacks removed
 
