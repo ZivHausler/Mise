@@ -63,6 +63,8 @@ const envSchema = z.object({
 
   // Feature flags — comma-separated store IDs that have the feature enabled, or '*' for all stores
   FEATURE_PRODUCTION: z.string().default(''),
+  FEATURE_WHATSAPP: z.string().default(''),
+  FEATURE_SMS: z.string().default(''),
 });
 
 export type Env = z.infer<typeof envSchema>;
