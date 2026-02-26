@@ -1,8 +1,8 @@
 import type { FastifyRequest, FastifyReply } from 'fastify';
 import type { StoreService } from './store.service.js';
 import { StoreRole } from './store.types.js';
-import { createStoreSchema, inviteSchema } from './store.schema.js';
-import { ValidationError } from '../../core/errors/app-error.js';
+import { createStoreSchema, inviteSchema, updateThemeSchema } from './store.schema.js';
+import { ForbiddenError, ValidationError } from '../../core/errors/app-error.js';
 import { ErrorCode } from '@mise/shared';
 
 export class StoreController {
@@ -86,6 +86,18 @@ export class StoreController {
     const isAdmin = request.currentUser!.isAdmin;
     const invitationId = Number(request.params.id);
     await this.storeService.revokeInvitation(storeId, storeRole as StoreRole, invitationId, isAdmin);
+    return reply.send({ success: true });
+  }
+
+  async updateTheme(request: FastifyRequest, reply: FastifyReply) {
+    const storeId = request.currentUser!.storeId!;
+    const storeRole = request.currentUser!.storeRole;
+    const isAdmin = request.currentUser!.isAdmin;
+    if (storeRole !== StoreRole.OWNER && !isAdmin) {
+      throw new ForbiddenError('Only store owners can change the theme', ErrorCode.STORE_NO_ACCESS);
+    }
+    const { theme } = updateThemeSchema.parse(request.body);
+    await this.storeService.updateTheme(storeId, theme);
     return reply.send({ success: true });
   }
 

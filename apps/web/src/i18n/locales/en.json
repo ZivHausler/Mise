@@ -443,6 +443,16 @@
     },
     "showFriday": "Show Friday",
     "showSaturday": "Show Saturday",
+    "appearance": "Appearance",
+    "themes": {
+      "cream": "Cream",
+      "white": "White",
+      "stone": "Stone",
+      "rose": "Rose",
+      "mint": "Mint",
+      "sky": "Sky",
+      "lavender": "Lavender"
+    },
     "languages": {
       "en": "English",
       "he": "Hebrew",

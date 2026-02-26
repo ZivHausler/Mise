@@ -126,7 +126,7 @@ export function App() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <div dir={dir} className="min-h-screen bg-primary-50 dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 font-body">
+      <div dir={dir} className="min-h-screen dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 font-body transition-colors duration-300" style={{ backgroundColor: 'var(--primary-50)' }}>
         <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
           <Suspense fallback={<PageLoading />}>
             <Routes>
