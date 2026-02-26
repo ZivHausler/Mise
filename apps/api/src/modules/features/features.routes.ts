@@ -13,11 +13,14 @@ export default async function featuresRoutes(app: FastifyInstance) {
   app.addHook('preHandler', requireStoreMiddleware);
 
   app.get('/', (request, reply) => {
+    const isAdmin = request.currentUser!.isAdmin;
     const storeId = request.currentUser!.storeId!;
     return reply.send({
       success: true,
       data: {
-        production: isEnabled(env.FEATURE_PRODUCTION, storeId),
+        production: isAdmin || isEnabled(env.FEATURE_PRODUCTION, storeId),
+        whatsapp: isAdmin || isEnabled(env.FEATURE_WHATSAPP, storeId),
+        sms: isAdmin || isEnabled(env.FEATURE_SMS, storeId),
       },
     });
   });

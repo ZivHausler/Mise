@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Card, Section } from '@/components/Layout';
 import { Button } from '@/components/Button';
 import { Spinner } from '@/components/Feedback';
-import { useNotificationPreferences, useUpdateNotificationPreferences, useProfile, useWhatsAppConfig } from '@/api/hooks';
+import { useNotificationPreferences, useUpdateNotificationPreferences, useProfile, useWhatsAppConfig, useFeatureFlags } from '@/api/hooks';
 import { useAppStore } from '@/store/app';
 import { Save, Sparkles } from 'lucide-react';
 import { useAuthStore } from '@/store/auth';
@@ -25,12 +25,13 @@ export default function NotificationsTab() {
   const { data: profile } = useProfile();
   const updatePrefs = useUpdateNotificationPreferences();
   const { data: whatsappConfig } = useWhatsAppConfig();
+  const { data: featureFlags } = useFeatureFlags();
   const setSettingsTab = useAppStore((s) => s.setSettingsTab);
 
   const activeStoreId = useAuthStore((s) => s.activeStoreId);
 
   const p = profile as { phone?: string } | undefined;
-  const hasPhone = !!p?.phone;
+  const hasPhone = !!featureFlags?.sms && !!p?.phone;
   const hasWhatsApp = !!whatsappConfig?.connected;
   const hasPush = !!activeStoreId && PUSH_NOTIFICATIONS_STORE_IDS.includes(activeStoreId);
 

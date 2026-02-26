@@ -25,8 +25,8 @@ export class WhatsAppController {
     const storeId = request.currentUser!.storeId!;
     const { code, phoneNumberId, wabaId } = request.body as {
       code: string;
-      phoneNumberId: string;
-      wabaId: string;
+      phoneNumberId?: string;
+      wabaId?: string;
     };
 
     await this.whatsAppService.handleSignupCallback(storeId, code, phoneNumberId, wabaId);

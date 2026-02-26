@@ -5,10 +5,7 @@ import { Card, Section, Stack } from '@/components/Layout';
 import { cn } from '@/utils/cn';
 import { Button } from '@/components/Button';
 import { Spinner } from '@/components/Feedback';
-import { useWhatsAppConfig, useConnectWhatsApp, useDisconnectWhatsApp } from '@/api/hooks';
-import { useAuthStore } from '@/store/auth';
-
-const INTEGRATIONS_STORE_IDS = (import.meta.env.VITE_INTEGRATIONS_STORE_IDS ?? '').split(',').filter(Boolean);
+import { useWhatsAppConfig, useConnectWhatsApp, useDisconnectWhatsApp, useFeatureFlags } from '@/api/hooks';
 
 declare global {
   interface Window {
@@ -20,7 +17,7 @@ declare global {
           config_id: string;
           response_type: string;
           override_default_response_type: boolean;
-          extras: { setup: Record<string, unknown>; featureType: string; sessionInfoVersion: string };
+          extras: { setup?: Record<string, unknown>; featureType?: string; sessionInfoVersion: string };
         },
       ): void;
     };
@@ -33,8 +30,8 @@ const META_CONFIG_ID = import.meta.env.VITE_META_CONFIG_ID ?? '';
 
 export default function IntegrationsTab() {
   const { t } = useTranslation();
-  const activeStoreId = useAuthStore((s) => s.activeStoreId);
-  const isComingSoon = !activeStoreId || !INTEGRATIONS_STORE_IDS.includes(activeStoreId);
+  const { data: featureFlags } = useFeatureFlags();
+  const isComingSoon = !featureFlags?.whatsapp;
   const { data: config, isLoading } = useWhatsAppConfig();
   const connectMutation = useConnectWhatsApp();
   const disconnectMutation = useDisconnectWhatsApp();
@@ -63,29 +60,33 @@ export default function IntegrationsTab() {
   const handleConnect = useCallback(() => {
     if (!window.FB) return;
 
+    // Capture embedded signup data BEFORE FB.login — Meta sends the
+    // WA_EMBEDDED_SIGNUP postMessage while the popup is still open,
+    // before the FB.login callback fires.
+    let signupData: { phone_number_id: string; waba_id: string } | null = null;
+
+    const handler = (event: MessageEvent) => {
+      if (!event.origin?.endsWith('facebook.com')) return;
+      try {
+        const data = JSON.parse(event.data);
+        if (data.type === 'WA_EMBEDDED_SIGNUP') {
+          signupData = data.data;
+        }
+      } catch {
+        // ignore non-JSON messages
+      }
+    };
+    window.addEventListener('message', handler);
+
     window.FB.login(
       (response) => {
+        window.removeEventListener('message', handler);
         if (response.authResponse?.code) {
-          const code = response.authResponse.code;
-
-          // The phoneNumberId and wabaId come from the embedded signup session
-          // Meta sends these via the message event listener
-          const handler = (event: MessageEvent) => {
-            if (event.origin !== 'https://www.facebook.com') return;
-            try {
-              const data = JSON.parse(event.data);
-              if (data.type === 'WA_EMBEDDED_SIGNUP') {
-                const { phone_number_id, waba_id } = data.data;
-                if (phone_number_id && waba_id) {
-                  connectMutation.mutate({ code, phoneNumberId: phone_number_id, wabaId: waba_id });
-                }
-                window.removeEventListener('message', handler);
-              }
-            } catch {
-              // ignore non-JSON messages
-            }
-          };
-          window.addEventListener('message', handler);
+          connectMutation.mutate({
+            code: response.authResponse.code,
+            phoneNumberId: signupData?.phone_number_id,
+            wabaId: signupData?.waba_id,
+          });
         }
       },
       {
@@ -93,7 +94,7 @@ export default function IntegrationsTab() {
         response_type: 'code',
         override_default_response_type: true,
         extras: {
-          sessionInfoVersion: 2,
+          sessionInfoVersion: '3',
         },
       },
     );
