@@ -3,10 +3,12 @@ import { env } from '../../config/env.js';
 import { ForbiddenError } from '../errors/app-error.js';
 import { ErrorCode } from '@mise/shared';
 
-type FeatureFlag = 'production';
+type FeatureFlag = 'production' | 'whatsapp' | 'sms';
 
 const featureFlagEnvMap: Record<FeatureFlag, string> = {
   production: env.FEATURE_PRODUCTION,
+  whatsapp: env.FEATURE_WHATSAPP,
+  sms: env.FEATURE_SMS,
 };
 
 function isEnabled(flagValue: string, storeId: number): boolean {

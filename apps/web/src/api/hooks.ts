@@ -47,7 +47,7 @@ async function deleteApi(url: string): Promise<void> {
 export function useFeatureFlags() {
   return useQuery({
     queryKey: ['features'],
-    queryFn: () => fetchApi<{ production: boolean }>('/features'),
+    queryFn: () => fetchApi<{ production: boolean; whatsapp: boolean; sms: boolean }>('/features'),
     staleTime: 5 * 60 * 1000,
   });
 }
@@ -1204,7 +1204,7 @@ export function useConnectWhatsApp() {
   const addToast = useToastStore((s) => s.addToast);
   const { t } = useTranslation();
   return useMutation({
-    mutationFn: (body: { code: string; phoneNumberId: string; wabaId: string }) => postApi('/settings/whatsapp/connect', body),
+    mutationFn: (body: { code: string; phoneNumberId?: string; wabaId?: string }) => postApi('/settings/whatsapp/connect', body),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['whatsappConfig'] }); addToast('success', t('toasts.whatsappConnected', 'WhatsApp connected')); },
     onError: () => addToast('error', t('toasts.whatsappConnectFailed', 'Failed to connect WhatsApp')),
   });
