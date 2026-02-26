@@ -6,6 +6,10 @@ export const createStoreSchema = z.object({
   address: z.string().trim().max(500).optional(),
 });
 
+export const updateThemeSchema = z.object({
+  theme: z.enum(['cream', 'white', 'stone', 'rose', 'mint', 'sky', 'lavender']),
+});
+
 export const inviteSchema = z.object({
   email: z.string().email(),
   role: z.number().int().min(2).max(3).default(3),

@@ -4,6 +4,19 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  --primary-50:  #FDF8F3;
+  --primary-100: #FAF0E4;
+  --primary-200: #F3DCC5;
+  --primary-300: #E8C49A;
+  --primary-400: #D4A06A;
+  --primary-500: #C4823E;
+  --primary-600: #A66A2E;
+  --primary-700: #7A4D20;
+  --primary-800: #5C3A18;
+  --primary-900: #3D2610;
+}
+
 @layer utilities {
   .scrollbar-hide {
     -ms-overflow-style: none;
@@ -20,7 +33,8 @@
   }
 
   body {
-    @apply bg-primary-50 text-neutral-900 dark:bg-neutral-900 dark:text-neutral-100;
+    background-color: var(--primary-50);
+    @apply text-neutral-900 dark:bg-neutral-900 dark:text-neutral-100;
   }
 
   [dir='rtl'] {

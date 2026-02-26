@@ -443,6 +443,16 @@
     },
     "showFriday": "הצג יום שישי",
     "showSaturday": "הצג יום שבת",
+    "appearance": "מראה",
+    "themes": {
+      "cream": "קרם",
+      "white": "לבן",
+      "stone": "אבן",
+      "rose": "ורוד",
+      "mint": "מנטה",
+      "sky": "שמיים",
+      "lavender": "לבנדר"
+    },
     "languages": {
       "en": "אנגלית",
       "he": "עברית",

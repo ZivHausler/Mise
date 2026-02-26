@@ -673,6 +673,18 @@ export function useSelectStore() {
   });
 }
 
+export function useUpdateStoreTheme() {
+  const qc = useQueryClient();
+  const addToast = useToastStore((s) => s.addToast);
+  return useMutation({
+    mutationFn: (body: { theme: string }) => patchApi<void>('/stores/theme', body),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['stores'] });
+    },
+    onError: (error) => addToast('error', getApiErrorMessage(error, 'toasts.themeUpdateFailed')),
+  });
+}
+
 export function useValidateInvite(token?: string) {
   return useQuery({
     queryKey: ['invite', token],

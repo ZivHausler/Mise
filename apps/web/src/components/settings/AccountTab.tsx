@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { LogOut, Save } from 'lucide-react';
+import { LogOut, Save, Check } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Card, Section, Stack } from '@/components/Layout';
 import { TextInput, Select, Toggle } from '@/components/FormFields';
@@ -8,10 +8,10 @@ import { Button } from '@/components/Button';
 import { Spinner } from '@/components/Feedback';
 import { useAuthStore } from '@/store/auth';
 import { useAppStore } from '@/store/app';
-import { useProfile, useUpdateProfile } from '@/api/hooks';
-import { DATE_FORMATS, LANGUAGES, WEEK_START_DAYS, LANGUAGE_TO_ENUM, ENUM_TO_LANGUAGE } from '@/constants/defaults';
+import { useProfile, useUpdateProfile, useUpdateStoreTheme } from '@/api/hooks';
+import { DATE_FORMATS, LANGUAGES, WEEK_START_DAYS, LANGUAGE_TO_ENUM, ENUM_TO_LANGUAGE, APP_THEMES, THEME_PRESETS, STORE_ROLES, applyThemePalette } from '@/constants/defaults';
 import { languageDir } from '@/utils/language';
-import type { DateFormat, Language, WeekStartDay } from '@/constants/defaults';
+import type { DateFormat, Language, WeekStartDay, AppTheme } from '@/constants/defaults';
 
 export default function AccountTab() {
   const { t, i18n } = useTranslation();
@@ -28,8 +28,16 @@ export default function AccountTab() {
   const setShowSaturday = useAppStore((s) => s.setShowSaturday);
 
   const authUser = useAuthStore((s) => s.user);
+  const stores = useAuthStore((s) => s.stores);
+  const activeStoreId = useAuthStore((s) => s.activeStoreId);
+  const isAdmin = useAuthStore((s) => s.isAdmin);
   const { data: profile, isLoading } = useProfile();
   const updateProfile = useUpdateProfile();
+  const updateTheme = useUpdateStoreTheme();
+
+  const activeStore = stores.find((s) => String(s.storeId) === String(activeStoreId)) ?? stores[0];
+  const currentTheme = (activeStore?.theme as AppTheme) || 'cream';
+  const isOwnerOrAdmin = activeStore?.role === STORE_ROLES.OWNER || isAdmin;
 
   const initLanguageFromProfile = useAppStore((s) => s.initLanguageFromProfile);
   const p = profile as { id: number; email: string; name: string; phone?: string; language: number } | undefined;
@@ -162,6 +170,30 @@ export default function AccountTab() {
         </Section>
       </Card>
 
+      {isOwnerOrAdmin && (
+        <Card>
+          <Section title={t('settings.appearance', 'Appearance')}>
+            <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-7 gap-2.5">
+              {APP_THEMES.map((theme) => (
+                <ThemeOption
+                  key={theme}
+                  theme={theme}
+                  selected={theme === currentTheme}
+                  onClick={() => {
+                    updateTheme.mutate({ theme });
+                    applyThemePalette(theme);
+                    const updatedStores = stores.map((s) =>
+                      String(s.storeId) === String(activeStoreId) ? { ...s, theme } : s,
+                    );
+                    useAuthStore.getState().setStores(updatedStores);
+                  }}
+                />
+              ))}
+            </div>
+          </Section>
+        </Card>
+      )}
+
       <Card>
         <Section title={t('settings.account.title', 'Account')}>
           <Button variant="danger" icon={<LogOut className="h-4 w-4" />} onClick={handleLogout}>
@@ -170,5 +202,41 @@ export default function AccountTab() {
         </Section>
       </Card>
     </Stack>
+  );
+}
+
+function ThemeOption({ theme, selected, onClick }: { theme: AppTheme; selected: boolean; onClick: () => void }) {
+  const { t } = useTranslation();
+  const { nameKey, colors } = THEME_PRESETS[theme];
+
+  return (
+    <button type="button" className="flex flex-col items-center gap-1" onClick={onClick}>
+      <div
+        className={`relative w-full aspect-[3/2] rounded-md overflow-hidden border transition-all ${
+          selected ? 'ring-2 ring-primary-500 border-primary-500' : 'border-neutral-200 hover:border-neutral-300'
+        }`}
+      >
+        <div className="absolute inset-y-0 start-0 w-3.5 flex flex-col items-center gap-0.5 pt-2" style={{ backgroundColor: colors['900'] }}>
+          <div className="w-1.5 h-1.5 rounded-full bg-white/60" />
+          <div className="w-1.5 h-1.5 rounded-full bg-white/40" />
+          <div className="w-1.5 h-1.5 rounded-full bg-white/40" />
+        </div>
+        <div className="absolute inset-y-0 start-3.5 end-0 flex flex-col gap-0.5 p-1.5" style={{ backgroundColor: colors['50'] }}>
+          <div className="w-full h-3 rounded-sm bg-white shadow-sm" />
+          <div className="flex gap-0.5 mt-auto">
+            <div className="w-5 h-2 rounded-full" style={{ backgroundColor: colors['500'], opacity: 0.7 }} />
+            <div className="w-5 h-2 rounded-full" style={{ backgroundColor: colors['500'], opacity: 0.4 }} />
+          </div>
+        </div>
+        {selected && (
+          <div className="absolute top-0.5 end-0.5 w-4 h-4 rounded-full bg-primary-500 flex items-center justify-center">
+            <Check className="w-2.5 h-2.5 text-white" />
+          </div>
+        )}
+      </div>
+      <span className="text-[11px] text-neutral-600 font-medium">
+        {t(nameKey, theme.charAt(0).toUpperCase() + theme.slice(1))}
+      </span>
+    </button>
   );
 }
