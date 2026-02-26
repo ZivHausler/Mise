@@ -445,7 +445,7 @@
     "showSaturday": "Show Saturday",
     "appearance": "Appearance",
     "themes": {
-      "cream": "Cream",
+      "cream": "Cream (default)",
       "white": "White",
       "stone": "Stone",
       "rose": "Rose",
