@@ -131,11 +131,12 @@ export class PgProductionRepository {
     return result.rows[0] ? this.mapPrepItemRow(result.rows[0]) : null;
   }
 
-  static async getAggregatedPrepList(storeId: number, date: string): Promise<Array<{ ingredientId: string; ingredientName: string; totalRequired: number; unit: string; preppedCount: number; totalCount: number; items: (BatchPrepItem & { recipeName: string })[] }>> {
+  static async getAggregatedPrepList(storeId: number, date: string): Promise<Array<{ ingredient: { id: number; name: string }; totalRequired: number; unit: string; preppedCount: number; totalCount: number; items: (BatchPrepItem & { recipe: { id: string; name: string } })[] }>> {
     const pool = getPool();
     const result = await pool.query(
       `SELECT
          bpi.*,
+         pb.recipe_id,
          pb.recipe_name
        FROM batch_prep_items bpi
        JOIN production_batches pb ON pb.id = bpi.batch_id
@@ -144,17 +145,19 @@ export class PgProductionRepository {
       [storeId, date],
     );
 
-    const grouped = new Map<string, { ingredientId: string; ingredientName: string; totalRequired: number; unit: string; preppedCount: number; totalCount: number; items: (BatchPrepItem & { recipeName: string })[] }>();
+    const grouped = new Map<string, { ingredient: { id: number; name: string }; totalRequired: number; unit: string; preppedCount: number; totalCount: number; items: (BatchPrepItem & { recipe: { id: string; name: string } })[] }>();
 
     for (const row of result.rows) {
       const item = this.mapPrepItemRow(row as Record<string, unknown>);
-      const recipeName = (row as Record<string, unknown>)['recipe_name'] as string;
-      const key = String(item.ingredientId);
+      const recipe = {
+        id: (row as Record<string, unknown>)['recipe_id'] as string,
+        name: (row as Record<string, unknown>)['recipe_name'] as string,
+      };
+      const key = String(item.ingredient.id);
 
       if (!grouped.has(key)) {
         grouped.set(key, {
-          ingredientId: String(item.ingredientId),
-          ingredientName: item.ingredientName,
+          ingredient: { ...item.ingredient },
           totalRequired: 0,
           unit: item.unit,
           preppedCount: 0,
@@ -166,7 +169,7 @@ export class PgProductionRepository {
       group.totalRequired += item.requiredQuantity;
       group.totalCount++;
       if (item.isPrepped) group.preppedCount++;
-      group.items.push({ ...item, recipeName });
+      group.items.push({ ...item, recipe });
     }
 
     return Array.from(grouped.values());
@@ -204,8 +207,10 @@ export class PgProductionRepository {
     return {
       id: Number(row['id']),
       storeId: Number(row['store_id']),
-      recipeId: row['recipe_id'] as string,
-      recipeName: row['recipe_name'] as string,
+      recipe: {
+        id: row['recipe_id'] as string,
+        name: row['recipe_name'] as string,
+      },
       quantity: Number(row['quantity']),
       stage: Number(row['stage']) as ProductionStage,
       productionDate: row['production_date'] instanceof Date
@@ -234,8 +239,10 @@ export class PgProductionRepository {
     return {
       id: Number(row['id']),
       batchId: Number(row['batch_id']),
-      ingredientId: Number(row['ingredient_id']),
-      ingredientName: row['ingredient_name'] as string,
+      ingredient: {
+        id: Number(row['ingredient_id']),
+        name: row['ingredient_name'] as string,
+      },
       requiredQuantity: Number(row['required_quantity']),
       unit: row['unit'] as string,
       isPrepped: Boolean(row['is_prepped']),

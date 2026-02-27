@@ -29,7 +29,7 @@ export default function OrderDetailPage() {
   const [showLogPayment, setShowLogPayment] = React.useState(false);
 
   const formatDate = useFormatDate();
-  const storeName = useAuthStore((s) => s.stores[0]?.storeName ?? '');
+  const storeName = useAuthStore((s) => s.stores[0]?.store?.name ?? '');
   const language = useAppStore((s) => s.language);
   const isRtl = language === 'he';
   const currency = String(t('common.currency'));
@@ -131,12 +131,12 @@ export default function OrderDetailPage() {
             <Stack gap={3}>
               <div className="flex justify-between text-body-sm">
                 <span className="text-neutral-500">{t('orders.customer', 'Customer')}</span>
-                {o.customerId ? (
-                  <Link to={`/customers/${o.customerId}`} className="font-medium text-primary-600 hover:underline">
-                    {o.customerName ?? '-'}
+                {o.customer?.id ? (
+                  <Link to={`/customers/${o.customer.id}`} className="font-medium text-primary-600 hover:underline">
+                    {o.customer?.name ?? '-'}
                   </Link>
                 ) : (
-                  <span className="font-medium text-neutral-800">{o.customerName ?? '-'}</span>
+                  <span className="font-medium text-neutral-800">{o.customer?.name ?? '-'}</span>
                 )}
               </div>
               <DetailRow label={t('orders.createdAt', 'Created')} value={o.createdAt ? formatDate(o.createdAt) : '-'} />

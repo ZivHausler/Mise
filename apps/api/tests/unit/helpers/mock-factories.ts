@@ -78,7 +78,7 @@ export function createOrder(overrides?: Partial<Order>): Order {
   return {
     id: 1,
     orderNumber: 100000001,
-    customerId: 1,
+    customer: { id: 1, name: null },
     items: [{ recipeId: 'recipe-1', quantity: 2, unitPrice: 50 }],
     status: 0, // ORDER_STATUS.RECEIVED
     totalAmount: 100,
@@ -91,9 +91,11 @@ export function createOrder(overrides?: Partial<Order>): Order {
 export function createPayment(overrides?: Partial<Payment>): Payment {
   return {
     id: 1,
-    orderId: 1,
+    order: { id: 1, number: null },
+    customer: { id: null, name: null },
     amount: 50,
     method: 'cash',
+    status: 'completed',
     createdAt: new Date('2025-01-01'),
     ...overrides,
   };

@@ -44,6 +44,6 @@ export interface AuthResponse {
   user: UserPublic;
   token: string;
   hasStore: boolean;
-  stores: { storeId: number; storeName: string; role: number }[];
+  stores: { storeId: number; store: { id: number; name: string; code: string | null; theme: string }; role: number }[];
   pendingCreateStoreToken?: string;
 }

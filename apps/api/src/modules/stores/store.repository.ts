@@ -45,9 +45,12 @@ export class PgStoreRepository {
       userId: Number(row['user_id']),
       storeId: Number(row['store_id']),
       role: row['role'] as StoreRole,
-      storeName: row['store_name'] as string,
-      storeCode: (row['store_code'] as string) || null,
-      theme: (row['theme'] as AppTheme) || 'cream',
+      store: {
+        id: Number(row['store_id']),
+        name: row['store_name'] as string,
+        code: (row['store_code'] as string) || null,
+        theme: (row['theme'] as AppTheme) || 'cream',
+      },
     }));
   }
 

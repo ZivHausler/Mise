@@ -39,7 +39,7 @@ export function useOrderSSE() {
         queryClient.invalidateQueries({ queryKey: ['orders'] });
         queryClient.invalidateQueries({ queryKey: ['dashboard'] });
 
-        const customerName = order.customerName ?? '';
+        const customerName = order.customer?.name ?? '';
         const orderNum = order.orderNumber ? `#${order.orderNumber}` : '';
         addToast(
           'info',

@@ -47,8 +47,8 @@ export default function PaymentsPage() {
   const columns: Column<any>[] = useMemo(
     () => [
       { key: 'createdAt', header: t('payments.date', 'Date'), sortable: true, render: (row: any) => row.createdAt ? formatDate(row.createdAt) : '-'},
-      { key: 'orderNumber', header: t('payments.order', 'Order'), render: (row: any) => `#${row.orderNumber}` },
-      { key: 'customerName', header: t('payments.customer', 'Customer'), sortable: true },
+      { key: 'orderNumber', header: t('payments.order', 'Order'), render: (row: any) => `#${row.order?.number}` },
+      { key: 'customerName', header: t('payments.customer', 'Customer'), sortable: true, render: (row: any) => row.customer?.name ?? '-' },
       {
         key: 'amount',
         header: t('payments.amount', 'Amount'),
@@ -234,7 +234,7 @@ export default function PaymentsPage() {
           {t('payments.refundMsg', 'This will mark the payment of {{amount}} {{currency}} for order #{{order}} as refunded.', {
             amount: refundTarget?.amount,
             currency: t('common.currency'),
-            order: refundTarget?.orderNumber,
+            order: refundTarget?.order?.number,
           })}
         </p>
       </Modal>

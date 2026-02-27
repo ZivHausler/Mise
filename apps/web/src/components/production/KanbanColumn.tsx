@@ -7,7 +7,7 @@ import { cn } from '@/utils/cn';
 
 interface BatchData {
   id: number;
-  recipeName: string;
+  recipe?: { id: string; name: string };
   quantity: number;
   stage: number;
   priority: number;

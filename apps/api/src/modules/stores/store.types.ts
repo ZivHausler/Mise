@@ -17,13 +17,18 @@ export interface Store {
   updatedAt: Date;
 }
 
+export interface UserStoreInfo {
+  id: number;
+  name: string;
+  code: string | null;
+  theme: AppTheme;
+}
+
 export interface UserStore {
   userId: number;
   storeId: number;
   role: StoreRole;
-  storeName: string;
-  storeCode: string | null;
-  theme: AppTheme;
+  store: UserStoreInfo;
 }
 
 export interface StoreInvitation {

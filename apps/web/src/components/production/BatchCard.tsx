@@ -7,7 +7,7 @@ import { cn } from '@/utils/cn';
 
 interface BatchData {
   id: number;
-  recipeName: string;
+  recipe?: { id: string; name: string };
   quantity: number;
   stage: number;
   priority: number;
@@ -57,7 +57,7 @@ export function BatchCard({ batch, index, variant, onClick, onAdvance, onRevert 
                 'font-medium leading-tight truncate',
                 isKiosk ? 'text-base text-white' : 'text-body-sm text-neutral-800 dark:text-neutral-100',
               )}>
-                {batch.recipeName || t('production.batch')}
+                {batch.recipe?.name || t('production.batch')}
               </h4>
             </div>
             <span className={cn(

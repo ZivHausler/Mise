@@ -53,7 +53,7 @@ export function Sidebar() {
 
   // For admins, show all stores in the system; for non-admins, show their stores
   const displayStores = isAdmin && allStoresQuery.data
-    ? allStoresQuery.data.map((s) => ({ storeId: String(s.id), storeName: s.name, role: -1 }))
+    ? allStoresQuery.data.map((s) => ({ storeId: String(s.id), store: { id: s.id, name: s.name, code: null, theme: 'cream' }, role: -1 }))
     : stores;
 
   const handleToggle = useCallback(() => toggleSidebar(), [toggleSidebar]);
@@ -192,7 +192,7 @@ export function Sidebar() {
 }
 
 function StoreDropdown({ stores, activeStoreId, isAdmin, onSwitch }: {
-  stores: { storeId: string; storeName: string }[];
+  stores: { storeId: string; store: { name: string } }[];
   activeStoreId: string | null;
   isAdmin: boolean;
   onSwitch: (storeId: string) => void;
@@ -212,7 +212,7 @@ function StoreDropdown({ stores, activeStoreId, isAdmin, onSwitch }: {
 
   const activeStore = stores.find((s) => s.storeId === activeStoreId) ?? stores[0];
   const label = activeStore
-    ? (isAdmin ? `${activeStore.storeId}  |  ${activeStore.storeName}` : activeStore.storeName)
+    ? (isAdmin ? `${activeStore.storeId}  |  ${activeStore.store.name}` : activeStore.store.name)
     : '';
 
   return (
@@ -236,7 +236,7 @@ function StoreDropdown({ stores, activeStoreId, isAdmin, onSwitch }: {
                 onClick={() => { onSwitch(s.storeId); setOpen(false); }}
                 className={`flex w-full items-center rounded-md px-3 py-2 text-body-sm transition-colors ${selected ? 'bg-primary-700 text-white' : 'text-primary-200 hover:bg-primary-700 hover:text-white'}`}
               >
-                {isAdmin ? `${s.storeId}  |  ${s.storeName}` : s.storeName}
+                {isAdmin ? `${s.storeId}  |  ${s.store.name}` : s.store.name}
               </button>
             );
           })}

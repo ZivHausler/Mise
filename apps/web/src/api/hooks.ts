@@ -739,7 +739,7 @@ export function useRemoveMember() {
 
 export function useAcceptInvite() {
   return useMutation({
-    mutationFn: (body: { token: string }) => postApi<{ token: string; storeId: string; role: number; stores: { storeId: string; storeName: string; role: number }[] }>('/stores/accept-invite', body),
+    mutationFn: (body: { token: string }) => postApi<{ token: string; storeId: string; role: number; stores: { storeId: string; store: { id: number; name: string; code: string | null; theme: string }; role: number }[] }>('/stores/accept-invite', body),
   });
 }
 

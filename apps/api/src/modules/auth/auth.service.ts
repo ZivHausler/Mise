@@ -119,12 +119,12 @@ export class AuthService {
     return { user: this.toPublic(user), token, hasStore: user.isAdmin || stores.length > 0, stores: this.formatStores(stores) };
   }
 
-  async getProfile(userId: number): Promise<UserPublic & { stores: { storeId: number; storeName: string; role: number }[]; hasStore: boolean }> {
+  async getProfile(userId: number): Promise<UserPublic & { stores: { storeId: number; store: { id: number; name: string; code: string | null; theme: string }; role: number }[]; hasStore: boolean }> {
     const user = await this.getUserProfileUseCase.execute(userId);
     const stores = await PgStoreRepository.getUserStores(userId);
     return {
       ...this.toPublic(user),
-      stores: stores.map((s) => ({ storeId: s.storeId, storeName: s.storeName, role: s.role })),
+      stores: this.formatStores(stores),
       hasStore: user.isAdmin || stores.length > 0,
     };
   }
@@ -176,8 +176,8 @@ export class AuthService {
     return this.app.jwt.sign(payload, { expiresIn: env.JWT_EXPIRES_IN });
   }
 
-  private formatStores(stores: { storeId: number; storeName: string; role: number }[]) {
-    return stores.map((s) => ({ storeId: s.storeId, storeName: s.storeName, role: s.role }));
+  private formatStores(stores: { storeId: number; store: { id: number; name: string; code: string | null; theme: string }; role: number }[]) {
+    return stores.map((s) => ({ storeId: s.storeId, store: s.store, role: s.role }));
   }
 
   private async validateInvitation(inviteToken: string | undefined, email?: string): Promise<{ invitation: StoreInvitation; token: string }> {

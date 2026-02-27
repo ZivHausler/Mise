@@ -6,7 +6,7 @@ import { cn } from '@/utils/cn';
 interface TimelineBlockProps {
   batch: {
     id: number;
-    recipeName: string;
+    recipe?: { id: string; name: string };
     quantity: number;
     stage: number;
   };
@@ -25,9 +25,9 @@ export function TimelineBlock({ batch, span }: TimelineBlockProps) {
         colors.text,
       )}
       style={{ gridColumn: `span ${span}` }}
-      title={`${batch.recipeName} x${batch.quantity} — ${t(stageLabelKey(batch.stage))}`}
+      title={`${batch.recipe?.name} x${batch.quantity} — ${t(stageLabelKey(batch.stage))}`}
     >
-      <div className="truncate">{batch.recipeName}</div>
+      <div className="truncate">{batch.recipe?.name}</div>
       <div className="text-[10px] opacity-70">x{batch.quantity}</div>
     </div>
   );

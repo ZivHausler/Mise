@@ -11,7 +11,7 @@ interface OrderItem {
 
 interface OrderData {
   orderNumber: string | number;
-  customerName?: string;
+  customer?: { id?: number | null; name?: string | null };
   status: number;
   createdAt?: string;
   dueDate?: string;
@@ -78,7 +78,7 @@ export function printOrder(
   <div class="store">${storeName}</div>
   <h1>${t('orders.orderNum', 'Order')} ${ltr(`#${order.orderNumber}`)}</h1>
   <div class="meta">
-    ${order.customerName ? `<div class="meta-row"><span class="meta-label">${t('orders.customer', 'Customer')}</span><span class="meta-value">${order.customerName}</span></div>` : ''}
+    ${order.customer?.name ? `<div class="meta-row"><span class="meta-label">${t('orders.customer', 'Customer')}</span><span class="meta-value">${order.customer?.name}</span></div>` : ''}
     <div class="meta-row"><span class="meta-label">${t('orders.statusLabel', 'Status')}</span><span class="meta-value">${t(`orders.status.${statusKey}`, statusKey)}</span></div>
     ${order.createdAt ? `<div class="meta-row"><span class="meta-label">${t('orders.createdAt', 'Created')}</span><span class="meta-value">${ltr(formatDate(order.createdAt))}</span></div>` : ''}
     ${order.dueDate ? `<div class="meta-row"><span class="meta-label">${t('orders.dueDate', 'Due Date')}</span><span class="meta-value">${ltr(formatDate(order.dueDate))}</span></div>` : ''}

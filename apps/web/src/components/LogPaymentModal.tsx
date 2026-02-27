@@ -22,7 +22,7 @@ export function LogPaymentModal({ open, onClose, preselectedOrderId }: LogPaymen
   const orderList = (orders as any[]) ?? [];
   const orderOptions = orderList.map((o: any) => ({
     value: o.id,
-    label: `#${o.orderNumber} - ${o.customerName ?? 'Customer'}`,
+    label: `#${o.orderNumber} - ${o.customer?.name ?? 'Customer'}`,
   }));
 
   // Pre-select order when provided
