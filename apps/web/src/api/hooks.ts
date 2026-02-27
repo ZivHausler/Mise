@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tansta
 import { useTranslation } from 'react-i18next';
 import { apiClient } from './client';
 import { useToastStore } from '@/store/toast';
+import { useAuthStore } from '@/store/auth';
 import { getApiErrorMessage, getApiErrorCode } from '@/utils/getApiError';
 
 // PDF download helper
@@ -1230,5 +1231,29 @@ export function useDisconnectWhatsApp() {
     mutationFn: () => deleteApi('/settings/whatsapp'),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['whatsappConfig'] }); addToast('success', t('toasts.whatsappDisconnected', 'WhatsApp disconnected')); },
     onError: () => addToast('error', t('toasts.whatsappDisconnectFailed', 'Failed to disconnect WhatsApp')),
+  });
+}
+
+// ── Store Business Info ──────────────────────────────────
+export function useCurrentStore() {
+  return useQuery({ queryKey: ['currentStore'], queryFn: () => fetchApi<any>('/stores/current') });
+}
+
+export function useUpdateBusinessInfo() {
+  const qc = useQueryClient();
+  const addToast = useToastStore((s) => s.addToast);
+  const { t } = useTranslation();
+  return useMutation({
+    mutationFn: (data: { name?: string; address?: string; phone?: string; email?: string; taxNumber?: string; vatRate?: number }) => patchApi<any>('/stores/business-info', data),
+    onSuccess: (_data, variables) => {
+      qc.invalidateQueries({ queryKey: ['currentStore'] });
+      qc.invalidateQueries({ queryKey: ['stores', 'all'] });
+      if (variables.name) {
+        const { stores, activeStoreId, setStores } = useAuthStore.getState();
+        setStores(stores.map((s) => String(s.storeId) === String(activeStoreId) ? { ...s, store: { ...s.store, name: variables.name! } } : s));
+      }
+      addToast('success', t('toasts.businessInfoUpdated', 'Business info updated'));
+    },
+    onError: (err) => addToast('error', getApiErrorMessage(err) || t('toasts.businessInfoUpdateFailed', 'Failed to update business info')),
   });
 }

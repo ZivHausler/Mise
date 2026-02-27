@@ -466,7 +466,8 @@
       "tags": "תגיות",
       "notifications": "התראות",
       "loyalty": "צבירת נקודות",
-      "integrations": "אינטגרציות"
+      "integrations": "אינטגרציות",
+      "billing": "חיוב"
     },
     "team": {
       "title": "חברי צוות",
@@ -538,6 +539,17 @@
       "pointValue": "ערך נקודה (₪)",
       "minRedeemPoints": "מינימום נקודות למימוש",
       "preview": "רכישה של ₪{{purchase}} = {{points}} נקודות = ₪{{value}} בעת מימוש"
+    },
+    "billing": {
+      "businessDetails": "פרטי עסק",
+      "businessName": "שם העסק",
+      "businessId": "ח.פ. / ע.מ.",
+      "address": "כתובת",
+      "phone": "טלפון",
+      "email": "אימייל",
+      "invoiceSettings": "הגדרות חשבוניות",
+      "vatRate": "שיעור מע\"מ (%)",
+      "vatRateNote": "שינויים בשיעור המע\"מ ישפיעו רק על חשבוניות עתידיות."
     },
     "integrations": {
       "title": "אינטגרציות",
@@ -678,7 +690,9 @@
     "whatsappConnected": "WhatsApp חובר בהצלחה",
     "whatsappConnectFailed": "חיבור WhatsApp נכשל",
     "whatsappDisconnected": "WhatsApp נותק",
-    "whatsappDisconnectFailed": "ניתוק WhatsApp נכשל"
+    "whatsappDisconnectFailed": "ניתוק WhatsApp נכשל",
+    "businessInfoUpdated": "פרטי העסק עודכנו",
+    "businessInfoUpdateFailed": "עדכון פרטי העסק נכשל"
   },
   "store": {
     "setupTitle": "הקם את המאפייה שלך",

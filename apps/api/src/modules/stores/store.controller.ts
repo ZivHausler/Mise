@@ -1,7 +1,7 @@
 import type { FastifyRequest, FastifyReply } from 'fastify';
 import type { StoreService } from './store.service.js';
 import { StoreRole } from './store.types.js';
-import { createStoreSchema, inviteSchema, updateThemeSchema } from './store.schema.js';
+import { createStoreSchema, inviteSchema, updateThemeSchema, updateBusinessInfoSchema } from './store.schema.js';
 import { ForbiddenError, ValidationError } from '../../core/errors/app-error.js';
 import { ErrorCode } from '@mise/shared';
 
@@ -89,6 +89,12 @@ export class StoreController {
     return reply.send({ success: true });
   }
 
+  async getCurrent(request: FastifyRequest, reply: FastifyReply) {
+    const storeId = request.currentUser!.storeId!;
+    const store = await this.storeService.getStoreById(storeId);
+    return reply.send({ success: true, data: store });
+  }
+
   async updateTheme(request: FastifyRequest, reply: FastifyReply) {
     const storeId = request.currentUser!.storeId!;
     const storeRole = request.currentUser!.storeRole;
@@ -99,6 +105,18 @@ export class StoreController {
     const { theme } = updateThemeSchema.parse(request.body);
     await this.storeService.updateTheme(storeId, theme);
     return reply.send({ success: true });
+  }
+
+  async updateBusinessInfo(request: FastifyRequest, reply: FastifyReply) {
+    const storeId = request.currentUser!.storeId!;
+    const storeRole = request.currentUser!.storeRole;
+    const isAdmin = request.currentUser!.isAdmin;
+    if (storeRole !== StoreRole.OWNER && !isAdmin) {
+      throw new ForbiddenError('Only store owners can update business info', ErrorCode.STORE_NO_ACCESS);
+    }
+    const data = updateBusinessInfoSchema.parse(request.body);
+    const store = await this.storeService.updateBusinessInfo(storeId, data);
+    return reply.send({ success: true, data: store });
   }
 
   async validateInvite(request: FastifyRequest<{ Params: { token: string } }>, reply: FastifyReply) {
