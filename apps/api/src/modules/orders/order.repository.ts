@@ -22,33 +22,33 @@ export class PgOrderRepository {
 
   static async findByCustomerId(storeId: number, customerId: number, options?: { limit: number; offset: number }, filters?: CustomerOrderFilters): Promise<{ orders: Order[]; total: number }> {
     const pool = getPool();
-    let whereClause = 'WHERE customer_id = $1 AND store_id = $2';
+    let whereClause = 'WHERE o.customer_id = $1 AND o.store_id = $2';
     const baseParams: unknown[] = [customerId, storeId];
     let idx = 3;
 
     if (filters?.status !== undefined) {
-      whereClause += ` AND status = $${idx++}`;
+      whereClause += ` AND o.status = $${idx++}`;
       baseParams.push(filters.status);
     }
     if (filters?.dateFrom) {
-      whereClause += ` AND created_at >= $${idx++}`;
+      whereClause += ` AND o.created_at >= $${idx++}`;
       baseParams.push(filters.dateFrom);
     }
     if (filters?.dateTo) {
-      whereClause += ` AND created_at < ($${idx++}::date + interval '1 day')`;
+      whereClause += ` AND o.created_at < ($${idx++}::date + interval '1 day')`;
       baseParams.push(filters.dateTo);
     }
 
     const countResult = await pool.query(
-      `SELECT COUNT(*) FROM orders ${whereClause}`,
+      `SELECT COUNT(*) FROM orders o ${whereClause}`,
       baseParams,
     );
     const total = Number(countResult.rows[0].count);
 
-    const sortColumnMap: Record<string, string> = { created_at: 'created_at', order_number: 'order_number' };
-    const sortColumn = sortColumnMap[filters?.sortBy ?? 'created_at'] ?? 'created_at';
+    const sortColumnMap: Record<string, string> = { created_at: 'o.created_at', order_number: 'o.order_number' };
+    const sortColumn = sortColumnMap[filters?.sortBy ?? 'created_at'] ?? 'o.created_at';
     const sortDirection = filters?.sortDir === 'asc' ? 'ASC' : 'DESC';
-    let query = `SELECT * FROM orders ${whereClause} ORDER BY ${sortColumn} ${sortDirection}`;
+    let query = `SELECT o.*, c.name as customer_name FROM orders o LEFT JOIN customers c ON o.customer_id = c.id ${whereClause} ORDER BY ${sortColumn} ${sortDirection}`;
     const params = [...baseParams];
     if (options) {
       query += ` LIMIT $${idx++} OFFSET $${idx++}`;
@@ -301,8 +301,10 @@ export class PgOrderRepository {
     return {
       id: Number(row['id']),
       orderNumber: Number(row['order_number']),
-      customerId: Number(row['customer_id']),
-      customerName: (row['customer_name'] as string) || undefined,
+      customer: {
+        id: row['customer_id'] != null ? Number(row['customer_id']) : null,
+        name: (row['customer_name'] as string) || null,
+      },
       items,
       status: Number(row['status']) as OrderStatus,
       totalAmount: Number(row['total_amount']),

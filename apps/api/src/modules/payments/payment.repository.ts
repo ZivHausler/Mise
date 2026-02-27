@@ -77,7 +77,7 @@ export class PgPaymentRepository {
     const total = Number(countResult.rows[0].count);
 
     let idx = qb.getNextParamIndex();
-    let query = `SELECT p.*, o.order_number, c.name as customer_name
+    let query = `SELECT p.*, o.order_number, o.customer_id, c.name as customer_name
        FROM payments p
        LEFT JOIN orders o ON p.order_id = o.id
        LEFT JOIN customers c ON o.customer_id = c.id
@@ -121,7 +121,7 @@ export class PgPaymentRepository {
     );
     const total = Number(countResult.rows[0].count);
 
-    let query = `SELECT p.*, o.order_number, c.name as customer_name
+    let query = `SELECT p.*, o.order_number, o.customer_id, c.name as customer_name
        FROM payments p
        LEFT JOIN orders o ON p.order_id = o.id
        LEFT JOIN customers c ON o.customer_id = c.id
@@ -140,8 +140,10 @@ export class PgPaymentRepository {
     await ensureStatusColumn();
     const pool = getPool();
     const result = await pool.query(
-      `SELECT p.* FROM payments p
+      `SELECT p.*, o.order_number, o.customer_id, c.name as customer_name
+       FROM payments p
        JOIN orders o ON p.order_id = o.id
+       LEFT JOIN customers c ON o.customer_id = c.id
        WHERE p.id = $1 AND o.store_id = $2`,
       [id, storeId],
     );
@@ -152,8 +154,10 @@ export class PgPaymentRepository {
     await ensureStatusColumn();
     const pool = getPool();
     const result = await pool.query(
-      `SELECT p.* FROM payments p
+      `SELECT p.*, o.order_number, o.customer_id, c.name as customer_name
+       FROM payments p
        JOIN orders o ON p.order_id = o.id
+       LEFT JOIN customers c ON o.customer_id = c.id
        WHERE p.order_id = $1 AND o.store_id = $2
        ORDER BY p.created_at DESC`,
       [orderId, storeId],
@@ -228,9 +232,14 @@ export class PgPaymentRepository {
   private static mapRow(row: Record<string, unknown>): Payment {
     return {
       id: Number(row['id']),
-      orderId: Number(row['order_id']),
-      orderNumber: row['order_number'] ? Number(row['order_number']) : undefined,
-      customerName: (row['customer_name'] as string) || undefined,
+      order: {
+        id: Number(row['order_id']),
+        number: row['order_number'] ? Number(row['order_number']) : null,
+      },
+      customer: {
+        id: row['customer_id'] != null ? Number(row['customer_id']) : null,
+        name: (row['customer_name'] as string) || null,
+      },
       amount: Number(row['amount']),
       method: row['method'] as Payment['method'],
       status: (row['status'] as Payment['status']) || PAYMENT_RECORD_STATUS.COMPLETED,

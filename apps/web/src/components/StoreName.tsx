@@ -8,7 +8,7 @@ export function StoreName({ className }: StoreNameProps) {
   const stores = useAuthStore((s) => s.stores);
   const activeStoreId = useAuthStore((s) => s.activeStoreId);
   const activeStore = stores.find((s) => String(s.storeId) === String(activeStoreId));
-  const storeName = activeStore?.storeName ?? (stores.length > 0 ? stores[0].storeName : null);
+  const storeName = activeStore?.store?.name ?? (stores.length > 0 ? stores[0]?.store?.name : null);
 
   if (!storeName) return null;
 

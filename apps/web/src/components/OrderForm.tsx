@@ -40,7 +40,7 @@ export function OrderForm({ existingOrder, defaultDueDate, onSuccess, onCancel }
 
   const o = existingOrder as any;
 
-  const [customerId, setCustomerId] = useState(o?.customerId ?? '');
+  const [customerId, setCustomerId] = useState(o?.customer?.id ?? '');
   const [dueDate, setDueDate] = useState(o?.dueDate ?? defaultDueDate ?? '');
   const [notes, setNotes] = useState(o?.notes ?? '');
   const [items, setItems] = useState<OrderItem[]>(

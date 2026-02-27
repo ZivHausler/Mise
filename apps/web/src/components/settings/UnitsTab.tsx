@@ -12,8 +12,7 @@ interface UnitItem {
   id: number;
   name: string;
   abbreviation: string;
-  categoryId: number;
-  categoryName?: string;
+  category?: { id: number; name: string };
   conversionFactor: number;
   isDefault: boolean;
 }
@@ -34,7 +33,7 @@ export default function UnitsTab() {
 
   const grouped = categoryList.map((cat) => ({
     ...cat,
-    units: unitList.filter((u) => u.categoryId === cat.id),
+    units: unitList.filter((u) => u.category?.id === cat.id),
   }));
 
   const openCreate = () => {
@@ -45,7 +44,7 @@ export default function UnitsTab() {
 
   const openEdit = (unit: UnitItem) => {
     setEditingUnit(unit);
-    setForm({ name: unit.name, abbreviation: unit.abbreviation, categoryId: unit.categoryId, conversionFactor: unit.conversionFactor });
+    setForm({ name: unit.name, abbreviation: unit.abbreviation, categoryId: unit.category?.id ?? 0, conversionFactor: unit.conversionFactor });
     setShowModal(true);
   };
 

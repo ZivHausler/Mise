@@ -19,11 +19,20 @@ export const PAYMENT_RECORD_STATUS = {
 
 export type PaymentRecordStatus = (typeof PAYMENT_RECORD_STATUS)[keyof typeof PAYMENT_RECORD_STATUS];
 
+export interface PaymentOrder {
+  id: number;
+  number: number | null;
+}
+
+export interface PaymentCustomer {
+  id: number | null;
+  name: string | null;
+}
+
 export interface Payment {
   id: number;
-  orderId: number;
-  orderNumber?: number;
-  customerName?: string;
+  order: PaymentOrder;
+  customer: PaymentCustomer;
   amount: number;
   method: PaymentMethod;
   status: PaymentRecordStatus;

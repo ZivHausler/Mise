@@ -53,7 +53,7 @@ export class ProductionService {
 
     await getEventBus().publish({
       eventName: ProductionEventNames.BATCH_CREATED,
-      payload: { batchId: batch.id, recipeId: batch.recipeId },
+      payload: { batchId: batch.id, recipeId: batch.recipe.id },
       timestamp: new Date(),
     });
 
@@ -123,7 +123,7 @@ export class ProductionService {
 
       await getEventBus().publish({
         eventName: ProductionEventNames.BATCH_CREATED,
-        payload: { batchId: batch.id, recipeId: batch.recipeId },
+        payload: { batchId: batch.id, recipeId: batch.recipe.id },
         timestamp: new Date(),
       });
     }
@@ -179,8 +179,8 @@ export class ProductionService {
 
     // Create new batch with split quantity
     const newBatch = await ProductionCrud.create(storeId, {
-      recipeId: existing.recipeId,
-      recipeName: existing.recipeName,
+      recipeId: existing.recipe.id,
+      recipeName: existing.recipe.name,
       quantity: splitQuantity,
       productionDate: existing.productionDate,
       priority: existing.priority,
@@ -210,10 +210,10 @@ export class ProductionService {
 
     // Validate all batches have same recipe and date
     const first = batches[0]!;
-    const recipeId = first.recipeId;
+    const recipeId = first.recipe.id;
     const productionDate = first.productionDate;
     for (const b of batches) {
-      if (b.recipeId !== recipeId || b.productionDate !== productionDate) {
+      if (b.recipe.id !== recipeId || b.productionDate !== productionDate) {
         throw new ValidationError('Can only merge batches with the same recipe and production date', ErrorCode.BATCH_MERGE_MISMATCH);
       }
     }
@@ -226,7 +226,7 @@ export class ProductionService {
     // Create merged batch
     const merged = await ProductionCrud.create(storeId, {
       recipeId,
-      recipeName: first.recipeName,
+      recipeName: first.recipe.name,
       quantity: totalQuantity,
       productionDate,
       priority: highestPriority,
@@ -282,7 +282,7 @@ export class ProductionService {
     if (!this.recipeService) return;
 
     try {
-      const recipe = await this.recipeService.getById(storeId, batch.recipeId);
+      const recipe = await this.recipeService.getById(storeId, batch.recipe.id);
       if (!recipe.ingredients) return;
 
       for (const ing of recipe.ingredients) {

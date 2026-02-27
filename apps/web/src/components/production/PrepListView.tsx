@@ -70,10 +70,10 @@ export function PrepListView({ date }: PrepListViewProps) {
 
         {groups.map((group: any) => {
           const allPrepped = group.preppedCount === group.totalCount;
-          const recipeNames = [...new Set(group.items.map((i: any) => i.recipeName))].join(', ');
+          const recipeNames = [...new Set(group.items.map((i: any) => i.recipe?.name))].join(', ');
 
           return (
-            <React.Fragment key={group.ingredientId}>
+            <React.Fragment key={group.ingredient?.id}>
               {/* Mobile card */}
               <div className={cn(
                 'md:hidden rounded-lg border p-3',
@@ -93,7 +93,7 @@ export function PrepListView({ date }: PrepListViewProps) {
                       'text-body-sm font-medium',
                       allPrepped && 'line-through text-neutral-400',
                     )}>
-                      {group.ingredientName}
+                      {group.ingredient?.name}
                     </p>
                     <p className="text-xs text-neutral-500">
                       {group.totalRequired} {group.unit} — {recipeNames}
@@ -121,7 +121,7 @@ export function PrepListView({ date }: PrepListViewProps) {
                   'col-span-4 text-body-sm font-medium',
                   allPrepped && 'line-through text-neutral-400',
                 )}>
-                  {group.ingredientName}
+                  {group.ingredient?.name}
                 </div>
                 <div className="col-span-3 text-body-sm text-neutral-600 dark:text-neutral-400">
                   {group.totalRequired} {group.unit}

@@ -10,11 +10,15 @@ export interface UnitCategory {
 
 // ─── Units ──────────────────────────────────────────────────────────────────
 
+export interface UnitCategoryRef {
+  id: number;
+  name: string;
+}
+
 export interface Unit {
   id: number;
   storeId: number | null;
-  categoryId: number;
-  categoryName?: string;
+  category: UnitCategoryRef;
   name: string;
   abbreviation: string;
   conversionFactor: number;

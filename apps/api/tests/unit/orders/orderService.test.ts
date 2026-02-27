@@ -82,7 +82,7 @@ describe('OrderService', () => {
           eventName: 'order.created',
           payload: expect.objectContaining({
             orderId: order.id,
-            customerId: order.customerId,
+            customerId: order.customer.id,
           }),
         }),
       );

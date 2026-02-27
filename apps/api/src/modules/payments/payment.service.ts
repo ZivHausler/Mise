@@ -61,7 +61,7 @@ export class PaymentService {
     // Enrich event payload with order & customer details for notifications
     const eventPayload: Record<string, unknown> = {
       paymentId: payment.id,
-      orderId: payment.orderId,
+      orderId: payment.order.id,
       amount: payment.amount,
       method: payment.method,
     };
@@ -69,9 +69,9 @@ export class PaymentService {
     if (this.orderService) {
       const order = await this.orderService.getById(storeId, data.orderId);
       eventPayload['orderNumber'] = order.orderNumber;
-      eventPayload['customerName'] = order.customerName;
+      eventPayload['customerName'] = order.customer.name;
 
-      const customer = await CustomerCrud.getById(order.customerId, storeId);
+      const customer = order.customer.id ? await CustomerCrud.getById(order.customer.id, storeId) : null;
       if (customer) {
         eventPayload['customerPhone'] = customer.phone;
         eventPayload['customerEmail'] = customer.email;
@@ -97,7 +97,7 @@ export class PaymentService {
 
     await getEventBus().publish({
       eventName: EventNames.PAYMENT_REFUNDED,
-      payload: { paymentId: refunded.id, orderId: refunded.orderId, amount: refunded.amount },
+      payload: { paymentId: refunded.id, orderId: refunded.order.id, amount: refunded.amount },
       timestamp: new Date(),
       correlationId,
     });

@@ -48,7 +48,7 @@ export function BatchDetailModal({ batchId, onClose }: BatchDetailModalProps) {
   };
 
   return (
-    <Modal open={true} onClose={onClose} title={b?.recipeName || t('production.batch')}>
+    <Modal open={true} onClose={onClose} title={b?.recipe?.name || t('production.batch')}>
       {isLoading || !b ? (
         <div className="h-40 animate-pulse bg-neutral-100 dark:bg-neutral-800 rounded" />
       ) : (
@@ -133,7 +133,7 @@ export function BatchDetailModal({ batchId, onClose }: BatchDetailModalProps) {
                 {b.prepItems.map((item: any) => (
                   <div key={String(item.id)} className="flex items-center gap-2 rounded bg-neutral-50 dark:bg-neutral-700 px-3 py-1.5 text-body-sm">
                     <span className={cn('flex-1', item.isPrepped && 'line-through text-neutral-400')}>
-                      {item.ingredientName}
+                      {item.ingredient?.name}
                     </span>
                     <span className="text-neutral-500">{item.requiredQuantity} {item.unit}</span>
                   </div>

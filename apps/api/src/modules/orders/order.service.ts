@@ -66,8 +66,8 @@ export class OrderService {
     const eventPayload: Record<string, unknown> = {
       orderId: order.id,
       orderNumber: order.orderNumber,
-      customerId: order.customerId,
-      customerName: order.customerName,
+      customerId: order.customer.id,
+      customerName: order.customer.name,
       total: order.totalAmount,
       storeId,
       items: order.items.map((i) => ({
@@ -77,7 +77,7 @@ export class OrderService {
       })),
     };
 
-    const customer = await CustomerCrud.getById(order.customerId, storeId);
+    const customer = order.customer.id ? await CustomerCrud.getById(order.customer.id, storeId) : null;
     if (customer) {
       eventPayload['customerPhone'] = customer.phone;
       eventPayload['customerEmail'] = customer.email;

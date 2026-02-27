@@ -36,7 +36,7 @@ export default function StoreSetupPage() {
               setAuth(user, data.token, true);
               setHasStore(true);
               if (data.stores) setStores(data.stores);
-              else if (data.store) setStores([{ storeId: data.store.id, storeName: data.store.name, role: 1 }]);
+              else if (data.store) setStores([{ storeId: data.store.id, store: { id: data.store.id, name: data.store.name, code: null, theme: 'cream' }, role: 1 }]);
             }
             setPendingCreateStoreToken(null);
             navigate('/');

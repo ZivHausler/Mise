@@ -10,9 +10,13 @@ interface User {
 
 interface StoreInfo {
   storeId: string;
-  storeName: string;
+  store: {
+    id: number;
+    name: string;
+    code: string | null;
+    theme: string;
+  };
   role: number;
-  theme?: string;
 }
 
 interface AuthState {
