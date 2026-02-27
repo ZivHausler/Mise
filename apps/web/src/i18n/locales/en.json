@@ -319,7 +319,24 @@
     "refunded": "Refunded",
     "refundTitle": "Refund Payment?",
     "refundMsg": "This will mark the payment of {{amount}} {{currency}} for order #{{order}} as refunded. This action cannot be undone.",
-    "allMethods": "All methods"
+    "allMethods": "All methods",
+    "viewPayment": "View payment",
+    "alsoGenerateInvoice": "Also generate an invoice for this payment",
+    "autoInvoiceNotice": "An invoice will be generated automatically."
+  },
+  "refund": {
+    "refundTitle": "Refund Payment?",
+    "refundMsg": "This will mark the payment as refunded.",
+    "refund": "Refund",
+    "refundAndCreditNote": "Refund & Credit Note",
+    "generateCreditNote": "Also generate a credit note",
+    "creditNoteNotes": "Credit note notes (optional)",
+    "refundSuccess": "Payment refunded successfully",
+    "refundWithCreditNoteSuccess": "Payment refunded and credit note generated",
+    "creditNoteFailed": "Payment refunded but credit note creation failed. You can create it manually.",
+    "creditNoteAlreadyExists": "A credit note has already been issued for this order.",
+    "alsoRefund": "Also refund the payment",
+    "autoCreditNoteNotice": "A credit note will be generated automatically."
   },
   "invoices": {
     "title": "Invoices",
@@ -343,7 +360,9 @@
     "notes": "Notes",
     "missingBusinessDetailsBefore": "Complete your business details in",
     "missingBusinessDetailsLink": "Settings > Billing",
-    "missingBusinessDetailsAfter": "before generating invoices."
+    "missingBusinessDetailsAfter": "before generating invoices.",
+    "billingDocuments": "Billing Documents",
+    "noDocumentsYet": "No billing documents yet."
   },
   "loyalty": {
     "balance": "Points Balance",
@@ -461,6 +480,11 @@
     "preferences": "Preferences",
     "language": "Language",
     "dateFormat": "Date Format",
+    "timeFormat": "Time Format",
+    "timeFormats": {
+      "24h": "24h (14:30)",
+      "12h": "12h (2:30 PM)"
+    },
     "weekStartDay": "Week starts on",
     "weekStartDays": {
       "sunday": "Sunday",
@@ -574,7 +598,12 @@
       "email": "Email",
       "invoiceSettings": "Invoice Settings",
       "vatRate": "VAT Rate (%)",
-      "vatRateNote": "Changes to VAT rate will only affect future invoices."
+      "vatRateNote": "Changes to VAT rate will only affect future invoices.",
+      "automation": "Automation",
+      "autoGenerateInvoice": "Auto-generate invoice",
+      "autoGenerateInvoiceDesc": "Automatically create an invoice when a payment is logged.",
+      "autoGenerateCreditNote": "Auto-generate credit note",
+      "autoGenerateCreditNoteDesc": "Automatically create a credit note when a refund is processed."
     },
     "integrations": {
       "title": "Integrations",

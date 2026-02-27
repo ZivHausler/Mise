@@ -7,6 +7,11 @@ export const DATE_FORMATS = ['dd/mm/yyyy', 'mm/dd/yyyy'] as const;
 export type DateFormat = (typeof DATE_FORMATS)[number];
 export const DEFAULT_DATE_FORMAT: DateFormat = 'dd/mm/yyyy';
 
+// --- Time formats ----------------------------------------------------------
+export const TIME_FORMATS = ['24h', '12h'] as const;
+export type TimeFormat = (typeof TIME_FORMATS)[number];
+export const DEFAULT_TIME_FORMAT: TimeFormat = '24h';
+
 // --- Languages -------------------------------------------------------------
 export const LANGUAGES = ['en', 'he', 'ar'] as const;
 export type Language = (typeof LANGUAGES)[number];

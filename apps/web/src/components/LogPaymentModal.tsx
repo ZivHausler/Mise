@@ -1,10 +1,13 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Info } from 'lucide-react';
 import { Modal } from '@/components/Modal';
 import { NumberInput, Select, DatePicker, TextInput } from '@/components/FormFields';
 import { Button } from '@/components/Button';
 import { Stack } from '@/components/Layout';
-import { useOrders, useCreatePayment } from '@/api/hooks';
+import { useOrders, useCreatePayment, useCurrentStore, useCreateInvoice, downloadPdf } from '@/api/hooks';
+import { useAppStore } from '@/store/app';
+import { useToastStore } from '@/store/toast';
 import { PAYMENT_METHODS, DEFAULT_PAYMENT_METHOD, PAYMENT_METHOD_I18N } from '@/constants/defaults';
 
 interface LogPaymentModalProps {
@@ -17,7 +20,15 @@ export function LogPaymentModal({ open, onClose, preselectedOrderId }: LogPaymen
   const { t } = useTranslation();
   const { data: orders } = useOrders({ excludePaid: true });
   const createPayment = useCreatePayment();
+  const { data: currentStore } = useCurrentStore();
+  const createInvoice = useCreateInvoice();
+  const language = useAppStore((s) => s.language);
+  const addToast = useToastStore((s) => s.addToast);
   const [form, setForm] = useState({ orderId: '', amount: '' as number | '', method: DEFAULT_PAYMENT_METHOD as string, date: '', notes: '' });
+  const [generateInvoice, setGenerateInvoice] = useState(true);
+
+  const hasTaxNumber = !!currentStore?.taxNumber;
+  const autoInvoice = hasTaxNumber && !!currentStore?.autoGenerateInvoice;
 
   const orderList = (orders as any[]) ?? [];
   const orderOptions = orderList.map((o: any) => ({
@@ -39,14 +50,31 @@ export function LogPaymentModal({ open, onClose, preselectedOrderId }: LogPaymen
   useEffect(() => {
     if (!open) {
       setForm({ orderId: '', amount: '', method: DEFAULT_PAYMENT_METHOD, date: '', notes: '' });
+      setGenerateInvoice(true);
     }
   }, [open]);
 
-  const handleCreate = useCallback(() => {
+  const handleCreate = useCallback(async () => {
     createPayment.mutate(form, {
-      onSuccess: () => onClose(),
+      onSuccess: async () => {
+        const shouldCreateInvoice = autoInvoice || (hasTaxNumber && !autoInvoice && generateInvoice);
+        if (shouldCreateInvoice && form.orderId) {
+          try {
+            const today = new Date().toISOString().slice(0, 10);
+            const inv = await createInvoice.mutateAsync({
+              orderId: Number(form.orderId),
+              notes: undefined,
+              invoiceDate: form.date || today,
+            });
+            downloadPdf(`/invoices/${inv.id}/pdf?lang=${language}`, `invoice-${inv.displayNumber}.pdf`);
+          } catch {
+            addToast('warning', t('toasts.invoiceCreateFailed', 'Failed to create invoice'));
+          }
+        }
+        onClose();
+      },
     });
-  }, [form, createPayment, onClose]);
+  }, [form, createPayment, onClose, autoInvoice, hasTaxNumber, generateInvoice, createInvoice, language, addToast, t]);
 
   return (
     <Modal
@@ -90,6 +118,31 @@ export function LogPaymentModal({ open, onClose, preselectedOrderId }: LogPaymen
         />
         <DatePicker label={t('payments.date', 'Date')} value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })} required />
         <TextInput label={t('payments.notes', 'Notes')} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} dir="auto" />
+
+        {autoInvoice && (
+          <div className="flex items-start gap-3 rounded-md border border-blue-200 bg-blue-50 p-3">
+            <Info className="h-5 w-5 shrink-0 text-blue-600 mt-0.5" />
+            <p className="text-body-sm text-blue-800">
+              {t('payments.autoInvoiceNotice', 'An invoice will be generated automatically.')}
+            </p>
+          </div>
+        )}
+
+        {hasTaxNumber && !autoInvoice && (
+          <div className="rounded-md border border-amber-200 bg-amber-50 p-3">
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={generateInvoice}
+                onChange={(e) => setGenerateInvoice(e.target.checked)}
+                className="h-4 w-4 rounded border-neutral-300 text-primary-600 focus:ring-primary-500"
+              />
+              <span className="text-body-sm text-amber-800">
+                {t('payments.alsoGenerateInvoice', 'Also generate an invoice for this payment')}
+              </span>
+            </label>
+          </div>
+        )}
       </Stack>
     </Modal>
   );

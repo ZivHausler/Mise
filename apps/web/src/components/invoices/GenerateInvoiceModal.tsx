@@ -6,8 +6,9 @@ import { Modal } from '@/components/Modal';
 import { Button } from '@/components/Button';
 import { TextInput } from '@/components/FormFields';
 import { Stack } from '@/components/Layout';
-import { useCreateInvoice, useCreateCreditNote, useCurrentStore, downloadPdf } from '@/api/hooks';
+import { useCreateInvoice, useCreateCreditNote, useRefundPayment, useCurrentStore, downloadPdf } from '@/api/hooks';
 import { useAppStore } from '@/store/app';
+import { useToastStore } from '@/store/toast';
 
 interface GenerateInvoiceModalProps {
   isOpen: boolean;
@@ -15,50 +16,81 @@ interface GenerateInvoiceModalProps {
   order: { id: number; orderNumber: number; customerName: string; totalAmount: number };
   type: 'invoice' | 'credit_note';
   originalInvoiceId?: number;
+  isPaid?: boolean;
+  payments?: any[];
 }
 
-export function GenerateInvoiceModal({ isOpen, onClose, order, type, originalInvoiceId }: GenerateInvoiceModalProps) {
+export function GenerateInvoiceModal({ isOpen, onClose, order, type, originalInvoiceId, isPaid, payments }: GenerateInvoiceModalProps) {
   const { t } = useTranslation();
   const language = useAppStore((s) => s.language);
+  const addToast = useToastStore((s) => s.addToast);
   const { data: currentStore } = useCurrentStore();
   const hasTaxNumber = !!currentStore?.taxNumber;
 
   const [invoiceDate, setInvoiceDate] = useState(() => new Date().toISOString().split('T')[0]);
   const [notes, setNotes] = useState('');
+  const [alsoRefund, setAlsoRefund] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const createInvoice = useCreateInvoice();
-  const createCreditNote = useCreateCreditNote(originalInvoiceId ?? 0);
+  const createCreditNote = useCreateCreditNote(originalInvoiceId ?? -1);
+  const refundPayment = useRefundPayment();
 
   const isCredit = type === 'credit_note';
+  const showRefundToggle = isCredit && !!isPaid && (payments ?? []).some((p: any) => p.status !== 'refunded');
+
   const title = isCredit
     ? t('invoices.generateCreditNote', 'Generate Credit Note')
     : t('invoices.generate', 'Generate Invoice');
 
-  const handleGenerate = useCallback(() => {
-    const onSuccess = (data: any) => {
+  const handleGenerate = useCallback(async () => {
+    setIsSubmitting(true);
+
+    const onInvoiceSuccess = async (data: any) => {
       const displayNumber = data?.displayNumber ?? data?.invoiceNumber ?? '';
       const id = data?.id;
       if (id) {
         downloadPdf(`/invoices/${id}/pdf?lang=${language}`, `invoice-${displayNumber}.pdf`);
       }
-      onClose();
-      setNotes('');
     };
 
-    if (isCredit && originalInvoiceId) {
-      createCreditNote.mutate(
-        { notes: notes || undefined },
-        { onSuccess },
-      );
-    } else {
-      createInvoice.mutate(
-        { orderId: order.id, notes: notes || undefined, invoiceDate },
-        { onSuccess },
-      );
+    try {
+      if (isCredit && originalInvoiceId) {
+        const data = await createCreditNote.mutateAsync({ notes: notes || undefined });
+        await onInvoiceSuccess(data);
+      } else {
+        const data = await createInvoice.mutateAsync({ orderId: order.id, notes: notes || undefined, invoiceDate });
+        await onInvoiceSuccess(data);
+      }
+    } catch {
+      setIsSubmitting(false);
+      return;
     }
-  }, [isCredit, originalInvoiceId, createCreditNote, createInvoice, order.id, notes, invoiceDate, language, onClose]);
 
-  const isPending = createInvoice.isPending || createCreditNote.isPending;
+    // If refund toggle is on, refund all non-refunded payments
+    if (showRefundToggle && alsoRefund) {
+      const nonRefundedPayments = (payments ?? []).filter((p: any) => p.status !== 'refunded');
+      try {
+        for (const payment of nonRefundedPayments) {
+          await refundPayment.mutateAsync(payment.id);
+        }
+      } catch {
+        addToast('warning', t('refund.creditNoteFailed', 'Credit note created but refund failed. You can refund manually.'));
+      }
+    }
+
+    setIsSubmitting(false);
+    setNotes('');
+    setAlsoRefund(true);
+    onClose();
+  }, [isCredit, originalInvoiceId, createCreditNote, createInvoice, refundPayment, order.id, notes, invoiceDate, language, onClose, showRefundToggle, alsoRefund, payments, addToast, t]);
+
+  const handleClose = useCallback(() => {
+    if (isSubmitting) return;
+    onClose();
+  }, [isSubmitting, onClose]);
+
+  const isPending = isSubmitting;
 
   return (
     <Modal
@@ -68,14 +100,16 @@ export function GenerateInvoiceModal({ isOpen, onClose, order, type, originalInv
       size="sm"
       footer={
         <>
-          <Button variant="secondary" onClick={onClose}>{t('common.cancel')}</Button>
+          <Button variant="secondary" onClick={handleClose} disabled={isPending}>{t('common.cancel')}</Button>
           <Button
-            variant="primary"
+            variant={showRefundToggle && alsoRefund ? 'danger' : 'primary'}
             onClick={handleGenerate}
             loading={isPending}
             disabled={!hasTaxNumber}
           >
-            {title}
+            {showRefundToggle && alsoRefund
+              ? t('refund.refundAndCreditNote', 'Refund & Credit Note')
+              : title}
           </Button>
         </>
       }
@@ -130,6 +164,20 @@ export function GenerateInvoiceModal({ isOpen, onClose, order, type, originalInv
           onChange={(e) => setNotes(e.target.value)}
           placeholder=""
         />
+
+        {showRefundToggle && (
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={alsoRefund}
+              onChange={(e) => setAlsoRefund(e.target.checked)}
+              className="h-4 w-4 rounded border-neutral-300 text-primary-600 focus:ring-primary-500"
+            />
+            <span className="text-body-sm text-neutral-700">
+              {t('refund.alsoRefund', 'Also refund the payment')}
+            </span>
+          </label>
+        )}
       </Stack>
     </Modal>
   );

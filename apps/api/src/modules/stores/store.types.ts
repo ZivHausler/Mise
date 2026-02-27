@@ -17,6 +17,8 @@ export interface Store {
   taxNumber: string | null;
   vatRate: number;
   theme: AppTheme;
+  autoGenerateInvoice: boolean;
+  autoGenerateCreditNote: boolean;
   createdAt: Date;
   updatedAt: Date;
 }

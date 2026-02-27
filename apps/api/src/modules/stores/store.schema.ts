@@ -17,6 +17,8 @@ export const updateBusinessInfoSchema = z.object({
   email: z.string().email().max(255).optional(),
   taxNumber: z.string().regex(/^\d{1,9}$/, 'Tax number must be 1-9 digits').optional(),
   vatRate: z.number().min(0).max(100).optional(),
+  autoGenerateInvoice: z.boolean().optional(),
+  autoGenerateCreditNote: z.boolean().optional(),
 });
 
 export const inviteSchema = z.object({

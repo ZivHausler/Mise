@@ -22,8 +22,15 @@ export class PgInvoiceRepository {
 
   static async findExistingInvoice(storeId: number, orderId: number): Promise<Invoice | null> {
     const pool = getPool();
+    // Find an invoice that has NOT been cancelled by a credit note
     const result = await pool.query(
-      "SELECT * FROM invoices WHERE store_id = $1 AND order_id = $2 AND type = 'invoice' LIMIT 1",
+      `SELECT i.* FROM invoices i
+       WHERE i.store_id = $1 AND i.order_id = $2 AND i.type = 'invoice'
+         AND NOT EXISTS (
+           SELECT 1 FROM invoices cn
+           WHERE cn.store_id = $1 AND cn.original_invoice_id = i.id AND cn.type = 'credit_note'
+         )
+       LIMIT 1`,
       [storeId, orderId],
     );
     return result.rows[0] ? this.mapRow(result.rows[0]) : null;

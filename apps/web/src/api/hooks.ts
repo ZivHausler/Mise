@@ -499,6 +499,14 @@ export function useRefundPayment() {
   });
 }
 
+export function useOrderPayments(orderId: number) {
+  return useQuery({
+    queryKey: ['payments', 'order', orderId],
+    queryFn: () => fetchApi<any[]>(`/payments/order/${orderId}`),
+    enabled: !!orderId,
+  });
+}
+
 export function usePaymentStatuses() {
   return useQuery({
     queryKey: ['paymentStatuses'],
@@ -1290,7 +1298,7 @@ export function useUpdateBusinessInfo() {
   const addToast = useToastStore((s) => s.addToast);
   const { t } = useTranslation();
   return useMutation({
-    mutationFn: (data: { name?: string; address?: string; phone?: string; email?: string; taxNumber?: string; vatRate?: number }) => patchApi<any>('/stores/business-info', data),
+    mutationFn: (data: { name?: string; address?: string; phone?: string; email?: string; taxNumber?: string; vatRate?: number; autoGenerateInvoice?: boolean; autoGenerateCreditNote?: boolean }) => patchApi<any>('/stores/business-info', data),
     onSuccess: (_data, variables) => {
       qc.invalidateQueries({ queryKey: ['currentStore'] });
       qc.invalidateQueries({ queryKey: ['stores', 'all'] });

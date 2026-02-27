@@ -319,7 +319,24 @@
     "refunded": "הוחזר",
     "refundTitle": "להחזיר תשלום?",
     "refundMsg": "פעולה זו תסמן את התשלום בסך {{amount}} {{currency}} עבור הזמנה #{{order}} כהוחזר. לא ניתן לבטל פעולה זו.",
-    "allMethods": "כל האמצעים"
+    "allMethods": "כל האמצעים",
+    "viewPayment": "צפה בתשלום",
+    "alsoGenerateInvoice": "צור גם חשבונית עבור תשלום זה",
+    "autoInvoiceNotice": "חשבונית תיווצר אוטומטית."
+  },
+  "refund": {
+    "refundTitle": "להחזיר תשלום?",
+    "refundMsg": "פעולה זו תסמן את התשלום כהוחזר.",
+    "refund": "החזר",
+    "refundAndCreditNote": "החזר וחשבונית זיכוי",
+    "generateCreditNote": "הפק גם חשבונית זיכוי",
+    "creditNoteNotes": "הערות לחשבונית זיכוי (אופציונלי)",
+    "refundSuccess": "התשלום הוחזר בהצלחה",
+    "refundWithCreditNoteSuccess": "התשלום הוחזר וחשבונית זיכוי הופקה",
+    "creditNoteFailed": "התשלום הוחזר אך יצירת חשבונית הזיכוי נכשלה. ניתן ליצור אותה ידנית.",
+    "creditNoteAlreadyExists": "חשבונית זיכוי כבר הופקה עבור הזמנה זו.",
+    "alsoRefund": "החזר גם את התשלום",
+    "autoCreditNoteNotice": "חשבונית זיכוי תיווצר אוטומטית."
   },
   "invoices": {
     "title": "חשבוניות",
@@ -343,7 +360,9 @@
     "notes": "הערות",
     "missingBusinessDetailsBefore": "השלם את פרטי העסק ב",
     "missingBusinessDetailsLink": "הגדרות > חיוב",
-    "missingBusinessDetailsAfter": "לפני הפקת חשבוניות."
+    "missingBusinessDetailsAfter": "לפני הפקת חשבוניות.",
+    "billingDocuments": "מסמכי חיוב",
+    "noDocumentsYet": "אין מסמכי חיוב עדיין."
   },
   "loyalty": {
     "balance": "יתרת נקודות",
@@ -461,6 +480,11 @@
     "preferences": "העדפות",
     "language": "שפה",
     "dateFormat": "תבנית תאריך",
+    "timeFormat": "תבנית שעה",
+    "timeFormats": {
+      "24h": "24 שעות (14:30)",
+      "12h": "12 שעות (2:30 PM)"
+    },
     "weekStartDay": "השבוע מתחיל ב",
     "weekStartDays": {
       "sunday": "יום ראשון",
@@ -574,7 +598,12 @@
       "email": "אימייל",
       "invoiceSettings": "הגדרות חשבוניות",
       "vatRate": "שיעור מע\"מ (%)",
-      "vatRateNote": "שינויים בשיעור המע\"מ ישפיעו רק על חשבוניות עתידיות."
+      "vatRateNote": "שינויים בשיעור המע\"מ ישפיעו רק על חשבוניות עתידיות.",
+      "automation": "אוטומציה",
+      "autoGenerateInvoice": "יצירת חשבונית אוטומטית",
+      "autoGenerateInvoiceDesc": "צור חשבונית אוטומטית בעת רישום תשלום עבור הזמנה.",
+      "autoGenerateCreditNote": "יצירת חשבונית זיכוי אוטומטית",
+      "autoGenerateCreditNoteDesc": "צור חשבונית זיכוי אוטומטית בעת ביצוע החזר."
     },
     "integrations": {
       "title": "אינטגרציות",
