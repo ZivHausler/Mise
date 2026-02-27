@@ -57,7 +57,17 @@ function getStoredIsAdmin(): boolean {
 function getStoredStores(): StoreInfo[] {
   try {
     const raw = localStorage.getItem('auth_stores');
-    return raw ? JSON.parse(raw) : [];
+    if (!raw) return [];
+    const parsed = JSON.parse(raw) as any[];
+    return parsed.map((s) => {
+      if (s.store) return s as StoreInfo;
+      // Migrate old flat format (storeName/storeCode/theme) to nested
+      return {
+        storeId: s.storeId,
+        store: { id: Number(s.storeId), name: s.storeName ?? '', code: s.storeCode ?? null, theme: s.theme ?? 'cream' },
+        role: s.role,
+      };
+    });
   } catch {
     return [];
   }
