@@ -32,7 +32,8 @@ export default defineConfig({
   reporter: 'html',
 
   use: {
-    baseURL: 'http://localhost:5173',
+    baseURL: 'https://localhost:5173',
+    ignoreHTTPSErrors: true,
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
   },
@@ -79,7 +80,8 @@ export default defineConfig({
     },
     {
       command: 'pnpm --filter @mise/web dev',
-      url: 'http://localhost:5173',
+      url: 'https://localhost:5173',
+      ignoreHTTPSErrors: true,
       reuseExistingServer: !process.env.CI,
       cwd: '../..',
       timeout: 30_000,
