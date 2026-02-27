@@ -756,5 +756,26 @@
       "noBody": "No body",
       "noEntries": "No audit log entries"
     }
+  },
+  "invoice": {
+    "phone": "Tel",
+    "authorizedDealer": "Authorized Dealer",
+    "invoiceTitle": "Tax Invoice-Receipt No.",
+    "creditNoteTitle": "Credit Note No.",
+    "date": "Date",
+    "customer": "Customer",
+    "customerPhone": "Phone",
+    "customerAddress": "Address",
+    "orderRef": "Order Ref",
+    "originalInvoice": "Original Invoice",
+    "description": "Description",
+    "qty": "Qty",
+    "unitPrice": "Unit Price",
+    "lineTotal": "Total",
+    "subtotal": "Subtotal (before VAT)",
+    "vat": "VAT",
+    "total": "Total (incl. VAT)",
+    "notes": "Notes",
+    "footer": "Generated with Mise"
   }
 }

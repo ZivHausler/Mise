@@ -1,7 +1,7 @@
 import React, { useCallback } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { ChevronLeft, ChevronRight, Trash2, Edit, BadgeDollarSign, Download, Printer } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Trash2, Edit, BadgeDollarSign, Download, Printer, FileText } from 'lucide-react';
 import { Page, Card, Section, Stack, Row } from '@/components/Layout';
 import { Breadcrumbs } from '@/components/Breadcrumbs';
 import { StatusBadge } from '@/components/DataDisplay';
@@ -9,7 +9,8 @@ import { Button } from '@/components/Button';
 import { PageSkeleton } from '@/components/Feedback';
 import { ConfirmModal } from '@/components/Modal';
 import { LogPaymentModal } from '@/components/LogPaymentModal';
-import { useOrder, useUpdateOrderStatus, useDeleteOrder, usePaymentStatuses, downloadPdf } from '@/api/hooks';
+import { useOrder, useUpdateOrderStatus, useDeleteOrder, usePaymentStatuses, useOrderInvoices, downloadPdf } from '@/api/hooks';
+import { GenerateInvoiceModal } from '@/components/invoices/GenerateInvoiceModal';
 import { ORDER_STATUS, getStatusLabel } from '@/utils/orderStatus';
 import { useFormatDate } from '@/utils/dateFormat';
 import { useAuthStore } from '@/store/auth';
@@ -27,6 +28,8 @@ export default function OrderDetailPage() {
   const { data: paymentStatuses } = usePaymentStatuses();
   const [showDelete, setShowDelete] = React.useState(false);
   const [showLogPayment, setShowLogPayment] = React.useState(false);
+  const [showInvoice, setShowInvoice] = React.useState<'invoice' | 'credit_note' | null>(null);
+  const { data: orderInvoices } = useOrderInvoices(numId);
 
   const formatDate = useFormatDate();
   const storeName = useAuthStore((s) => s.stores[0]?.store?.name ?? '');
@@ -184,13 +187,44 @@ export default function OrderDetailPage() {
         </Card>
       )}
 
-      <Row gap={2} className="mt-6">
+      <Row gap={2} className="mt-6 flex-wrap">
         <Button variant="secondary" icon={<Download className="h-4 w-4" />} onClick={handlePdf}>
           {t('orders.downloadPdf', 'PDF')}
         </Button>
         <Button variant="secondary" icon={<Printer className="h-4 w-4" />} onClick={handlePrint}>
           {t('orders.print', 'Print')}
         </Button>
+        {(() => {
+          const isPaid = paymentStatuses?.[o.id] === 'paid';
+          const invoice = orderInvoices?.find((inv: any) => inv.type === 'invoice');
+          const creditNote = orderInvoices?.find((inv: any) => inv.type === 'credit_note');
+          return (
+            <>
+              {!invoice ? (
+                isPaid && (
+                  <Button variant="secondary" icon={<FileText className="h-4 w-4" />} onClick={() => setShowInvoice('invoice')}>
+                    {t('invoices.generate', 'Generate Invoice')}
+                  </Button>
+                )
+              ) : (
+                <>
+                  <Button
+                    variant="secondary"
+                    icon={<FileText className="h-4 w-4" />}
+                    onClick={() => downloadPdf(`/invoices/${invoice.id}/pdf?lang=${language}`, `invoice-${invoice.displayNumber}.pdf`)}
+                  >
+                    {t('invoices.viewInvoice', 'View Invoice')}
+                  </Button>
+                  {!creditNote && (
+                    <Button variant="secondary" icon={<FileText className="h-4 w-4" />} onClick={() => setShowInvoice('credit_note')}>
+                      {t('invoices.generateCreditNote', 'Generate Credit Note')}
+                    </Button>
+                  )}
+                </>
+              )}
+            </>
+          );
+        })()}
       </Row>
 
       <ConfirmModal
@@ -209,6 +243,16 @@ export default function OrderDetailPage() {
         onClose={() => setShowLogPayment(false)}
         preselectedOrderId={o.id}
       />
+
+      {showInvoice && (
+        <GenerateInvoiceModal
+          isOpen={true}
+          onClose={() => setShowInvoice(null)}
+          order={{ id: o.id, orderNumber: o.orderNumber, customerName: o.customer?.name ?? '-', totalAmount: o.totalAmount ?? 0 }}
+          type={showInvoice}
+          originalInvoiceId={showInvoice === 'credit_note' ? orderInvoices?.find((inv: any) => inv.type === 'invoice')?.id : undefined}
+        />
+      )}
     </Page>
   );
 }

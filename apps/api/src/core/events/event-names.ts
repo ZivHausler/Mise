@@ -7,6 +7,8 @@ export const EventNames = {
   BATCH_CREATED: 'batch.created',
   BATCH_STAGE_CHANGED: 'batch.stageChanged',
   BATCH_COMPLETED: 'batch.completed',
+  INVOICE_CREATED: 'invoice.created',
+  CREDIT_NOTE_CREATED: 'invoice.creditNoteCreated',
 } as const;
 
 export type EventName = (typeof EventNames)[keyof typeof EventNames];
