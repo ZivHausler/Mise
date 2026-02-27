@@ -466,7 +466,8 @@
       "tags": "Tags",
       "notifications": "Notifications",
       "loyalty": "Loyalty",
-      "integrations": "Integrations"
+      "integrations": "Integrations",
+      "billing": "Billing"
     },
     "team": {
       "title": "Team Members",
@@ -538,6 +539,17 @@
       "pointValue": "Point Value (₪)",
       "minRedeemPoints": "Min. Redeem Points",
       "preview": "₪{{purchase}} purchase = {{points}} points = ₪{{value}} on redemption"
+    },
+    "billing": {
+      "businessDetails": "Business Details",
+      "businessName": "Business Name",
+      "businessId": "Business ID (ח.פ.)",
+      "address": "Address",
+      "phone": "Phone",
+      "email": "Email",
+      "invoiceSettings": "Invoice Settings",
+      "vatRate": "VAT Rate (%)",
+      "vatRateNote": "Changes to VAT rate will only affect future invoices."
     },
     "integrations": {
       "title": "Integrations",
@@ -678,7 +690,9 @@
     "whatsappConnected": "WhatsApp connected",
     "whatsappConnectFailed": "Failed to connect WhatsApp",
     "whatsappDisconnected": "WhatsApp disconnected",
-    "whatsappDisconnectFailed": "Failed to disconnect WhatsApp"
+    "whatsappDisconnectFailed": "Failed to disconnect WhatsApp",
+    "businessInfoUpdated": "Business info updated",
+    "businessInfoUpdateFailed": "Failed to update business info"
   },
   "store": {
     "setupTitle": "Set up your bakery",

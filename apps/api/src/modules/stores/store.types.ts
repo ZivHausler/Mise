@@ -12,6 +12,10 @@ export interface Store {
   name: string;
   code: string | null;
   address: string | null;
+  phone: string | null;
+  email: string | null;
+  taxNumber: string | null;
+  vatRate: number;
   theme: AppTheme;
   createdAt: Date;
   updatedAt: Date;

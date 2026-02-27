@@ -6,7 +6,7 @@ export type { DateFormat, Language, WeekStartDay };
 
 type OrdersViewMode = 'pipeline' | 'list' | 'calendar';
 type RecipesViewMode = 'grid' | 'list';
-type SettingsTab = 'account' | 'team' | 'units' | 'allergens' | 'tags' | 'notifications' | 'loyalty' | 'integrations';
+type SettingsTab = 'account' | 'team' | 'units' | 'allergens' | 'tags' | 'notifications' | 'loyalty' | 'integrations' | 'billing';
 type ProductionTab = 'board' | 'timeline' | 'prepList';
 type AdminDashboardRange = 'week' | 'month' | 'year';
 

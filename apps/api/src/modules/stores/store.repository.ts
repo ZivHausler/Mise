@@ -186,12 +186,44 @@ export class PgStoreRepository {
     );
   }
 
+  static async updateBusinessInfo(storeId: number, data: { name?: string; address?: string; phone?: string; email?: string; taxNumber?: string; vatRate?: number }): Promise<Store> {
+    const pool = getPool();
+    const fields: string[] = [];
+    const values: unknown[] = [];
+    let idx = 1;
+
+    if (data.name !== undefined) { fields.push(`name = $${idx++}`); values.push(data.name); }
+    if (data.address !== undefined) { fields.push(`address = $${idx++}`); values.push(data.address); }
+    if (data.phone !== undefined) { fields.push(`phone = $${idx++}`); values.push(data.phone); }
+    if (data.email !== undefined) { fields.push(`email = $${idx++}`); values.push(data.email); }
+    if (data.taxNumber !== undefined) { fields.push(`tax_number = $${idx++}`); values.push(data.taxNumber); }
+    if (data.vatRate !== undefined) { fields.push(`vat_rate = $${idx++}`); values.push(data.vatRate); }
+
+    if (fields.length === 0) {
+      const existing = await this.findStoreById(storeId);
+      return existing!;
+    }
+
+    fields.push('updated_at = NOW()');
+    values.push(storeId);
+
+    const result = await pool.query(
+      `UPDATE stores SET ${fields.join(', ')} WHERE id = $${idx} RETURNING *`,
+      values,
+    );
+    return this.mapStoreRow(result.rows[0]);
+  }
+
   private static mapStoreRow(row: Record<string, unknown>): Store {
     return {
       id: Number(row['id']),
       name: row['name'] as string,
       code: (row['code'] as string) || null,
       address: (row['address'] as string) || null,
+      phone: (row['phone'] as string) || null,
+      email: (row['email'] as string) || null,
+      taxNumber: (row['tax_number'] as string) || null,
+      vatRate: Number(row['vat_rate'] ?? 18),
       theme: (row['theme'] as AppTheme) || 'cream',
       createdAt: new Date(row['created_at'] as string),
       updatedAt: new Date(row['updated_at'] as string),

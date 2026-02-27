@@ -10,6 +10,15 @@ export const updateThemeSchema = z.object({
   theme: z.enum(['cream', 'white', 'stone', 'rose', 'mint', 'sky', 'lavender']),
 });
 
+export const updateBusinessInfoSchema = z.object({
+  name: z.string().trim().min(1).max(255).optional(),
+  address: z.string().trim().max(500).optional(),
+  phone: z.string().max(50).optional(),
+  email: z.string().email().max(255).optional(),
+  taxNumber: z.string().regex(/^\d{1,9}$/, 'Tax number must be 1-9 digits').optional(),
+  vatRate: z.number().min(0).max(100).optional(),
+});
+
 export const inviteSchema = z.object({
   email: z.string().email(),
   role: z.number().int().min(2).max(3).default(3),
