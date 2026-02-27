@@ -1,5 +1,5 @@
 import autoTable from 'jspdf-autotable';
-import { fixRtl } from './pdfHelpers.js';
+import { fixRtl, drawBidiText } from './pdfHelpers.js';
 import { t } from './i18n.js';
 import { formatDate } from './dateFormat.js';
 import { buildPdf, FONT_NAME, type PdfContext, type PdfSection, type PdfBuildOptions } from './pdfBuilder.js';
@@ -8,16 +8,14 @@ import { ORDER_STATUSES } from '@mise/shared';
 import type { Order } from '../../orders/order.types.js';
 
 function drawMetaRow(ctx: PdfContext, label: string, value: string, y: number) {
-  const labelText = fixRtl(label);
-  const valueText = fixRtl(value);
   const { doc, pageWidth, margin, isRtl } = ctx;
 
   if (isRtl) {
-    doc.text(labelText, pageWidth - margin, y, { align: 'right' });
-    doc.text(valueText, margin, y, { align: 'left' });
+    drawBidiText(doc, label, pageWidth - margin, y, { align: 'right', isRtl });
+    doc.text(value, margin, y, { align: 'left' });
   } else {
-    doc.text(labelText, margin, y);
-    doc.text(valueText, pageWidth - margin, y, { align: 'right' });
+    doc.text(label, margin, y);
+    doc.text(value, pageWidth - margin, y, { align: 'right' });
   }
 }
 
@@ -28,11 +26,10 @@ class StoreHeaderSection implements PdfSection {
     const { doc, pageWidth, margin, isRtl } = ctx;
     doc.setFontSize(PDF_LAYOUT.subtitleFontSize);
     doc.setTextColor(...PDF_COLORS.order.storeNameText);
-    const storeText = fixRtl(this.storeName);
     if (isRtl) {
-      doc.text(storeText, pageWidth - margin, y, { align: 'right' });
+      drawBidiText(doc, this.storeName, pageWidth - margin, y, { align: 'right', isRtl });
     } else {
-      doc.text(storeText, margin, y);
+      doc.text(this.storeName, margin, y);
     }
     return y + 12;
   }
@@ -45,14 +42,11 @@ class OrderTitleSection implements PdfSection {
     const { doc, pageWidth, margin, isRtl, lang } = ctx;
     doc.setFontSize(PDF_LAYOUT.titleFontSize);
     doc.setTextColor(...PDF_COLORS.shared.black);
-    const orderLabel = fixRtl(t(lang, 'orders.orderNum', 'Order'));
-    const orderNum = `#${this.order.orderNumber}`;
+    const title = `${t(lang, 'orders.orderNum', 'Order')} #${this.order.orderNumber}`;
     if (isRtl) {
-      const labelWidth = doc.getTextWidth(orderLabel);
-      doc.text(orderLabel, pageWidth - margin, y, { align: 'right' });
-      doc.text(orderNum, pageWidth - margin - labelWidth - 3, y, { align: 'right' });
+      drawBidiText(doc, title, pageWidth - margin, y, { align: 'right', isRtl });
     } else {
-      doc.text(`${orderLabel} ${orderNum}`, margin, y);
+      doc.text(title, margin, y);
     }
     return y + 10;
   }
@@ -69,8 +63,8 @@ class OrderMetaSection implements PdfSection {
     doc.setFontSize(PDF_LAYOUT.bodyFontSize);
     doc.setTextColor(...PDF_COLORS.shared.muted);
 
-    if (order.customerName) {
-      drawMetaRow(ctx, t(lang, 'orders.customer', 'Customer'), order.customerName, y);
+    if (order.customer?.name) {
+      drawMetaRow(ctx, t(lang, 'orders.customer', 'Customer'), order.customer.name, y);
       y += 6;
     }
     drawMetaRow(ctx, t(lang, 'orders.statusLabel', 'Status'), t(lang, `orders.status.${statusKey}`, statusKey), y);
@@ -145,20 +139,18 @@ class OrderNotesSection implements PdfSection {
 
     doc.setFontSize(PDF_LAYOUT.labelFontSize);
     doc.setTextColor(...PDF_COLORS.shared.black);
-    const notesLabel = fixRtl(t(lang, 'orders.notes', 'Notes'));
     if (isRtl) {
-      doc.text(notesLabel, pageWidth - margin, y, { align: 'right' });
+      drawBidiText(doc, t(lang, 'orders.notes', 'Notes'), pageWidth - margin, y, { align: 'right', isRtl });
     } else {
-      doc.text(notesLabel, margin, y);
+      doc.text(t(lang, 'orders.notes', 'Notes'), margin, y);
     }
     y += 7;
     doc.setFontSize(PDF_LAYOUT.smallFontSize);
     doc.setTextColor(...PDF_COLORS.shared.muted);
-    const notesText = fixRtl(order.notes);
     if (isRtl) {
-      doc.text(notesText, pageWidth - margin, y, { align: 'right', maxWidth: pageWidth - margin * 2 });
+      drawBidiText(doc, order.notes, pageWidth - margin, y, { align: 'right', isRtl });
     } else {
-      doc.text(notesText, margin, y, { maxWidth: pageWidth - margin * 2 });
+      doc.text(order.notes, margin, y, { maxWidth: pageWidth - margin * 2 });
     }
     return y + 10;
   }
