@@ -68,7 +68,7 @@ export class StoreService {
     return store;
   }
 
-  async updateBusinessInfo(storeId: number, data: { name?: string; address?: string; phone?: string; email?: string; taxNumber?: string; vatRate?: number }): Promise<Store> {
+  async updateBusinessInfo(storeId: number, data: { name?: string; address?: string; phone?: string; email?: string; taxNumber?: string; vatRate?: number; autoGenerateInvoice?: boolean; autoGenerateCreditNote?: boolean }): Promise<Store> {
     return PgStoreRepository.updateBusinessInfo(storeId, data);
   }
 

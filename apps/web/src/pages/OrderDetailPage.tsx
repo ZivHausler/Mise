@@ -1,7 +1,7 @@
 import React, { useCallback } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { ChevronLeft, ChevronRight, Trash2, Edit, BadgeDollarSign, Download, Printer, FileText } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Trash2, Edit, BadgeDollarSign, Download, Printer, FileText, RotateCcw } from 'lucide-react';
 import { Page, Card, Section, Stack, Row } from '@/components/Layout';
 import { Breadcrumbs } from '@/components/Breadcrumbs';
 import { StatusBadge } from '@/components/DataDisplay';
@@ -9,10 +9,11 @@ import { Button } from '@/components/Button';
 import { PageSkeleton } from '@/components/Feedback';
 import { ConfirmModal } from '@/components/Modal';
 import { LogPaymentModal } from '@/components/LogPaymentModal';
-import { useOrder, useUpdateOrderStatus, useDeleteOrder, usePaymentStatuses, useOrderInvoices, downloadPdf } from '@/api/hooks';
+import { RefundOrderModal } from '@/components/RefundOrderModal';
+import { useOrder, useUpdateOrderStatus, useDeleteOrder, usePaymentStatuses, useOrderInvoices, useOrderPayments, useCurrentStore, downloadPdf } from '@/api/hooks';
 import { GenerateInvoiceModal } from '@/components/invoices/GenerateInvoiceModal';
 import { ORDER_STATUS, getStatusLabel } from '@/utils/orderStatus';
-import { useFormatDate } from '@/utils/dateFormat';
+import { useFormatDate, useFormatTime } from '@/utils/dateFormat';
 import { useAuthStore } from '@/store/auth';
 import { useAppStore } from '@/store/app';
 import { printOrder } from '@/utils/orderPrint';
@@ -29,10 +30,30 @@ export default function OrderDetailPage() {
   const [showDelete, setShowDelete] = React.useState(false);
   const [showLogPayment, setShowLogPayment] = React.useState(false);
   const [showInvoice, setShowInvoice] = React.useState<'invoice' | 'credit_note' | null>(null);
+  const [showRefund, setShowRefund] = React.useState(false);
   const { data: orderInvoices } = useOrderInvoices(numId);
+  const { data: orderPayments } = useOrderPayments(numId);
+  const { data: currentStore } = useCurrentStore();
+  const hasTaxNumber = !!currentStore?.taxNumber;
+  const autoInvoice = hasTaxNumber && !!currentStore?.autoGenerateInvoice;
+  const autoCreditNote = hasTaxNumber && !!currentStore?.autoGenerateCreditNote;
+
+  // Compute active (uncredited) invoice for the order
+  const invoicesList = (orderInvoices ?? []) as any[];
+  const creditedInvoiceIds = React.useMemo(() => {
+    return new Set(invoicesList.filter((i: any) => i.type === 'credit_note').map((cn: any) => cn.originalInvoiceId));
+  }, [invoicesList]);
+  const activeInvoice = React.useMemo(() => {
+    return invoicesList.find((i: any) => i.type === 'invoice' && !creditedInvoiceIds.has(i.id)) ?? null;
+  }, [invoicesList, creditedInvoiceIds]);
 
   const formatDate = useFormatDate();
+  const formatTime = useFormatTime();
   const storeName = useAuthStore((s) => s.stores[0]?.store?.name ?? '');
+  const isAdmin = useAuthStore((s) => s.isAdmin);
+  const activeStoreId = useAuthStore((s) => s.activeStoreId);
+  const storeRole = useAuthStore((s) => s.stores.find((st) => String(st.storeId) === String(activeStoreId))?.role ?? 3);
+  const canRefund = isAdmin || storeRole <= 2;
   const language = useAppStore((s) => s.language);
   const isRtl = language === 'he';
   const currency = String(t('common.currency'));
@@ -87,6 +108,11 @@ export default function OrderDetailPage() {
               <BadgeDollarSign className="h-6 w-6 text-green-600 transition-colors hover:text-green-800" />
             </Link>
           )}
+          {paymentStatuses?.[o.id] === 'refunded' && (
+            <Link to={`/payments?search=${encodeURIComponent(o.orderNumber)}`} title={t('payments.refunded', 'Refunded')}>
+              <BadgeDollarSign className="h-6 w-6 text-red-500 transition-colors hover:text-red-700" />
+            </Link>
+          )}
         </div>
         <Row gap={2} className="flex-wrap">
           {o.status > ORDER_STATUS.RECEIVED && (
@@ -110,9 +136,18 @@ export default function OrderDetailPage() {
               {t('orders.advance', 'Advance')}
             </Button>
           )}
-          {paymentStatuses?.[o.id] !== 'paid' && (
+          {paymentStatuses?.[o.id] !== 'paid' && paymentStatuses?.[o.id] !== 'refunded' && (
             <Button variant="secondary" icon={<BadgeDollarSign className="h-4 w-4" />} onClick={() => setShowLogPayment(true)}>
               {t('payments.logPayment', 'Log Payment')}
+            </Button>
+          )}
+          {paymentStatuses?.[o.id] === 'paid' && canRefund && (
+            <Button
+              variant="danger"
+              icon={<RotateCcw className="h-4 w-4" />}
+              onClick={() => setShowRefund(true)}
+            >
+              {t('refund.refund', 'Refund')}
             </Button>
           )}
           {o.status <= ORDER_STATUS.IN_PROGRESS && paymentStatuses?.[o.id] !== 'paid' && (
@@ -194,38 +229,95 @@ export default function OrderDetailPage() {
         <Button variant="secondary" icon={<Printer className="h-4 w-4" />} onClick={handlePrint}>
           {t('orders.print', 'Print')}
         </Button>
-        {(() => {
-          const isPaid = paymentStatuses?.[o.id] === 'paid';
-          const invoice = orderInvoices?.find((inv: any) => inv.type === 'invoice');
-          const creditNote = orderInvoices?.find((inv: any) => inv.type === 'credit_note');
-          return (
-            <>
-              {!invoice ? (
-                isPaid && (
-                  <Button variant="secondary" icon={<FileText className="h-4 w-4" />} onClick={() => setShowInvoice('invoice')}>
-                    {t('invoices.generate', 'Generate Invoice')}
-                  </Button>
-                )
+      </Row>
+
+      {(() => {
+        const isPaid = paymentStatuses?.[o.id] === 'paid';
+        const allDocs = invoicesList.slice().sort((a: any, b: any) => new Date(a.issuedAt).getTime() - new Date(b.issuedAt).getTime());
+        const canGenerateInvoice = isPaid && !activeInvoice && !autoInvoice;
+        const canGenerateCreditNote = !!activeInvoice && !autoCreditNote;
+        const showSection = allDocs.length > 0 || canGenerateInvoice || canGenerateCreditNote;
+
+        if (!showSection) return null;
+
+        return (
+          <Card className="mt-6">
+            <Section title={t('invoices.billingDocuments', 'Billing Documents')}>
+              {allDocs.length > 0 ? (
+                <div className="overflow-hidden rounded-md border border-neutral-200">
+                  <table className="w-full text-body-sm">
+                    <thead>
+                      <tr className="border-b bg-neutral-100">
+                        <th className="px-3 py-2 text-start font-semibold">{t('invoices.type', 'Type')}</th>
+                        <th className="px-3 py-2 text-start font-semibold">{t('invoices.invoiceNumber', 'Number')}</th>
+                        <th className="px-3 py-2 text-start font-semibold">{t('invoices.date', 'Date')}</th>
+                        <th className="px-3 py-2 text-end font-semibold">{t('invoices.amount', 'Amount')}</th>
+                        <th className="px-3 py-2 text-end font-semibold"></th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {allDocs.map((doc: any) => (
+                        <tr key={doc.id} className="border-b border-neutral-100">
+                          <td className="px-3 py-2">
+                            <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
+                              doc.type === 'credit_note'
+                                ? 'bg-red-50 text-red-700'
+                                : 'bg-green-50 text-green-700'
+                            }`}>
+                              {doc.type === 'credit_note'
+                                ? t('invoices.creditNote', 'Credit Note')
+                                : t('invoices.taxInvoice', 'Tax Invoice')}
+                            </span>
+                          </td>
+                          <td className="px-3 py-2 font-mono">{doc.displayNumber}</td>
+                          <td className="px-3 py-2">
+                            {doc.issuedAt ? (
+                              <>
+                                {formatDate(doc.issuedAt)}
+                                <span className="text-neutral-400 ms-1">
+                                  {formatTime(doc.issuedAt)}
+                                </span>
+                              </>
+                            ) : '-'}
+                          </td>
+                          <td className="px-3 py-2 text-end font-mono">{doc.pricing?.totalAmount ?? 0} {currency}</td>
+                          <td className="px-3 py-2 text-end">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              icon={<Download className="h-3.5 w-3.5" />}
+                              onClick={() => downloadPdf(`/invoices/${doc.id}/pdf?lang=${language}`, `${doc.type === 'credit_note' ? 'credit-note' : 'invoice'}-${doc.displayNumber}.pdf`)}
+                            >
+                              {t('invoices.download', 'Download')}
+                            </Button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               ) : (
-                <>
-                  <Button
-                    variant="secondary"
-                    icon={<FileText className="h-4 w-4" />}
-                    onClick={() => downloadPdf(`/invoices/${invoice.id}/pdf?lang=${language}`, `invoice-${invoice.displayNumber}.pdf`)}
-                  >
-                    {t('invoices.viewInvoice', 'View Invoice')}
-                  </Button>
-                  {!creditNote && (
-                    <Button variant="secondary" icon={<FileText className="h-4 w-4" />} onClick={() => setShowInvoice('credit_note')}>
+                <p className="text-body-sm text-neutral-400">{t('invoices.noDocumentsYet', 'No billing documents yet.')}</p>
+              )}
+
+              {(canGenerateInvoice || canGenerateCreditNote) && (
+                <Row gap={2} className="mt-4">
+                  {canGenerateInvoice && (
+                    <Button variant="secondary" size="sm" icon={<FileText className="h-4 w-4" />} onClick={() => setShowInvoice('invoice')}>
+                      {t('invoices.generate', 'Generate Invoice')}
+                    </Button>
+                  )}
+                  {canGenerateCreditNote && (
+                    <Button variant="secondary" size="sm" icon={<FileText className="h-4 w-4" />} onClick={() => setShowInvoice('credit_note')}>
                       {t('invoices.generateCreditNote', 'Generate Credit Note')}
                     </Button>
                   )}
-                </>
+                </Row>
               )}
-            </>
-          );
-        })()}
-      </Row>
+            </Section>
+          </Card>
+        );
+      })()}
 
       <ConfirmModal
         open={showDelete}
@@ -250,9 +342,20 @@ export default function OrderDetailPage() {
           onClose={() => setShowInvoice(null)}
           order={{ id: o.id, orderNumber: o.orderNumber, customerName: o.customer?.name ?? '-', totalAmount: o.totalAmount ?? 0 }}
           type={showInvoice}
-          originalInvoiceId={showInvoice === 'credit_note' ? orderInvoices?.find((inv: any) => inv.type === 'invoice')?.id : undefined}
+          originalInvoiceId={showInvoice === 'credit_note' ? activeInvoice?.id : undefined}
+          isPaid={paymentStatuses?.[o.id] === 'paid'}
+          payments={(orderPayments as any[]) ?? []}
         />
       )}
+
+      <RefundOrderModal
+        open={showRefund}
+        onClose={() => setShowRefund(false)}
+        order={{ id: o.id, orderNumber: o.orderNumber, customerName: o.customer?.name ?? '-', totalAmount: o.totalAmount ?? 0 }}
+        invoice={activeInvoice}
+        creditNoteExists={false}
+        payments={(orderPayments as any[]) ?? []}
+      />
     </Page>
   );
 }

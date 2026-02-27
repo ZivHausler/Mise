@@ -1,14 +1,13 @@
-import React, { useMemo, useState, useCallback, useEffect } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSearchParams } from 'react-router-dom';
-import { Plus, CreditCard, ChevronLeft, ChevronRight, RotateCcw, X } from 'lucide-react';
+import { Plus, CreditCard, ChevronLeft, ChevronRight, X } from 'lucide-react';
 import { Page, PageHeader } from '@/components/Layout';
 import { Button } from '@/components/Button';
 import { DataTable, StatusBadge, EmptyState, type Column } from '@/components/DataDisplay';
 import { PageSkeleton } from '@/components/Feedback';
-import { Modal } from '@/components/Modal';
 import { LogPaymentModal } from '@/components/LogPaymentModal';
-import { usePayments, useRefundPayment } from '@/api/hooks';
+import { usePayments } from '@/api/hooks';
 import { PAYMENT_METHODS, PAYMENT_METHOD_I18N } from '@/constants/defaults';
 import { useFormatDate } from '@/utils/dateFormat';
 import { DateFilterDropdown } from '@/components/DateFilterDropdown';
@@ -33,9 +32,7 @@ export default function PaymentsPage() {
     return Object.keys(f).length ? f : undefined;
   }, [filterStatus, filterMethod, dateFrom, dateTo]);
   const { data: paymentsData, isLoading } = usePayments(page, 10, filters);
-  const refundPayment = useRefundPayment();
   const [showAdd, setShowAdd] = useState(false);
-  const [refundTarget, setRefundTarget] = useState<any>(null);
 
   // Reset page when filters change
   useEffect(() => { setPage(1); }, [filterStatus, filterMethod, dateFrom, dateTo]);
@@ -74,31 +71,9 @@ export default function PaymentsPage() {
           />
         ),
       },
-      {
-        key: 'actions',
-        header: '',
-        shrink: true,
-        render: (row: any) => row.status !== 'refunded' ? (
-          <Button
-            size="sm"
-            variant="secondary"
-            icon={<RotateCcw className="h-3.5 w-3.5" />}
-            onClick={(e) => { e.stopPropagation(); setRefundTarget(row); }}
-          >
-            {t('payments.refund', 'Refund')}
-          </Button>
-        ) : null,
-      },
     ],
     [t]
   );
-
-  const handleRefund = useCallback(() => {
-    if (!refundTarget) return;
-    refundPayment.mutate(refundTarget.id, {
-      onSuccess: () => setRefundTarget(null),
-    });
-  }, [refundTarget, refundPayment]);
 
   if (isLoading) return <PageSkeleton />;
 
@@ -217,27 +192,6 @@ export default function PaymentsPage() {
       )}
 
       <LogPaymentModal open={showAdd} onClose={() => setShowAdd(false)} />
-
-      <Modal
-        open={!!refundTarget}
-        onClose={() => setRefundTarget(null)}
-        title={t('payments.refundTitle', 'Refund Payment?')}
-        size="sm"
-        footer={
-          <>
-            <Button variant="secondary" onClick={() => setRefundTarget(null)}>{t('common.cancel')}</Button>
-            <Button variant="danger" onClick={handleRefund} loading={refundPayment.isPending}>{t('payments.refund', 'Refund')}</Button>
-          </>
-        }
-      >
-        <p className="text-body-sm text-neutral-600">
-          {t('payments.refundMsg', 'This will mark the payment of {{amount}} {{currency}} for order #{{order}} as refunded.', {
-            amount: refundTarget?.amount,
-            currency: t('common.currency'),
-            order: refundTarget?.order?.number,
-          })}
-        </p>
-      </Modal>
     </Page>
   );
 }
