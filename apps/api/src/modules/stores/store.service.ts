@@ -62,6 +62,16 @@ export class StoreService {
     return { token };
   }
 
+  async getStoreById(storeId: number): Promise<Store> {
+    const store = await PgStoreRepository.findStoreById(storeId);
+    if (!store) throw new NotFoundError('Store not found', ErrorCode.STORE_NOT_FOUND);
+    return store;
+  }
+
+  async updateBusinessInfo(storeId: number, data: { name?: string; address?: string; phone?: string; email?: string; taxNumber?: string; vatRate?: number }): Promise<Store> {
+    return PgStoreRepository.updateBusinessInfo(storeId, data);
+  }
+
   async updateTheme(storeId: number, theme: AppTheme): Promise<void> {
     await PgStoreRepository.updateTheme(storeId, theme);
   }

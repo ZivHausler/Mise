@@ -10,6 +10,7 @@ import NotificationsTab from '@/components/settings/NotificationsTab';
 import TeamTab from '@/components/settings/TeamTab';
 import LoyaltyTab from '@/components/settings/LoyaltyTab';
 import IntegrationsTab from '@/components/settings/IntegrationsTab';
+import BillingTab from '@/components/settings/BillingTab';
 import { useAppStore } from '@/store/app';
 import { useAuthStore } from '@/store/auth';
 import { STORE_ROLES } from '@/constants/defaults';
@@ -31,6 +32,7 @@ export default function SettingsPage() {
     { key: 'tags' as const, label: t('settings.tabs.tags', 'Tags') },
     { key: 'notifications' as const, label: t('settings.tabs.notifications', 'Notifications') },
     { key: 'loyalty' as const, label: t('settings.tabs.loyalty', 'Loyalty') },
+    ...(isOwner ? [{ key: 'billing' as const, label: t('settings.tabs.billing', 'Billing') }] : []),
     ...(isOwner ? [{ key: 'integrations' as const, label: t('settings.tabs.integrations', 'Integrations') }] : []),
   ];
 
@@ -48,6 +50,7 @@ export default function SettingsPage() {
         {activeTab === 'tags' && <TagsTab />}
         {activeTab === 'notifications' && <NotificationsTab />}
         {activeTab === 'loyalty' && <LoyaltyTab />}
+        {activeTab === 'billing' && isOwner && <BillingTab />}
         {activeTab === 'integrations' && isOwner && <IntegrationsTab />}
       </div>
     </Page>
