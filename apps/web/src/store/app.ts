@@ -1,8 +1,8 @@
 import { create } from 'zustand';
-import { DEFAULT_DATE_FORMAT, DEFAULT_LANGUAGE, DEFAULT_WEEK_START_DAY, DEFAULT_SHOW_FRIDAY, DEFAULT_SHOW_SATURDAY, ENUM_TO_LANGUAGE } from '@/constants/defaults';
-import type { DateFormat, Language, WeekStartDay } from '@/constants/defaults';
+import { DEFAULT_DATE_FORMAT, DEFAULT_TIME_FORMAT, DEFAULT_LANGUAGE, DEFAULT_WEEK_START_DAY, DEFAULT_SHOW_FRIDAY, DEFAULT_SHOW_SATURDAY, ENUM_TO_LANGUAGE } from '@/constants/defaults';
+import type { DateFormat, TimeFormat, Language, WeekStartDay } from '@/constants/defaults';
 
-export type { DateFormat, Language, WeekStartDay };
+export type { DateFormat, TimeFormat, Language, WeekStartDay };
 
 type OrdersViewMode = 'pipeline' | 'list' | 'calendar';
 type RecipesViewMode = 'grid' | 'list';
@@ -13,6 +13,7 @@ type AdminDashboardRange = 'week' | 'month' | 'year';
 interface AppState {
   language: Language;
   dateFormat: DateFormat;
+  timeFormat: TimeFormat;
   weekStartDay: WeekStartDay;
   showFriday: boolean;
   showSaturday: boolean;
@@ -25,6 +26,7 @@ interface AppState {
   adminDashboardRange: AdminDashboardRange;
   setLanguage: (lang: Language) => void;
   setDateFormat: (format: DateFormat) => void;
+  setTimeFormat: (format: TimeFormat) => void;
   setWeekStartDay: (day: WeekStartDay) => void;
   setShowFriday: (show: boolean) => void;
   setShowSaturday: (show: boolean) => void;
@@ -48,6 +50,7 @@ function boolFromStorage(key: string, fallback: boolean): boolean {
 export const useAppStore = create<AppState>((set) => ({
   language: DEFAULT_LANGUAGE,
   dateFormat: (localStorage.getItem('dateFormat') as DateFormat) || DEFAULT_DATE_FORMAT,
+  timeFormat: (localStorage.getItem('timeFormat') as TimeFormat) || DEFAULT_TIME_FORMAT,
   weekStartDay: (localStorage.getItem('weekStartDay') as WeekStartDay) || DEFAULT_WEEK_START_DAY,
   showFriday: boolFromStorage('showFriday', DEFAULT_SHOW_FRIDAY),
   showSaturday: boolFromStorage('showSaturday', DEFAULT_SHOW_SATURDAY),
@@ -65,6 +68,10 @@ export const useAppStore = create<AppState>((set) => ({
   setDateFormat: (dateFormat) => {
     localStorage.setItem('dateFormat', dateFormat);
     set({ dateFormat });
+  },
+  setTimeFormat: (timeFormat) => {
+    localStorage.setItem('timeFormat', timeFormat);
+    set({ timeFormat });
   },
   setWeekStartDay: (weekStartDay) => {
     localStorage.setItem('weekStartDay', weekStartDay);

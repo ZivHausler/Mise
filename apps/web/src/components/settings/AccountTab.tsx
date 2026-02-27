@@ -9,9 +9,9 @@ import { Spinner } from '@/components/Feedback';
 import { useAuthStore } from '@/store/auth';
 import { useAppStore } from '@/store/app';
 import { useProfile, useUpdateProfile, useUpdateStoreTheme } from '@/api/hooks';
-import { DATE_FORMATS, LANGUAGES, WEEK_START_DAYS, LANGUAGE_TO_ENUM, ENUM_TO_LANGUAGE, APP_THEMES, THEME_PRESETS, STORE_ROLES, applyThemePalette } from '@/constants/defaults';
+import { DATE_FORMATS, TIME_FORMATS, LANGUAGES, WEEK_START_DAYS, LANGUAGE_TO_ENUM, ENUM_TO_LANGUAGE, APP_THEMES, THEME_PRESETS, STORE_ROLES, applyThemePalette } from '@/constants/defaults';
 import { languageDir } from '@/utils/language';
-import type { DateFormat, Language, WeekStartDay, AppTheme } from '@/constants/defaults';
+import type { DateFormat, TimeFormat, Language, WeekStartDay, AppTheme } from '@/constants/defaults';
 
 export default function AccountTab() {
   const { t, i18n } = useTranslation();
@@ -20,6 +20,8 @@ export default function AccountTab() {
   const setLanguage = useAppStore((s) => s.setLanguage);
   const dateFormat = useAppStore((s) => s.dateFormat);
   const setDateFormat = useAppStore((s) => s.setDateFormat);
+  const timeFormat = useAppStore((s) => s.timeFormat);
+  const setTimeFormat = useAppStore((s) => s.setTimeFormat);
   const weekStartDay = useAppStore((s) => s.weekStartDay);
   const setWeekStartDay = useAppStore((s) => s.setWeekStartDay);
   const showFriday = useAppStore((s) => s.showFriday);
@@ -146,6 +148,15 @@ export default function AccountTab() {
               options={DATE_FORMATS.map((f) => ({ value: f, label: f }))}
               value={dateFormat}
               onChange={(e) => setDateFormat(e.target.value as DateFormat)}
+            />
+            <Select
+              label={t('settings.timeFormat', 'Time Format')}
+              options={TIME_FORMATS.map((f) => ({
+                value: f,
+                label: f === '24h' ? t('settings.timeFormats.24h', '24h (14:30)') : t('settings.timeFormats.12h', '12h (2:30 PM)'),
+              }))}
+              value={timeFormat}
+              onChange={(e) => setTimeFormat(e.target.value as TimeFormat)}
             />
             <Select
               label={t('settings.weekStartDay', 'Week starts on')}

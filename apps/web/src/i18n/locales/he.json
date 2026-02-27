@@ -461,6 +461,11 @@
     "preferences": "העדפות",
     "language": "שפה",
     "dateFormat": "תבנית תאריך",
+    "timeFormat": "תבנית שעה",
+    "timeFormats": {
+      "24h": "24 שעות (14:30)",
+      "12h": "12 שעות (2:30 PM)"
+    },
     "weekStartDay": "השבוע מתחיל ב",
     "weekStartDays": {
       "sunday": "יום ראשון",

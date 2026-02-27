@@ -5,6 +5,8 @@ import { useAdminAuditLog, useAdminUsers, useAuditLogRequestBody, useAuditLogRes
 import { useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/Button';
 import { useDebouncedValue } from '@/hooks/useDebouncedValue';
+import { useAppStore } from '@/store/app';
+import { formatTime } from '@/utils/dateFormat';
 
 type AuditEntry = {
   id: number;
@@ -137,6 +139,7 @@ function UserFilterDropdown({
 
 export default function AdminAuditLogPage() {
   const { t } = useTranslation();
+  const timeFormat = useAppStore((s) => s.timeFormat);
   const [page, setPage] = useState(1);
   const [method, setMethod] = useState('');
   const [statusCode, setStatusCode] = useState('');
@@ -335,7 +338,7 @@ export default function AdminAuditLogPage() {
                     <td className="px-3 py-2 text-body-sm text-neutral-600 dark:text-neutral-400 font-mono max-w-xs truncate">{entry.path}</td>
                     <td className={`px-3 py-2 text-body-sm font-mono font-medium ${statusColorFn(entry.statusCode)}`}>{entry.statusCode}</td>
                     <td className="px-3 py-2 text-body-sm text-neutral-500 dark:text-neutral-400 font-mono">{entry.ip}</td>
-                    <td className="px-3 py-2 text-body-sm text-neutral-600 dark:text-neutral-400">{new Date(entry.createdAt).toLocaleDateString('en-GB')} {new Date(entry.createdAt).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}</td>
+                    <td className="px-3 py-2 text-body-sm text-neutral-600 dark:text-neutral-400">{new Date(entry.createdAt).toLocaleDateString('en-GB')} {formatTime(new Date(entry.createdAt), timeFormat)}</td>
                   </tr>
                 ))
               )}
@@ -419,7 +422,7 @@ export default function AdminAuditLogPage() {
             </div>
             <div>
               <span className="text-neutral-500 dark:text-neutral-400">{t('admin.auditLog.date')}: </span>
-              <span className="text-neutral-700 dark:text-neutral-300">{new Date(selectedEntry.createdAt).toLocaleDateString('en-GB')} {new Date(selectedEntry.createdAt).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}</span>
+              <span className="text-neutral-700 dark:text-neutral-300">{new Date(selectedEntry.createdAt).toLocaleDateString('en-GB')} {formatTime(new Date(selectedEntry.createdAt), timeFormat)}</span>
             </div>
           </div>
 
