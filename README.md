@@ -1,6 +1,6 @@
 # Mise — Bakery Management App
 
-A full-stack bakery management application built with TypeScript. Manage recipes, inventory, orders, customers, and payments — with multi-tenancy, admin tools, and Hebrew/English i18n support.
+A full-stack bakery management application built with TypeScript. Manage recipes, inventory, orders, production, customers, invoices, and payments — with multi-tenancy, role-based access, feature flags, and Hebrew/English i18n support.
 
 ## Tech Stack
 
@@ -14,7 +14,7 @@ A full-stack bakery management application built with TypeScript. Manage recipes
 | DI | Awilix |
 | i18n | i18next (Hebrew RTL + English LTR) |
 | Observability | Pino logging, Grafana dashboards |
-| Testing | Vitest |
+| Testing | Vitest (unit), Playwright (e2e) |
 
 ## Project Structure
 
@@ -23,7 +23,7 @@ mise/
 ├── apps/
 │   ├── api/          # Fastify backend
 │   ├── web/          # React frontend
-│   └── e2e/          # End-to-end tests
+│   └── e2e/          # Playwright end-to-end tests
 ├── packages/
 │   ├── db/           # Database migrations & schemas
 │   ├── shared/       # Shared types & Zod validation
@@ -86,8 +86,8 @@ Migrations run automatically when the API server starts.
 pnpm dev
 ```
 
-- **API** → http://localhost:3001
-- **Web** → http://localhost:5173
+- **API** → https://localhost:3001
+- **Web** → https://localhost:5173
 - **Grafana** → http://localhost:3002
 
 ## Scripts
@@ -100,22 +100,39 @@ pnpm dev
 | `pnpm lint` | Lint all packages |
 | `pnpm type-check` | TypeScript type checking |
 | `pnpm format` | Format code with Prettier |
+| `pnpm format:check` | Check Prettier formatting |
+| `pnpm clean` | Clean all build artifacts |
 
 ## Backend Modules
 
 | Module | Description |
 |--------|-------------|
-| **Auth** | Email/password + Google OAuth, JWT with refresh tokens |
-| **Stores** | Multi-tenant store management, roles (Owner/Manager/Employee) |
-| **Recipes** | MongoDB-backed, sub-recipes, recursive cost calculation |
-| **Inventory** | Stock tracking, adjustments with price logging, low-stock alerts |
-| **Customers** | Customer profiles with preferences (allergies, favorites) |
-| **Orders** | Status pipeline (received → in_progress → ready → delivered), sequential numbering |
-| **Payments** | Payment tracking, refunds, auto-calculated status |
-| **Notifications** | Event-driven dispatcher (order, inventory, payment events) |
+| **Auth** | Email/password + Google OAuth, JWT with refresh tokens and blacklisting |
+| **Stores** | Multi-tenant store management, roles (Owner/Manager/Employee), invitation system |
+| **Recipes** | MongoDB-backed, sub-recipes, recursive cost calculation, selling price tracking |
+| **Inventory** | Stock tracking, adjustments with price logging, low-stock alerts, unit conversions |
+| **Customers** | Customer profiles with preferences (allergies, favorites), duplicate detection |
+| **Orders** | Status pipeline (received → in_progress → ready → delivered), recurring orders, sequential numbering |
+| **Production** | Batch management, stage tracking, recipe-based prep items, order-to-batch generation |
+| **Payments** | Payment tracking, refunds, auto-calculated payment status (paid/partial/unpaid) |
+| **Invoices** | Invoice generation with VAT calculation, credit notes, business detail snapshots |
+| **Loyalty** | Customer loyalty and rewards program |
+| **Notifications** | Event-driven dispatcher (order, inventory, payment events), WhatsApp & SMS channels |
 | **Analytics** | Revenue, popular recipes, order stats |
-| **Settings** | Groups, units, notification preferences |
+| **Settings** | Tags, units, notification preferences, WhatsApp Business integration |
 | **Admin** | User/store/invitation management, audit log, analytics dashboard |
+
+### Feature Flags
+
+Modules behind feature flags for gradual rollout:
+
+| Flag | Module |
+|------|--------|
+| `FEATURE_PRODUCTION` | Production batch management |
+| `FEATURE_WHATSAPP` | WhatsApp Business integration |
+| `FEATURE_SMS` | SMS notifications |
+
+Flags are set via environment variables — use `*` for all stores or a comma-separated list of store IDs.
 
 ## Architecture
 
@@ -129,6 +146,7 @@ Route → Controller → Service → Repository → Database
 - **Event-driven** notifications via RabbitMQ subscribers
 - **Multi-tenant** — all data tables scoped by `store_id`
 - **Invitation-only** registration system
+- **Feature flags** for controlled module rollout
 
 ## Security
 
