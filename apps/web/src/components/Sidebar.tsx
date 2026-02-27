@@ -9,6 +9,7 @@ import {
   Package,
   Users,
   CreditCard,
+  FileText,
   Settings,
   Shield,
   ChevronLeft,
@@ -30,6 +31,7 @@ const navItems = [
   { path: '/customers', icon: Users, labelKey: 'nav.customers', tourId: 'sidebar-customers' },
   { path: '/orders', icon: ClipboardList, labelKey: 'nav.orders', tourId: 'sidebar-orders' },
   { path: '/payments', icon: CreditCard, labelKey: 'nav.payments', tourId: 'sidebar-payments' },
+  { path: '/invoices', icon: FileText, labelKey: 'nav.invoices', tourId: 'sidebar-invoices' },
   { path: '/production', icon: Factory, labelKey: 'nav.production', tourId: 'sidebar-production', featureFlag: 'production' as const },
 ];
 

@@ -1,13 +1,14 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Users, CreditCard, Settings, Factory, ChevronRight, Sparkles } from 'lucide-react';
+import { Users, CreditCard, FileText, Settings, Factory, ChevronRight, Sparkles } from 'lucide-react';
 import { Page, PageHeader } from '@/components/Layout';
 import { useFeatureFlags } from '@/api/hooks';
 
 const moreItems = [
   { path: '/customers', icon: Users, labelKey: 'nav.customers' },
   { path: '/payments', icon: CreditCard, labelKey: 'nav.payments' },
+  { path: '/invoices', icon: FileText, labelKey: 'nav.invoices' },
   { path: '/production', icon: Factory, labelKey: 'nav.production', featureFlag: 'production' as const },
   { path: '/settings', icon: Settings, labelKey: 'nav.settings' },
 ];

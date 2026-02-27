@@ -12,7 +12,17 @@ export class PgStoreRepository {
        RETURNING *`,
       [data.name, data.code ?? null, data.address ?? null],
     );
-    return this.mapStoreRow(result.rows[0]);
+    const store = this.mapStoreRow(result.rows[0]);
+
+    // Initialize invoice counters for new store
+    await pool.query(
+      `INSERT INTO invoice_counters (store_id, counter_type, last_number)
+       VALUES ($1, 'invoice', 0), ($1, 'credit_note', 0)
+       ON CONFLICT DO NOTHING`,
+      [store.id],
+    );
+
+    return store;
   }
 
   static async addUserToStore(userId: number, storeId: number, role: StoreRole): Promise<void> {
