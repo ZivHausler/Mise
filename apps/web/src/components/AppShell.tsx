@@ -2,7 +2,7 @@ import React, { useState, useCallback, useRef, useEffect, Suspense } from 'react
 import { useTranslation } from 'react-i18next';
 import { Outlet } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
-import { ChevronDown, Shield, LayoutDashboard, ClipboardList, BookOpen, Package, Users, CreditCard, Settings } from 'lucide-react';
+import { ChevronDown, Shield, LayoutDashboard, ClipboardList, BookOpen, Package, Users, CreditCard, FileText, Settings } from 'lucide-react';
 import { useOrderSSE } from '@/api/useOrderSSE';
 import { Logo } from './Logo';
 import { Sidebar } from './Sidebar';
@@ -89,6 +89,7 @@ const navItems = [
   { path: '/inventory', icon: Package, labelKey: 'nav.inventory' },
   { path: '/customers', icon: Users, labelKey: 'nav.customers' },
   { path: '/payments', icon: CreditCard, labelKey: 'nav.payments' },
+  { path: '/invoices', icon: FileText, labelKey: 'nav.invoices' },
 ];
 
 const MobileNav = React.memo(function MobileNav({ onClose }: { onClose: () => void }) {

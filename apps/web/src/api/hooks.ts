@@ -1234,7 +1234,53 @@ export function useDisconnectWhatsApp() {
   });
 }
 
-// ── Store Business Info ──────────────────────────────────
+// ── Invoices ──────────────────────────────────────────────
+export function useInvoices(page = 1, limit = 10, filters?: { type?: string; dateFrom?: string; dateTo?: string; search?: string }) {
+  return useQuery({
+    queryKey: ['invoices', page, limit, filters],
+    queryFn: async () => {
+      const params = new URLSearchParams({ page: String(page), limit: String(limit) });
+      if (filters?.type) params.set('type', filters.type);
+      if (filters?.dateFrom) params.set('dateFrom', filters.dateFrom);
+      if (filters?.dateTo) params.set('dateTo', filters.dateTo);
+      if (filters?.search) params.set('search', filters.search);
+      const { data } = await apiClient.get(`/invoices?${params.toString()}`);
+      return { invoices: data.data, pagination: data.pagination };
+    },
+    placeholderData: keepPreviousData,
+  });
+}
+
+export function useOrderInvoices(orderId: number) {
+  return useQuery({
+    queryKey: ['invoices', 'order', orderId],
+    queryFn: () => fetchApi<any[]>(`/invoices/order/${orderId}`),
+    enabled: !!orderId,
+  });
+}
+
+export function useCreateInvoice() {
+  const qc = useQueryClient();
+  const addToast = useToastStore((s) => s.addToast);
+  const { t } = useTranslation();
+  return useMutation({
+    mutationFn: (data: { orderId: number; notes?: string; invoiceDate?: string }) => postApi<any>('/invoices', data),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['invoices'] }); addToast('success', t('toasts.invoiceCreated', 'Invoice created')); },
+    onError: (err) => addToast('error', getApiErrorMessage(err) || t('toasts.invoiceCreateFailed', 'Failed to create invoice')),
+  });
+}
+
+export function useCreateCreditNote(invoiceId: number) {
+  const qc = useQueryClient();
+  const addToast = useToastStore((s) => s.addToast);
+  const { t } = useTranslation();
+  return useMutation({
+    mutationFn: (data: { notes?: string }) => postApi<any>(`/invoices/${invoiceId}/credit-note`, data),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['invoices'] }); addToast('success', t('toasts.creditNoteCreated', 'Credit note created')); },
+    onError: (err) => addToast('error', getApiErrorMessage(err) || t('toasts.creditNoteCreateFailed', 'Failed to create credit note')),
+  });
+}
+
 export function useCurrentStore() {
   return useQuery({ queryKey: ['currentStore'], queryFn: () => fetchApi<any>('/stores/current') });
 }

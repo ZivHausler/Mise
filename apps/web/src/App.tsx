@@ -34,6 +34,7 @@ const pageImports = {
   customerDetail: () => import('@/pages/CustomerDetailPage'),
   customerForm: () => import('@/pages/CustomerFormPage'),
   payments: () => import('@/pages/PaymentsPage'),
+  invoices: () => import('@/pages/InvoicesPage'),
   settings: () => import('@/pages/SettingsPage'),
   more: () => import('@/pages/MorePage'),
   invite: () => import('@/pages/InvitePage'),
@@ -65,6 +66,7 @@ const CustomersPage = lazy(pageImports.customers);
 const CustomerDetailPage = lazy(pageImports.customerDetail);
 const CustomerFormPage = lazy(pageImports.customerForm);
 const PaymentsPage = lazy(pageImports.payments);
+const InvoicesPage = lazy(pageImports.invoices);
 const SettingsPage = lazy(pageImports.settings);
 const MorePage = lazy(pageImports.more);
 const InvitePage = lazy(pageImports.invite);
@@ -197,6 +199,7 @@ export function App() {
                 <Route path="customers/:id" element={<CustomerDetailPage />} />
                 <Route path="customers/:id/edit" element={<CustomerFormPage />} />
                 <Route path="payments" element={<PaymentsPage />} />
+                <Route path="invoices" element={<InvoicesPage />} />
                 <Route path="settings" element={<SettingsPage />} />
                 <Route path="more" element={<MorePage />} />
               </Route>

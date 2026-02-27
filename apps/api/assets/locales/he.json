@@ -756,5 +756,26 @@
       "noBody": "אין תוכן",
       "noEntries": "אין רשומות ביומן"
     }
+  },
+  "invoice": {
+    "phone": "טל'",
+    "authorizedDealer": "עוסק מורשה",
+    "invoiceTitle": "חשבונית מס קבלה מס'",
+    "creditNoteTitle": "חשבונית זיכוי מס'",
+    "date": "תאריך",
+    "customer": "לקוח",
+    "customerPhone": "טלפון",
+    "customerAddress": "כתובת",
+    "orderRef": "מס' הזמנה",
+    "originalInvoice": "חשבונית מקורית",
+    "description": "תיאור",
+    "qty": "כמות",
+    "unitPrice": "מחיר ליחידה",
+    "lineTotal": "סה\"כ",
+    "subtotal": "סכום לפני מע\"מ",
+    "vat": "מע\"מ",
+    "total": "סה\"כ כולל מע\"מ",
+    "notes": "הערות",
+    "footer": "נוצר באמצעות Mise"
   }
 }
