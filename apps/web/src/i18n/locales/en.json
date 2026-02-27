@@ -461,6 +461,11 @@
     "preferences": "Preferences",
     "language": "Language",
     "dateFormat": "Date Format",
+    "timeFormat": "Time Format",
+    "timeFormats": {
+      "24h": "24h (14:30)",
+      "12h": "12h (2:30 PM)"
+    },
     "weekStartDay": "Week starts on",
     "weekStartDays": {
       "sunday": "Sunday",

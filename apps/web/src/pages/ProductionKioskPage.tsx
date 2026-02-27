@@ -5,6 +5,8 @@ import { Maximize, Minimize, Factory } from 'lucide-react';
 import { useUpdateBatchStage } from '@/api/hooks';
 import { apiClient } from '@/api/client';
 import { KanbanBoard } from '@/components/production/KanbanBoard';
+import { useAppStore } from '@/store/app';
+import { formatTime } from '@/utils/dateFormat';
 
 const REFRESH_INTERVAL = 30_000;
 
@@ -54,7 +56,8 @@ export default function ProductionKioskPage() {
     updateStage.mutate({ id: batchId, stage: newStage });
   }, [qc, updateStage]);
 
-  const timeStr = clock.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  const timeFormat = useAppStore((s) => s.timeFormat);
+  const timeStr = formatTime(clock, timeFormat);
   const dateStr = clock.toLocaleDateString([], { weekday: 'long', month: 'long', day: 'numeric' });
 
   return (
