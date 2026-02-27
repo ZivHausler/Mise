@@ -24,7 +24,7 @@ export default async function invoiceRoutes(app: FastifyInstance) {
 
   app.post('/', (req, reply) => controller.create(req, reply));
   app.post<{ Params: { id: string } }>('/:id/credit-note', (req, reply) => controller.createCreditNote(req, reply));
-  app.get('/', (req, reply) => controller.getAll(req, reply));
+  app.get<{ Querystring: Record<string, string> }>('/', (req, reply) => controller.getAll(req, reply));
   app.get<{ Params: { id: string } }>('/:id', (req, reply) => controller.getById(req, reply));
   app.get<{ Params: { id: string }; Querystring: { lang?: string; dateFormat?: string } }>('/:id/pdf', (req, reply) => controller.getPdf(req, reply));
   app.get<{ Params: { orderId: string } }>('/order/:orderId', (req, reply) => controller.getByOrderId(req, reply));
