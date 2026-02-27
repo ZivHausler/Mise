@@ -338,7 +338,7 @@ export default function CustomerDetailPage() {
                 {payments.map((p: any) => (
                   <tr key={String(p.id)} className="group border-b border-neutral-100">
                     <td className="sticky start-0 z-10 bg-white px-3 py-2">{formatDate(p.createdAt)}</td>
-                    <td className="px-3 py-2">#{p.orderNumber}</td>
+                    <td className="px-3 py-2">#{p.order?.number}</td>
                     <td className="px-3 py-2 text-end font-mono">{p.amount} {t('common.currency')}</td>
                     <td className="px-3 py-2">
                       <StatusBadge variant="info" label={p.method === 'cash' ? t('payments.cash', 'Cash') : t('payments.card', 'Card')} />

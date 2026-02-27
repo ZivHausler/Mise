@@ -5,7 +5,7 @@ import { cn } from '@/utils/cn';
 interface TimelineRowProps {
   batch: {
     id: number;
-    recipeName: string;
+    recipe?: { id: string; name: string };
     quantity: number;
     stage: number;
   };
@@ -28,7 +28,7 @@ export function TimelineRow({ batch, index, totalCols }: TimelineRowProps) {
       style={{ gridTemplateColumns: `160px repeat(${totalCols}, minmax(40px, 1fr))` }}
     >
       <div className="px-3 py-2 text-body-sm font-medium text-neutral-800 dark:text-neutral-200 line-clamp-2 break-words border-e dark:border-neutral-700 flex items-center">
-        {batch.recipeName || 'Batch'}
+        {batch.recipe?.name || 'Batch'}
       </div>
       {/* Empty cells + block */}
       {Array.from({ length: totalCols }).map((_, colIdx) => {

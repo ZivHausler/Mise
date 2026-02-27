@@ -76,8 +76,10 @@ export class PgUnitsRepository {
     return {
       id: Number(row['id']),
       storeId: row['store_id'] != null ? Number(row['store_id']) : null,
-      categoryId: Number(row['category_id']),
-      categoryName: (row['category_name'] as string) || undefined,
+      category: {
+        id: Number(row['category_id']),
+        name: (row['category_name'] as string) || '',
+      },
       name: row['name'] as string,
       abbreviation: row['abbreviation'] as string,
       conversionFactor: Number(row['conversion_factor']),

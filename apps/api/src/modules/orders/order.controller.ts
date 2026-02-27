@@ -47,7 +47,7 @@ export class OrderController {
 
     const order = await this.orderService.getById(storeId, Number(request.params.id));
     const stores = await PgStoreRepository.getUserStores(userId);
-    const storeName = stores.find((s) => s.storeId === storeId)?.storeName ?? '';
+    const storeName = stores.find((s) => s.storeId === storeId)?.store?.name ?? '';
     const currency = t(lang, 'common.currency', '\u20AA');
 
     const pdf = generateOrderPdf(order, { lang, dateFormat, currency, storeName });

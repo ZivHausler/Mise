@@ -8,11 +8,15 @@ export const ORDER_STATUS = {
 export type OrderStatus = (typeof ORDER_STATUS)[keyof typeof ORDER_STATUS];
 
 
+export interface OrderCustomer {
+  id: number | null;
+  name: string | null;
+}
+
 export interface Order {
   id: number;
   orderNumber: number;
-  customerId: number;
-  customerName?: string;
+  customer: OrderCustomer;
   items: OrderItem[];
   status: OrderStatus;
   totalAmount: number;

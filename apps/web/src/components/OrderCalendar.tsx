@@ -90,7 +90,7 @@ const STATUS_DOT_COLORS: Record<string, string> = {
 interface OrderForCalendar {
   id: number;
   orderNumber: number;
-  customerName?: string;
+  customer?: { id?: number | null; name?: string | null };
   status: number;
   dueDate: string;
   totalAmount: number;
@@ -166,7 +166,7 @@ const DayCell = React.memo(function DayCell({ date, isCurrentMonth, isToday, ord
             >
               <span className={cn('h-2 w-2 shrink-0 rounded-full', STATUS_DOT_COLORS[label])} />
               <span className="truncate font-medium text-neutral-700">#{order.orderNumber}</span>
-              <span className="hidden truncate text-neutral-500 sm:inline">{order.customerName}</span>
+              <span className="hidden truncate text-neutral-500 sm:inline">{order.customer?.name}</span>
               {paymentStatuses[order.id] === 'paid' && <BadgeDollarSign className="h-3 w-3 shrink-0 text-green-600" />}
             </button>
           );
@@ -236,7 +236,7 @@ function DayDetail({ date, orders, paymentStatuses, onClose, onOrderClick, onCre
                         <StatusBadge variant={label as any} label={t(`orders.status.${label}`, label)} />
                         {paymentStatuses[order.id] === 'paid' && <BadgeDollarSign className="h-4 w-4 text-green-600" />}
                       </div>
-                      <p className="mt-0.5 truncate text-caption text-neutral-500">{order.customerName}</p>
+                      <p className="mt-0.5 truncate text-caption text-neutral-500">{order.customer?.name}</p>
                       {order.items?.length > 0 && (
                         <p className="mt-0.5 truncate text-[11px] text-neutral-400">
                           {order.items.slice(0, 2).map((i) => `${i.recipeName || i.recipeId} x${i.quantity}`).join(', ')}

@@ -4,11 +4,11 @@ import { cn } from '@/utils/cn';
 interface PrepItemRowProps {
   item: {
     id: number;
-    ingredientName: string;
+    ingredient?: { id: number; name: string };
     requiredQuantity: number;
     unit: string;
     isPrepped: boolean;
-    recipeName: string;
+    recipe?: { id: string; name: string };
   };
   onToggle: (isPrepped: boolean) => void;
 }
@@ -30,10 +30,10 @@ export function PrepItemRow({ item, onToggle }: PrepItemRowProps) {
               'text-body-sm font-medium',
               item.isPrepped && 'line-through text-neutral-400',
             )}>
-              {item.ingredientName}
+              {item.ingredient?.name}
             </p>
             <p className="text-xs text-neutral-500">
-              {item.requiredQuantity} {item.unit} — {item.recipeName}
+              {item.requiredQuantity} {item.unit} — {item.recipe?.name}
             </p>
           </div>
         </div>
@@ -58,13 +58,13 @@ export function PrepItemRow({ item, onToggle }: PrepItemRowProps) {
           'col-span-4 text-body-sm font-medium',
           item.isPrepped && 'line-through text-neutral-400',
         )}>
-          {item.ingredientName}
+          {item.ingredient?.name}
         </div>
         <div className="col-span-3 text-body-sm text-neutral-600 dark:text-neutral-400">
           {item.requiredQuantity} {item.unit}
         </div>
         <div className="col-span-4 text-body-sm text-neutral-500">
-          {item.recipeName}
+          {item.recipe?.name}
         </div>
       </div>
     </>

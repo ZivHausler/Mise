@@ -81,7 +81,7 @@ export default function OrdersPage() {
           {paymentStatuses?.[row.id] === 'paid' && <BadgeDollarSign className="h-4 w-4 text-green-600" />}
         </span>
       ) },
-      { key: 'customerName', header: t('orders.customer', 'Customer'), sortable: true },
+      { key: 'customer', header: t('orders.customer', 'Customer'), sortable: true, render: (row: any) => row.customer?.name ?? '-' },
       {
         key: 'status',
         header: t('orders.statusLabel', 'Status'),
@@ -204,7 +204,7 @@ export default function OrdersPage() {
                             </button>
                           )}
                         </div>
-                        <p className="text-caption text-neutral-500">{order.customerName ?? 'Customer'}</p>
+                        <p className="text-caption text-neutral-500">{order.customer?.name ?? 'Customer'}</p>
                         {order.dueDate && <p className="mt-1 text-caption text-neutral-400">{formatDate(order.dueDate)}</p>}
                       </div>
                     ))

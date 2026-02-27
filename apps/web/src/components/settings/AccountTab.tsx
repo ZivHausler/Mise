@@ -36,7 +36,7 @@ export default function AccountTab() {
   const updateTheme = useUpdateStoreTheme();
 
   const activeStore = stores.find((s) => String(s.storeId) === String(activeStoreId)) ?? stores[0];
-  const currentTheme = (activeStore?.theme as AppTheme) || 'cream';
+  const currentTheme = (activeStore?.store?.theme as AppTheme) || 'cream';
   const isOwnerOrAdmin = activeStore?.role === STORE_ROLES.OWNER || isAdmin;
 
   const initLanguageFromProfile = useAppStore((s) => s.initLanguageFromProfile);
@@ -183,7 +183,7 @@ export default function AccountTab() {
                     updateTheme.mutate({ theme });
                     applyThemePalette(theme);
                     const updatedStores = stores.map((s) =>
-                      String(s.storeId) === String(activeStoreId) ? { ...s, theme } : s,
+                      String(s.storeId) === String(activeStoreId) ? { ...s, store: { ...s.store, theme } } : s,
                     );
                     useAuthStore.getState().setStores(updatedStores);
                   }}

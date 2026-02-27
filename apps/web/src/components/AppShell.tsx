@@ -43,7 +43,7 @@ export const AppShell = React.memo(function AppShell() {
   const activeStoreId = useAuthStore((s) => s.activeStoreId);
   React.useEffect(() => {
     const activeStore = stores.find((s) => String(s.storeId) === String(activeStoreId));
-    const theme = (activeStore?.theme as AppTheme) || DEFAULT_THEME;
+    const theme = (activeStore?.store?.theme as AppTheme) || DEFAULT_THEME;
     applyThemePalette(theme);
   }, [stores, activeStoreId]);
 
@@ -103,7 +103,7 @@ const MobileNav = React.memo(function MobileNav({ onClose }: { onClose: () => vo
   const qc = useQueryClient();
 
   const displayStores = isAdmin && allStoresQuery.data
-    ? allStoresQuery.data.map((s: any) => ({ storeId: String(s.id), storeName: s.name, role: -1 }))
+    ? allStoresQuery.data.map((s: any) => ({ storeId: String(s.id), store: { id: s.id, name: s.name, code: null, theme: 'cream' }, role: -1 }))
     : stores;
 
   const handleStoreSwitch = useCallback(
@@ -182,7 +182,7 @@ const MobileNav = React.memo(function MobileNav({ onClose }: { onClose: () => vo
 });
 
 function MobileStoreDropdown({ stores, activeStoreId, isAdmin, onSwitch }: {
-  stores: { storeId: string; storeName: string }[];
+  stores: { storeId: string; store: { name: string } }[];
   activeStoreId: string | null;
   isAdmin: boolean;
   onSwitch: (storeId: string) => void;
@@ -202,7 +202,7 @@ function MobileStoreDropdown({ stores, activeStoreId, isAdmin, onSwitch }: {
 
   const activeStore = stores.find((s) => s.storeId === activeStoreId) ?? stores[0];
   const label = activeStore
-    ? (isAdmin ? `${activeStore.storeId}  |  ${activeStore.storeName}` : activeStore.storeName)
+    ? (isAdmin ? `${activeStore.storeId}  |  ${activeStore.store.name}` : activeStore.store.name)
     : '';
 
   return (
@@ -227,7 +227,7 @@ function MobileStoreDropdown({ stores, activeStoreId, isAdmin, onSwitch }: {
                 onClick={() => { onSwitch(s.storeId); setOpen(false); }}
                 className={`flex w-full items-center rounded-md px-3 py-2 text-body-sm transition-colors ${selected ? 'bg-primary-700 text-white' : 'text-primary-200 hover:bg-primary-700 hover:text-white'}`}
               >
-                {isAdmin ? `${s.storeId}  |  ${s.storeName}` : s.storeName}
+                {isAdmin ? `${s.storeId}  |  ${s.store.name}` : s.store.name}
               </button>
             );
           })}

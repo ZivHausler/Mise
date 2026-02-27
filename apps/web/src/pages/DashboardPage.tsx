@@ -100,7 +100,7 @@ export default function DashboardPage() {
                       </p>
                       <p className="text-caption font-medium text-neutral-700">{order.totalAmount ?? 0} {t('common.currency', '₪')}</p>
                     </div>
-                    <p className="text-caption text-neutral-500">{order.customerName ?? 'Customer'}</p>
+                    <p className="text-caption text-neutral-500">{order.customer?.name ?? 'Customer'}</p>
                     <div className="mt-1 flex items-center justify-between text-caption text-neutral-400">
                       <span>{formatDate(order.createdAt)}</span>
                       {order.dueDate && (
