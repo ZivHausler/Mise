@@ -87,12 +87,13 @@ Many small bakeries do their own deliveries:
 
 ## Tier 3 — "Delight features" (Differentiation)
 
-### 10. Invoice & Receipt Generation (חשבונית)
-Israeli businesses must issue tax invoices:
+### 10. Receipt Generation (קבלה)
+Invoices are already implemented. Receipts are the missing piece:
 
-- Auto-generate invoices with business number (ח.פ.)
-- Sequential invoice numbering (legal requirement)
+- Auto-generate receipts on payment confirmation
+- Sequential receipt numbering (legal requirement)
 - PDF export with store branding
+- Link receipts to invoices and payments
 - Integration-ready for Israeli accounting software (Hashavshevet, Rivhit, Green Invoice)
 
 ### 11. Waste & Spoilage Tracking
@@ -109,7 +110,17 @@ Israeli businesses must issue tax invoices:
 - Customer segmentation: VIP, regular, new, dormant
 - Automated re-engagement: "Haven't seen customer X in 30 days"
 
-### 13. Custom Cake Builder
+### 13. AI Assistant for Admins & Owners
+Give store owners and admins an intelligent co-pilot:
+
+- Natural language queries: "How much did I sell this week?", "Which recipes have the lowest margins?"
+- Smart suggestions: "You're running low on flour and have 12 orders due Friday — consider reordering"
+- Anomaly detection: "Revenue dropped 30% compared to same week last month"
+- Order forecasting based on historical patterns and upcoming holidays
+- Auto-generated daily/weekly business summaries
+- Accessible via a chat-style panel in the app (owners & admins only)
+
+### 14. Custom Cake Builder
 For bakeries that do custom work:
 
 - Layer/size/flavor/decoration configurator
