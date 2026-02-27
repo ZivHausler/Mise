@@ -3,6 +3,9 @@ export const PDF_COLORS = {
     storeNameText: [120, 80, 40] as [number, number, number],
     tableHeader: [180, 120, 60] as [number, number, number],
   },
+  invoice: {
+    tableHeader: [180, 120, 60] as [number, number, number],
+  },
   inventory: {
     tableHeader: [59, 130, 246] as [number, number, number],
   },
