@@ -1,5 +1,8 @@
 import type { CreateCustomerDTO, Customer, UpdateCustomerDTO } from './customer.types.js';
+import type { CustomerSegment } from '../loyalty/loyalty.types.js';
 import { CustomerCrud } from './customerCrud.js';
+import { PgCustomerRepository } from './customer.repository.js';
+import { LoyaltyService } from '../loyalty/loyalty.service.js';
 import { OrderCrud } from '../orders/orderCrud.js';
 import { ConflictError, NotFoundError } from '../../core/errors/app-error.js';
 import { ErrorCode } from '@mise/shared';
@@ -11,7 +14,12 @@ export class CustomerService {
     return customer;
   }
 
-  async getAll(storeId: number, search?: string): Promise<Customer[]> {
+  async getAll(storeId: number, search?: string, segment?: CustomerSegment): Promise<Customer[]> {
+    if (segment) {
+      const loyaltyService = new LoyaltyService();
+      const config = await loyaltyService.getFullConfig(storeId);
+      return PgCustomerRepository.findAllWithSegment(storeId, config, segment, search);
+    }
     return CustomerCrud.getAll(storeId, search);
   }
 

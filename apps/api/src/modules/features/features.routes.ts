@@ -22,6 +22,7 @@ export default async function featuresRoutes(app: FastifyInstance) {
         whatsapp: isAdmin || isEnabled(env.FEATURE_WHATSAPP, storeId),
         sms: isAdmin || isEnabled(env.FEATURE_SMS, storeId),
         ai_chat: isAdmin || isEnabled(env.FEATURE_AI_CHAT, storeId),
+        loyaltyEnhancements: isAdmin || isEnabled(env.FEATURE_LOYALTY_ENHANCEMENTS, storeId),
       },
     });
   });

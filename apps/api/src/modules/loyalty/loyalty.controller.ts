@@ -48,4 +48,10 @@ export class LoyaltyController {
     const config = await this.loyaltyService.upsertConfig(storeId, data);
     return reply.send({ success: true, data: config });
   }
+
+  async getDashboard(request: FastifyRequest, reply: FastifyReply) {
+    const storeId = request.currentUser!.storeId!;
+    const data = await this.loyaltyService.getDashboard(storeId);
+    return reply.send({ success: true, data });
+  }
 }

@@ -4,6 +4,7 @@ import { Stack } from '@/components/Layout';
 import { Button } from '@/components/Button';
 import { Modal } from '@/components/Modal';
 import { TextInput, TextArea } from '@/components/FormFields';
+import { BirthdayInput, type BirthdayValue } from '@/components/BirthdayInput';
 import { useCreateCustomer, useCustomer } from '@/api/hooks';
 
 interface Conflict {
@@ -22,6 +23,7 @@ export function NewCustomerModal({ open, onClose, onCreated, allowUseExisting = 
   const { t } = useTranslation();
   const createCustomer = useCreateCustomer();
   const [form, setForm] = useState({ name: '', phone: '', email: '', address: '', notes: '' });
+  const [birthday, setBirthday] = useState<BirthdayValue | null>(null);
   const [conflicts, setConflicts] = useState<Conflict[]>([]);
   const [selectedConflictIdx, setSelectedConflictIdx] = useState<number | null>(null);
 
@@ -32,15 +34,20 @@ export function NewCustomerModal({ open, onClose, onCreated, allowUseExisting = 
 
   const resetAndClose = useCallback(() => {
     setForm({ name: '', phone: '', email: '', address: '', notes: '' });
+    setBirthday(null);
     setConflicts([]);
     setSelectedConflictIdx(null);
     onClose();
   }, [onClose]);
 
   const handleCreate = useCallback(() => {
-    createCustomer.mutate(form, {
+    const birthdayISO = birthday?.day && birthday?.month
+      ? `2000-${String(birthday.month).padStart(2, '0')}-${String(birthday.day).padStart(2, '0')}`
+      : undefined;
+    createCustomer.mutate({ ...form, ...(birthdayISO && { birthday: birthdayISO }) }, {
       onSuccess: (data: any) => {
         setForm({ name: '', phone: '', email: '', address: '', notes: '' });
+        setBirthday(null);
         setConflicts([]);
         setSelectedConflictIdx(0);
         onClose();
@@ -65,12 +72,13 @@ export function NewCustomerModal({ open, onClose, onCreated, allowUseExisting = 
         }
       },
     });
-  }, [form, createCustomer, onClose, onCreated]);
+  }, [form, birthday, createCustomer, onClose, onCreated]);
 
   const handleUseExisting = useCallback(() => {
     const customer = selectedConflictIdx !== null ? conflictCustomers[selectedConflictIdx] : conflictCustomers[0];
     if (customer) {
       setForm({ name: '', phone: '', email: '', address: '', notes: '' });
+      setBirthday(null);
       setConflicts([]);
       setSelectedConflictIdx(0);
       onClose();
@@ -94,6 +102,7 @@ export function NewCustomerModal({ open, onClose, onCreated, allowUseExisting = 
         <Stack gap={4}>
           <TextInput label={t('customers.name', 'Name')} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required dir="auto" />
           <TextInput label={t('customers.phone', 'Phone')} value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} required dir="ltr" type="tel" />
+          <BirthdayInput value={birthday} onChange={setBirthday} />
           <TextInput label={t('customers.email', 'Email')} value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} dir="ltr" type="email" />
           <TextArea label={t('customers.address', 'Address')} value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} dir="auto" />
           <TextArea label={t('customers.notes', 'Notes')} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} dir="auto" />

@@ -10,6 +10,11 @@ export const createCustomerSchema = z.object({
     allergies: z.array(z.string().max(100)).max(50).optional(),
     favorites: z.array(z.string().max(100)).max(50).optional(),
   }).optional(),
+  birthday: z.string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, 'Birthday must be YYYY-MM-DD')
+    .refine((val) => !isNaN(new Date(val).getTime()), 'Invalid date')
+    .nullable()
+    .optional(),
   loyaltyEnabled: z.boolean().optional(),
   loyaltyTier: z.enum(['bronze', 'silver', 'gold']).optional(),
 });

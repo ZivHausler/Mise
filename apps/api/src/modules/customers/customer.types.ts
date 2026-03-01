@@ -8,10 +8,12 @@ export interface Customer {
   address?: string;
   notes?: string;
   preferences?: CustomerPreferences;
+  birthday?: string | null;
   loyaltyEnabled: boolean;
   loyaltyTier: LoyaltyTier;
   orderCount?: number;
   totalSpent?: number;
+  segment?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -28,6 +30,7 @@ export interface CreateCustomerDTO {
   address?: string;
   notes?: string;
   preferences?: CustomerPreferences;
+  birthday?: string | null;
   loyaltyEnabled?: boolean;
   loyaltyTier?: LoyaltyTier;
 }

@@ -71,6 +71,7 @@ const envSchema = z.object({
   FEATURE_WHATSAPP: z.string().default(''),
   FEATURE_SMS: z.string().default(''),
   FEATURE_AI_CHAT: z.string().default(''),
+  FEATURE_LOYALTY_ENHANCEMENTS: z.string().default(''),
 });
 
 export type Env = z.infer<typeof envSchema>;

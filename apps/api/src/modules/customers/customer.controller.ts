@@ -1,13 +1,33 @@
 import type { FastifyRequest, FastifyReply } from 'fastify';
 import type { CustomerService } from './customer.service.js';
+import type { LoyaltyService } from '../loyalty/loyalty.service.js';
+import type { CustomerSegment } from '../loyalty/loyalty.types.js';
 import { createCustomerSchema, updateCustomerSchema } from './customer.schema.js';
+import { segmentFilterSchema } from '../loyalty/loyalty.schema.js';
+import { isFeatureEnabled } from '../../core/middleware/requireFeature.js';
 
 export class CustomerController {
+  private loyaltyService: LoyaltyService | null = null;
+
   constructor(private customerService: CustomerService) {}
 
-  async getAll(request: FastifyRequest<{ Querystring: { search?: string } }>, reply: FastifyReply) {
+  setLoyaltyService(loyaltyService: LoyaltyService) {
+    this.loyaltyService = loyaltyService;
+  }
+
+  async getSegments(request: FastifyRequest, reply: FastifyReply) {
     const storeId = request.currentUser!.storeId!;
-    const customers = await this.customerService.getAll(storeId, request.query.search);
+    const data = await this.loyaltyService!.getSegmentCounts(storeId);
+    return reply.send({ success: true, data });
+  }
+
+  async getAll(request: FastifyRequest<{ Querystring: { search?: string; segment?: string } }>, reply: FastifyReply) {
+    const storeId = request.currentUser!.storeId!;
+    let segment = segmentFilterSchema.parse(request.query.segment) as CustomerSegment | undefined;
+    if (segment && !isFeatureEnabled('loyalty_enhancements', storeId)) {
+      segment = undefined;
+    }
+    const customers = await this.customerService.getAll(storeId, request.query.search, segment);
     return reply.send({ success: true, data: customers });
   }
 

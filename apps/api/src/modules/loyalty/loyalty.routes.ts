@@ -2,6 +2,7 @@ import type { FastifyInstance } from 'fastify';
 import { LoyaltyController } from './loyalty.controller.js';
 import { LoyaltyService } from './loyalty.service.js';
 import { authMiddleware, requireStoreMiddleware } from '../../core/middleware/auth.js';
+import { requireFeature } from '../../core/middleware/requireFeature.js';
 import { getEventBus } from '../../core/events/event-bus.js';
 import { EventNames } from '../../core/events/event-names.js';
 
@@ -34,6 +35,7 @@ export default async function loyaltyRoutes(app: FastifyInstance) {
   });
 
   // HTTP routes
+  app.get('/dashboard', { preHandler: [requireFeature('loyalty_enhancements')] }, (req, reply) => controller.getDashboard(req, reply));
   app.get<{ Params: { customerId: string } }>('/customer/:customerId', (req, reply) => controller.getCustomerBalance(req, reply));
   app.get<{ Params: { customerId: string }; Querystring: { page?: string; limit?: string } }>('/customer/:customerId/transactions', (req, reply) => controller.getCustomerTransactions(req, reply));
   app.post('/adjust', (req, reply) => controller.adjustPoints(req, reply));

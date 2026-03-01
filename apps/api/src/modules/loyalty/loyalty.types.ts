@@ -13,6 +13,13 @@ export interface LoyaltyConfig {
   pointsPerShekel: number;
   pointValue: number;
   minRedeemPoints: number;
+  segmentVipOrderCount: number;
+  segmentVipDays: number;
+  segmentRegularOrderCount: number;
+  segmentRegularDays: number;
+  segmentNewDays: number;
+  segmentDormantDays: number;
+  birthdayReminderDays: number;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -48,4 +55,44 @@ export interface UpsertLoyaltyConfigDTO {
   pointsPerShekel?: number;
   pointValue?: number;
   minRedeemPoints?: number;
+  segmentVipOrderCount?: number;
+  segmentVipDays?: number;
+  segmentRegularOrderCount?: number;
+  segmentRegularDays?: number;
+  segmentNewDays?: number;
+  segmentDormantDays?: number;
+  birthdayReminderDays?: number;
+}
+
+export type CustomerSegment = 'vip' | 'regular' | 'new' | 'dormant' | 'inactive';
+
+export interface SegmentCounts {
+  vip: number;
+  regular: number;
+  new: number;
+  dormant: number;
+  inactive: number;
+}
+
+export interface UpcomingBirthday {
+  id: number;
+  name: string;
+  phone: string;
+  birthday: string;
+  daysUntil: number;
+}
+
+export interface DormantCustomer {
+  id: number;
+  name: string;
+  phone: string;
+  lastOrderDate: string;
+  daysSinceLastOrder: number;
+  totalOrders: number;
+}
+
+export interface LoyaltyDashboardData {
+  upcomingBirthdays: UpcomingBirthday[];
+  dormantCustomers: DormantCustomer[];
+  segmentCounts: SegmentCounts;
 }

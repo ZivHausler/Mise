@@ -6,9 +6,11 @@ import { Page, PageHeader, Section, Card, Row } from '@/components/Layout';
 import { StatCard, StatusBadge } from '@/components/DataDisplay';
 import { Button } from '@/components/Button';
 import { PageLoading } from '@/components/Feedback';
-import { useDashboardStats, useOrders, usePaymentStatuses } from '@/api/hooks';
+import { useDashboardStats, useOrders, usePaymentStatuses, useLoyaltyDashboard, useFeatureFlags } from '@/api/hooks';
 import { ORDER_STATUS, getStatusLabel } from '@/utils/orderStatus';
 import { useFormatDate } from '@/utils/dateFormat';
+import BirthdayWidget from '@/components/dashboard/BirthdayWidget';
+import ReengagementWidget from '@/components/dashboard/ReengagementWidget';
 
 export default function DashboardPage() {
   const { t, i18n } = useTranslation();
@@ -16,6 +18,9 @@ export default function DashboardPage() {
   const { data: stats, isLoading: statsLoading } = useDashboardStats();
   const { data: orders, isLoading: ordersLoading } = useOrders();
   const { data: paymentStatuses } = usePaymentStatuses();
+  const { data: featureFlags } = useFeatureFlags();
+  const { data: loyaltyDashboard } = useLoyaltyDashboard();
+  const loyaltyData = loyaltyDashboard as any;
 
   const formatDate = useFormatDate();
   const dashStats = stats as any;
@@ -69,6 +74,12 @@ export default function DashboardPage() {
           <StatCard key={s.label} label={s.label} value={s.value} icon={s.icon} onClick={s.onClick} />
         ))}
       </div>
+
+      {(featureFlags as any)?.loyaltyEnhancements && (
+        <div className="mb-6">
+          <BirthdayWidget birthdays={loyaltyData?.upcomingBirthdays ?? []} />
+        </div>
+      )}
 
       <Section title={t('dashboard.orderPipeline', 'Order Pipeline')}>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -127,6 +138,12 @@ export default function DashboardPage() {
           })}
         </div>
       </Section>
+
+      {(featureFlags as any)?.loyaltyEnhancements && (
+        <div className="mb-6">
+          <ReengagementWidget customers={loyaltyData?.dormantCustomers ?? []} />
+        </div>
+      )}
 
       <Section title={t('dashboard.quickActions', 'Quick Actions')}>
         <Card variant="flat" className="flex flex-col gap-2 px-6 py-0 lg:flex-row">
