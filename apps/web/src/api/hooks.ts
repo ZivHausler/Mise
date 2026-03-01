@@ -48,7 +48,7 @@ async function deleteApi(url: string): Promise<void> {
 export function useFeatureFlags() {
   return useQuery({
     queryKey: ['features'],
-    queryFn: () => fetchApi<{ production: boolean; whatsapp: boolean; sms: boolean; ai_chat: boolean }>('/features'),
+    queryFn: () => fetchApi<{ production: boolean; whatsapp: boolean; sms: boolean; ai_chat: boolean; loyaltyEnhancements: boolean }>('/features'),
     staleTime: 5 * 60 * 1000,
   });
 }
@@ -370,8 +370,11 @@ export function useDeleteInventoryItem() {
 }
 
 // Customers
-export function useCustomers() {
-  return useQuery({ queryKey: ['customers'], queryFn: () => fetchApi<unknown[]>('/customers') });
+export function useCustomers(filters?: { segment?: string }) {
+  const params = new URLSearchParams();
+  if (filters?.segment) params.set('segment', filters.segment);
+  const qs = params.toString();
+  return useQuery({ queryKey: ['customers', filters], queryFn: () => fetchApi<unknown[]>(`/customers${qs ? `?${qs}` : ''}`) });
 }
 
 export function useCustomer(id: number) {
@@ -496,14 +499,6 @@ export function useRefundPayment() {
       addToast('success', t('toasts.paymentRefunded'));
     },
     onError: (error) => addToast('error', getApiErrorMessage(error, 'toasts.paymentRefundFailed')),
-  });
-}
-
-export function useOrderPayments(orderId: number) {
-  return useQuery({
-    queryKey: ['payments', 'order', orderId],
-    queryFn: () => fetchApi<any[]>(`/payments/order/${orderId}`),
-    enabled: !!orderId,
   });
 }
 
@@ -1298,7 +1293,7 @@ export function useUpdateBusinessInfo() {
   const addToast = useToastStore((s) => s.addToast);
   const { t } = useTranslation();
   return useMutation({
-    mutationFn: (data: { name?: string; address?: string; phone?: string; email?: string; taxNumber?: string; vatRate?: number; autoGenerateInvoice?: boolean; autoGenerateCreditNote?: boolean }) => patchApi<any>('/stores/business-info', data),
+    mutationFn: (data: { name?: string; address?: string; phone?: string; email?: string; taxNumber?: string; vatRate?: number }) => patchApi<any>('/stores/business-info', data),
     onSuccess: (_data, variables) => {
       qc.invalidateQueries({ queryKey: ['currentStore'] });
       qc.invalidateQueries({ queryKey: ['stores', 'all'] });
@@ -1309,5 +1304,27 @@ export function useUpdateBusinessInfo() {
       addToast('success', t('toasts.businessInfoUpdated', 'Business info updated'));
     },
     onError: (err) => addToast('error', getApiErrorMessage(err) || t('toasts.businessInfoUpdateFailed', 'Failed to update business info')),
+  });
+}
+
+// Loyalty — Dashboard
+export function useLoyaltyDashboard() {
+  return useQuery({
+    queryKey: ['loyaltyDashboard'],
+    queryFn: () => fetchApi<{
+      upcomingBirthdays: Array<{ id: number; name: string; phone: string; birthday: string; daysUntil: number }>;
+      dormantCustomers: Array<{ id: number; name: string; phone: string; lastOrderDate: string; daysSinceLastOrder: number; totalOrders: number }>;
+      segmentCounts: { vip: number; regular: number; new: number; dormant: number; inactive: number };
+    }>('/loyalty/dashboard'),
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
+// Customer Segments
+export function useCustomerSegments() {
+  return useQuery({
+    queryKey: ['customerSegments'],
+    queryFn: () => fetchApi<{ vip: number; regular: number; new: number; dormant: number; inactive: number }>('/customers/segments'),
+    staleTime: 5 * 60 * 1000,
   });
 }

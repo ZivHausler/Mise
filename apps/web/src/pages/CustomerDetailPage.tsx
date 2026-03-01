@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Edit, Trash2, ChevronLeft, ChevronRight, ChevronUp, ChevronDown, X } from 'lucide-react';
+import { Edit, Trash2, ChevronLeft, ChevronRight, ChevronUp, ChevronDown, X, Cake } from 'lucide-react';
 import { Page, Card, Section, Stack, Row } from '@/components/Layout';
 import { Breadcrumbs } from '@/components/Breadcrumbs';
 import { Button } from '@/components/Button';
@@ -21,7 +21,7 @@ import RedeemPointsModal from '@/components/loyalty/RedeemPointsModal';
 export default function CustomerDetailPage() {
   const { id } = useParams<{ id: string }>();
   const numId = id ? Number(id) : 0;
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const { data: customer, isLoading } = useCustomer(numId);
   const [ordersPage, setOrdersPage] = useState(1);
@@ -114,6 +114,31 @@ export default function CustomerDetailPage() {
               {c.phone && <InfoRow label={t('customers.phone', 'Phone')} value={c.phone} dir="ltr" />}
               {c.email && <InfoRow label={t('customers.email', 'Email')} value={c.email} dir="ltr" />}
               {c.address && <InfoRow label={t('customers.address', 'Address')} value={c.address} />}
+              {c.birthday && (() => {
+                const bDate = new Date(c.birthday);
+                const day = bDate.getUTCDate();
+                const month = bDate.getUTCMonth(); // 0-indexed
+                const today = new Date();
+                const isBirthdayToday = today.getDate() === day && today.getMonth() === month;
+                const monthNames = i18n.language === 'he'
+                  ? ['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר']
+                  : ['January','February','March','April','May','June','July','August','September','October','November','December'];
+                const displayDate = i18n.language === 'he' ? `${day} ב${monthNames[month]}` : `${monthNames[month]} ${day}`;
+                return (
+                  <div className="flex items-center justify-between text-body-sm">
+                    <span className="text-neutral-500">{t('customers.birthday', 'Birthday')}</span>
+                    <span className="flex items-center gap-2 font-medium text-neutral-800">
+                      {displayDate}
+                      {isBirthdayToday && (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-primary-100 px-2 py-0.5 text-caption font-semibold text-primary-700">
+                          <Cake className="h-3 w-3" />
+                          {t('customers.happyBirthday', 'Happy Birthday!')}
+                        </span>
+                      )}
+                    </span>
+                  </div>
+                );
+              })()}
             </Stack>
           </Section>
         </Card>

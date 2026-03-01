@@ -297,7 +297,12 @@
       "email": "אימייל"
     },
     "conflictMatch": "התאמה",
-    "useExisting": "השתמש בלקוח הזה"
+    "useExisting": "השתמש בלקוח הזה",
+    "birthday": "יום הולדת",
+    "birthdayDay": "יום",
+    "birthdayMonth": "חודש",
+    "happyBirthday": "יום הולדת שמח!",
+    "segment": "פילוח"
   },
   "payments": {
     "logPayment": "רשום תשלום",
@@ -319,24 +324,7 @@
     "refunded": "הוחזר",
     "refundTitle": "להחזיר תשלום?",
     "refundMsg": "פעולה זו תסמן את התשלום בסך {{amount}} {{currency}} עבור הזמנה #{{order}} כהוחזר. לא ניתן לבטל פעולה זו.",
-    "allMethods": "כל האמצעים",
-    "viewPayment": "צפה בתשלום",
-    "alsoGenerateInvoice": "צור גם חשבונית עבור תשלום זה",
-    "autoInvoiceNotice": "חשבונית תיווצר אוטומטית."
-  },
-  "refund": {
-    "refundTitle": "להחזיר תשלום?",
-    "refundMsg": "פעולה זו תסמן את התשלום כהוחזר.",
-    "refund": "החזר",
-    "refundAndCreditNote": "החזר וחשבונית זיכוי",
-    "generateCreditNote": "הפק גם חשבונית זיכוי",
-    "creditNoteNotes": "הערות לחשבונית זיכוי (אופציונלי)",
-    "refundSuccess": "התשלום הוחזר בהצלחה",
-    "refundWithCreditNoteSuccess": "התשלום הוחזר וחשבונית זיכוי הופקה",
-    "creditNoteFailed": "התשלום הוחזר אך יצירת חשבונית הזיכוי נכשלה. ניתן ליצור אותה ידנית.",
-    "creditNoteAlreadyExists": "חשבונית זיכוי כבר הופקה עבור הזמנה זו.",
-    "alsoRefund": "החזר גם את התשלום",
-    "autoCreditNoteNotice": "חשבונית זיכוי תיווצר אוטומטית."
+    "allMethods": "כל האמצעים"
   },
   "invoices": {
     "title": "חשבוניות",
@@ -360,9 +348,7 @@
     "notes": "הערות",
     "missingBusinessDetailsBefore": "השלם את פרטי העסק ב",
     "missingBusinessDetailsLink": "הגדרות > חיוב",
-    "missingBusinessDetailsAfter": "לפני הפקת חשבוניות.",
-    "billingDocuments": "מסמכי חיוב",
-    "noDocumentsYet": "אין מסמכי חיוב עדיין."
+    "missingBusinessDetailsAfter": "לפני הפקת חשבוניות."
   },
   "loyalty": {
     "balance": "יתרת נקודות",
@@ -406,6 +392,42 @@
       "discount": "ערך הנחה",
       "minPoints": "מינימום {{min}} נקודות נדרש",
       "currentBalance": "יתרה נוכחית"
+    },
+    "segments": {
+      "title": "פילוח לקוחות",
+      "vip": "VIP",
+      "regular": "קבוע",
+      "new": "חדש",
+      "dormant": "רדום",
+      "inactive": "לא פעיל"
+    },
+    "birthday": {
+      "title": "ימי הולדת קרובים",
+      "empty": "אין ימי הולדת השבוע",
+      "emptyDesc": "הוסיפו ימי הולדת לפרופילי לקוחות כדי לראות אותם כאן.",
+      "today": "היום!",
+      "sendWish": "שלח ברכה",
+      "daysUntil": "בעוד {{count}} ימים",
+      "tomorrow": "מחר"
+    },
+    "reengagement": {
+      "title": "לקוחות לחידוש קשר",
+      "viewAll": "הצג הכל ({{count}})",
+      "daysSince": "לפני {{count}} ימים",
+      "lastOrder": "הזמנה אחרונה",
+      "newOrder": "הזמנה חדשה",
+      "noActivity": "אין פעילות אחרונה"
+    },
+    "settings": {
+      "segmentation": "הגדרות פילוח",
+      "segmentationDesc": "הגדר כיצד לקוחות מסווגים אוטומטית",
+      "vipOrderCount": "VIP: מינימום הזמנות",
+      "vipDays": "VIP: בתוך ימים",
+      "regularOrderCount": "קבוע: מינימום הזמנות",
+      "regularDays": "קבוע: בתוך ימים",
+      "newDays": "לקוח חדש: בתוך ימים",
+      "dormantDays": "רדום: ללא הזמנות בימים",
+      "birthdayReminderDays": "תזכורת יום הולדת: ימים מראש"
     }
   },
   "production": {
@@ -480,11 +502,6 @@
     "preferences": "העדפות",
     "language": "שפה",
     "dateFormat": "תבנית תאריך",
-    "timeFormat": "תבנית שעה",
-    "timeFormats": {
-      "24h": "24 שעות (14:30)",
-      "12h": "12 שעות (2:30 PM)"
-    },
     "weekStartDay": "השבוע מתחיל ב",
     "weekStartDays": {
       "sunday": "יום ראשון",
@@ -598,12 +615,7 @@
       "email": "אימייל",
       "invoiceSettings": "הגדרות חשבוניות",
       "vatRate": "שיעור מע\"מ (%)",
-      "vatRateNote": "שינויים בשיעור המע\"מ ישפיעו רק על חשבוניות עתידיות.",
-      "automation": "אוטומציה",
-      "autoGenerateInvoice": "יצירת חשבונית אוטומטית",
-      "autoGenerateInvoiceDesc": "צור חשבונית אוטומטית בעת רישום תשלום עבור הזמנה.",
-      "autoGenerateCreditNote": "יצירת חשבונית זיכוי אוטומטית",
-      "autoGenerateCreditNoteDesc": "צור חשבונית זיכוי אוטומטית בעת ביצוע החזר."
+      "vatRateNote": "שינויים בשיעור המע\"מ ישפיעו רק על חשבוניות עתידיות."
     },
     "integrations": {
       "title": "אינטגרציות",

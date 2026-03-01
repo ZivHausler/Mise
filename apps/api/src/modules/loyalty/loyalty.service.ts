@@ -1,7 +1,8 @@
 import { LoyaltyCrud } from './loyaltyCrud.js';
 import { LOYALTY_TRANSACTION_TYPE } from './loyalty.types.js';
-import type { LoyaltyConfig, CustomerLoyaltySummary, LoyaltyTransaction, UpsertLoyaltyConfigDTO } from './loyalty.types.js';
+import type { LoyaltyConfig, CustomerLoyaltySummary, LoyaltyTransaction, UpsertLoyaltyConfigDTO, LoyaltyDashboardData, SegmentCounts } from './loyalty.types.js';
 import type { PaginationOptions, PaginatedResult } from './loyalty.repository.js';
+import { PgLoyaltyRepository } from './loyalty.repository.js';
 import { PgOrderRepository } from '../orders/order.repository.js';
 import { PgCustomerRepository } from '../customers/customer.repository.js';
 import { ValidationError } from '../../core/errors/app-error.js';
@@ -12,6 +13,13 @@ const DEFAULT_CONFIG: Omit<LoyaltyConfig, 'id' | 'storeId' | 'createdAt' | 'upda
   pointsPerShekel: 1.0,
   pointValue: 0.1,
   minRedeemPoints: 0,
+  segmentVipOrderCount: 10,
+  segmentVipDays: 90,
+  segmentRegularOrderCount: 3,
+  segmentRegularDays: 90,
+  segmentNewDays: 30,
+  segmentDormantDays: 60,
+  birthdayReminderDays: 7,
 };
 
 export class LoyaltyService {
@@ -130,5 +138,33 @@ export class LoyaltyService {
     });
 
     return { pointsRedeemed: points, shekelValue };
+  }
+
+  async getFullConfig(storeId: number): Promise<LoyaltyConfig> {
+    const config = await LoyaltyCrud.getConfig(storeId);
+    if (config) return config;
+    // Return a synthetic full config with defaults for queries that need threshold values
+    return {
+      id: 0,
+      storeId,
+      ...DEFAULT_CONFIG,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+  }
+
+  async getDashboard(storeId: number): Promise<LoyaltyDashboardData> {
+    const config = await this.getFullConfig(storeId);
+    const [segmentCounts, upcomingBirthdays, dormantCustomers] = await Promise.all([
+      PgLoyaltyRepository.getSegmentCounts(storeId, config),
+      PgLoyaltyRepository.getUpcomingBirthdays(storeId, config.birthdayReminderDays),
+      PgLoyaltyRepository.getDormantCustomers(storeId, config.segmentDormantDays),
+    ]);
+    return { upcomingBirthdays, dormantCustomers, segmentCounts };
+  }
+
+  async getSegmentCounts(storeId: number): Promise<SegmentCounts> {
+    const config = await this.getFullConfig(storeId);
+    return PgLoyaltyRepository.getSegmentCounts(storeId, config);
   }
 }

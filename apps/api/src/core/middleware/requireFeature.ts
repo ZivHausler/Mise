@@ -3,14 +3,19 @@ import { env } from '../../config/env.js';
 import { ForbiddenError } from '../errors/app-error.js';
 import { ErrorCode } from '@mise/shared';
 
-type FeatureFlag = 'production' | 'whatsapp' | 'sms' | 'ai_chat';
+type FeatureFlag = 'production' | 'whatsapp' | 'sms' | 'ai_chat' | 'loyalty_enhancements';
 
 const featureFlagEnvMap: Record<FeatureFlag, string> = {
   production: env.FEATURE_PRODUCTION,
   whatsapp: env.FEATURE_WHATSAPP,
   sms: env.FEATURE_SMS,
   ai_chat: env.FEATURE_AI_CHAT,
+  loyalty_enhancements: env.FEATURE_LOYALTY_ENHANCEMENTS,
 };
+
+export function isFeatureEnabled(flag: FeatureFlag, storeId: number): boolean {
+  return isEnabled(featureFlagEnvMap[flag], storeId);
+}
 
 function isEnabled(flagValue: string, storeId: number): boolean {
   if (!flagValue) return false;

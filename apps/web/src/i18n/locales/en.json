@@ -297,7 +297,12 @@
       "email": "Email"
     },
     "conflictMatch": "match",
-    "useExisting": "Use This Customer"
+    "useExisting": "Use This Customer",
+    "birthday": "Birthday",
+    "birthdayDay": "Day",
+    "birthdayMonth": "Month",
+    "happyBirthday": "Happy Birthday!",
+    "segment": "Segment"
   },
   "payments": {
     "logPayment": "Log Payment",
@@ -319,24 +324,7 @@
     "refunded": "Refunded",
     "refundTitle": "Refund Payment?",
     "refundMsg": "This will mark the payment of {{amount}} {{currency}} for order #{{order}} as refunded. This action cannot be undone.",
-    "allMethods": "All methods",
-    "viewPayment": "View payment",
-    "alsoGenerateInvoice": "Also generate an invoice for this payment",
-    "autoInvoiceNotice": "An invoice will be generated automatically."
-  },
-  "refund": {
-    "refundTitle": "Refund Payment?",
-    "refundMsg": "This will mark the payment as refunded.",
-    "refund": "Refund",
-    "refundAndCreditNote": "Refund & Credit Note",
-    "generateCreditNote": "Also generate a credit note",
-    "creditNoteNotes": "Credit note notes (optional)",
-    "refundSuccess": "Payment refunded successfully",
-    "refundWithCreditNoteSuccess": "Payment refunded and credit note generated",
-    "creditNoteFailed": "Payment refunded but credit note creation failed. You can create it manually.",
-    "creditNoteAlreadyExists": "A credit note has already been issued for this order.",
-    "alsoRefund": "Also refund the payment",
-    "autoCreditNoteNotice": "A credit note will be generated automatically."
+    "allMethods": "All methods"
   },
   "invoices": {
     "title": "Invoices",
@@ -360,9 +348,7 @@
     "notes": "Notes",
     "missingBusinessDetailsBefore": "Complete your business details in",
     "missingBusinessDetailsLink": "Settings > Billing",
-    "missingBusinessDetailsAfter": "before generating invoices.",
-    "billingDocuments": "Billing Documents",
-    "noDocumentsYet": "No billing documents yet."
+    "missingBusinessDetailsAfter": "before generating invoices."
   },
   "loyalty": {
     "balance": "Points Balance",
@@ -406,6 +392,42 @@
       "discount": "Discount Value",
       "minPoints": "Minimum {{min}} points required",
       "currentBalance": "Current Balance"
+    },
+    "segments": {
+      "title": "Customer Segments",
+      "vip": "VIP",
+      "regular": "Regular",
+      "new": "New",
+      "dormant": "Dormant",
+      "inactive": "Inactive"
+    },
+    "birthday": {
+      "title": "Upcoming Birthdays",
+      "empty": "No birthdays this week",
+      "emptyDesc": "Add birthdays to customer profiles to see them here.",
+      "today": "Today!",
+      "sendWish": "Send Wish",
+      "daysUntil": "in {{count}} days",
+      "tomorrow": "Tomorrow"
+    },
+    "reengagement": {
+      "title": "Customers to Re-engage",
+      "viewAll": "View All ({{count}})",
+      "daysSince": "{{count}} days ago",
+      "lastOrder": "Last order",
+      "newOrder": "New Order",
+      "noActivity": "No recent activity"
+    },
+    "settings": {
+      "segmentation": "Segmentation Settings",
+      "segmentationDesc": "Configure how customers are automatically categorized",
+      "vipOrderCount": "VIP: Minimum orders",
+      "vipDays": "VIP: Within days",
+      "regularOrderCount": "Regular: Minimum orders",
+      "regularDays": "Regular: Within days",
+      "newDays": "New customer: Within days",
+      "dormantDays": "Dormant: No orders for days",
+      "birthdayReminderDays": "Birthday reminder: Days ahead"
     }
   },
   "production": {
@@ -480,11 +502,6 @@
     "preferences": "Preferences",
     "language": "Language",
     "dateFormat": "Date Format",
-    "timeFormat": "Time Format",
-    "timeFormats": {
-      "24h": "24h (14:30)",
-      "12h": "12h (2:30 PM)"
-    },
     "weekStartDay": "Week starts on",
     "weekStartDays": {
       "sunday": "Sunday",
@@ -598,12 +615,7 @@
       "email": "Email",
       "invoiceSettings": "Invoice Settings",
       "vatRate": "VAT Rate (%)",
-      "vatRateNote": "Changes to VAT rate will only affect future invoices.",
-      "automation": "Automation",
-      "autoGenerateInvoice": "Auto-generate invoice",
-      "autoGenerateInvoiceDesc": "Automatically create an invoice when a payment is logged.",
-      "autoGenerateCreditNote": "Auto-generate credit note",
-      "autoGenerateCreditNoteDesc": "Automatically create a credit note when a refund is processed."
+      "vatRateNote": "Changes to VAT rate will only affect future invoices."
     },
     "integrations": {
       "title": "Integrations",
