@@ -910,6 +910,22 @@
     "FEATURE_DISABLED": "This feature is not available",
     "RATE_LIMIT_EXCEEDED": "Too many requests. Please try again later."
   },
+  "chat": {
+    "title": "AI Assistant",
+    "placeholder": "Type a message...",
+    "send": "Send",
+    "greeting": "Hi! I'm your AI assistant.",
+    "greetingBody": "Ask me about your orders, customers, recipes, or anything about your bakery.",
+    "suggestedTopSellers": "Top sellers this week",
+    "suggestedTodayOrders": "Today's orders summary",
+    "suggestedLowStock": "Low stock ingredients",
+    "errorUnavailable": "AI assistant is temporarily unavailable. Please try again.",
+    "errorSlow": "This is taking longer than usual...",
+    "errorRateLimit": "Too many messages. Please wait a moment.",
+    "retry": "Retry",
+    "newConversation": "New conversation",
+    "fetchingData": "Fetching data..."
+  },
   "admin": {
     "nav": {
       "title": "Admin Panel",

@@ -63,10 +63,14 @@ const envSchema = z.object({
   META_APP_ID: z.string().default(''),
   META_APP_SECRET: z.string().default(''),
 
+  // Gemini AI
+  GEMINI_API_KEY: z.string().default(''),
+
   // Feature flags — comma-separated store IDs that have the feature enabled, or '*' for all stores
   FEATURE_PRODUCTION: z.string().default(''),
   FEATURE_WHATSAPP: z.string().default(''),
   FEATURE_SMS: z.string().default(''),
+  FEATURE_AI_CHAT: z.string().default(''),
 });
 
 export type Env = z.infer<typeof envSchema>;
