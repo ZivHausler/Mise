@@ -21,6 +21,7 @@
     "@fastify/multipart": "^8.3.0",
     "@fastify/rate-limit": "^9.1.0",
     "@google-cloud/storage": "^7.19.0",
+    "@google/genai": "^1.43.0",
     "@mise/db": "workspace:*",
     "@mise/shared": "workspace:*",
     "amqplib": "^0.10.9",

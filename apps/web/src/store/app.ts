@@ -24,6 +24,7 @@ interface AppState {
   productionTab: ProductionTab;
   settingsTab: SettingsTab;
   adminDashboardRange: AdminDashboardRange;
+  aiChatOpen: boolean;
   setLanguage: (lang: Language) => void;
   setDateFormat: (format: DateFormat) => void;
   setTimeFormat: (format: TimeFormat) => void;
@@ -38,6 +39,8 @@ interface AppState {
   setProductionTab: (tab: ProductionTab) => void;
   setSettingsTab: (tab: SettingsTab) => void;
   setAdminDashboardRange: (range: AdminDashboardRange) => void;
+  setAiChatOpen: (open: boolean) => void;
+  toggleAiChat: () => void;
   initLanguageFromProfile: (langEnum: number) => void;
 }
 
@@ -61,6 +64,7 @@ export const useAppStore = create<AppState>((set) => ({
   productionTab: (localStorage.getItem('productionTab') as ProductionTab) || 'board',
   settingsTab: (localStorage.getItem('settingsTab') as SettingsTab) || 'account',
   adminDashboardRange: (localStorage.getItem('adminDashboardRange') as AdminDashboardRange) || 'month',
+  aiChatOpen: false,
   setLanguage: (language) => {
     localStorage.setItem('i18nextLng', language);
     set({ language });
@@ -113,6 +117,8 @@ export const useAppStore = create<AppState>((set) => ({
     localStorage.setItem('adminDashboardRange', adminDashboardRange);
     set({ adminDashboardRange });
   },
+  setAiChatOpen: (aiChatOpen) => set({ aiChatOpen }),
+  toggleAiChat: () => set((s) => ({ aiChatOpen: !s.aiChatOpen })),
   initLanguageFromProfile: (langEnum) => {
     const language = ENUM_TO_LANGUAGE[langEnum] ?? DEFAULT_LANGUAGE;
     localStorage.setItem('i18nextLng', language);

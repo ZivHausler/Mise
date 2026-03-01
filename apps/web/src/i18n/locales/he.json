@@ -910,6 +910,22 @@
     "FEATURE_DISABLED": "תכונה זו אינה זמינה",
     "RATE_LIMIT_EXCEEDED": "יותר מדי בקשות. אנא נסה שוב מאוחר יותר."
   },
+  "chat": {
+    "title": "עוזר AI",
+    "placeholder": "כתבו הודעה...",
+    "send": "שליחה",
+    "greeting": "!שלום! אני העוזר החכם שלכם",
+    "greetingBody": "שאלו אותי על הזמנות, לקוחות, מתכונים, או כל דבר שקשור למאפייה שלכם.",
+    "suggestedTopSellers": "המוצרים הנמכרים ביותר השבוע",
+    "suggestedTodayOrders": "סיכום הזמנות להיום",
+    "suggestedLowStock": "מלאי נמוך של חומרי גלם",
+    "errorUnavailable": "העוזר החכם לא זמין כרגע. נסו שוב.",
+    "errorSlow": "זה לוקח יותר זמן מהרגיל...",
+    "errorRateLimit": "יותר מדי הודעות. נא להמתין.",
+    "retry": "ניסיון חוזר",
+    "newConversation": "שיחה חדשה",
+    "fetchingData": "מביא נתונים..."
+  },
   "admin": {
     "nav": {
       "title": "פאנל ניהול",

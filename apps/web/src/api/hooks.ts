@@ -48,7 +48,7 @@ async function deleteApi(url: string): Promise<void> {
 export function useFeatureFlags() {
   return useQuery({
     queryKey: ['features'],
-    queryFn: () => fetchApi<{ production: boolean; whatsapp: boolean; sms: boolean }>('/features'),
+    queryFn: () => fetchApi<{ production: boolean; whatsapp: boolean; sms: boolean; ai_chat: boolean }>('/features'),
     staleTime: 5 * 60 * 1000,
   });
 }
