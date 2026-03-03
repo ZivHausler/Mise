@@ -218,6 +218,7 @@ describe('ai-chat service', () => {
       expect(result).toEqual({
         reply: 'Your orders look great',
         toolCalls: [],
+        references: [],
       });
     });
 
