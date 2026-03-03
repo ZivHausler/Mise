@@ -512,6 +512,14 @@ export function usePaymentStatuses() {
   });
 }
 
+export function useOrderPayments(orderId: number) {
+  return useQuery({
+    queryKey: ['payments', 'order', orderId],
+    queryFn: () => fetchApi<any[]>(`/payments/order/${orderId}`),
+    enabled: !!orderId,
+  });
+}
+
 // Dashboard
 export function useDashboardStats() {
   return useQuery({ queryKey: ['dashboard'], queryFn: () => fetchApi<unknown>('/analytics/dashboard'), staleTime: 60_000 });

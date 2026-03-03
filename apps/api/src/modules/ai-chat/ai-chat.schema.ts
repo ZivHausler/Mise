@@ -7,7 +7,7 @@ const chatMessageSchema = z.object({
 
 export const chatRequestSchema = z.object({
   message: z.string().min(1).max(2000),
-  history: z.array(chatMessageSchema).max(20).default([]),
+  history: z.array(chatMessageSchema).max(20, { message: 'Conversation limit reached. Please start a new conversation.' }).default([]),
   language: z.enum(['en', 'he']).default('he'),
 });
 

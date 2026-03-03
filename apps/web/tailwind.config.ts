@@ -124,6 +124,10 @@ const config: Config = {
           '0%': { opacity: '0', transform: 'translateX(16px)' },
           '100%': { opacity: '1', transform: 'translateX(0)' },
         },
+        'slide-in-from-start': {
+          '0%': { opacity: '0', transform: 'translateX(-16px)' },
+          '100%': { opacity: '1', transform: 'translateX(0)' },
+        },
         'progress-indeterminate': {
           '0%': { transform: 'translateX(-100%)' },
           '50%': { transform: 'translateX(0%)' },
@@ -143,6 +147,7 @@ const config: Config = {
         'fade-in': 'fade-in 200ms ease-out',
         'slide-up': 'slide-up 200ms ease-out',
         'slide-in': 'slide-in-from-end 300ms ease-out',
+        'slide-in-rtl': 'slide-in-from-start 300ms ease-out',
         'progress-indeterminate': 'progress-indeterminate 1.2s ease-in-out infinite',
         'image-crossfade': 'image-crossfade 700ms ease-in-out forwards',
         'expand-down': 'expand-down 250ms ease-out forwards',

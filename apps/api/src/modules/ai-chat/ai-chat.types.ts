@@ -18,3 +18,18 @@ export interface ChatStreamEvent {
   type: 'token' | 'tool_call' | 'tool_result' | 'done' | 'error';
   data: Record<string, unknown>;
 }
+
+export type EntityType = 'order' | 'customer' | 'recipe' | 'inventory';
+
+export interface EntityReference {
+  type: EntityType;
+  id: string | number;
+  displayName: string;
+  subtitle?: string;
+  meta?: string;
+}
+
+export interface ToolCallResult {
+  stripped: unknown;
+  references: EntityReference[];
+}

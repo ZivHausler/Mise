@@ -928,15 +928,31 @@
     "send": "שליחה",
     "greeting": "!שלום! אני העוזר החכם שלכם",
     "greetingBody": "שאלו אותי על הזמנות, לקוחות, מתכונים, או כל דבר שקשור למאפייה שלכם.",
-    "suggestedTopSellers": "המוצרים הנמכרים ביותר השבוע",
-    "suggestedTodayOrders": "סיכום הזמנות להיום",
-    "suggestedLowStock": "מלאי נמוך של חומרי גלם",
+    "suggestedDashboard": "מה המצב במאפייה היום?",
+    "suggestedTopSellers": "מה המתכונים הכי נמכרים?",
+    "suggestedLowStock": "אילו חומרי גלם עומדים להיגמר?",
+    "suggestedRevenue": "הראה לי את ההכנסות החודש",
+    "suggestedBestCustomers": "מי הלקוחות הכי תדירים שלי?",
+    "suggestedPendingOrders": "אילו הזמנות עדיין ממתינות?",
+    "suggestedUnpaid": "אילו הזמנות עדיין לא שולמו?",
+    "suggestedOutstanding": "כמה כסף חייבים לי לקוחות?",
     "errorUnavailable": "העוזר החכם לא זמין כרגע. נסו שוב.",
     "errorSlow": "זה לוקח יותר זמן מהרגיל...",
     "errorRateLimit": "יותר מדי הודעות. נא להמתין.",
     "retry": "ניסיון חוזר",
     "newConversation": "שיחה חדשה",
-    "fetchingData": "מביא נתונים..."
+    "fetchingData": "מביא נתונים...",
+    "entityCards": {
+      "order": "הזמנה",
+      "customer": "לקוח",
+      "recipe": "מתכון",
+      "inventory": "מלאי",
+      "showMore": "+{{count}} נוספים",
+      "showLess": "הצג פחות"
+    },
+    "sessionWarning": "השיחה מתארכת. מומלץ להתחיל שיחה חדשה לתוצאות טובות יותר.",
+    "sessionLimit": "השיחה הגיעה למגבלה. יש להתחיל שיחה חדשה כדי להמשיך.",
+    "startNew": "שיחה חדשה"
   },
   "admin": {
     "nav": {

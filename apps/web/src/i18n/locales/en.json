@@ -928,15 +928,31 @@
     "send": "Send",
     "greeting": "Hi! I'm your AI assistant.",
     "greetingBody": "Ask me about your orders, customers, recipes, or anything about your bakery.",
-    "suggestedTopSellers": "Top sellers this week",
-    "suggestedTodayOrders": "Today's orders summary",
-    "suggestedLowStock": "Low stock ingredients",
+    "suggestedDashboard": "How's my bakery doing today?",
+    "suggestedTopSellers": "What are my best selling recipes?",
+    "suggestedLowStock": "Which ingredients are running low?",
+    "suggestedRevenue": "Show me this month's revenue",
+    "suggestedBestCustomers": "Who are my most frequent customers?",
+    "suggestedPendingOrders": "What orders are still pending?",
+    "suggestedUnpaid": "Which orders haven't been paid yet?",
+    "suggestedOutstanding": "How much money do customers owe me?",
     "errorUnavailable": "AI assistant is temporarily unavailable. Please try again.",
     "errorSlow": "This is taking longer than usual...",
     "errorRateLimit": "Too many messages. Please wait a moment.",
     "retry": "Retry",
     "newConversation": "New conversation",
-    "fetchingData": "Fetching data..."
+    "fetchingData": "Fetching data...",
+    "entityCards": {
+      "order": "Order",
+      "customer": "Customer",
+      "recipe": "Recipe",
+      "inventory": "Inventory",
+      "showMore": "+{{count}} more",
+      "showLess": "Show less"
+    },
+    "sessionWarning": "This conversation is getting long. Consider starting a new one for best results.",
+    "sessionLimit": "Conversation limit reached. Please start a new one to continue.",
+    "startNew": "New conversation"
   },
   "admin": {
     "nav": {

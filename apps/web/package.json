@@ -27,6 +27,7 @@
     "react-dom": "^18.3.0",
     "react-i18next": "^14.1.0",
     "react-joyride": "^2.9.3",
+    "react-markdown": "^10.1.0",
     "react-router-dom": "^6.23.0",
     "tailwind-merge": "^2.3.0",
     "zod": "^3.23.0",
