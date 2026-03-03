@@ -447,13 +447,13 @@ async function executeToolCallRaw(
           const subDuration = sr.steps.reduce((sum, s) => sum + (s.duration ?? 0), 0);
           resolvedSubRecipes.push({ name: sr.name, ingredients: sr.ingredients, steps: sr.steps, totalDurationMinutes: subDuration });
         }
-        (recipe as Record<string, unknown>)['subRecipes'] = resolvedSubRecipes;
+        (recipe as unknown as Record<string, unknown>)['subRecipes'] = resolvedSubRecipes;
       }
 
       // Compute total duration including sub-recipes
       const mainDuration = recipe.steps.reduce((sum, s) => sum + (s.duration ?? 0), 0);
       const subDuration = resolvedSubRecipes.reduce((sum, sr) => sum + sr.totalDurationMinutes, 0);
-      (recipe as Record<string, unknown>)['totalDurationMinutes'] = mainDuration + subDuration;
+      (recipe as unknown as Record<string, unknown>)['totalDurationMinutes'] = mainDuration + subDuration;
 
       return recipe;
     }
