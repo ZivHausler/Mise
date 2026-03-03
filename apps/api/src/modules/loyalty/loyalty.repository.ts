@@ -286,7 +286,7 @@ export class PgLoyaltyRepository {
       id: Number(row['id']),
       name: row['name'] as string,
       phone: row['phone'] as string,
-      birthday: (row['birthday'] as string)?.substring(0, 10) ?? '',
+      birthday: row['birthday'] instanceof Date ? row['birthday'].toISOString().substring(0, 10) : String(row['birthday'] ?? '').substring(0, 10),
       daysUntil: Number(row['days_until']),
     }));
   }
