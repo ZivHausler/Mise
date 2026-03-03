@@ -10,6 +10,7 @@ export interface RevenueData {
 
 export interface PopularRecipe {
   recipe_id: string;
+  recipe_name: string;
   total_ordered: number;
 }
 

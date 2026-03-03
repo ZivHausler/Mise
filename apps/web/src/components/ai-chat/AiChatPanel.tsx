@@ -1,15 +1,16 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { X, Sparkles, RotateCcw } from 'lucide-react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Minus, Sparkles, RotateCcw, AlertTriangle } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { cn } from '@/utils/cn';
 import { useAppStore } from '@/store/app';
-import { streamChat } from '@/api/useAiChat';
+import { streamChat, type EntityReference } from '@/api/useAiChat';
 import { ChatMessage } from './ChatMessage';
 import { ChatInput } from './ChatInput';
 
 interface Message {
   role: 'user' | 'assistant';
   content: string;
+  references?: EntityReference[];
 }
 
 export const AiChatPanel = React.memo(function AiChatPanel() {
@@ -24,6 +25,11 @@ export const AiChatPanel = React.memo(function AiChatPanel() {
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
+  const HISTORY_LIMIT = 20;
+  const HISTORY_WARNING = 14;
+  const isNearLimit = messages.length >= HISTORY_WARNING && messages.length <= HISTORY_LIMIT;
+  const isAtLimit = messages.length > HISTORY_LIMIT;
+
   // Auto-scroll to bottom
   const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -31,7 +37,7 @@ export const AiChatPanel = React.memo(function AiChatPanel() {
 
   useEffect(() => {
     scrollToBottom();
-  }, [messages, isStreaming, scrollToBottom]);
+  }, [messages, isStreaming, open, scrollToBottom]);
 
   // Escape key closes panel
   useEffect(() => {
@@ -68,9 +74,7 @@ export const AiChatPanel = React.memo(function AiChatPanel() {
 
       setIsStreaming(true);
       let assistantContent = '';
-
-      // Add empty assistant message to stream into
-      setMessages((prev) => [...prev, { role: 'assistant', content: '' }]);
+      let assistantAdded = false;
 
       try {
         const language = (i18n.language === 'he' ? 'he' : 'en') as 'en' | 'he';
@@ -79,14 +83,19 @@ export const AiChatPanel = React.memo(function AiChatPanel() {
             case 'token': {
               const tokenText = (event.data as { text?: string }).text ?? '';
               assistantContent += tokenText;
-              setMessages((prev) => {
-                const updated = [...prev];
-                updated[updated.length - 1] = {
-                  role: 'assistant',
-                  content: assistantContent,
-                };
-                return updated;
-              });
+              if (!assistantAdded) {
+                assistantAdded = true;
+                setMessages((prev) => [...prev, { role: 'assistant', content: assistantContent }]);
+              } else {
+                setMessages((prev) => {
+                  const updated = [...prev];
+                  updated[updated.length - 1] = {
+                    role: 'assistant',
+                    content: assistantContent,
+                  };
+                  return updated;
+                });
+              }
               break;
             }
             case 'tool_call': {
@@ -100,16 +109,38 @@ export const AiChatPanel = React.memo(function AiChatPanel() {
             }
             case 'done': {
               const fullText = (event.data as { fullText?: string }).fullText;
+              const refs = (event.data as { references?: EntityReference[] }).references;
+
               if (fullText) {
                 assistantContent = fullText;
-                setMessages((prev) => {
-                  const updated = [...prev];
-                  updated[updated.length - 1] = {
-                    role: 'assistant',
-                    content: fullText,
-                  };
-                  return updated;
-                });
+              }
+
+              if (fullText || refs?.length) {
+                if (!assistantAdded) {
+                  assistantAdded = true;
+                  setMessages((prev) => [
+                    ...prev,
+                    {
+                      role: 'assistant',
+                      content: fullText ?? assistantContent,
+                      ...(refs?.length ? { references: refs } : {}),
+                    },
+                  ]);
+                } else {
+                  setMessages((prev) => {
+                    const updated = [...prev];
+                    const lastIdx = updated.length - 1;
+                    const lastMsg = updated[lastIdx];
+                    if (lastIdx >= 0 && lastMsg && lastMsg.role === 'assistant') {
+                      updated[lastIdx] = {
+                        role: lastMsg.role,
+                        content: fullText ?? lastMsg.content,
+                        references: refs?.length ? refs : lastMsg.references,
+                      };
+                    }
+                    return updated;
+                  });
+                }
               }
               break;
             }
@@ -118,19 +149,12 @@ export const AiChatPanel = React.memo(function AiChatPanel() {
                 (event.data as { message?: string }).message ??
                 t('chat.errorUnavailable');
               setError(errMsg);
-              // Remove the empty assistant message
-              if (!assistantContent) {
-                setMessages((prev) => prev.slice(0, -1));
-              }
               break;
             }
           }
         }
       } catch {
         setError(t('chat.errorUnavailable'));
-        if (!assistantContent) {
-          setMessages((prev) => prev.slice(0, -1));
-        }
       } finally {
         setIsStreaming(false);
         setActiveToolCall(null);
@@ -149,9 +173,14 @@ export const AiChatPanel = React.memo(function AiChatPanel() {
   if (!open) return null;
 
   const suggestedPrompts = [
+    { key: 'suggestedDashboard', label: t('chat.suggestedDashboard') },
     { key: 'suggestedTopSellers', label: t('chat.suggestedTopSellers') },
-    { key: 'suggestedTodayOrders', label: t('chat.suggestedTodayOrders') },
     { key: 'suggestedLowStock', label: t('chat.suggestedLowStock') },
+    { key: 'suggestedRevenue', label: t('chat.suggestedRevenue') },
+    { key: 'suggestedBestCustomers', label: t('chat.suggestedBestCustomers') },
+    { key: 'suggestedPendingOrders', label: t('chat.suggestedPendingOrders') },
+    { key: 'suggestedUnpaid', label: t('chat.suggestedUnpaid') },
+    { key: 'suggestedOutstanding', label: t('chat.suggestedOutstanding') },
   ];
 
   return (
@@ -169,8 +198,9 @@ export const AiChatPanel = React.memo(function AiChatPanel() {
           // Mobile: full screen
           'inset-0',
           // Desktop: slide-over from end
-          'lg:inset-y-0 lg:inset-start-auto lg:inset-end-0 lg:w-[380px] lg:border-s lg:border-neutral-200',
-          'animate-slide-in',
+          'lg:inset-y-0 lg:left-auto lg:right-0 lg:w-[480px] lg:border-l lg:border-neutral-200',
+          'rtl:lg:left-0 rtl:lg:right-auto rtl:lg:border-l-0 rtl:lg:border-r rtl:lg:border-neutral-200',
+          'animate-slide-in rtl:animate-slide-in-rtl',
         )}
         role="dialog"
         aria-modal="true"
@@ -201,7 +231,7 @@ export const AiChatPanel = React.memo(function AiChatPanel() {
               onClick={handleClose}
               className="rounded-md p-1.5 text-neutral-400 hover:bg-neutral-100 hover:text-neutral-600 transition-colors"
             >
-              <X className="h-5 w-5" />
+              <Minus className="h-5 w-5" />
             </button>
           </div>
         </div>
@@ -250,25 +280,12 @@ export const AiChatPanel = React.memo(function AiChatPanel() {
                     idx === messages.length - 1 &&
                     msg.role === 'assistant'
                   }
+                  references={msg.references}
                 />
               ))}
 
-              {/* Tool call indicator */}
-              {activeToolCall && (
-                <div className="flex items-center gap-2 ps-8">
-                  <div className="flex items-center gap-1.5 rounded-full bg-primary-50 border border-primary-200 px-3 py-1 text-caption text-primary-600">
-                    <div className="flex gap-0.5">
-                      <span className="h-1 w-1 rounded-full bg-primary-400 animate-bounce" style={{ animationDelay: '0ms' }} />
-                      <span className="h-1 w-1 rounded-full bg-primary-400 animate-bounce" style={{ animationDelay: '150ms' }} />
-                      <span className="h-1 w-1 rounded-full bg-primary-400 animate-bounce" style={{ animationDelay: '300ms' }} />
-                    </div>
-                    <span>{t('chat.fetchingData')}</span>
-                  </div>
-                </div>
-              )}
-
-              {/* Typing indicator (when streaming but no content yet) */}
-              {isStreaming && !activeToolCall && messages[messages.length - 1]?.content === '' && (
+              {/* Typing indicator (while waiting for assistant response) */}
+              {isStreaming && messages[messages.length - 1]?.role !== 'assistant' && (
                 <div className="flex items-center gap-2 ps-8">
                   <div className="flex gap-1 rounded-2xl rounded-ss-md bg-neutral-100 px-4 py-3">
                     <span className="h-2 w-2 rounded-full bg-neutral-400 animate-bounce" style={{ animationDelay: '0ms' }} />
@@ -289,8 +306,33 @@ export const AiChatPanel = React.memo(function AiChatPanel() {
           <div ref={messagesEndRef} />
         </div>
 
-        {/* Input */}
-        <ChatInput onSend={handleSend} disabled={isStreaming} />
+        {/* Session limit warning / block */}
+        {isAtLimit ? (
+          <div className="border-t border-neutral-200 px-4 py-3 text-center">
+            <p className="text-caption text-neutral-600 mb-2">
+              {t('chat.sessionLimit')}
+            </p>
+            <button
+              type="button"
+              onClick={handleNewConversation}
+              className="inline-flex items-center gap-1.5 rounded-full bg-primary-500 px-4 py-1.5 text-caption font-medium text-white hover:bg-primary-600 transition-colors"
+            >
+              <RotateCcw className="h-3.5 w-3.5" />
+              {t('chat.startNew')}
+            </button>
+          </div>
+        ) : (
+          <>
+            {isNearLimit && (
+              <div className="flex items-center gap-2 border-t border-warning/30 bg-warning-light px-4 py-2">
+                <AlertTriangle className="h-3.5 w-3.5 shrink-0 text-warning" />
+                <p className="text-caption text-warning-dark">{t('chat.sessionWarning')}</p>
+              </div>
+            )}
+            {/* Input */}
+            <ChatInput onSend={handleSend} disabled={isStreaming} />
+          </>
+        )}
       </div>
     </>
   );

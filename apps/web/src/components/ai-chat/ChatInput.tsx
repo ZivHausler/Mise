@@ -16,17 +16,21 @@ export const ChatInput = React.memo(function ChatInput({
   const [value, setValue] = useState('');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
+  const maxHeight = 78; // ~3 lines
+
   const adjustHeight = useCallback(() => {
     const el = textareaRef.current;
     if (!el) return;
     el.style.height = 'auto';
-    el.style.height = `${Math.min(el.scrollHeight, 128)}px`;
+    const clamped = Math.min(el.scrollHeight, maxHeight);
+    el.style.height = `${clamped}px`;
+    el.style.overflowY = el.scrollHeight > maxHeight ? 'auto' : 'hidden';
   }, []);
 
   const handleChange = useCallback(
     (e: React.ChangeEvent<HTMLTextAreaElement>) => {
       setValue(e.target.value);
-      adjustHeight();
+      requestAnimationFrame(adjustHeight);
     },
     [adjustHeight],
   );
@@ -67,7 +71,7 @@ export const ChatInput = React.memo(function ChatInput({
             'placeholder:text-neutral-400 focus:border-primary-400 focus:outline-none focus:ring-1 focus:ring-primary-400',
             'disabled:opacity-50 disabled:cursor-not-allowed',
           )}
-          style={{ minHeight: '42px', maxHeight: '128px' }}
+          style={{ minHeight: '42px', maxHeight: `${maxHeight}px` }}
         />
         <button
           type="button"

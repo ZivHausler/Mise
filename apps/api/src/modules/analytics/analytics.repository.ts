@@ -35,10 +35,11 @@ export class PgAnalyticsRepository {
     const result = await pool.query(
       `SELECT
          item->>'recipeId' as recipe_id,
+         COALESCE(item->>'recipeName', item->>'recipeId') as recipe_name,
          SUM((item->>'quantity')::int) as total_ordered
        FROM orders, jsonb_array_elements(items::jsonb) as item
        WHERE store_id = $1
-       GROUP BY item->>'recipeId'
+       GROUP BY item->>'recipeId', COALESCE(item->>'recipeName', item->>'recipeId')
        ORDER BY total_ordered DESC
        LIMIT 10`,
       [storeId],

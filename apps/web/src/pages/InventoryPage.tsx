@@ -69,7 +69,7 @@ export default function InventoryPage() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const [page, setPage] = useState(1);
-  const [search, setSearch] = useState('');
+  const [search, setSearch] = useState(() => searchParams.get('search') ?? '');
   const debouncedSearch = useDebouncedValue(search, 500, () => setPage(1));
   const [selectedAllergenIds, setSelectedAllergenIds] = useState<string[]>([]);
   const [selectedStatuses, setSelectedStatuses] = useState<string[]>(() => {
@@ -99,6 +99,15 @@ export default function InventoryPage() {
   const [adjustInputMode, setAdjustInputMode] = useState<'units' | 'packages'>('units');
   const [thresholdMode, setThresholdMode] = useState<'units' | 'packages'>('units');
 
+
+  // Sync local state when URL search params change (e.g. clicking a chat card while already on this page)
+  useEffect(() => {
+    const urlSearch = searchParams.get('search') ?? '';
+    if (urlSearch !== search) setSearch(urlSearch);
+    const urlStatus = searchParams.get('status');
+    const urlStatuses = urlStatus ? urlStatus.split(',').filter(Boolean) : [];
+    if (JSON.stringify(urlStatuses) !== JSON.stringify(selectedStatuses)) setSelectedStatuses(urlStatuses);
+  }, [searchParams]);
 
   useEffect(() => {
     setPage(1);
