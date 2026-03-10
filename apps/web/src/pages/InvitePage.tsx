@@ -13,6 +13,8 @@ export default function InvitePage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const user = useAuthStore((s) => s.user);
+  const logout = useAuthStore((s) => s.logout);
   const updateToken = useAuthStore((s) => s.updateToken);
   const setHasStore = useAuthStore((s) => s.setHasStore);
   const setPendingCreateStoreToken = useAuthStore((s) => s.setPendingCreateStoreToken);
@@ -21,6 +23,9 @@ export default function InvitePage() {
   const { data: invite, isLoading, isError } = useValidateInvite(token);
 
   const isCreateStoreInvite = invite?.type === 'create_store';
+  const emailMismatch = isAuthenticated && invite?.email && user?.email
+    ? invite.email.toLowerCase() !== user.email.toLowerCase()
+    : false;
 
   const handleJoin = () => {
     if (!token) return;
@@ -82,7 +87,18 @@ export default function InvitePage() {
           )}
         </div>
 
-        {isAuthenticated ? (
+        {isAuthenticated && emailMismatch ? (
+          <Stack gap={3}>
+            <div className="rounded-md bg-red-50 border border-red-200 p-3 text-center">
+              <p className="text-body-sm text-red-700">
+                {t('store.inviteEmailMismatch', { email: invite?.email })}
+              </p>
+            </div>
+            <Button variant="primary" fullWidth onClick={() => { logout(); navigate(`/login/${token}`); }}>
+              {t('store.switchAccount', 'Switch Account')}
+            </Button>
+          </Stack>
+        ) : isAuthenticated ? (
           <Stack gap={3}>
             {isCreateStoreInvite ? (
               <Button variant="primary" fullWidth onClick={handleSetupStore}>

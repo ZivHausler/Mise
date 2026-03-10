@@ -103,6 +103,15 @@ export class PgStoreRepository {
     }));
   }
 
+  static async updateUserRole(userId: number, storeId: number, role: StoreRole): Promise<boolean> {
+    const pool = getPool();
+    const result = await pool.query(
+      `UPDATE users_stores SET role = $1 WHERE user_id = $2 AND store_id = $3`,
+      [role, userId, storeId],
+    );
+    return (result.rowCount ?? 0) > 0;
+  }
+
   static async removeUserFromStore(userId: number, storeId: number): Promise<boolean> {
     const pool = getPool();
     const result = await pool.query(

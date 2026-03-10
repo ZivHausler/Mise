@@ -749,6 +749,17 @@ export function useRemoveMember() {
   });
 }
 
+export function useUpdateMemberRole() {
+  const qc = useQueryClient();
+  const addToast = useToastStore((s) => s.addToast);
+  const { t } = useTranslation();
+  return useMutation({
+    mutationFn: ({ userId, role }: { userId: number; role: number }) => patchApi(`/stores/members/${userId}/role`, { role }),
+    onSuccess: () => { addToast('success', t('toasts.roleUpdated')); qc.invalidateQueries({ queryKey: ['storeMembers'] }); },
+    onError: (error) => addToast('error', getApiErrorMessage(error, 'toasts.roleUpdateFailed')),
+  });
+}
+
 export function useAcceptInvite() {
   return useMutation({
     mutationFn: (body: { token: string }) => postApi<{ token: string; storeId: string; role: number; stores: { storeId: string; store: { id: number; name: string; code: string | null; theme: string }; role: number }[] }>('/stores/accept-invite', body),

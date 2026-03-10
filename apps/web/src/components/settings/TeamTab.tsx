@@ -5,7 +5,7 @@ import { Card, Section, Stack } from '@/components/Layout';
 import { TextInput, Select } from '@/components/FormFields';
 import { Button } from '@/components/Button';
 import { Spinner } from '@/components/Feedback';
-import { useStoreMembers, useSendInvite, usePendingInvitations, useRevokeInvitation, useRemoveMember } from '@/api/hooks';
+import { useStoreMembers, useSendInvite, usePendingInvitations, useRevokeInvitation, useRemoveMember, useUpdateMemberRole } from '@/api/hooks';
 import { INVITE_ROLE_OPTIONS, ROLE_LABELS, STORE_ROLES } from '@/constants/defaults';
 import { useAuthStore } from '@/store/auth';
 
@@ -19,6 +19,7 @@ export default function TeamTab() {
   const sendInvite = useSendInvite();
   const revokeInvitation = useRevokeInvitation();
   const removeMember = useRemoveMember();
+  const updateRole = useUpdateMemberRole();
 
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviteRole, setInviteRole] = useState('3');
@@ -87,9 +88,21 @@ export default function TeamTab() {
                       <UserMinus className="h-4 w-4" />
                     </button>
                   )}
-                  <span className="rounded-full bg-primary-100 px-3 py-1 text-body-sm font-medium text-primary-700">
-                    {t(`settings.team.role${m.role}`, ROLE_LABELS[m.role] || 'Member')}
-                  </span>
+                  {isOwner && m.role !== STORE_ROLES.OWNER ? (
+                    <select
+                      value={m.role}
+                      onChange={(e) => updateRole.mutate({ userId: Number(m.userId), role: Number(e.target.value) })}
+                      className="rounded-full bg-primary-100 px-3 py-1 text-body-sm font-medium text-primary-700 border-none outline-none cursor-pointer hover:bg-primary-200 transition-colors"
+                    >
+                      {INVITE_ROLE_OPTIONS.map((r) => (
+                        <option key={r.value} value={r.value}>{t(`settings.team.role${r.value}`, r.label)}</option>
+                      ))}
+                    </select>
+                  ) : (
+                    <span className="rounded-full bg-primary-100 px-3 py-1 text-body-sm font-medium text-primary-700">
+                      {t(`settings.team.role${m.role}`, ROLE_LABELS[m.role] || 'Member')}
+                    </span>
+                  )}
                 </div>
               </div>
             ))}
