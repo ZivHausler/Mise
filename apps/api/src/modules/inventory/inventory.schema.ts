@@ -22,3 +22,16 @@ export const adjustStockSchema = z.object({
   reason: z.string().max(500).optional(),
   pricePaid: z.number().min(0).max(1000000).optional(),
 });
+
+export const bulkAdjustSchema = z.object({
+  adjustments: z.array(z.object({
+    ingredientId: z.coerce.number().int().positive(),
+    quantity: z.number().positive().max(1000000),
+    pricePaid: z.number().min(0).max(10000000),
+    reason: z.string().max(500).optional(),
+  })).min(1).max(100),
+});
+
+export const bulkDeleteSchema = z.object({
+  ingredientIds: z.array(z.coerce.number().int().positive()).min(1).max(100),
+});

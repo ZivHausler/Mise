@@ -56,3 +56,61 @@ export interface AdjustStockDTO {
   reason?: string;
   pricePaid?: number;
 }
+
+// Receipt Scanner types
+
+export interface ExtractedItem {
+  name: string;
+  quantity: number;
+  unit: string;
+  totalPrice: number;
+}
+
+export interface ExtractedReceipt {
+  items: ExtractedItem[];
+  vendor: string | null;
+  date: string | null;
+  total: number | null;
+}
+
+export interface MatchedItem extends ExtractedItem {
+  unitPrice: number;
+  match: {
+    type: 'exact' | 'fuzzy' | 'none';
+    ingredientId: number | null;
+    ingredientName: string | null;
+    confidence: number;
+  };
+}
+
+export interface ScanResult {
+  items: MatchedItem[];
+  receiptMeta: {
+    vendor: string | null;
+    date: string | null;
+    total: number | null;
+  };
+}
+
+// Bulk operations types
+
+export interface BulkAdjustmentDTO {
+  ingredientId: number;
+  quantity: number;
+  pricePaid: number;
+  reason?: string;
+}
+
+export interface BulkAdjustResultItem {
+  ingredientId: number;
+  name?: string;
+  previousQuantity?: number;
+  newQuantity?: number;
+  success: boolean;
+  error?: string;
+}
+
+export interface BulkAdjustResult {
+  results: BulkAdjustResultItem[];
+  summary: { total: number; succeeded: number; failed: number };
+}
