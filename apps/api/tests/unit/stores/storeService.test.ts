@@ -212,12 +212,12 @@ describe('StoreService', () => {
   describe('acceptInvite', () => {
     it('should accept a join-store invitation', async () => {
       vi.mocked(PgStoreRepository.findInvitationByToken).mockResolvedValue({
-        storeId: 's1', role: StoreRole.EMPLOYEE,
+        storeId: 's1', role: StoreRole.EMPLOYEE, email: 'user@test.com',
       } as any);
       vi.mocked(PgStoreRepository.addUserToStore).mockResolvedValue(undefined as any);
       vi.mocked(PgStoreRepository.markInvitationUsed).mockResolvedValue(undefined as any);
 
-      const result = await service.acceptInvite('u1', 'tok');
+      const result = await service.acceptInvite('u1', 'user@test.com', 'tok');
       expect(result.storeId).toBe('s1');
       expect(result.role).toBe(StoreRole.EMPLOYEE);
     });
@@ -225,15 +225,23 @@ describe('StoreService', () => {
     it('should throw NotFoundError for invalid token', async () => {
       vi.mocked(PgStoreRepository.findInvitationByToken).mockResolvedValue(null);
 
-      await expect(service.acceptInvite('u1', 'bad')).rejects.toThrow(NotFoundError);
+      await expect(service.acceptInvite('u1', 'user@test.com', 'bad')).rejects.toThrow(NotFoundError);
+    });
+
+    it('should throw ForbiddenError for email mismatch', async () => {
+      vi.mocked(PgStoreRepository.findInvitationByToken).mockResolvedValue({
+        storeId: 's1', role: StoreRole.EMPLOYEE, email: 'invited@test.com',
+      } as any);
+
+      await expect(service.acceptInvite('u1', 'wrong@test.com', 'tok')).rejects.toThrow(ForbiddenError);
     });
 
     it('should throw ValidationError for create-store invitation', async () => {
       vi.mocked(PgStoreRepository.findInvitationByToken).mockResolvedValue({
-        storeId: null, role: StoreRole.OWNER,
+        storeId: null, role: StoreRole.OWNER, email: 'user@test.com',
       } as any);
 
-      await expect(service.acceptInvite('u1', 'tok')).rejects.toThrow(ValidationError);
+      await expect(service.acceptInvite('u1', 'user@test.com', 'tok')).rejects.toThrow(ValidationError);
     });
   });
 
