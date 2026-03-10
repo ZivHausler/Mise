@@ -272,6 +272,96 @@ function buildEmail(context: NotificationContext, lang: number): { subject: stri
 }
 
 // ---------------------------------------------------------------------------
+// Password reset email templates
+// ---------------------------------------------------------------------------
+
+interface PasswordResetTranslations {
+  subject: string;
+  body: string;
+  ctaLabel: string;
+  expiresNote: string;
+  ignoreNotice: string;
+}
+
+const passwordResetI18n: Record<Language, PasswordResetTranslations> = {
+  [Language.HEBREW]: {
+    subject: 'איפוס סיסמה',
+    body: 'קיבלנו בקשה לאיפוס הסיסמה שלך. לחצו על הכפתור למטה כדי לבחור סיסמה חדשה.',
+    ctaLabel: 'איפוס סיסמה',
+    expiresNote: 'קישור זה תקף לשעה אחת בלבד.',
+    ignoreNotice: 'אם לא ביקשת לאפס את הסיסמה, ניתן להתעלם מהודעה זו.',
+  },
+  [Language.ENGLISH]: {
+    subject: 'Reset your password',
+    body: 'We received a request to reset your password. Click the button below to choose a new password.',
+    ctaLabel: 'Reset Password',
+    expiresNote: 'This link is valid for 1 hour.',
+    ignoreNotice: "If you didn't request a password reset, you can safely ignore this email.",
+  },
+  [Language.ARABIC]: {
+    subject: 'إعادة تعيين كلمة المرور',
+    body: 'تلقينا طلبًا لإعادة تعيين كلمة المرور الخاصة بك. انقر على الزر أدناه لاختيار كلمة مرور جديدة.',
+    ctaLabel: 'إعادة تعيين كلمة المرور',
+    expiresNote: 'هذا الرابط صالح لمدة ساعة واحدة فقط.',
+    ignoreNotice: 'إذا لم تطلب إعادة تعيين كلمة المرور، يمكنك تجاهل هذا البريد الإلكتروني بأمان.',
+  },
+};
+
+function getPasswordResetTranslations(lang: number): PasswordResetTranslations {
+  return passwordResetI18n[lang as Language] ?? passwordResetI18n[Language.HEBREW];
+}
+
+export async function sendPasswordResetEmail(params: {
+  to: string;
+  resetLink: string;
+  lang?: number;
+}): Promise<void> {
+  if (!resend) {
+    appLogger.warn(
+      { to: params.to },
+      '[EMAIL] Password reset email NOT sent — RESEND_API_KEY is not configured',
+    );
+    return;
+  }
+
+  const lang = params.lang ?? Language.HEBREW;
+  const t = getPasswordResetTranslations(lang);
+
+  const html = wrap(lang, `
+    <div style="text-align:center;padding:32px 0 16px">
+      <div style="font-size:48px;margin-bottom:8px">\u{1F510}</div>
+      <h2 style="color:#C4823E;margin:0">${t.subject}</h2>
+    </div>
+    <p style="font-size:16px;line-height:1.7;color:#374151;text-align:center">${t.body}</p>
+    <div style="text-align:center;margin:32px 0">
+      <a href="${params.resetLink}" style="display:inline-block;padding:12px 28px;background:#C4823E;color:#fff;text-decoration:none;border-radius:6px;font-weight:600">${t.ctaLabel}</a>
+    </div>
+    <p style="font-size:13px;color:#666;text-align:center">${t.expiresNote}</p>
+    <div style="margin-top:32px;padding-top:16px;border-top:1px solid #e5e5e5;font-size:12px;color:#888;text-align:center">
+      ${t.ignoreNotice}
+    </div>
+  `);
+
+  try {
+    const { data, error } = await resend.emails.send({
+      from: FROM_EMAIL,
+      to: params.to,
+      subject: t.subject,
+      html,
+    });
+
+    if (error) {
+      appLogger.error({ to: params.to, error }, '[EMAIL] Failed to send password reset email');
+      return;
+    }
+
+    appLogger.info({ to: params.to, emailId: data?.id }, '[EMAIL] Password reset email sent successfully');
+  } catch (err) {
+    appLogger.error({ to: params.to, err }, '[EMAIL] Unexpected error sending password reset email');
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Invitation email templates (bypass notification dispatcher)
 // ---------------------------------------------------------------------------
 

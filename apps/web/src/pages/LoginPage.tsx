@@ -28,8 +28,14 @@ export default function LoginPage() {
   const acceptInvite = useAcceptInvite();
   const inviteQuery = useValidateInvite(inviteToken);
 
+  const inviteEmail = inviteQuery.data?.email ?? '';
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+
+  // Pre-fill email from invite when data loads
+  useEffect(() => {
+    if (inviteEmail) setEmail(inviteEmail);
+  }, [inviteEmail]);
 
   const [showMerge, setShowMerge] = useState(false);
   const [showGoogleHint, setShowGoogleHint] = useState(false);
@@ -140,6 +146,8 @@ export default function LoginPage() {
               setShowGoogleHint(true);
             } else if (code === 'AUTH_NO_ACCOUNT_FOUND') {
               addToast('error', t('auth.noAccountFound'));
+            } else if (code === 'AUTH_INVALID_CREDENTIALS') {
+              addToast('error', t('auth.invalidCredentials'));
             } else {
               addToast('error', t('toasts.loginFailed'));
             }
@@ -181,6 +189,7 @@ export default function LoginPage() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="baker@mise.app"
+              disabled={!!inviteEmail}
             />
             <TextInput
               label={t('auth.password')}
@@ -190,6 +199,11 @@ export default function LoginPage() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
             />
+            <div className="text-end">
+              <Link to="/forgot-password" className="text-body-sm text-primary-500 hover:underline">
+                {t('auth.forgotPassword')}
+              </Link>
+            </div>
             <Button type="submit" variant="primary" fullWidth loading={login.isPending}>
               {t('auth.login')}
             </Button>

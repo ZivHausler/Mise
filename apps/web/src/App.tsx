@@ -49,6 +49,8 @@ const pageImports = {
   adminAuditLog: () => import('@/pages/admin/AdminAuditLogPage'),
   production: () => import('@/pages/ProductionPage'),
   productionKiosk: () => import('@/pages/ProductionKioskPage'),
+  forgotPassword: () => import('@/pages/ForgotPasswordPage'),
+  resetPassword: () => import('@/pages/ResetPasswordPage'),
 };
 
 const LoginPage = lazy(pageImports.login);
@@ -74,6 +76,8 @@ const InvitePage = lazy(pageImports.invite);
 const NotFoundPage = lazy(pageImports.notFound);
 const ProductionPage = lazy(pageImports.production);
 const ProductionKioskPage = lazy(pageImports.productionKiosk);
+const ForgotPasswordPage = lazy(pageImports.forgotPassword);
+const ResetPasswordPage = lazy(pageImports.resetPassword);
 
 // Admin pages
 const AdminRoute = lazy(pageImports.adminRoute);
@@ -140,6 +144,8 @@ export function App() {
               <Route path="/register" element={<RegisterPage />} />
               <Route path="/register/:inviteToken" element={<RegisterPage />} />
               <Route path="/invite/:token" element={<InvitePage />} />
+              <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+              <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
 
               {/* Store setup route */}
               <Route

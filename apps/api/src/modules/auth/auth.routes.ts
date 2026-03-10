@@ -17,6 +17,8 @@ export default async function authRoutes(app: FastifyInstance) {
   app.post<{ Body: { idToken: string; inviteToken?: string } }>('/google/register', (req, reply) => controller.googleRegister(req, reply));
   app.post<{ Body: { idToken: string; password: string } }>('/google/merge', (req, reply) => controller.mergeGoogleToEmail(req, reply));
   app.post<{ Body: { idToken: string; newPassword: string } }>('/google/merge-password', (req, reply) => controller.mergeEmailToGoogle(req, reply));
+  app.post<{ Body: { email: string } }>('/forgot-password', (req, reply) => controller.forgotPassword(req, reply));
+  app.post<{ Body: { token: string; newPassword: string } }>('/reset-password', (req, reply) => controller.resetPassword(req, reply));
   app.get('/me', { preHandler: [authMiddleware] }, (req, reply) => controller.getProfile(req, reply));
   app.post('/refresh', { preHandler: [authMiddleware] }, (req, reply) => controller.refreshToken(req, reply));
   app.post('/logout', { preHandler: [authMiddleware] }, (req, reply) => controller.logout(req, reply));
