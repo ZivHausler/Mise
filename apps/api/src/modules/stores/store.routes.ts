@@ -44,6 +44,7 @@ export default async function storeRoutes(app: FastifyInstance) {
   app.patch('/theme', { preHandler: [authMiddleware, requireStoreMiddleware] }, (req, reply) => controller.updateTheme(req, reply));
   app.patch('/business-info', { preHandler: [authMiddleware, requireStoreMiddleware] }, (req, reply) => controller.updateBusinessInfo(req, reply));
   app.get('/members', { preHandler: [authMiddleware, requireStoreMiddleware] }, (req, reply) => controller.getMembers(req, reply));
+  app.patch<{ Params: { userId: string } }>('/members/:userId/role', { preHandler: [authMiddleware, requireStoreMiddleware] }, (req, reply) => controller.updateMemberRole(req, reply));
   app.delete<{ Params: { userId: string } }>('/members/:userId', { preHandler: [authMiddleware, requireStoreMiddleware] }, (req, reply) => controller.removeMember(req, reply));
   app.get('/invitations/pending', { preHandler: [authMiddleware, requireStoreMiddleware] }, (req, reply) => controller.getPendingInvitations(req, reply));
   app.patch<{ Params: { id: string } }>('/invitations/:id/revoke', { preHandler: [authMiddleware, requireStoreMiddleware] }, (req, reply) => controller.revokeInvitation(req, reply));

@@ -107,6 +107,31 @@ export class StoreService {
     }
   }
 
+  async updateMemberRole(storeId: number, storeRole: StoreRole, callerUserId: number, targetUserId: number, newRole: StoreRole, isAdmin?: boolean): Promise<void> {
+    if (storeRole !== StoreRole.OWNER && !isAdmin) {
+      throw new ForbiddenError('Only store owners can change member roles', ErrorCode.STORE_NO_ACCESS);
+    }
+
+    if (callerUserId === targetUserId) {
+      throw new ForbiddenError('You cannot change your own role', ErrorCode.STORE_CANNOT_REMOVE_SELF);
+    }
+
+    const targetRole = await PgStoreRepository.getUserStoreRole(targetUserId, storeId);
+    if (!targetRole) {
+      throw new NotFoundError('User is not a member of this store', ErrorCode.STORE_MEMBER_NOT_FOUND);
+    }
+
+    if (targetRole === StoreRole.OWNER) {
+      throw new ForbiddenError('Cannot change the role of a store owner', ErrorCode.STORE_CANNOT_REMOVE_OWNER);
+    }
+
+    if (newRole === StoreRole.OWNER) {
+      throw new ForbiddenError('Cannot promote a member to owner', ErrorCode.STORE_NO_ACCESS);
+    }
+
+    await PgStoreRepository.updateUserRole(targetUserId, storeId, newRole);
+  }
+
   async removeMember(storeId: number, storeRole: StoreRole, callerUserId: number, targetUserId: number, isAdmin?: boolean): Promise<void> {
     if (storeRole !== StoreRole.OWNER && !isAdmin) {
       throw new ForbiddenError('Only store owners can remove members', ErrorCode.STORE_ONLY_OWNER_CAN_REMOVE);
@@ -163,10 +188,14 @@ export class StoreService {
     };
   }
 
-  async acceptInvite(userId: number, token: string): Promise<{ storeId: number; role: StoreRole }> {
+  async acceptInvite(userId: number, email: string, token: string): Promise<{ storeId: number; role: StoreRole }> {
     const invitation = await PgStoreRepository.findInvitationByToken(token);
     if (!invitation) {
       throw new NotFoundError('Invalid or expired invitation', ErrorCode.STORE_INVITE_INVALID);
+    }
+
+    if (invitation.email.toLowerCase() !== email.toLowerCase()) {
+      throw new ForbiddenError('Email does not match the invitation', ErrorCode.STORE_INVITE_EMAIL_MISMATCH);
     }
 
     if (invitation.storeId === null) {

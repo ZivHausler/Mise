@@ -56,6 +56,19 @@ export class StoreController {
     return reply.send({ success: true, data: invitations });
   }
 
+  async updateMemberRole(request: FastifyRequest<{ Params: { userId: string } }>, reply: FastifyReply) {
+    const storeId = request.currentUser!.storeId!;
+    const storeRole = request.currentUser!.storeRole;
+    if (!storeRole) throw new ValidationError('No store role assigned', ErrorCode.STORE_NO_ROLE);
+    const callerUserId = request.currentUser!.userId;
+    const targetUserId = Number(request.params.userId);
+    const { role } = request.body as { role: number };
+    if (role !== 2 && role !== 3) throw new ValidationError('Role must be 2 (Manager) or 3 (Employee)', ErrorCode.VALIDATION_ERROR);
+    const isAdmin = request.currentUser!.isAdmin;
+    await this.storeService.updateMemberRole(storeId, storeRole as StoreRole, callerUserId, targetUserId, role as StoreRole, isAdmin);
+    return reply.send({ success: true });
+  }
+
   async removeMember(request: FastifyRequest<{ Params: { userId: string } }>, reply: FastifyReply) {
     const storeId = request.currentUser!.storeId!;
     const storeRole = request.currentUser!.storeRole;
@@ -130,7 +143,7 @@ export class StoreController {
     const email = request.currentUser!.email;
     const { token } = request.body as { token: string };
 
-    const { storeId, role } = await this.storeService.acceptInvite(userId, token);
+    const { storeId, role } = await this.storeService.acceptInvite(userId, email, token);
     const jwt = this.storeService.generateTokenWithStore(userId, email, storeId, role);
     const stores = await this.storeService.getMyStores(userId);
 
