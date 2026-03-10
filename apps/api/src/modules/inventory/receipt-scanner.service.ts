@@ -28,6 +28,76 @@ const matchResultSchema = z.object({
 
 const MODEL = 'gemini-2.5-flash';
 
+// ─── Local matching helpers ────────────────────────────────────
+
+/** Strip Hebrew niqqud (diacritical marks) from a string */
+function stripNiqqud(s: string): string {
+  // Hebrew niqqud range: U+0591–U+05C7
+  return s.replace(/[\u0591-\u05C7]/g, '');
+}
+
+/** Remove parenthetical suffixes like "(unsalted)" */
+function stripParenthetical(s: string): string {
+  return s.replace(/\s*\([^)]*\)\s*$/, '').trim();
+}
+
+/** Normalize a name for matching: lowercase, strip niqqud, strip parenthetical */
+function normalizeName(s: string): string {
+  return stripParenthetical(stripNiqqud(s)).toLowerCase().trim();
+}
+
+/** Simple Levenshtein distance */
+function levenshtein(a: string, b: string): number {
+  const m = a.length;
+  const n = b.length;
+  const dp: number[][] = Array.from({ length: m + 1 }, () => Array(n + 1).fill(0));
+  for (let i = 0; i <= m; i++) dp[i][0] = i;
+  for (let j = 0; j <= n; j++) dp[0][j] = j;
+  for (let i = 1; i <= m; i++) {
+    for (let j = 1; j <= n; j++) {
+      dp[i][j] = a[i - 1] === b[j - 1]
+        ? dp[i - 1][j - 1]
+        : 1 + Math.min(dp[i - 1][j], dp[i][j - 1], dp[i - 1][j - 1]);
+    }
+  }
+  return dp[m][n];
+}
+
+/** Try to match an item name against ingredients locally. Returns match or null. */
+function localMatch(
+  itemName: string,
+  ingredients: Ingredient[],
+): { ingredientId: number; ingredientName: string; confidence: number; type: 'exact' | 'fuzzy' } | null {
+  const normalized = normalizeName(itemName);
+  if (!normalized) return null;
+
+  // 1. Exact match (after normalization)
+  for (const ing of ingredients) {
+    if (normalizeName(ing.name) === normalized) {
+      return { ingredientId: ing.id, ingredientName: ing.name, confidence: 1, type: 'exact' };
+    }
+  }
+
+  // 2. Fuzzy match via Levenshtein
+  let bestMatch: { ingredientId: number; ingredientName: string; confidence: number } | null = null;
+  for (const ing of ingredients) {
+    const ingNorm = normalizeName(ing.name);
+    const maxLen = Math.max(normalized.length, ingNorm.length);
+    if (maxLen === 0) continue;
+    const dist = levenshtein(normalized, ingNorm);
+    const similarity = 1 - dist / maxLen;
+    if (similarity >= 0.6 && (!bestMatch || similarity > bestMatch.confidence)) {
+      bestMatch = { ingredientId: ing.id, ingredientName: ing.name, confidence: Math.round(similarity * 100) / 100 };
+    }
+  }
+
+  if (bestMatch) {
+    return { ...bestMatch, type: bestMatch.confidence >= 1 ? 'exact' : 'fuzzy' };
+  }
+
+  return null;
+}
+
 const RECEIPT_PROMPT = `You are a receipt parser for a bakery supply system. Extract all purchased items from this receipt image or PDF document.
 
 The receipt may be in Hebrew or English. Extract ALL line items.
@@ -114,18 +184,51 @@ async function extractItemsFromReceipt(imageBuffer: Buffer, mimeType: string): P
   return parsed;
 }
 
-async function matchItemsWithAI(
+async function matchItems(
   extractedItems: ExtractedReceipt['items'],
   ingredients: Ingredient[],
 ): Promise<MatchedItem[]> {
   if (extractedItems.length === 0) return [];
 
-  const ingredientList = ingredients.map((ing) => ({ id: ing.id, name: ing.name }));
+  // 1. Try local matching first (exact + fuzzy text comparison)
+  const results: MatchedItem[] = [];
+  const unmatchedIndices: number[] = [];
 
-  const prompt = `You are matching receipt items to a store's ingredient inventory.
+  for (let i = 0; i < extractedItems.length; i++) {
+    const item = extractedItems[i];
+    const unitPrice = item.quantity > 0 ? item.totalPrice / item.quantity : item.totalPrice;
+    const match = localMatch(item.name, ingredients);
+
+    if (match) {
+      results.push({
+        ...item,
+        unitPrice,
+        match: {
+          type: match.type,
+          ingredientId: match.ingredientId,
+          ingredientName: match.ingredientName,
+          confidence: match.confidence,
+        },
+      });
+    } else {
+      unmatchedIndices.push(i);
+      results.push({
+        ...item,
+        unitPrice,
+        match: { type: 'none' as const, ingredientId: null, ingredientName: null, confidence: 0 },
+      });
+    }
+  }
+
+  // 2. For remaining unmatched items, try AI matching
+  if (unmatchedIndices.length > 0 && ingredients.length > 0) {
+    const unmatchedItems = unmatchedIndices.map((i) => extractedItems[i]);
+    const ingredientList = ingredients.map((ing) => ({ id: ing.id, name: ing.name }));
+
+    const prompt = `You are matching receipt items to a store's ingredient inventory.
 
 Receipt items:
-${extractedItems.map((item, i) => `${i}: "${item.name}"`).join('\n')}
+${unmatchedItems.map((item, i) => `${i}: "${item.name}"`).join('\n')}
 
 Store ingredients:
 ${ingredientList.map((ing) => `${ing.id}: "${ing.name}"`).join('\n')}
@@ -152,61 +255,45 @@ Rules:
 - "confidence" is 0-1 (1 = certain match, 0 = no match)
 - Only match if confidence >= 0.6. Below that, set ingredientId to null.`;
 
-  const ai = getClient();
-  const response = await ai.models.generateContent({
-    model: MODEL,
-    contents: [{ role: 'user', parts: [{ text: prompt }] }],
-    config: {
-      responseMimeType: 'application/json',
-      temperature: 0.1,
-      maxOutputTokens: 2048,
-    },
-  });
-
-  const text = response.candidates?.[0]?.content?.parts?.[0]?.text;
-  const ingredientById = new Map(ingredients.map((ing) => [ing.id, ing.name]));
-
-  // Parse AI matches, falling back to no matches on failure
-  let aiMatches: Array<{ receiptIndex: number; ingredientId: number | null; confidence: number }> = [];
-  if (text) {
     try {
-      const parsed = matchResultSchema.parse(JSON.parse(text));
-      aiMatches = parsed.matches;
+      const ai = getClient();
+      const response = await ai.models.generateContent({
+        model: MODEL,
+        contents: [{ role: 'user', parts: [{ text: prompt }] }],
+        config: {
+          responseMimeType: 'application/json',
+          temperature: 0.1,
+          maxOutputTokens: 2048,
+        },
+      });
+
+      const text = response.candidates?.[0]?.content?.parts?.[0]?.text;
+      const ingredientById = new Map(ingredients.map((ing) => [ing.id, ing.name]));
+
+      if (text) {
+        const parsed = matchResultSchema.parse(JSON.parse(text));
+        for (const aiMatch of parsed.matches) {
+          const originalIdx = unmatchedIndices[aiMatch.receiptIndex];
+          if (originalIdx == null) continue;
+          if (aiMatch.ingredientId != null && ingredientById.has(aiMatch.ingredientId)) {
+            results[originalIdx] = {
+              ...results[originalIdx],
+              match: {
+                type: (aiMatch.confidence >= 1 ? 'exact' : 'fuzzy') as 'exact' | 'fuzzy',
+                ingredientId: aiMatch.ingredientId,
+                ingredientName: ingredientById.get(aiMatch.ingredientId) ?? null,
+                confidence: Math.round(aiMatch.confidence * 100) / 100,
+              },
+            };
+          }
+        }
+      }
     } catch {
-      // If AI response is malformed, fall back to no matches
+      // AI matching failed — keep local results (already set to 'none')
     }
   }
 
-  const matchMap = new Map(aiMatches.map((m) => [m.receiptIndex, m]));
-
-  return extractedItems.map((item, idx) => {
-    const unitPrice = item.quantity > 0 ? item.totalPrice / item.quantity : item.totalPrice;
-    const aiMatch = matchMap.get(idx);
-
-    if (aiMatch?.ingredientId != null && ingredientById.has(aiMatch.ingredientId)) {
-      return {
-        ...item,
-        unitPrice,
-        match: {
-          type: (aiMatch.confidence >= 1 ? 'exact' : 'fuzzy') as 'exact' | 'fuzzy',
-          ingredientId: aiMatch.ingredientId,
-          ingredientName: ingredientById.get(aiMatch.ingredientId) ?? null,
-          confidence: Math.round(aiMatch.confidence * 100) / 100,
-        },
-      };
-    }
-
-    return {
-      ...item,
-      unitPrice,
-      match: {
-        type: 'none' as const,
-        ingredientId: null,
-        ingredientName: null,
-        confidence: 0,
-      },
-    };
-  });
+  return results;
 }
 
 export class ReceiptScannerService {
@@ -216,7 +303,7 @@ export class ReceiptScannerService {
       InventoryCrud.getAll(storeId),
     ]);
 
-    const matchedItems = await matchItemsWithAI(extracted.items, ingredients);
+    const matchedItems = await matchItems(extracted.items, ingredients);
 
     return {
       items: matchedItems,

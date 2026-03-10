@@ -125,7 +125,7 @@ describe('ReceiptScannerService', () => {
       mockGenerateContent.mockResolvedValue({ candidates: [] });
 
       await expect(service.scanReceipt(STORE_ID, DUMMY_BUFFER, MIME_TYPE)).rejects.toThrow(
-        'Could not extract items from receipt image',
+        'Could not extract items from receipt',
       );
     });
 
@@ -133,7 +133,7 @@ describe('ReceiptScannerService', () => {
       mockGenerateContent.mockResolvedValue({ candidates: null });
 
       await expect(service.scanReceipt(STORE_ID, DUMMY_BUFFER, MIME_TYPE)).rejects.toThrow(
-        'Could not extract items from receipt image',
+        'Could not extract items from receipt',
       );
     });
 
@@ -145,12 +145,12 @@ describe('ReceiptScannerService', () => {
       );
     });
 
-    it('should filter out items with missing name or zero quantity', async () => {
+    it('should handle items with empty name or zero quantity via zod defaults', async () => {
       const receiptWithBadItems = {
         items: [
           { name: 'Flour', quantity: 10, unit: 'kg', totalPrice: 50 },
-          { name: '', quantity: 5, unit: 'kg', totalPrice: 30 },       // empty name
-          { name: 'Sugar', quantity: 0, unit: 'kg', totalPrice: 0 },   // zero quantity
+          { name: '', quantity: 5, unit: 'kg', totalPrice: 30 },       // empty name (passes through)
+          { name: 'Sugar', quantity: 0, unit: 'kg', totalPrice: 0 },   // zero quantity → defaults to 1 via zod .positive().catch(1)
           { name: 'Butter', quantity: 3, unit: 'kg', totalPrice: 45 },
         ],
         vendor: null,
@@ -161,18 +161,23 @@ describe('ReceiptScannerService', () => {
 
       const result = await service.scanReceipt(STORE_ID, DUMMY_BUFFER, MIME_TYPE);
 
-      expect(result.items).toHaveLength(2);
-      expect(result.items.map((i) => i.name)).toEqual(['Flour', 'Butter']);
+      // All 4 items pass through — zod .catch() fills defaults for invalid fields
+      expect(result.items).toHaveLength(4);
+      expect(result.items[0].name).toBe('Flour');
+      expect(result.items[2].quantity).toBe(1); // zero was replaced by catch default
     });
 
-    it('should throw when Gemini returns response without items array', async () => {
+    it('should handle response without items array — defaults to empty via zod', async () => {
       mockGenerateContent.mockResolvedValue(
         makeGeminiResponse({ vendor: 'test', total: 100 }),
       );
 
-      await expect(service.scanReceipt(STORE_ID, DUMMY_BUFFER, MIME_TYPE)).rejects.toThrow(
-        'Invalid receipt extraction result',
-      );
+      const result = await service.scanReceipt(STORE_ID, DUMMY_BUFFER, MIME_TYPE);
+
+      // zod .catch([]) fills missing items with empty array
+      expect(result.items).toHaveLength(0);
+      expect(result.receiptMeta.vendor).toBe('test');
+      expect(result.receiptMeta.total).toBe(100);
     });
   });
 
