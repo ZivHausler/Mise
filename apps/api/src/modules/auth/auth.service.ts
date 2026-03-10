@@ -7,6 +7,8 @@ import { GoogleAuthUseCase } from './use-cases/googleAuth.js';
 import { MergeGoogleAccountUseCase } from './use-cases/mergeGoogleAccount.js';
 import { MergeEmailToGoogleUseCase } from './use-cases/mergeEmailToGoogle.js';
 import { GoogleRegisterUseCase } from './use-cases/googleRegister.js';
+import { ForgotPasswordUseCase } from './use-cases/forgotPassword.js';
+import { ResetPasswordUseCase } from './use-cases/resetPassword.js';
 import type { User } from './auth.types.js';
 import { PgStoreRepository } from '../stores/store.repository.js';
 import { StoreRole, type StoreInvitation } from '../stores/store.types.js';
@@ -23,6 +25,8 @@ export class AuthService {
   private mergeGoogleAccountUseCase: MergeGoogleAccountUseCase;
   private mergeEmailToGoogleUseCase: MergeEmailToGoogleUseCase;
   private googleRegisterUseCase: GoogleRegisterUseCase;
+  private forgotPasswordUseCase: ForgotPasswordUseCase;
+  private resetPasswordUseCase: ResetPasswordUseCase;
 
   constructor(
     private app: FastifyInstance,
@@ -34,6 +38,8 @@ export class AuthService {
     this.mergeGoogleAccountUseCase = new MergeGoogleAccountUseCase();
     this.mergeEmailToGoogleUseCase = new MergeEmailToGoogleUseCase();
     this.googleRegisterUseCase = new GoogleRegisterUseCase();
+    this.forgotPasswordUseCase = new ForgotPasswordUseCase();
+    this.resetPasswordUseCase = new ResetPasswordUseCase();
   }
 
   async register(data: RegisterDTO, inviteToken?: string): Promise<AuthResponse> {
@@ -127,6 +133,14 @@ export class AuthService {
       stores: this.formatStores(stores),
       hasStore: user.isAdmin || stores.length > 0,
     };
+  }
+
+  async forgotPassword(email: string): Promise<void> {
+    await this.forgotPasswordUseCase.execute(email);
+  }
+
+  async resetPassword(token: string, newPassword: string): Promise<void> {
+    await this.resetPasswordUseCase.execute(token, newPassword);
   }
 
   async logout(jti: string | undefined, expiresAt: number): Promise<void> {

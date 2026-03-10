@@ -1,6 +1,7 @@
 import type { FastifyRequest, FastifyReply } from 'fastify';
 import type { AuthService } from './auth.service.js';
 import { registerSchema, loginSchema } from '@mise/shared/src/validation/index.js';
+import { forgotPasswordSchema, resetPasswordSchema } from './auth.schema.js';
 
 export class AuthController {
   constructor(private authService: AuthService) {}
@@ -58,6 +59,24 @@ export class AuthController {
     const { idToken, newPassword } = request.body;
     const result = await this.authService.mergeEmailToGoogle(idToken, newPassword);
     return reply.send({ success: true, data: result });
+  }
+
+  async forgotPassword(
+    request: FastifyRequest<{ Body: { email: string } }>,
+    reply: FastifyReply,
+  ) {
+    const { email } = forgotPasswordSchema.parse(request.body);
+    await this.authService.forgotPassword(email);
+    return reply.send({ success: true, data: { message: 'If an account exists, a reset email has been sent' } });
+  }
+
+  async resetPassword(
+    request: FastifyRequest<{ Body: { token: string; newPassword: string } }>,
+    reply: FastifyReply,
+  ) {
+    const { token, newPassword } = resetPasswordSchema.parse(request.body);
+    await this.authService.resetPassword(token, newPassword);
+    return reply.send({ success: true, data: { message: 'Password has been reset' } });
   }
 
   async getProfile(request: FastifyRequest, reply: FastifyReply) {

@@ -245,6 +245,20 @@ export function useMergeEmailToGoogle() {
   });
 }
 
+export function useForgotPassword() {
+  return useMutation({
+    mutationFn: (body: { email: string }) =>
+      postApi<{ message: string }>('/auth/forgot-password', body),
+  });
+}
+
+export function useResetPassword() {
+  return useMutation({
+    mutationFn: (body: { token: string; newPassword: string }) =>
+      postApi<{ message: string }>('/auth/reset-password', body),
+  });
+}
+
 // Orders
 export function useOrders(filters?: { excludePaid?: boolean }) {
   const params = new URLSearchParams();
