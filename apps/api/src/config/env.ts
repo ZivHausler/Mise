@@ -31,7 +31,7 @@ const envSchema = z.object({
   GOOGLE_CLIENT_ID: z.string().default(''),
 
   // Frontend URL (for invite links)
-  FRONTEND_URL: z.string().default('http://localhost:5173'),
+  FRONTEND_URL: z.string().default('https://localhost:5173'),
 
   // Admin
   ADMIN_SECRET: z.string().min(16).default('dev-admin-secret-change-in-production'),
@@ -66,12 +66,28 @@ const envSchema = z.object({
   // Gemini AI
   GEMINI_API_KEY: z.string().default(''),
 
-  // Feature flags — comma-separated store IDs that have the feature enabled, or '*' for all stores
-  FEATURE_PRODUCTION: z.string().default(''),
-  FEATURE_WHATSAPP: z.string().default(''),
-  FEATURE_SMS: z.string().default(''),
-  FEATURE_AI_CHAT: z.string().default(''),
-  FEATURE_LOYALTY_ENHANCEMENTS: z.string().default(''),
+  // PayPlus
+  PAYPLUS_API_KEY: z.string().default(''),
+  PAYPLUS_SECRET_KEY: z.string().default(''),
+  PAYPLUS_API_URL: z.string().default('https://restapidev.payplus.co.il/api/v1.0'),
+  PAYPLUS_TERMINAL_UID: z.string().default(''),
+
+  // PayPal
+  PAYPAL_CLIENT_ID: z.string().default(''),
+  PAYPAL_CLIENT_SECRET: z.string().default(''),
+  PAYPAL_API_URL: z.string().default('https://api-m.sandbox.paypal.com'),
+  PAYPAL_WEBHOOK_ID: z.string().default(''),
+  PAYPAL_PLAN_ID_BASIC: z.string().default(''),
+  PAYPAL_PLAN_ID_PRO: z.string().default(''),
+
+  // Webhooks
+  WEBHOOK_BASE_URL: z.string().default(''),
+
+  // Feature flags (features not yet ready for production)
+  FEATURE_PRODUCTION: z.coerce.boolean().default(false),
+  FEATURE_RECEIPT_SCANNER: z.coerce.boolean().default(false),
+  FEATURE_WHATSAPP: z.coerce.boolean().default(false),
+
 });
 
 export type Env = z.infer<typeof envSchema>;
@@ -112,6 +128,19 @@ function loadEnv(): Env {
 
     if (parsed.data.REDIS_URL === 'redis://localhost:6379') {
       process.stderr.write('FATAL: REDIS_URL must not be localhost in production\n');
+      process.exit(1);
+    }
+
+    if (parsed.data.PAYPLUS_API_URL.includes('restapidev')) {
+      process.stderr.write('FATAL: PAYPLUS_API_URL appears to be sandbox in production\n');
+      process.exit(1);
+    }
+    if (parsed.data.PAYPAL_API_URL.includes('sandbox')) {
+      process.stderr.write('FATAL: PAYPAL_API_URL appears to be sandbox in production\n');
+      process.exit(1);
+    }
+    if (!parsed.data.WEBHOOK_BASE_URL) {
+      process.stderr.write('FATAL: WEBHOOK_BASE_URL must be set in production for payment callbacks\n');
       process.exit(1);
     }
   }

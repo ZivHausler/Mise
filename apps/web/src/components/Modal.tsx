@@ -18,6 +18,7 @@ interface ModalProps {
   size?: 'sm' | 'md' | 'lg' | 'full';
   children: React.ReactNode;
   footer?: React.ReactNode;
+  dismissible?: boolean;
 }
 
 export const Modal = React.memo(function Modal({
@@ -28,10 +29,11 @@ export const Modal = React.memo(function Modal({
   size = 'md',
   children,
   footer,
+  dismissible = true,
 }: ModalProps) {
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
+      if (e.key === 'Escape' && dismissible) onClose();
       if (e.key === 'Enter' && onConfirm) {
         const active = document.activeElement;
         if (active instanceof HTMLTextAreaElement) return;
@@ -56,7 +58,7 @@ export const Modal = React.memo(function Modal({
 
   return (
     <div className="fixed inset-0 z-modal flex items-center justify-center p-4">
-      <div className="fixed inset-0 bg-black/50" onClick={onClose} />
+      <div className="fixed inset-0 bg-black/50" onClick={dismissible ? onClose : undefined} />
       <div
         className={cn(
           'relative z-10 w-full rounded-lg bg-white dark:bg-neutral-800 shadow-lg animate-fade-in',

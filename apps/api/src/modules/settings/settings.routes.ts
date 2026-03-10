@@ -1,5 +1,6 @@
 import type { FastifyInstance } from 'fastify';
 import { authMiddleware, requireStoreMiddleware } from '../../core/middleware/auth.js';
+import { requireTier } from '../../core/middleware/requireTier.js';
 
 import { UnitsService } from './units/units.service.js';
 import { UnitsController } from './units/units.controller.js';
@@ -77,14 +78,14 @@ export default async function settingsRoutes(app: FastifyInstance) {
   const loyaltyService = new LoyaltyService();
   const loyaltyController = new LoyaltyController(loyaltyService);
 
-  app.get('/loyalty', (req, reply) => loyaltyController.getConfig(req, reply));
-  app.patch('/loyalty', (req, reply) => loyaltyController.updateConfig(req, reply));
+  app.get('/loyalty', { preHandler: [requireTier('loyalty')] }, (req, reply) => loyaltyController.getConfig(req, reply));
+  app.patch('/loyalty', { preHandler: [requireTier('loyalty')] }, (req, reply) => loyaltyController.updateConfig(req, reply));
 
   // WhatsApp
   const whatsAppService = new WhatsAppService();
   const whatsAppController = new WhatsAppController(whatsAppService);
 
-  app.get('/whatsapp', (req, reply) => whatsAppController.getConfig(req, reply));
-  app.post('/whatsapp/connect', (req, reply) => whatsAppController.connect(req, reply));
-  app.delete('/whatsapp', (req, reply) => whatsAppController.disconnect(req, reply));
+  app.get('/whatsapp', { preHandler: [requireTier('whatsapp')] }, (req, reply) => whatsAppController.getConfig(req, reply));
+  app.post('/whatsapp/connect', { preHandler: [requireTier('whatsapp')] }, (req, reply) => whatsAppController.connect(req, reply));
+  app.delete('/whatsapp', { preHandler: [requireTier('whatsapp')] }, (req, reply) => whatsAppController.disconnect(req, reply));
 }

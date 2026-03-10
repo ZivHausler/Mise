@@ -11,8 +11,10 @@ import TeamTab from '@/components/settings/TeamTab';
 import LoyaltyTab from '@/components/settings/LoyaltyTab';
 import IntegrationsTab from '@/components/settings/IntegrationsTab';
 import BillingTab from '@/components/settings/BillingTab';
+import SubscriptionTab from '@/components/settings/SubscriptionTab';
 import { useAppStore } from '@/store/app';
 import { useAuthStore } from '@/store/auth';
+import { useFeatureFlags } from '@/api/hooks';
 import { STORE_ROLES } from '@/constants/defaults';
 
 export default function SettingsPage() {
@@ -21,8 +23,10 @@ export default function SettingsPage() {
   const setActiveTab = useAppStore((s) => s.setSettingsTab);
   const stores = useAuthStore((s) => s.stores);
   const isAdmin = useAuthStore((s) => s.isAdmin);
+  const { data: featureFlags } = useFeatureFlags();
 
   const isOwner = stores[0]?.role === STORE_ROLES.OWNER || isAdmin;
+  const loyaltyEnabled = featureFlags?.loyalty ?? false;
 
   const tabs = [
     { key: 'account' as const, label: t('settings.tabs.account', 'Account') },
@@ -31,7 +35,8 @@ export default function SettingsPage() {
     { key: 'allergens' as const, label: t('settings.tabs.allergens', 'Allergens') },
     { key: 'tags' as const, label: t('settings.tabs.tags', 'Tags') },
     { key: 'notifications' as const, label: t('settings.tabs.notifications', 'Notifications') },
-    { key: 'loyalty' as const, label: t('settings.tabs.loyalty', 'Loyalty') },
+    ...(loyaltyEnabled ? [{ key: 'loyalty' as const, label: t('settings.tabs.loyalty', 'Loyalty') }] : []),
+    ...(isOwner ? [{ key: 'subscription' as const, label: t('settings.tabs.subscription', 'Subscription') }] : []),
     ...(isOwner ? [{ key: 'billing' as const, label: t('settings.tabs.billing', 'Billing') }] : []),
     ...(isOwner ? [{ key: 'integrations' as const, label: t('settings.tabs.integrations', 'Integrations') }] : []),
   ];
@@ -49,7 +54,8 @@ export default function SettingsPage() {
         {activeTab === 'allergens' && <AllergensTab />}
         {activeTab === 'tags' && <TagsTab />}
         {activeTab === 'notifications' && <NotificationsTab />}
-        {activeTab === 'loyalty' && <LoyaltyTab />}
+        {activeTab === 'loyalty' && loyaltyEnabled && <LoyaltyTab />}
+        {activeTab === 'subscription' && isOwner && <SubscriptionTab />}
         {activeTab === 'billing' && isOwner && <BillingTab />}
         {activeTab === 'integrations' && isOwner && <IntegrationsTab />}
       </div>

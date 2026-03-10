@@ -4,8 +4,9 @@ import { Card, Section } from '@/components/Layout';
 import { Button } from '@/components/Button';
 import { Spinner } from '@/components/Feedback';
 import { useNotificationPreferences, useUpdateNotificationPreferences, useProfile, useWhatsAppConfig, useFeatureFlags } from '@/api/hooks';
+import { ComingSoonBadge } from '@/components/ComingSoonBadge';
 import { useAppStore } from '@/store/app';
-import { Save, Sparkles } from 'lucide-react';
+import { Save } from 'lucide-react';
 import { useAuthStore } from '@/store/auth';
 
 const PUSH_NOTIFICATIONS_STORE_IDS = (import.meta.env.VITE_PUSH_NOTIFICATIONS_STORE_IDS ?? '').split(',').filter(Boolean);
@@ -86,12 +87,7 @@ export default function NotificationsTab() {
                 <th className="px-3 py-2 text-center font-semibold">
                   <div className="flex items-center justify-center gap-1.5">
                     <span className={hasPush ? '' : 'text-neutral-400'}>{t('settings.notifications.app', 'App')}</span>
-                    {!hasPush && (
-                      <span className="inline-flex items-center gap-0.5 rounded-full bg-purple-50 px-1.5 py-0.5 text-[10px] font-medium text-purple-500">
-                        <Sparkles className="h-3 w-3" />
-                        {t('nav.comingSoon', 'Coming soon')}
-                      </span>
-                    )}
+                    {!hasPush && <ComingSoonBadge variant="pill" />}
                   </div>
                 </th>
                 {hasPhone && (

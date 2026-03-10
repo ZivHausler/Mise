@@ -38,6 +38,7 @@ jobs:
         env:
           VITE_API_URL: https://app.mise-en-place.shop
           VITE_GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
+          VITE_PAYPAL_CLIENT_ID: ${{ secrets.PAYPAL_CLIENT_ID_PUBLIC }}
 
       - name: Deploy to Firebase Hosting
         uses: FirebaseExtended/action-hosting-deploy@v0

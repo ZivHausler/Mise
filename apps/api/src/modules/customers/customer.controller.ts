@@ -4,7 +4,7 @@ import type { LoyaltyService } from '../loyalty/loyalty.service.js';
 import type { CustomerSegment } from '../loyalty/loyalty.types.js';
 import { createCustomerSchema, updateCustomerSchema } from './customer.schema.js';
 import { segmentFilterSchema } from '../loyalty/loyalty.schema.js';
-import { isFeatureEnabled } from '../../core/middleware/requireFeature.js';
+import { isTierFeatureEnabled } from '../../core/middleware/requireTier.js';
 
 export class CustomerController {
   private loyaltyService: LoyaltyService | null = null;
@@ -24,7 +24,7 @@ export class CustomerController {
   async getAll(request: FastifyRequest<{ Querystring: { search?: string; segment?: string } }>, reply: FastifyReply) {
     const storeId = request.currentUser!.storeId!;
     let segment = segmentFilterSchema.parse(request.query.segment) as CustomerSegment | undefined;
-    if (segment && !isFeatureEnabled('loyalty_enhancements', storeId)) {
+    if (segment && !(await isTierFeatureEnabled('loyalty_enhancements', storeId))) {
       segment = undefined;
     }
     const customers = await this.customerService.getAll(storeId, request.query.search, segment);

@@ -25,7 +25,7 @@ export default function CustomersPage() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const { data: featureFlags } = useFeatureFlags();
-  const loyaltyEnhancements = (featureFlags as any)?.loyaltyEnhancements ?? false;
+  const loyaltyEnhancements = featureFlags?.loyalty && featureFlags?.loyaltyEnhancements;
 
   const segmentParam = searchParams.get('segment') ?? undefined;
   const [segmentFilter, setSegmentFilter] = useState<string | undefined>(segmentParam);

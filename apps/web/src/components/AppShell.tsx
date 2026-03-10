@@ -2,7 +2,7 @@ import React, { useState, useCallback, useRef, useEffect, Suspense } from 'react
 import { useTranslation } from 'react-i18next';
 import { Outlet } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
-import { ChevronDown, Shield, LayoutDashboard, ClipboardList, BookOpen, Package, Users, CreditCard, FileText, Settings } from 'lucide-react';
+import { ChevronDown, Shield, LayoutDashboard, ClipboardList, Factory, BookOpen, Package, Users, CreditCard, FileText, Settings } from 'lucide-react';
 import { useOrderSSE } from '@/api/useOrderSSE';
 import { Logo } from './Logo';
 import { Sidebar } from './Sidebar';
@@ -16,8 +16,8 @@ import { useSelectStore, useAllStores, useProfile, useFeatureFlags } from '@/api
 import { ENUM_TO_LANGUAGE, DEFAULT_THEME, applyThemePalette } from '@/constants/defaults';
 import type { AppTheme } from '@/constants/defaults';
 import { languageDir } from '@/utils/language';
-import { AiChatFab } from './ai-chat/AiChatFab';
 import { AiChatPanel } from './ai-chat/AiChatPanel';
+import { NavItem } from './NavItem';
 
 export const AppShell = React.memo(function AppShell() {
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -76,7 +76,7 @@ export const AppShell = React.memo(function AppShell() {
         )}
 
         <div className="flex min-w-0 flex-1 flex-col">
-          <TopBar onMenuClick={handleMenuClick} />
+          <TopBar onMenuClick={handleMenuClick} showAiChat={showAiChat} />
           <div className="flex-1 overflow-y-auto pb-20 lg:pb-0">
             <Suspense fallback={<PageSkeleton />}>
               <Outlet />
@@ -85,7 +85,6 @@ export const AppShell = React.memo(function AppShell() {
           <BottomTabs />
         </div>
 
-        {showAiChat && <AiChatFab />}
         {showAiChat && <AiChatPanel />}
       </div>
     </TourProvider>
@@ -95,12 +94,13 @@ export const AppShell = React.memo(function AppShell() {
 // Simple mobile nav reusing the same items as sidebar
 const navItems = [
   { path: '/', icon: LayoutDashboard, labelKey: 'nav.dashboard' },
-  { path: '/orders', icon: ClipboardList, labelKey: 'nav.orders' },
+  { path: '/orders', icon: ClipboardList, labelKey: 'nav.orders', featureFlag: 'orders' as const },
   { path: '/recipes', icon: BookOpen, labelKey: 'nav.recipes' },
   { path: '/inventory', icon: Package, labelKey: 'nav.inventory' },
-  { path: '/customers', icon: Users, labelKey: 'nav.customers' },
-  { path: '/payments', icon: CreditCard, labelKey: 'nav.payments' },
-  { path: '/invoices', icon: FileText, labelKey: 'nav.invoices' },
+  { path: '/customers', icon: Users, labelKey: 'nav.customers', featureFlag: 'customers' as const },
+  { path: '/payments', icon: CreditCard, labelKey: 'nav.payments', featureFlag: 'payments' as const },
+  { path: '/invoices', icon: FileText, labelKey: 'nav.invoices', featureFlag: 'invoices' as const },
+  { path: '/production', icon: Factory, labelKey: 'nav.production', featureFlag: 'production' as const },
 ];
 
 const MobileNav = React.memo(function MobileNav({ onClose }: { onClose: () => void }) {
@@ -156,14 +156,14 @@ const MobileNav = React.memo(function MobileNav({ onClose }: { onClose: () => vo
         <ul className="flex flex-col gap-1">
           {navItems.map((item) => (
             <li key={item.path}>
-              <a
-                href={item.path}
+              <NavItem
+                path={item.path}
+                icon={item.icon}
+                labelKey={item.labelKey}
+                featureFlag={'featureFlag' in item ? item.featureFlag : undefined}
+                variant="mobile"
                 onClick={onClose}
-                className="flex items-center gap-3 rounded-md px-3 py-2.5 text-body-sm text-primary-200 hover:bg-primary-800 hover:text-white"
-              >
-                <item.icon className="h-5 w-5 shrink-0" />
-                <span>{t(item.labelKey)}</span>
-              </a>
+              />
             </li>
           ))}
         </ul>

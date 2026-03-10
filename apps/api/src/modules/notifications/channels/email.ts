@@ -362,6 +362,253 @@ export async function sendInvitationEmail(params: {
 }
 
 // ---------------------------------------------------------------------------
+// Trial reminder translations
+// ---------------------------------------------------------------------------
+
+interface TrialReminderTranslations {
+  subject3d: string;
+  subject1d: string;
+  subject0d: string;
+  body3d: (planName: string) => string;
+  body1d: (planName: string) => string;
+  body0d: (planName: string) => string;
+  upgradeNow: string;
+  trialEndsOn: (date: string) => string;
+}
+
+const trialReminderI18n: Record<Language, TrialReminderTranslations> = {
+  [Language.HEBREW]: {
+    subject3d: 'תקופת הניסיון שלך מסתיימת בעוד 3 ימים',
+    subject1d: 'תקופת הניסיון שלך מסתיימת מחר!',
+    subject0d: 'תקופת הניסיון שלך מסתיימת היום',
+    body3d: (p) => `תקופת הניסיון החינמית של חבילת <strong>${p}</strong> מסתיימת בעוד 3 ימים. שדרגו עכשיו כדי להמשיך ליהנות מכל הפיצ׳רים.`,
+    body1d: (p) => `תקופת הניסיון החינמית של חבילת <strong>${p}</strong> מסתיימת מחר! אל תפספסו — שדרגו עכשיו.`,
+    body0d: (p) => `תקופת הניסיון של חבילת <strong>${p}</strong> מסתיימת היום. לאחר מכן תעברו לחבילה החינמית.`,
+    upgradeNow: 'שדרגו עכשיו',
+    trialEndsOn: (d) => `תקופת הניסיון מסתיימת ב-${d}`,
+  },
+  [Language.ENGLISH]: {
+    subject3d: 'Your trial ends in 3 days',
+    subject1d: 'Your trial ends tomorrow!',
+    subject0d: 'Your trial ends today',
+    body3d: (p) => `Your free trial of the <strong>${p}</strong> plan ends in 3 days. Upgrade now to keep all your features.`,
+    body1d: (p) => `Your free trial of the <strong>${p}</strong> plan ends tomorrow! Don't miss out — upgrade now.`,
+    body0d: (p) => `Your <strong>${p}</strong> trial ends today. After that, you'll be moved to the free plan.`,
+    upgradeNow: 'Upgrade Now',
+    trialEndsOn: (d) => `Trial ends on ${d}`,
+  },
+  [Language.ARABIC]: {
+    subject3d: 'تنتهي فترتك التجريبية خلال 3 أيام',
+    subject1d: 'تنتهي فترتك التجريبية غدًا!',
+    subject0d: 'تنتهي فترتك التجريبية اليوم',
+    body3d: (p) => `تنتهي الفترة التجريبية المجانية لخطة <strong>${p}</strong> خلال 3 أيام. قم بالترقية الآن للحفاظ على جميع الميزات.`,
+    body1d: (p) => `تنتهي الفترة التجريبية المجانية لخطة <strong>${p}</strong> غدًا! لا تفوت الفرصة — قم بالترقية الآن.`,
+    body0d: (p) => `تنتهي الفترة التجريبية لخطة <strong>${p}</strong> اليوم. بعد ذلك، سيتم نقلك إلى الخطة المجانية.`,
+    upgradeNow: 'قم بالترقية الآن',
+    trialEndsOn: (d) => `تنتهي الفترة التجريبية في ${d}`,
+  },
+};
+
+function getTrialReminderTranslations(lang: number): TrialReminderTranslations {
+  return trialReminderI18n[lang as Language] ?? trialReminderI18n[Language.HEBREW];
+}
+
+export async function sendTrialReminderEmail(params: {
+  to: string;
+  reminderType: '3d' | '1d' | '0d';
+  planName: string;
+  trialEndsAt: string;
+  lang?: number;
+  upgradeUrl?: string;
+}): Promise<void> {
+  if (!resend) {
+    appLogger.warn(
+      { to: params.to, reminderType: params.reminderType },
+      '[EMAIL] Trial reminder NOT sent — RESEND_API_KEY is not configured',
+    );
+    return;
+  }
+
+  const lang = params.lang ?? Language.HEBREW;
+  const t = getTrialReminderTranslations(lang);
+  const planName = params.planName;
+  const upgradeUrl = params.upgradeUrl ?? 'https://app.mise-en-place.shop/settings?tab=subscription';
+
+  const expiryDate = new Date(params.trialEndsAt);
+  const formattedDate = `${String(expiryDate.getDate()).padStart(2, '0')}.${String(expiryDate.getMonth() + 1).padStart(2, '0')}.${expiryDate.getFullYear()}`;
+
+  let subject: string;
+  let body: string;
+  switch (params.reminderType) {
+    case '3d': subject = t.subject3d; body = t.body3d(planName); break;
+    case '1d': subject = t.subject1d; body = t.body1d(planName); break;
+    case '0d': subject = t.subject0d; body = t.body0d(planName); break;
+  }
+
+  const html = wrap(lang, `
+    <div style="text-align:center;padding:32px 0 16px">
+      <div style="font-size:48px;margin-bottom:8px">⏰</div>
+      <h2 style="color:#C4823E;margin:0">${subject}</h2>
+    </div>
+    <p style="font-size:16px;line-height:1.7;color:#374151;text-align:center">${body}</p>
+    <p style="font-size:13px;color:#666;text-align:center">${t.trialEndsOn(formattedDate)}</p>
+    <div style="text-align:center;margin:32px 0">
+      <a href="${upgradeUrl}" style="display:inline-block;padding:12px 28px;background:#C4823E;color:#fff;text-decoration:none;border-radius:6px;font-weight:600">${t.upgradeNow}</a>
+    </div>
+  `);
+
+  try {
+    const { data, error } = await resend.emails.send({
+      from: FROM_EMAIL,
+      to: params.to,
+      subject,
+      html,
+    });
+
+    if (error) {
+      appLogger.error({ to: params.to, reminderType: params.reminderType, error }, '[EMAIL] Failed to send trial reminder');
+      return;
+    }
+
+    appLogger.info({ to: params.to, reminderType: params.reminderType, emailId: data?.id }, '[EMAIL] Trial reminder sent successfully');
+  } catch (err) {
+    appLogger.error({ to: params.to, reminderType: params.reminderType, err }, '[EMAIL] Unexpected error sending trial reminder');
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Payment failure + downgrade email templates
+// ---------------------------------------------------------------------------
+
+interface PaymentFailedTranslations {
+  subject: string;
+  body: (planName: string, amount: number) => string;
+  ctaLabel: string;
+  gracePeriodNote: string;
+}
+
+const paymentFailedI18n: Record<Language, PaymentFailedTranslations> = {
+  [Language.HEBREW]: {
+    subject: 'התשלום שלך נכשל',
+    body: (p, a) => `התשלום בסך <strong>₪${a}</strong> עבור חבילת <strong>${p}</strong> נכשל. יש לך 3 ימים לעדכן את אמצעי התשלום לפני שהחשבון יועבר לחבילה החינמית.`,
+    ctaLabel: 'עדכון תשלום',
+    gracePeriodNote: 'תקופת החסד מסתיימת בעוד 3 ימים.',
+  },
+  [Language.ENGLISH]: {
+    subject: 'Your payment failed',
+    body: (p, a) => `Your payment of <strong>₪${a}</strong> for the <strong>${p}</strong> plan failed. You have 3 days to update your payment method before your account is downgraded to Free.`,
+    ctaLabel: 'Update Payment',
+    gracePeriodNote: 'Grace period ends in 3 days.',
+  },
+  [Language.ARABIC]: {
+    subject: 'فشل الدفع الخاص بك',
+    body: (p, a) => `فشل الدفع بمبلغ <strong>₪${a}</strong> لخطة <strong>${p}</strong>. لديك 3 أيام لتحديث طريقة الدفع قبل تخفيض حسابك إلى الخطة المجانية.`,
+    ctaLabel: 'تحديث الدفع',
+    gracePeriodNote: 'تنتهي فترة السماح خلال 3 أيام.',
+  },
+};
+
+export async function sendPaymentFailedEmail(params: {
+  to: string;
+  planName: string;
+  amount: number;
+  recoveryUrl: string;
+  lang?: number;
+}): Promise<void> {
+  if (!resend) {
+    appLogger.warn({ to: params.to }, '[EMAIL] Payment failed email NOT sent — RESEND_API_KEY is not configured');
+    return;
+  }
+
+  const lang = params.lang ?? Language.HEBREW;
+  const t = paymentFailedI18n[lang as Language] ?? paymentFailedI18n[Language.HEBREW];
+
+  const html = wrap(lang, `
+    <div style="text-align:center;padding:32px 0 16px">
+      <div style="font-size:48px;margin-bottom:8px">⚠️</div>
+      <h2 style="color:#dc2626;margin:0">${t.subject}</h2>
+    </div>
+    <p style="font-size:16px;line-height:1.7;color:#374151;text-align:center">${t.body(params.planName, params.amount)}</p>
+    <p style="font-size:13px;color:#666;text-align:center">${t.gracePeriodNote}</p>
+    <div style="text-align:center;margin:32px 0">
+      <a href="${params.recoveryUrl}" style="display:inline-block;padding:12px 28px;background:#dc2626;color:#fff;text-decoration:none;border-radius:6px;font-weight:600">${t.ctaLabel}</a>
+    </div>
+  `);
+
+  try {
+    const { data, error } = await resend.emails.send({ from: FROM_EMAIL, to: params.to, subject: t.subject, html });
+    if (error) {
+      appLogger.error({ to: params.to, error }, '[EMAIL] Failed to send payment failed email');
+      return;
+    }
+    appLogger.info({ to: params.to, emailId: data?.id }, '[EMAIL] Payment failed email sent');
+  } catch (err) {
+    appLogger.error({ to: params.to, err }, '[EMAIL] Unexpected error sending payment failed email');
+  }
+}
+
+interface DowngradedTranslations {
+  subject: string;
+  body: (planName: string) => string;
+  ctaLabel: string;
+}
+
+const downgradedI18n: Record<Language, DowngradedTranslations> = {
+  [Language.HEBREW]: {
+    subject: 'החשבון שלך שודרג לאחור לחבילה החינמית',
+    body: (p) => `החשבון שלך הועבר מחבילת <strong>${p}</strong> לחבילה החינמית עקב כשל בתשלום. תוכל לשדרג מחדש בכל עת.`,
+    ctaLabel: 'שדרגו מחדש',
+  },
+  [Language.ENGLISH]: {
+    subject: 'Your account has been downgraded to Free',
+    body: (p) => `Your account has been moved from the <strong>${p}</strong> plan to Free due to a payment failure. You can upgrade again at any time.`,
+    ctaLabel: 'Upgrade Again',
+  },
+  [Language.ARABIC]: {
+    subject: 'تم تخفيض حسابك إلى الخطة المجانية',
+    body: (p) => `تم نقل حسابك من خطة <strong>${p}</strong> إلى الخطة المجانية بسبب فشل الدفع. يمكنك الترقية مرة أخرى في أي وقت.`,
+    ctaLabel: 'الترقية مرة أخرى',
+  },
+};
+
+export async function sendSubscriptionDowngradedEmail(params: {
+  to: string;
+  planName: string;
+  lang?: number;
+}): Promise<void> {
+  if (!resend) {
+    appLogger.warn({ to: params.to }, '[EMAIL] Downgraded email NOT sent — RESEND_API_KEY is not configured');
+    return;
+  }
+
+  const lang = params.lang ?? Language.HEBREW;
+  const t = downgradedI18n[lang as Language] ?? downgradedI18n[Language.HEBREW];
+  const upgradeUrl = 'https://app.mise-en-place.shop/settings?tab=subscription';
+
+  const html = wrap(lang, `
+    <div style="text-align:center;padding:32px 0 16px">
+      <div style="font-size:48px;margin-bottom:8px">📉</div>
+      <h2 style="color:#C4823E;margin:0">${t.subject}</h2>
+    </div>
+    <p style="font-size:16px;line-height:1.7;color:#374151;text-align:center">${t.body(params.planName)}</p>
+    <div style="text-align:center;margin:32px 0">
+      <a href="${upgradeUrl}" style="display:inline-block;padding:12px 28px;background:#C4823E;color:#fff;text-decoration:none;border-radius:6px;font-weight:600">${t.ctaLabel}</a>
+    </div>
+  `);
+
+  try {
+    const { data, error } = await resend.emails.send({ from: FROM_EMAIL, to: params.to, subject: t.subject, html });
+    if (error) {
+      appLogger.error({ to: params.to, error }, '[EMAIL] Failed to send downgraded email');
+      return;
+    }
+    appLogger.info({ to: params.to, emailId: data?.id }, '[EMAIL] Downgraded email sent');
+  } catch (err) {
+    appLogger.error({ to: params.to, err }, '[EMAIL] Unexpected error sending downgraded email');
+  }
+}
+
+// ---------------------------------------------------------------------------
 
 export class EmailNotifier implements NotificationChannel {
   async send(recipient: NotificationRecipient, context: NotificationContext): Promise<void> {

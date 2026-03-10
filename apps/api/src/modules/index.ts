@@ -4,6 +4,10 @@ import localUploadRoutes from '../core/storage/local-upload.routes.js';
 export async function registerModules(app: FastifyInstance) {
   // Local file upload/serving routes (dev only, no-op when GCS is configured)
   await app.register(localUploadRoutes);
+  // Webhook routes must be registered BEFORE auth-protected routes (no auth required)
+  await app.register(import('./subscription/webhook.routes.js'), { prefix: '/api/webhooks' });
+  // Subscription must be registered early — it initializes the requireTier middleware
+  await app.register(import('./subscription/subscription.routes.js'), { prefix: '/api/subscription' });
   await app.register(import('./auth/auth.routes.js'), { prefix: '/api/auth' });
   await app.register(import('./stores/store.routes.js'), { prefix: '/api/stores' });
   await app.register(import('./customers/customer.routes.js'), { prefix: '/api/customers' });

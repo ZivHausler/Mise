@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { AppShell } from '@/components/AppShell';
+import { FeatureGate } from '@/components/FeatureGate';
 import { PageLoading, ToastContainer } from '@/components/Feedback';
 import { useAuthStore } from '@/store/auth';
 import { languageDir } from '@/utils/language';
@@ -170,7 +171,9 @@ export function App() {
                 path="/production/kiosk"
                 element={
                   <ProtectedRoute>
-                    <ProductionKioskPage />
+                    <FeatureGate featureFlag="production">
+                      <ProductionKioskPage />
+                    </FeatureGate>
                   </ProtectedRoute>
                 }
               />
@@ -184,22 +187,22 @@ export function App() {
                 }
               >
                 <Route index element={<DashboardPage />} />
-                <Route path="orders" element={<OrdersPage />} />
-                <Route path="orders/new" element={<OrderFormPage />} />
-                <Route path="orders/:id" element={<OrderDetailPage />} />
-                <Route path="orders/:id/edit" element={<OrderFormPage />} />
+                <Route path="orders" element={<FeatureGate featureFlag="orders"><OrdersPage /></FeatureGate>} />
+                <Route path="orders/new" element={<FeatureGate featureFlag="orders"><OrderFormPage /></FeatureGate>} />
+                <Route path="orders/:id" element={<FeatureGate featureFlag="orders"><OrderDetailPage /></FeatureGate>} />
+                <Route path="orders/:id/edit" element={<FeatureGate featureFlag="orders"><OrderFormPage /></FeatureGate>} />
                 <Route path="recipes" element={<RecipesPage />} />
                 <Route path="recipes/new" element={<RecipeFormPage />} />
                 <Route path="recipes/:id" element={<RecipeDetailPage />} />
                 <Route path="recipes/:id/edit" element={<RecipeFormPage />} />
-                <Route path="production" element={<ProductionPage />} />
+                <Route path="production" element={<FeatureGate featureFlag="production"><ProductionPage /></FeatureGate>} />
                 <Route path="inventory" element={<InventoryPage />} />
                 <Route path="inventory/:id" element={<InventoryPage />} />
-                <Route path="customers" element={<CustomersPage />} />
-                <Route path="customers/:id" element={<CustomerDetailPage />} />
-                <Route path="customers/:id/edit" element={<CustomerFormPage />} />
-                <Route path="payments" element={<PaymentsPage />} />
-                <Route path="invoices" element={<InvoicesPage />} />
+                <Route path="customers" element={<FeatureGate featureFlag="customers"><CustomersPage /></FeatureGate>} />
+                <Route path="customers/:id" element={<FeatureGate featureFlag="customers"><CustomerDetailPage /></FeatureGate>} />
+                <Route path="customers/:id/edit" element={<FeatureGate featureFlag="customers"><CustomerFormPage /></FeatureGate>} />
+                <Route path="payments" element={<FeatureGate featureFlag="payments"><PaymentsPage /></FeatureGate>} />
+                <Route path="invoices" element={<FeatureGate featureFlag="invoices"><InvoicesPage /></FeatureGate>} />
                 <Route path="settings" element={<SettingsPage />} />
                 <Route path="more" element={<MorePage />} />
               </Route>

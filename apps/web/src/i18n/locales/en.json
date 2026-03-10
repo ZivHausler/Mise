@@ -16,6 +16,7 @@
     },
     "save": "Save",
     "cancel": "Cancel",
+    "done": "Done",
     "delete": "Delete",
     "edit": "Edit",
     "create": "Create",
@@ -36,7 +37,8 @@
     "clearFilters": "Clear",
     "previous": "Previous",
     "next": "Next",
-    "all": "All"
+    "all": "All",
+    "viewAll": "View All ({{count}})"
   },
   "nav": {
     "dashboard": "Dashboard",
@@ -50,7 +52,8 @@
     "more": "More",
     "admin": "Admin Panel",
     "production": "Production",
-    "comingSoon": "Coming soon"
+    "comingSoon": "Coming soon",
+    "upgrade": "Upgrade"
   },
   "auth": {
     "login": "Log In",
@@ -79,7 +82,27 @@
     "accountExistsGoogle": "This email is already registered with Google. Please sign in with Google.",
     "googleHintTitle": "Google Account Detected",
     "googleHintMessage": "It looks like you previously signed in with Google using this email. Please use the \"Sign in with Google\" button below to log in.",
-    "noAccountFound": "No account found. You need an invitation to register."
+    "noAccountFound": "No account found. You need an invitation to register.",
+    "invalidCredentials": "Incorrect email or password. Please try again.",
+    "forgotPassword": "Forgot password?",
+    "forgotPasswordTitle": "Reset Your Password",
+    "forgotPasswordDescription": "Enter your email address and we'll send you a link to reset your password.",
+    "sendResetLink": "Send Reset Link",
+    "checkYourEmail": "Check Your Email",
+    "resetEmailSent": "If an account exists with this email, we've sent password reset instructions.",
+    "didntReceive": "Didn't receive it? Check your spam folder or try again.",
+    "backToLogin": "Back to Login",
+    "setNewPassword": "Set New Password",
+    "newPassword": "New Password",
+    "confirmPassword": "Confirm Password",
+    "resetPassword": "Reset Password",
+    "passwordResetSuccess": "Password Reset Successful",
+    "passwordUpdated": "Your password has been updated.",
+    "redirectingToLogin": "Redirecting to login...",
+    "linkExpired": "Link Expired or Invalid",
+    "linkExpiredDescription": "This password reset link has expired or is no longer valid.",
+    "requestNewLink": "Request New Link",
+    "passwordMismatch": "Passwords do not match"
   },
   "dashboard": {
     "greeting": "Good morning!",
@@ -90,7 +113,18 @@
     "orderPipeline": "Order Pipeline",
     "quickActions": "Quick Actions",
     "recentActivity": "Recent Activity",
-    "lowStockAlerts": "Low Stock Alerts"
+    "lowStockAlerts": "Low Stock Alerts",
+    "totalIngredients": "Ingredients",
+    "totalRecipes": "Recipes",
+    "outOfStock": "Out of Stock",
+    "inventoryOverview": "Inventory Overview",
+    "inventoryValue": "Inventory Value",
+    "lowStockItems": "{{count}} items need restocking",
+    "outOfStockItems": "{{count}} items out of stock",
+    "stockHealthy": "All items are well stocked",
+    "recentRecipes": "Recent Recipes",
+    "noRecipesYet": "No recipes yet",
+    "ingredients": "ingredients"
   },
   "orders": {
     "create": "New Order",
@@ -251,6 +285,30 @@
     "editItem": "Edit Item",
     "deleteTitle": "Delete Item?",
     "deleteMsg": "This item will be permanently deleted.",
+    "scanReceipt": "Scan Receipt",
+    "receiptScanner": "Receipt Scanner",
+    "analyzingReceipt": "Analyzing receipt...",
+    "itemsMatched": "{{matched}} of {{total}} items matched automatically",
+    "someItemsUnreadable": "Some items could not be read from the receipt",
+    "noItemsFound": "No items found on receipt",
+    "noItemsFoundDesc": "The image may be blurry or not a receipt. Try a clearer photo.",
+    "couldNotReadReceipt": "Could not read the receipt",
+    "couldNotReadReceiptDesc": "The image may be blurry or in an unsupported format. Try again with a clearer photo.",
+    "tryAgain": "Try Again",
+    "receiptItem": "Receipt Item",
+    "matchedIngredient": "Ingredient",
+    "noMatch": "No match found",
+    "createIngredient": "Create Ingredient",
+    "confirmItems_one": "Confirm {{count}} Item",
+    "confirmItems_other": "Confirm {{count}} Items",
+    "removeRow": "Remove item",
+    "discardScanTitle": "Discard changes?",
+    "discardScanMessage": "{{count}} new ingredients created during this session will be deleted.",
+    "keepEditing": "Keep Editing",
+    "discardChanges": "Discard",
+    "receiptVendor": "Vendor",
+    "receiptDate": "Receipt Date",
+    "receiptTotal": "Receipt Total",
     "shoppingList": {
       "title": "Shopping List",
       "allStocked": "All items are fully stocked!",
@@ -421,13 +479,14 @@
     "settings": {
       "segmentation": "Segmentation Settings",
       "segmentationDesc": "Configure how customers are automatically categorized",
-      "vipOrderCount": "VIP: Minimum orders",
-      "vipDays": "VIP: Within days",
-      "regularOrderCount": "Regular: Minimum orders",
-      "regularDays": "Regular: Within days",
-      "newDays": "New customer: Within days",
-      "dormantDays": "Dormant: No orders for days",
-      "birthdayReminderDays": "Birthday reminder: Days ahead"
+      "vipOrderCount": "Minimum orders",
+      "vipDays": "Within days",
+      "regularOrderCount": "Minimum orders",
+      "regularDays": "Within days",
+      "newDays": "Customer registered within days",
+      "dormantDays": "No orders for days",
+      "birthdayReminderDays": "Days ahead to remind",
+      "birthdaySection": "Birthday Reminders"
     }
   },
   "production": {
@@ -533,7 +592,8 @@
       "notifications": "Notifications",
       "loyalty": "Loyalty",
       "integrations": "Integrations",
-      "billing": "Billing"
+      "billing": "Billing",
+      "subscription": "Subscription"
     },
     "team": {
       "title": "Team Members",
@@ -753,6 +813,8 @@
     "batchesMergeFailed": "Failed to merge batches",
     "memberRemoved": "Member removed",
     "memberRemoveFailed": "Failed to remove member",
+    "roleUpdated": "Role updated",
+    "roleUpdateFailed": "Failed to update role",
     "whatsappConnected": "WhatsApp connected",
     "whatsappConnectFailed": "Failed to connect WhatsApp",
     "whatsappDisconnected": "WhatsApp disconnected",
@@ -760,7 +822,10 @@
     "invoiceCreated": "Invoice created",
     "invoiceCreateFailed": "Failed to create invoice",
     "businessInfoUpdated": "Business info updated",
-    "businessInfoUpdateFailed": "Failed to update business info"
+    "businessInfoUpdateFailed": "Failed to update business info",
+    "receiptApplied": "Receipt items applied to inventory",
+    "receiptPartialSuccess": "{{succeeded}} items applied, {{failed}} failed",
+    "receiptScanFailed": "Failed to scan receipt"
   },
   "store": {
     "setupTitle": "Set up your bakery",
@@ -775,7 +840,9 @@
     "invitedToCreate": "You've been invited to create your own store",
     "setupStore": "Set Up Store",
     "invalidInvite": "This invite link is invalid or has expired.",
-    "joinStore": "Join Store"
+    "joinStore": "Join Store",
+    "inviteEmailMismatch": "This invite is for {{email}}. Please log in with that account.",
+    "switchAccount": "Switch Account"
   },
   "tour": {
     "back": "Back",
@@ -1080,6 +1147,166 @@
       "responseBody": "Response Body",
       "noBody": "No body",
       "noEntries": "No audit log entries"
+    }
+  },
+  "subscription": {
+    "title": "Subscription",
+    "currentPlan": "Current Plan",
+    "renewsOn": "Your plan renews on {{date}}",
+    "trialDaysLeft": "Pro trial - {{count}} days left",
+    "trialDaysLeft_one": "Pro trial - 1 day left",
+    "trialEndsToday": "Trial ends today",
+    "trialExpired": "Your Pro trial has ended",
+    "choosePlan": "Choose a plan to continue",
+    "continueWithFree": "Continue with Free",
+    "plans": "Plans",
+    "billingHistory": "Billing History",
+    "upgrade": "Upgrade",
+    "upgradeTo": "Upgrade to {{plan}}",
+    "downgrade": "Downgrade",
+    "downgradeTo": "Downgrade to {{plan}}",
+    "confirmUpgrade": "Confirm Upgrade - {{price}} NIS/mo",
+    "confirmDowngrade": "Confirm Downgrade",
+    "keepPlan": "Keep {{plan}}",
+    "currentPlanBadge": "Current Plan",
+    "popular": "Popular",
+    "viewAllPlans": "View all plans",
+    "perMonth": "/mo",
+    "free": "Free",
+    "welcomeTo": "Welcome to {{plan}}!",
+    "startExploring": "Start exploring",
+    "cancel": "Cancel Subscription",
+    "cancelConfirm": "Are you sure you want to cancel?",
+    "downgradedOn": "Downgrading to {{plan}} on {{date}}",
+    "youllLoseAccess": "You'll lose access to:",
+    "tiers": {
+      "free": "Free",
+      "basic": "Basic",
+      "pro": "Pro"
+    },
+    "tierDescriptions": {
+      "free": "Get started with inventory and recipes",
+      "basic": "Manage your business operations",
+      "pro": "Full business management suite"
+    },
+    "features": {
+      "inventory": "Inventory management",
+      "recipes": "Recipe management",
+      "dashboard": "Dashboard & analytics",
+      "customers": "Customer management",
+      "orders": "Order management",
+      "payments": "Payment tracking",
+      "invoices": "Invoices",
+      "notifications": "Notification settings",
+      "production": "Production planning",
+      "loyalty": "Loyalty program",
+      "whatsapp": "WhatsApp integration",
+      "ai_chat": "AI Chat assistant",
+      "receiptScanner": "Receipt scanner",
+      "generalSettings": "General settings",
+      "teamSettings": "Team management"
+    },
+    "featureDescriptions": {
+      "production": "Plan and schedule daily production with smart batch management.",
+      "loyalty": "Build a loyalty program to reward returning customers.",
+      "whatsapp": "Connect WhatsApp Business to communicate with customers.",
+      "ai_chat": "Get AI-powered insights about your business data.",
+      "receiptScanner": "Scan supplier receipts to auto-update inventory.",
+      "dashboard": "Track sales, orders, and business performance at a glance.",
+      "customers": "Manage your customer database and order history.",
+      "orders": "Create, track, and fulfill customer orders efficiently.",
+      "payments": "Record payments and track revenue across your business.",
+      "invoices": "Generate professional invoices for your customers.",
+      "notifications": "Set up order and inventory alerts for your team."
+    },
+    "everythingIn": "Everything in {{plan}}, plus:",
+    "upgradeHint": "Upgrade to {{plan}} to unlock more features",
+    "billing": {
+      "date": "Date",
+      "description": "Description",
+      "amount": "Amount",
+      "status": "Status",
+      "paid": "Paid"
+    },
+    "priceBreakdown": {
+      "title": "Price Breakdown",
+      "currentPlan": "Current plan ({{plan}})",
+      "newPlan": "New plan ({{plan}})",
+      "daysRemaining": "Days left in period",
+      "daysCount": "{{count}} days",
+      "creditFrom": "Credit from {{plan}}",
+      "costForDays": "{{plan}} for {{count}} days",
+      "dueToday": "Due today",
+      "nextRenewal": "Next renewal: {{date}} at {{price}} NIS/mo"
+    },
+    "payNow": "Pay {{amount}} NIS Now",
+    "subscribeFor": "Subscribe for {{price}} NIS/mo",
+    "firstCharge": "First charge: {{price}} NIS today",
+    "renewsMonthly": "Renews monthly",
+    "pendingDowngrade": {
+      "title": "Downgrade scheduled",
+      "message": "Your plan will change to {{plan}} on {{date}}. You'll keep {{currentPlan}} features until then.",
+      "cancelDowngrade": "Cancel Downgrade",
+      "changePlan": "Change Plan",
+      "switchingOn": "Switching on {{date}}"
+    },
+    "cancelDowngrade": {
+      "title": "Keep your current plan?",
+      "message": "Your {{plan}} subscription will continue as normal.",
+      "confirm": "Keep {{plan}}"
+    },
+    "downgradeEffective": "Your {{currentPlan}} features stay active until {{date}}. After that, your plan changes to {{targetPlan}}.",
+    "downgradeEffectivePaid": "Your {{currentPlan}} features stay active until {{date}}. After that, your plan changes to {{targetPlan}} at {{price}} NIS/mo.",
+    "changingDowngradeTarget": "This will change your scheduled downgrade from {{oldPlan}} to {{newPlan}}.",
+    "trial": {
+      "keepFeatures": "Your Pro trial ends on {{date}}. You'll keep all Pro features until then.",
+      "afterTrialBasic": "After your trial: {{plan}} at {{price}} NIS/mo",
+      "afterTrialPro": "Continue with Pro at {{price}} NIS/mo starting {{date}}",
+      "firstChargeOn": "First charge: {{date}}",
+      "confirmPlan": "Confirm {{plan}} Plan",
+      "continueWith": "Continue with {{plan}}"
+    },
+    "noBillingHistory": "No billing history yet",
+    "paymentTypes": {
+      "full": "Monthly subscription",
+      "proration": "Plan upgrade (prorated)",
+      "refund": "Refund"
+    },
+    "paymentStatuses": {
+      "pending": "Pending",
+      "succeeded": "Paid",
+      "failed": "Failed"
+    },
+    "payment": {
+      "chooseMethod": "Choose payment method",
+      "creditCard": "Credit / Debit Card",
+      "paypal": "PayPal",
+      "continueToPayment": "Continue to Payment",
+      "checkoutPending": "Confirming your payment...",
+      "checkoutPendingHint": "Waiting for confirmation from the payment provider. This may take a few seconds.",
+      "cancelPayment": "Cancel payment",
+      "paymentNotCompleted": "Payment not completed",
+      "paymentNotCompletedHint": "Your payment wasn't finished. No charges were made.",
+      "tryAgain": "Try Again",
+      "paymentApproved": "Payment approved!",
+      "paymentApprovedHint": "Your plan has been upgraded successfully.",
+      "paymentFailed": "Payment failed",
+      "paymentFailedHint": "We couldn't process your payment. Please try again or choose a different payment method.",
+      "paymentSuccess": "Payment successful!",
+      "paymentSuccessMessage": "Your plan has been upgraded successfully.",
+      "paymentCancelled": "Payment was cancelled",
+      "failedPayment": "Payment Failed",
+      "failedPaymentMessage": "Your last payment could not be processed. Complete payment to keep your {{plan}} features.",
+      "completePayment": "Complete Payment",
+      "startExploring": "Start Exploring",
+      "recoverySuccess": "Payment completed! Your subscription has been restored.",
+      "processing": "Processing payment...",
+      "processingHint": "Please don't close this window",
+      "securedByPayPal": "Secured by PayPal",
+      "genericError": "Something went wrong. Please try again.",
+      "sdkError": "Payment unavailable. Please try again later.",
+      "retryLoading": "Retry Loading",
+      "popupBlocked": "Please allow popups for this site"
     }
   }
 }

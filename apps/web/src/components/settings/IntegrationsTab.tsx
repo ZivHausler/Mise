@@ -1,9 +1,10 @@
 import React, { useCallback, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { MessageSquare, Unplug, CheckCircle, XCircle, Sparkles } from 'lucide-react';
+import { MessageSquare, Unplug, CheckCircle, XCircle } from 'lucide-react';
 import { Card, Section, Stack } from '@/components/Layout';
 import { cn } from '@/utils/cn';
 import { Button } from '@/components/Button';
+import { ComingSoonBadge } from '@/components/ComingSoonBadge';
 import { Spinner } from '@/components/Feedback';
 import { useWhatsAppConfig, useConnectWhatsApp, useDisconnectWhatsApp, useFeatureFlags } from '@/api/hooks';
 
@@ -109,12 +110,7 @@ export default function IntegrationsTab() {
           <h2 className="font-heading text-h3 text-neutral-800">
             {t('settings.integrations.title', 'Integrations')}
           </h2>
-          {isComingSoon && (
-            <span className="inline-flex items-center gap-1 rounded-full bg-purple-50 px-2.5 py-0.5 text-xs font-medium text-purple-500">
-              <Sparkles className="h-3.5 w-3.5" />
-              {t('nav.comingSoon', 'Coming soon')}
-            </span>
-          )}
+          {isComingSoon && <ComingSoonBadge variant="pill" />}
         </div>
         <Section>
           <div className={cn('space-y-4', isComingSoon && 'opacity-60 pointer-events-none select-none')}>
