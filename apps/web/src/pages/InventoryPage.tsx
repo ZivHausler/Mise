@@ -1,7 +1,7 @@
 import React, { useMemo, useState, useCallback, useEffect, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Plus, Package, SlidersHorizontal, Trash2, Pencil, ChevronLeft, ChevronRight, Search, Download, ChevronDown, Filter } from 'lucide-react';
+import { Plus, Package, SlidersHorizontal, Trash2, Pencil, ChevronLeft, ChevronRight, Search, Download, ChevronDown, Filter, ScanLine, Loader2 } from 'lucide-react';
 import { AllergenIcon, useAllergenName } from '@/components/settings/AllergensTab';
 import { Page, PageHeader, Stack } from '@/components/Layout';
 import { Button } from '@/components/Button';
@@ -9,10 +9,11 @@ import { DataTable, StatusBadge, EmptyState, type Column } from '@/components/Da
 import { PageSkeleton } from '@/components/Feedback';
 import { Modal } from '@/components/Modal';
 import { TextInput, NumberInput, Select } from '@/components/FormFields';
-import { useInventory, useCreateInventoryItem, useUpdateInventoryItem, useDeleteInventoryItem, useAdjustStock, useAllergens, downloadPdf, type PaginationInfo } from '@/api/hooks';
+import { useInventory, useCreateInventoryItem, useUpdateInventoryItem, useDeleteInventoryItem, useAdjustStock, useAllergens, useScanReceipt, downloadPdf, useFeatureFlags, type PaginationInfo } from '@/api/hooks';
 import { useAppStore } from '@/store/app';
 import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 import { InventoryLogType } from '@mise/shared';
+import { ReceiptScannerModal, type ScanResultItem, type ReceiptMeta } from '@/components/inventory/ReceiptScannerModal';
 
 function getStockStatus(stock: number, threshold: number): 'good' | 'ok' | 'low' | 'out' {
   if (stock === 0) return 'out';
@@ -86,6 +87,19 @@ export default function InventoryPage() {
   const [editingItem, setEditingItem] = useState<any>(null); // null = closed, 'new' = add, object = edit
   const [showAdjust, setShowAdjust] = useState<any>(null);
   const [showDelete, setShowDelete] = useState<any>(null);
+
+  // Feature flags
+  const { data: features } = useFeatureFlags();
+  const receiptScannerEnabled = features?.receiptScanner ?? false;
+
+  // Receipt scanner state
+  const scanReceipt = useScanReceipt();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [showReceiptModal, setShowReceiptModal] = useState(false);
+  const [scanResults, setScanResults] = useState<ScanResultItem[]>([]);
+  const [receiptMeta, setReceiptMeta] = useState<ReceiptMeta>({ vendor: null, date: null, total: null });
+  const [addingFromReceipt, setAddingFromReceipt] = useState(false);
+  const receiptCreatedIdsRef = useRef<(id: number) => void>();
 
   const emptyItem = { name: '', unit: '', stock: '' as number | '', packageSize: '' as number | '', threshold: '' as number | '', costPerUnit: '' as number | '', allergenIds: [] as string[] };
   const [newItem, setNewItem] = useState(emptyItem);
@@ -215,7 +229,13 @@ export default function InventoryPage() {
       if (!newItem.unit) return;
       createItem.mutate(
         { name: newItem.name, unit: newItem.unit, quantity: 0, lowStockThreshold: newItem.threshold === '' ? 0 : newItem.threshold, costPerUnit: newItem.costPerUnit, packageSize: newItem.packageSize, allergenIds: newItem.allergenIds },
-        { onSuccess: closeModal },
+        { onSuccess: (data: any) => {
+          if (addingFromReceipt && data?.id && receiptCreatedIdsRef.current) {
+            receiptCreatedIdsRef.current(data.id);
+          }
+          setAddingFromReceipt(false);
+          closeModal();
+        } },
       );
     }
   }, [newItem, isEdit, editingItem, createItem, updateItem, closeModal, priceInput]);
@@ -244,6 +264,26 @@ export default function InventoryPage() {
     downloadPdf(`/inventory/shopping-list/pdf?lang=${language}&dateFormat=${dateFormat}`, 'shopping-list.pdf');
   }, [language, dateFormat]);
 
+  const handleFileChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    // Reset input so same file can be re-selected
+    e.target.value = '';
+    scanReceipt.mutate(file, {
+      onSuccess: (data) => {
+        setScanResults(data.items);
+        setReceiptMeta(data.receiptMeta);
+        setShowReceiptModal(true);
+      },
+    });
+  }, [scanReceipt]);
+
+  const handleCloseReceiptModal = useCallback(() => {
+    setShowReceiptModal(false);
+    setScanResults([]);
+    setReceiptMeta({ vendor: null, date: null, total: null });
+  }, []);
+
   if (isLoading) return <PageSkeleton />;
 
   const items = (inventoryData?.items as any[]) ?? [];
@@ -257,6 +297,15 @@ export default function InventoryPage() {
           <div className="flex items-center gap-2">
             <Button variant="secondary" icon={<Download className="h-4 w-4" />} onClick={handleExportPdf}>
               {t('inventory.shoppingList.export')}
+            </Button>
+            <Button
+              variant="secondary"
+              icon={<ScanLine className="h-4 w-4" />}
+              onClick={receiptScannerEnabled ? () => fileInputRef.current?.click() : undefined}
+              loading={receiptScannerEnabled ? scanReceipt.isPending : false}
+              comingSoon={!receiptScannerEnabled}
+            >
+              {t('inventory.scanReceipt')}
             </Button>
             <Button variant="primary" icon={<Plus className="h-4 w-4" />} onClick={() => { setEditingItem('new'); setNewItem(emptyItem); setPriceInput(''); setPriceMode('unit'); setThresholdMode('units'); }}>
               {t('inventory.addItem', 'Add Item')}
@@ -371,7 +420,48 @@ export default function InventoryPage() {
         </div>
       )}
 
-      {/* Add / Edit Item Modal */}
+      {/* Delete Confirmation Modal */}
+      <Modal open={!!showDelete} onClose={() => setShowDelete(null)} onConfirm={() => { deleteItem.mutate(showDelete?.id, { onSuccess: () => setShowDelete(null) }); }} title={t('inventory.deleteTitle', 'Delete Item?')} size="sm"
+        footer={
+          <>
+            <Button variant="secondary" onClick={() => setShowDelete(null)}>{t('common.cancel')}</Button>
+            <Button variant="danger" onClick={() => { deleteItem.mutate(showDelete?.id, { onSuccess: () => setShowDelete(null) }); }} loading={deleteItem.isPending}>{t('common.delete')}</Button>
+          </>
+        }
+      >
+        <p>{t('inventory.deleteMsg', 'This item will be permanently deleted.')}</p>
+      </Modal>
+
+      {/* Hidden file input for receipt scanning */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*,.pdf"
+        className="hidden"
+        onChange={handleFileChange}
+      />
+
+      {/* Scanning loading overlay */}
+      {scanReceipt.isPending && (
+        <div className="fixed inset-0 z-modal flex items-center justify-center bg-black/50">
+          <div className="flex flex-col items-center gap-3 rounded-xl bg-white px-8 py-6 shadow-lg">
+            <Loader2 className="h-8 w-8 animate-spin text-primary-500" />
+            <p className="text-body font-medium text-neutral-700">{t('inventory.analyzingReceipt')}</p>
+          </div>
+        </div>
+      )}
+
+      {/* Receipt Scanner Modal */}
+      <ReceiptScannerModal
+        open={showReceiptModal}
+        onClose={handleCloseReceiptModal}
+        items={scanResults}
+        receiptMeta={receiptMeta}
+        onOpenAddItem={() => { setAddingFromReceipt(true); setEditingItem('new'); setNewItem(emptyItem); setPriceInput(''); setPriceMode('unit'); setThresholdMode('units'); }}
+        onCreatedIdsRef={(cb) => { receiptCreatedIdsRef.current = cb; }}
+      />
+
+      {/* Add / Edit Item Modal — placed after Receipt Scanner so it stacks on top when creating ingredient from scanner */}
       <Modal open={isModalOpen} onClose={closeModal} onConfirm={handleSaveItem} title={isEdit ? t('inventory.editItem', 'Edit Item') : t('inventory.addItem', 'Add Item')} size="md"
         footer={
           <>
@@ -452,18 +542,6 @@ export default function InventoryPage() {
             />
           </div>
         </Stack>
-      </Modal>
-
-      {/* Delete Confirmation Modal */}
-      <Modal open={!!showDelete} onClose={() => setShowDelete(null)} onConfirm={() => { deleteItem.mutate(showDelete?.id, { onSuccess: () => setShowDelete(null) }); }} title={t('inventory.deleteTitle', 'Delete Item?')} size="sm"
-        footer={
-          <>
-            <Button variant="secondary" onClick={() => setShowDelete(null)}>{t('common.cancel')}</Button>
-            <Button variant="danger" onClick={() => { deleteItem.mutate(showDelete?.id, { onSuccess: () => setShowDelete(null) }); }} loading={deleteItem.isPending}>{t('common.delete')}</Button>
-          </>
-        }
-      >
-        <p>{t('inventory.deleteMsg', 'This item will be permanently deleted.')}</p>
       </Modal>
 
       {/* Adjust Stock Modal */}

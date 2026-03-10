@@ -1,13 +1,22 @@
 import type { FastifyRequest, FastifyReply } from 'fastify';
 import type { InventoryService } from './inventory.service.js';
-import { createIngredientSchema, updateIngredientSchema, adjustStockSchema } from './inventory.schema.js';
+import type { ReceiptScannerService } from './receipt-scanner.service.js';
+import { createIngredientSchema, updateIngredientSchema, adjustStockSchema, bulkAdjustSchema, bulkDeleteSchema } from './inventory.schema.js';
 import { parsePaginationParams } from '../../core/types/pagination.js';
 import { pdfQuerySchema } from '../shared/pdf/pdfSchema.js';
 import { generateShoppingListPdf } from '../shared/pdf/shoppingListPdf.js';
 import { t } from '../shared/pdf/i18n.js';
+import { ValidationError } from '../../core/errors/app-error.js';
+import { ErrorCode } from '@mise/shared';
+
+const ALLOWED_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'application/pdf'];
+const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 
 export class InventoryController {
-  constructor(private inventoryService: InventoryService) {}
+  constructor(
+    private inventoryService: InventoryService,
+    private receiptScannerService?: ReceiptScannerService,
+  ) {}
 
   async getAll(request: FastifyRequest<{ Querystring: { search?: string; page?: string; limit?: string; allergenIds?: string; status?: string } }>, reply: FastifyReply) {
     const storeId = request.currentUser!.storeId!;
@@ -80,5 +89,43 @@ export class InventoryController {
     const storeId = request.currentUser!.storeId!;
     await this.inventoryService.delete(storeId, Number(request.params.id));
     return reply.status(204).send();
+  }
+
+  async scanReceipt(request: FastifyRequest, reply: FastifyReply) {
+    const storeId = request.currentUser!.storeId!;
+
+    const file = await request.file();
+    if (!file) {
+      throw new ValidationError('No file uploaded', ErrorCode.VALIDATION_ERROR);
+    }
+
+    if (!ALLOWED_MIME_TYPES.includes(file.mimetype)) {
+      throw new ValidationError(
+        `Invalid file type. Allowed: ${ALLOWED_MIME_TYPES.join(', ')}`,
+        ErrorCode.VALIDATION_ERROR,
+      );
+    }
+
+    const buffer = await file.toBuffer();
+    if (buffer.length > MAX_FILE_SIZE) {
+      throw new ValidationError('File too large. Maximum size is 5MB', ErrorCode.VALIDATION_ERROR);
+    }
+
+    const result = await this.receiptScannerService!.scanReceipt(storeId, buffer, file.mimetype);
+    return reply.send({ success: true, data: result });
+  }
+
+  async adjustBulk(request: FastifyRequest, reply: FastifyReply) {
+    const storeId = request.currentUser!.storeId!;
+    const { adjustments } = bulkAdjustSchema.parse(request.body);
+    const result = await this.inventoryService.adjustBulk(storeId, adjustments, request.id);
+    return reply.send({ success: true, data: result });
+  }
+
+  async deleteBulk(request: FastifyRequest, reply: FastifyReply) {
+    const storeId = request.currentUser!.storeId!;
+    const { ingredientIds } = bulkDeleteSchema.parse(request.body);
+    const result = await this.inventoryService.deleteBulk(storeId, ingredientIds);
+    return reply.send({ success: true, data: result });
   }
 }

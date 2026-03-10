@@ -531,6 +531,66 @@ export function useDeleteInventoryItem() {
   });
 }
 
+// Receipt scanning
+export function useScanReceipt() {
+  const addToast = useToastStore((s) => s.addToast);
+  const { t } = useTranslation();
+  return useMutation({
+    mutationFn: async (file: File) => {
+      const formData = new FormData();
+      formData.append('image', file);
+      const { data } = await apiClient.post('/inventory/scan-receipt', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      return data.data as {
+        items: Array<{
+          name: string;
+          quantity: number;
+          unit: string;
+          totalPrice: number;
+          unitPrice: number;
+          match: {
+            type: 'exact' | 'fuzzy' | 'none';
+            ingredientId: number | null;
+            ingredientName: string | null;
+            confidence: number;
+          };
+        }>;
+        receiptMeta: {
+          vendor: string | null;
+          date: string | null;
+          total: number | null;
+        };
+      };
+    },
+    onError: (error) => addToast('error', getApiErrorMessage(error, t('toasts.receiptScanFailed'))),
+  });
+}
+
+export function useBulkAdjustStock() {
+  const qc = useQueryClient();
+  const addToast = useToastStore((s) => s.addToast);
+  const { t } = useTranslation();
+  return useMutation({
+    mutationFn: (body: { adjustments: Array<{ ingredientId: number; quantity: number; pricePaid: number; reason?: string }> }) =>
+      postApi<{
+        results: Array<{ ingredientId: number; name: string; previousQuantity: number; newQuantity: number; success: true } | { ingredientId: number; success: false; error: string }>;
+        summary: { total: number; succeeded: number; failed: number };
+      }>('/inventory/adjust-bulk', body),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['inventory'] }); },
+    onError: (error) => addToast('error', getApiErrorMessage(error, t('toasts.stockAdjustFailed'))),
+  });
+}
+
+export function useBulkDeleteInventory() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (body: { ingredientIds: number[] }) =>
+      postApi<{ deleted: number }>('/inventory/bulk-delete', body),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['inventory'] }); },
+  });
+}
+
 // Customers
 export function useCustomers(filters?: { segment?: string }) {
   const params = new URLSearchParams();

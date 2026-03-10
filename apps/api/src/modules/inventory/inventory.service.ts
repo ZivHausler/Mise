@@ -1,10 +1,10 @@
-import type { AdjustStockDTO, CreateIngredientDTO, Ingredient, InventoryLog, UpdateIngredientDTO } from './inventory.types.js';
+import type { AdjustStockDTO, BulkAdjustmentDTO, BulkAdjustResult, BulkAdjustResultItem, CreateIngredientDTO, Ingredient, InventoryLog, UpdateIngredientDTO } from './inventory.types.js';
 import type { PaginatedResult } from '../../core/types/pagination.js';
 import { InventoryCrud } from './inventoryCrud.js';
 import { AdjustStockUseCase } from './use-cases/adjustStock.js';
 import { RecipeCrud } from '../recipes/recipeCrud.js';
 import { ConflictError, NotFoundError } from '../../core/errors/app-error.js';
-import { ErrorCode } from '@mise/shared';
+import { ErrorCode, InventoryLogType } from '@mise/shared';
 
 export class InventoryService {
   constructor() {}
@@ -58,5 +58,69 @@ export class InventoryService {
       throw new ConflictError('Ingredient is used in recipes', ErrorCode.INGREDIENT_IN_USE_BY_RECIPES);
     }
     return InventoryCrud.delete(storeId, id);
+  }
+
+  async adjustBulk(storeId: number, adjustments: BulkAdjustmentDTO[], correlationId?: string): Promise<BulkAdjustResult> {
+    const adjustStockUseCase = new AdjustStockUseCase();
+    const results: BulkAdjustResultItem[] = [];
+
+    for (const adj of adjustments) {
+      try {
+        const existing = await InventoryCrud.getById(storeId, adj.ingredientId);
+        const previousQuantity = existing?.quantity;
+
+        const ingredient = await adjustStockUseCase.execute(
+          storeId,
+          {
+            ingredientId: adj.ingredientId,
+            type: InventoryLogType.ADDITION,
+            quantity: adj.quantity,
+            reason: adj.reason ?? 'Receipt bulk restock',
+            pricePaid: adj.pricePaid,
+          },
+          correlationId,
+        );
+
+        results.push({
+          ingredientId: adj.ingredientId,
+          name: ingredient.name,
+          previousQuantity,
+          newQuantity: ingredient.quantity,
+          success: true,
+        });
+      } catch (err) {
+        results.push({
+          ingredientId: adj.ingredientId,
+          success: false,
+          error: err instanceof Error ? err.message : 'Unknown error',
+        });
+      }
+    }
+
+    const succeeded = results.filter((r) => r.success).length;
+    return {
+      results,
+      summary: {
+        total: results.length,
+        succeeded,
+        failed: results.length - succeeded,
+      },
+    };
+  }
+
+  async deleteBulk(storeId: number, ingredientIds: number[]): Promise<{ deleted: number[]; skipped: number[] }> {
+    const deleted: number[] = [];
+    const skipped: number[] = [];
+
+    for (const id of ingredientIds) {
+      try {
+        await this.delete(storeId, id);
+        deleted.push(id);
+      } catch {
+        skipped.push(id);
+      }
+    }
+
+    return { deleted, skipped };
   }
 }
