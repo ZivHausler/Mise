@@ -1,14 +1,14 @@
 import type { FastifyInstance } from 'fastify';
 import { AiChatController } from './ai-chat.controller.js';
 import { authMiddleware, requireStoreMiddleware } from '../../core/middleware/auth.js';
-import { requireFeature } from '../../core/middleware/requireFeature.js';
+import { requireTier } from '../../core/middleware/requireTier.js';
 
 export default async function aiChatRoutes(app: FastifyInstance) {
   const controller = new AiChatController();
 
   app.addHook('preHandler', authMiddleware);
   app.addHook('preHandler', requireStoreMiddleware);
-  app.addHook('preHandler', requireFeature('ai_chat'));
+  app.addHook('preHandler', requireTier('ai_chat'));
 
   app.post('/stream', {
     config: {

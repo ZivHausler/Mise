@@ -48,8 +48,156 @@ async function deleteApi(url: string): Promise<void> {
 export function useFeatureFlags() {
   return useQuery({
     queryKey: ['features'],
-    queryFn: () => fetchApi<{ production: boolean; whatsapp: boolean; sms: boolean; ai_chat: boolean; loyaltyEnhancements: boolean }>('/features'),
+    queryFn: () => fetchApi<{ dashboard: boolean; customers: boolean; orders: boolean; payments: boolean; invoices: boolean; notifications: boolean; production: boolean; whatsapp: boolean; sms: boolean; ai_chat: boolean; loyalty: boolean; loyaltyEnhancements: boolean; receiptScanner: boolean; comingSoon: string[] }>('/features'),
     staleTime: 5 * 60 * 1000,
+  });
+}
+
+// Subscription
+interface StoreSubscription {
+  id: number;
+  planSlug: 'free' | 'basic' | 'pro';
+  planName: string;
+  planNameHe: string;
+  priceNis: number;
+  status: 'active' | 'trialing' | 'canceled' | 'past_due' | 'expired';
+  trialEndsAt: string | null;
+  currentPeriodStart: string;
+  currentPeriodEnd: string;
+  cancelAtPeriodEnd: boolean;
+  downgradeToSlug: string | null;
+  features: string[];
+}
+
+interface Plan {
+  id: number;
+  slug: string;
+  name: string;
+  nameHe: string;
+  priceNis: number;
+  features: string[];
+  sortOrder: number;
+}
+
+export function useSubscription() {
+  return useQuery({
+    queryKey: ['subscription'],
+    queryFn: () => fetchApi<StoreSubscription>('/subscription'),
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
+export function usePlans() {
+  return useQuery({
+    queryKey: ['subscription', 'plans'],
+    queryFn: () => fetchApi<Plan[]>('/subscription/plans'),
+    staleTime: 30 * 60 * 1000,
+  });
+}
+
+export function useChangePlan() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (planSlug: string) => postApi<any>('/subscription/change', { planSlug }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['subscription'] });
+      qc.invalidateQueries({ queryKey: ['features'] });
+    },
+  });
+}
+
+export function useCancelSubscription() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () => postApi<any>('/subscription/cancel', {}),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['subscription'] });
+      qc.invalidateQueries({ queryKey: ['features'] });
+    },
+  });
+}
+
+export function usePreviewPlanChange(planSlug: string | null) {
+  return useQuery({
+    queryKey: ['subscription', 'preview', planSlug],
+    queryFn: () => fetchApi<{
+      type: 'upgrade' | 'downgrade' | 'trial_selection';
+      currentPlan: string;
+      targetPlan: string;
+      immediateChargeAgorot: number;
+      nextRenewalAmountAgorot: number;
+      nextRenewalDate: string;
+      daysRemaining: number;
+      daysInPeriod: number;
+      effectiveDate: string;
+    }>(`/subscription/preview-change?planSlug=${planSlug}`),
+    enabled: !!planSlug,
+  });
+}
+
+export function useCancelDowngrade() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () => postApi<any>('/subscription/cancel-downgrade', {}),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['subscription'] });
+    },
+  });
+}
+
+export function usePaymentHistory() {
+  return useQuery({
+    queryKey: ['subscription', 'payments'],
+    queryFn: () => fetchApi<Array<{
+      id: number;
+      amountAgorot: number;
+      type: number;
+      description: string;
+      fromPlanId: number | null;
+      toPlanId: number | null;
+      prorationDays: number | null;
+      periodDays: number | null;
+      status: number;
+      createdAt: string;
+    }>>('/subscription/payments'),
+  });
+}
+
+// Initiate a checkout session (returns payment page URL)
+export function useInitiateCheckout() {
+  return useMutation({
+    mutationFn: (params: { planSlug: string }) =>
+      postApi<{
+        checkoutSessionId: string;
+        paypalSubscriptionId: string;
+        amountAgorot: number;
+        expiresAt: string;
+      }>('/subscription/checkout', params),
+  });
+}
+
+// Initiate renewal recovery checkout (for past_due subscriptions)
+export function useRenewalRecovery() {
+  return useMutation({
+    mutationFn: () =>
+      postApi<{
+        checkoutSessionId: string;
+        paypalSubscriptionId: string;
+      }>('/subscription/recovery-checkout', {}),
+  });
+}
+
+// Poll checkout status (for after redirect back)
+export function useCheckoutStatus(sessionId: string | null) {
+  return useQuery({
+    queryKey: ['checkout-status', sessionId],
+    queryFn: () => fetchApi<{ status: string }>(`/subscription/checkout/${sessionId}`),
+    enabled: !!sessionId,
+    refetchInterval: (query) => {
+      const status = query.state.data?.status;
+      if (status === 'completed' || status === 'failed' || status === 'expired') return false;
+      return 2000;
+    },
   });
 }
 
@@ -1327,7 +1475,7 @@ export function useUpdateBusinessInfo() {
 }
 
 // Loyalty — Dashboard
-export function useLoyaltyDashboard() {
+export function useLoyaltyDashboard(enabled = true) {
   return useQuery({
     queryKey: ['loyaltyDashboard'],
     queryFn: () => fetchApi<{
@@ -1336,6 +1484,7 @@ export function useLoyaltyDashboard() {
       segmentCounts: { vip: number; regular: number; new: number; dormant: number; inactive: number };
     }>('/loyalty/dashboard'),
     staleTime: 5 * 60 * 1000,
+    enabled,
   });
 }
 

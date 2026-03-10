@@ -4,6 +4,8 @@ import { AdminService } from './admin.service.js';
 import { authMiddleware, requireAdminMiddleware } from '../../core/middleware/auth.js';
 import { UnauthorizedError } from '../../core/errors/app-error.js';
 import { env } from '../../config/env.js';
+import { SubscriptionController } from '../subscription/subscription.controller.js';
+import { getSubscriptionService } from '../../core/middleware/requireTier.js';
 
 async function adminSecretMiddleware(request: FastifyRequest, _reply: FastifyReply) {
   const authHeader = request.headers.authorization;
@@ -47,6 +49,11 @@ export default async function adminRoutes(app: FastifyInstance) {
 
   // Lightweight gate check used by frontend on admin panel entry
   app.get('/access', adminPreHandler, (_req, reply) => reply.send({ success: true }));
+
+  // Subscription management (admin force plan change) — uses the singleton from requireTier
+  const subscriptionController = new SubscriptionController(getSubscriptionService());
+
+  app.post<{ Params: { storeId: string } }>('/stores/:storeId/subscription', adminPreHandler, (req, reply) => subscriptionController.adminChangePlan(req, reply));
 
   // Test cleanup - secured by admin secret (used by E2E teardown)
   app.post('/cleanup-test-users', { preHandler: [adminSecretMiddleware] }, (req, reply) => controller.cleanupTestUsers(req, reply));

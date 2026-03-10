@@ -9,6 +9,7 @@ import { ErrorCode, Language } from '@mise/shared';
 import { sendInviteEmail, buildStoreInviteEmail, buildCreateStoreInviteEmail } from '../notifications/channels/email.js';
 import type { AuthTokenPayload } from '../auth/auth.types.js';
 import { sendInvitationEmail } from '../notifications/channels/email.js';
+import { SubscriptionService } from '../subscription/subscription.service.js';
 
 export class StoreService {
   constructor(
@@ -32,6 +33,14 @@ export class StoreService {
     const store = await PgStoreRepository.createStore(data);
     await PgStoreRepository.addUserToStore(userId, store.id, StoreRole.OWNER);
     await PgStoreRepository.markInvitationUsed(inviteToken);
+
+    // Create a 14-day Pro trial subscription for the new store
+    try {
+      const subscriptionService = new SubscriptionService(null);
+      await subscriptionService.createTrialSubscription(store.id);
+    } catch (err) {
+      appLogger.error({ err, storeId: store.id }, 'Failed to create trial subscription for new store');
+    }
 
     const token = this.generateTokenWithStore(userId, email, store.id, StoreRole.OWNER);
 

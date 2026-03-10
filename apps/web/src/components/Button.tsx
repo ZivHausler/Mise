@@ -2,6 +2,7 @@ import React from 'react';
 import { cva, type VariantProps } from 'class-variance-authority';
 import { Loader2 } from 'lucide-react';
 import { cn } from '@/utils/cn';
+import { ComingSoonBadge } from './ComingSoonBadge';
 
 const buttonVariants = cva(
   'inline-flex items-center justify-center gap-2 font-body font-medium rounded-md transition-all duration-normal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none',
@@ -36,6 +37,7 @@ interface ButtonProps
   icon?: React.ReactNode;
   iconPosition?: 'start' | 'end';
   loading?: boolean;
+  comingSoon?: boolean;
 }
 
 export const Button = React.memo(function Button({
@@ -45,6 +47,7 @@ export const Button = React.memo(function Button({
   icon,
   iconPosition = 'start',
   loading,
+  comingSoon,
   disabled,
   className,
   children,
@@ -55,11 +58,16 @@ export const Button = React.memo(function Button({
   return (
     <button
       className={cn(buttonVariants({ variant, size, fullWidth }), className)}
-      disabled={disabled || loading}
+      disabled={disabled || loading || comingSoon}
       {...props}
     >
       {iconEl && iconPosition === 'start' && iconEl}
-      {children}
+      {comingSoon ? (
+        <span className="flex flex-col items-center leading-none">
+          <span className="text-[0.8rem]">{children}</span>
+          <ComingSoonBadge variant="inline" className="-mt-px" />
+        </span>
+      ) : children}
       {iconEl && iconPosition === 'end' && iconEl}
     </button>
   );

@@ -22,7 +22,7 @@ export default function LoyaltyTab() {
   const { data: rawConfig, isLoading } = useLoyaltyConfig();
   const updateConfig = useUpdateLoyaltyConfig();
   const { data: featureFlags } = useFeatureFlags();
-  const loyaltyEnhancements = (featureFlags as any)?.loyaltyEnhancements ?? false;
+  const loyaltyEnhancements = featureFlags?.loyalty && featureFlags?.loyaltyEnhancements;
 
   const config = rawConfig as {
     isActive: boolean;
@@ -163,63 +163,92 @@ export default function LoyaltyTab() {
           </button>
 
           {segExpanded && (
-            <Stack gap={3} className="mt-4">
-              <TextInput
-                label={t('loyalty.settings.vipOrderCount', 'VIP: Minimum orders')}
-                type="number"
-                value={segVipOrderCount}
-                onChange={(e) => { setSegVipOrderCount(e.target.value); setDirty(true); }}
-                min="1"
-                step="1"
-              />
-              <TextInput
-                label={t('loyalty.settings.vipDays', 'VIP: Within days')}
-                type="number"
-                value={segVipDays}
-                onChange={(e) => { setSegVipDays(e.target.value); setDirty(true); }}
-                min="1"
-                step="1"
-              />
-              <TextInput
-                label={t('loyalty.settings.regularOrderCount', 'Regular: Minimum orders')}
-                type="number"
-                value={segRegularOrderCount}
-                onChange={(e) => { setSegRegularOrderCount(e.target.value); setDirty(true); }}
-                min="1"
-                step="1"
-              />
-              <TextInput
-                label={t('loyalty.settings.regularDays', 'Regular: Within days')}
-                type="number"
-                value={segRegularDays}
-                onChange={(e) => { setSegRegularDays(e.target.value); setDirty(true); }}
-                min="1"
-                step="1"
-              />
-              <TextInput
-                label={t('loyalty.settings.newDays', 'New customer: Within days')}
-                type="number"
-                value={segNewDays}
-                onChange={(e) => { setSegNewDays(e.target.value); setDirty(true); }}
-                min="1"
-                step="1"
-              />
-              <TextInput
-                label={t('loyalty.settings.dormantDays', 'Dormant: No orders for days')}
-                type="number"
-                value={segDormantDays}
-                onChange={(e) => { setSegDormantDays(e.target.value); setDirty(true); }}
-                min="1"
-                step="1"
-              />
-              <TextInput
-                label={t('loyalty.settings.birthdayReminderDays', 'Birthday reminder: Days ahead')}
-                type="number"
-                value={birthdayReminderDays}
-                onChange={(e) => { setBirthdayReminderDays(e.target.value); setDirty(true); }}
-                min="1"
-                step="1"
-              />
+            <Stack gap={6} className="mt-4">
+              {/* VIP */}
+              <div className="rounded-lg border border-neutral-200 p-4">
+                <h4 className="mb-3 text-body-sm font-semibold text-neutral-700">{t('loyalty.segments.vip', 'VIP')}</h4>
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  <TextInput
+                    label={t('loyalty.settings.vipOrderCount', 'Minimum orders')}
+                    type="number"
+                    value={segVipOrderCount}
+                    onChange={(e) => { setSegVipOrderCount(e.target.value); setDirty(true); }}
+                    min="1"
+                    step="1"
+                  />
+                  <TextInput
+                    label={t('loyalty.settings.vipDays', 'Within days')}
+                    type="number"
+                    value={segVipDays}
+                    onChange={(e) => { setSegVipDays(e.target.value); setDirty(true); }}
+                    min="1"
+                    step="1"
+                  />
+                </div>
+              </div>
+
+              {/* Regular */}
+              <div className="rounded-lg border border-neutral-200 p-4">
+                <h4 className="mb-3 text-body-sm font-semibold text-neutral-700">{t('loyalty.segments.regular', 'Regular')}</h4>
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  <TextInput
+                    label={t('loyalty.settings.regularOrderCount', 'Minimum orders')}
+                    type="number"
+                    value={segRegularOrderCount}
+                    onChange={(e) => { setSegRegularOrderCount(e.target.value); setDirty(true); }}
+                    min="1"
+                    step="1"
+                  />
+                  <TextInput
+                    label={t('loyalty.settings.regularDays', 'Within days')}
+                    type="number"
+                    value={segRegularDays}
+                    onChange={(e) => { setSegRegularDays(e.target.value); setDirty(true); }}
+                    min="1"
+                    step="1"
+                  />
+                </div>
+              </div>
+
+              {/* New */}
+              <div className="rounded-lg border border-neutral-200 p-4">
+                <h4 className="mb-3 text-body-sm font-semibold text-neutral-700">{t('loyalty.segments.new', 'New')}</h4>
+                <TextInput
+                  label={t('loyalty.settings.newDays', 'Customer registered within days')}
+                  type="number"
+                  value={segNewDays}
+                  onChange={(e) => { setSegNewDays(e.target.value); setDirty(true); }}
+                  min="1"
+                  step="1"
+                />
+              </div>
+
+              {/* Dormant */}
+              <div className="rounded-lg border border-neutral-200 p-4">
+                <h4 className="mb-3 text-body-sm font-semibold text-neutral-700">{t('loyalty.segments.dormant', 'Dormant')}</h4>
+                <TextInput
+                  label={t('loyalty.settings.dormantDays', 'No orders for days')}
+                  type="number"
+                  value={segDormantDays}
+                  onChange={(e) => { setSegDormantDays(e.target.value); setDirty(true); }}
+                  min="1"
+                  step="1"
+                />
+              </div>
+
+              {/* Birthday */}
+              <div className="rounded-lg border border-neutral-200 p-4">
+                <h4 className="mb-3 text-body-sm font-semibold text-neutral-700">{t('loyalty.settings.birthdaySection', 'Birthday Reminders')}</h4>
+                <TextInput
+                  label={t('loyalty.settings.birthdayReminderDays', 'Days ahead to remind')}
+                  type="number"
+                  value={birthdayReminderDays}
+                  onChange={(e) => { setBirthdayReminderDays(e.target.value); setDirty(true); }}
+                  min="1"
+                  step="1"
+                />
+              </div>
+
               {dirty && (
                 <div className="flex justify-center pt-3">
                   <Button variant="primary" size="sm" icon={<Save className="h-4 w-4" />} onClick={handleSave} loading={updateConfig.isPending}>

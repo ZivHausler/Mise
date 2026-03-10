@@ -15,23 +15,26 @@ import {
   ChevronLeft,
   ChevronRight,
   ChevronDown,
-  Sparkles,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useQueryClient } from '@tanstack/react-query';
 import { cn } from '@/utils/cn';
+import { NavItem } from './NavItem';
+import { UpgradeHint } from './subscription/UpgradeHint';
 import { useAppStore } from '@/store/app';
 import { useAuthStore } from '@/store/auth';
-import { useSelectStore, useAllStores, useFeatureFlags } from '@/api/hooks';
+import { useSelectStore, useAllStores, useSubscription } from '@/api/hooks';
+import { STORE_ROLES } from '@/constants/defaults';
+import { isTierHigher } from '@/utils/subscription';
 
 const navItems = [
   { path: '/', icon: LayoutDashboard, labelKey: 'nav.dashboard', tourId: 'sidebar-dashboard' },
   { path: '/inventory', icon: Package, labelKey: 'nav.inventory', tourId: 'sidebar-inventory' },
   { path: '/recipes', icon: BookOpen, labelKey: 'nav.recipes', tourId: 'sidebar-recipes' },
-  { path: '/customers', icon: Users, labelKey: 'nav.customers', tourId: 'sidebar-customers' },
-  { path: '/orders', icon: ClipboardList, labelKey: 'nav.orders', tourId: 'sidebar-orders' },
-  { path: '/payments', icon: CreditCard, labelKey: 'nav.payments', tourId: 'sidebar-payments' },
-  { path: '/invoices', icon: FileText, labelKey: 'nav.invoices', tourId: 'sidebar-invoices' },
+  { path: '/customers', icon: Users, labelKey: 'nav.customers', tourId: 'sidebar-customers', featureFlag: 'customers' as const },
+  { path: '/orders', icon: ClipboardList, labelKey: 'nav.orders', tourId: 'sidebar-orders', featureFlag: 'orders' as const },
+  { path: '/payments', icon: CreditCard, labelKey: 'nav.payments', tourId: 'sidebar-payments', featureFlag: 'payments' as const },
+  { path: '/invoices', icon: FileText, labelKey: 'nav.invoices', tourId: 'sidebar-invoices', featureFlag: 'invoices' as const },
   { path: '/production', icon: Factory, labelKey: 'nav.production', tourId: 'sidebar-production', featureFlag: 'production' as const },
 ];
 
@@ -42,7 +45,6 @@ const bottomItems = [
 export function Sidebar() {
   const { t } = useTranslation();
   const collapsed = useAppStore((s) => s.sidebarCollapsed);
-  const { data: featureFlags } = useFeatureFlags();
   const toggleSidebar = useAppStore((s) => s.toggleSidebar);
   const stores = useAuthStore((s) => s.stores);
   const isAdmin = useAuthStore((s) => s.isAdmin);
@@ -52,6 +54,11 @@ export function Sidebar() {
   const selectStore = useSelectStore();
   const allStoresQuery = useAllStores(isAdmin);
   const qc = useQueryClient();
+  const { data: subscription } = useSubscription();
+  const currentPlan = (subscription as any)?.planSlug ?? 'free';
+  const activeRole = stores.find((s) => String(s.storeId) === String(activeStoreId))?.role;
+  const isOwner = activeRole === STORE_ROLES.OWNER || isAdmin;
+  const nextTier = currentPlan === 'free' ? 'basic' : currentPlan === 'basic' ? 'pro' : null;
 
   // For admins, show all stores in the system; for non-admins, show their stores
   const displayStores = isAdmin && allStoresQuery.data
@@ -103,57 +110,28 @@ export function Sidebar() {
           />
         )}
         <ul className="flex flex-col gap-1 px-2">
-          {navItems.map((item) => {
-            const isLocked = item.featureFlag && !featureFlags?.[item.featureFlag];
-            if (isLocked) {
-              return (
-                <li key={item.path}>
-                  <div
-                    data-tour={item.tourId}
-                    className="flex items-center gap-3 rounded-md px-3 py-2.5 text-body-sm text-primary-600 cursor-not-allowed select-none"
-                  >
-                    <item.icon className="h-5 w-5 shrink-0" />
-                    {!collapsed && (
-                      <div className="flex flex-col">
-                        <span>{t(item.labelKey)}</span>
-                        <span className="flex items-center gap-1 -mt-0.5">
-                          <Sparkles className="h-3.5 w-3.5 shrink-0 text-purple-400" />
-                          <span className="text-xs font-medium text-purple-400">
-                            {t('nav.comingSoon')}
-                          </span>
-                        </span>
-                      </div>
-                    )}
-                    {collapsed && <Sparkles className="h-3.5 w-3.5 shrink-0 text-purple-400" />}
-                  </div>
-                </li>
-              );
-            }
-            return (
-              <li key={item.path}>
-                <NavLink
-                  to={item.path}
-                  end={item.path === '/'}
-                  data-tour={item.tourId}
-                  className={({ isActive }) =>
-                    cn(
-                      'flex items-center gap-3 rounded-md px-3 py-2.5 text-body-sm transition-colors',
-                      isActive
-                        ? 'bg-primary-800 text-white border-s-4 border-primary-500'
-                        : 'text-primary-300 hover:bg-primary-800 hover:text-white'
-                    )
-                  }
-                >
-                  <item.icon className="h-5 w-5 shrink-0" />
-                  {!collapsed && <span>{t(item.labelKey)}</span>}
-                </NavLink>
-              </li>
-            );
-          })}
+          {navItems.map((item) => (
+            <li key={item.path}>
+              <NavItem
+                path={item.path}
+                icon={item.icon}
+                labelKey={item.labelKey}
+                tourId={item.tourId}
+                featureFlag={item.featureFlag}
+                variant="sidebar"
+                collapsed={collapsed}
+              />
+            </li>
+          ))}
         </ul>
       </nav>
 
       <div className="border-t border-primary-800 py-4 px-2">
+        {isOwner && nextTier && !collapsed && (
+          <div className="mb-2">
+            <UpgradeHint targetPlan={nextTier} variant="sidebar" />
+          </div>
+        )}
         {isAdmin && (
           <NavLink
             to="/admin"

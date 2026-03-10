@@ -16,6 +16,7 @@
     },
     "save": "שמור",
     "cancel": "ביטול",
+    "done": "סיום",
     "delete": "מחק",
     "edit": "ערוך",
     "create": "צור",
@@ -36,7 +37,8 @@
     "clearFilters": "נקה",
     "previous": "הקודם",
     "next": "הבא",
-    "all": "הכל"
+    "all": "הכל",
+    "viewAll": "הצג הכל ({{count}})"
   },
   "nav": {
     "dashboard": "לוח בקרה",
@@ -50,7 +52,8 @@
     "more": "עוד",
     "admin": "פאנל ניהול",
     "production": "ייצור",
-    "comingSoon": "בקרוב"
+    "comingSoon": "בקרוב",
+    "upgrade": "שדרגו"
   },
   "auth": {
     "login": "התחברות",
@@ -79,7 +82,27 @@
     "accountExistsGoogle": "אימייל זה כבר רשום עם Google. אנא התחבר עם Google.",
     "googleHintTitle": "זוהה חשבון Google",
     "googleHintMessage": "נראה שהתחברת בעבר עם Google באמצעות אימייל זה. אנא השתמש בכפתור \"כניסה באמצעות Google\" למטה כדי להתחבר.",
-    "noAccountFound": "לא נמצא חשבון. יש צורך בהזמנה כדי להירשם."
+    "noAccountFound": "לא נמצא חשבון. יש צורך בהזמנה כדי להירשם.",
+    "invalidCredentials": "אימייל או סיסמה שגויים. נסו שנית.",
+    "forgotPassword": "שכחת סיסמה?",
+    "forgotPasswordTitle": "איפוס סיסמה",
+    "forgotPasswordDescription": "הזינו את כתובת האימייל שלכם ונשלח לכם קישור לאיפוס הסיסמה.",
+    "sendResetLink": "שלח קישור לאיפוס",
+    "checkYourEmail": "בדקו את האימייל",
+    "resetEmailSent": "אם קיים חשבון עם אימייל זה, שלחנו הוראות לאיפוס הסיסמה.",
+    "didntReceive": "לא קיבלתם? בדקו בתיקיית הספאם או נסו שוב.",
+    "backToLogin": "חזרה להתחברות",
+    "setNewPassword": "הגדרת סיסמה חדשה",
+    "newPassword": "סיסמה חדשה",
+    "confirmPassword": "אימות סיסמה",
+    "resetPassword": "איפוס סיסמה",
+    "passwordResetSuccess": "הסיסמה אופסה בהצלחה",
+    "passwordUpdated": "הסיסמה שלכם עודכנה.",
+    "redirectingToLogin": "מעביר להתחברות...",
+    "linkExpired": "הקישור פג תוקף או אינו תקין",
+    "linkExpiredDescription": "קישור איפוס הסיסמה פג תוקף או שאינו תקף יותר.",
+    "requestNewLink": "בקש קישור חדש",
+    "passwordMismatch": "הסיסמאות אינן תואמות"
   },
   "dashboard": {
     "greeting": "בוקר טוב!",
@@ -90,7 +113,18 @@
     "orderPipeline": "תהליך הזמנות",
     "quickActions": "פעולות מהירות",
     "recentActivity": "פעילות אחרונה",
-    "lowStockAlerts": "התראות מלאי נמוך"
+    "lowStockAlerts": "התראות מלאי נמוך",
+    "totalIngredients": "מרכיבים",
+    "totalRecipes": "מתכונים",
+    "outOfStock": "אזל מהמלאי",
+    "inventoryOverview": "סקירת מלאי",
+    "inventoryValue": "שווי מלאי",
+    "lowStockItems": "{{count}} פריטים דורשים מילוי",
+    "outOfStockItems": "{{count}} פריטים אזלו מהמלאי",
+    "stockHealthy": "כל הפריטים במלאי תקין",
+    "recentRecipes": "מתכונים אחרונים",
+    "noRecipesYet": "אין מתכונים עדיין",
+    "ingredients": "מרכיבים"
   },
   "orders": {
     "create": "הזמנה חדשה",
@@ -251,6 +285,30 @@
     "editItem": "עריכת פריט",
     "deleteTitle": "למחוק פריט?",
     "deleteMsg": "הפריט יימחק לצמיתות.",
+    "scanReceipt": "סריקת קבלה",
+    "receiptScanner": "סורק קבלות",
+    "analyzingReceipt": "מנתח קבלה...",
+    "itemsMatched": "{{matched}} מתוך {{total}} פריטים הותאמו אוטומטית",
+    "someItemsUnreadable": "חלק מהפריטים לא נקראו מהקבלה",
+    "noItemsFound": "לא נמצאו פריטים בקבלה",
+    "noItemsFoundDesc": "ייתכן שהתמונה מטושטשת או שאינה קבלה. נסו תמונה ברורה יותר.",
+    "couldNotReadReceipt": "לא ניתן לקרוא את הקבלה",
+    "couldNotReadReceiptDesc": "ייתכן שהתמונה מטושטשת או בפורמט לא נתמך. נסו שוב עם תמונה ברורה יותר.",
+    "tryAgain": "נסו שוב",
+    "receiptItem": "פריט בקבלה",
+    "matchedIngredient": "מרכיב",
+    "noMatch": "לא נמצאה התאמה",
+    "createIngredient": "יצירת מרכיב",
+    "confirmItems_one": "אישור פריט {{count}}",
+    "confirmItems_other": "אישור {{count}} פריטים",
+    "removeRow": "הסרת פריט",
+    "discardScanTitle": "לבטל שינויים?",
+    "discardScanMessage": "{{count}} מרכיבים חדשים שנוצרו במהלך הסשן הזה יימחקו.",
+    "keepEditing": "המשך עריכה",
+    "discardChanges": "ביטול",
+    "receiptVendor": "ספק",
+    "receiptDate": "תאריך קבלה",
+    "receiptTotal": "סה״כ קבלה",
     "shoppingList": {
       "title": "רשימת קניות",
       "allStocked": "כל הפריטים במלאי מלא!",
@@ -421,13 +479,14 @@
     "settings": {
       "segmentation": "הגדרות פילוח",
       "segmentationDesc": "הגדר כיצד לקוחות מסווגים אוטומטית",
-      "vipOrderCount": "VIP: מינימום הזמנות",
-      "vipDays": "VIP: בתוך ימים",
-      "regularOrderCount": "קבוע: מינימום הזמנות",
-      "regularDays": "קבוע: בתוך ימים",
-      "newDays": "לקוח חדש: בתוך ימים",
-      "dormantDays": "רדום: ללא הזמנות בימים",
-      "birthdayReminderDays": "תזכורת יום הולדת: ימים מראש"
+      "vipOrderCount": "מינימום הזמנות",
+      "vipDays": "בתוך ימים",
+      "regularOrderCount": "מינימום הזמנות",
+      "regularDays": "בתוך ימים",
+      "newDays": "לקוח נרשם בתוך ימים",
+      "dormantDays": "ללא הזמנות בימים",
+      "birthdayReminderDays": "ימים מראש לתזכורת",
+      "birthdaySection": "תזכורות יום הולדת"
     }
   },
   "production": {
@@ -533,7 +592,8 @@
       "notifications": "התראות",
       "loyalty": "צבירת נקודות",
       "integrations": "אינטגרציות",
-      "billing": "חיוב"
+      "billing": "חיוב",
+      "subscription": "מנוי"
     },
     "team": {
       "title": "חברי צוות",
@@ -753,6 +813,8 @@
     "batchesMergeFailed": "מיזוג מקבצים נכשל",
     "memberRemoved": "החבר הוסר",
     "memberRemoveFailed": "הסרת החבר נכשלה",
+    "roleUpdated": "התפקיד עודכן",
+    "roleUpdateFailed": "עדכון התפקיד נכשל",
     "whatsappConnected": "WhatsApp חובר בהצלחה",
     "whatsappConnectFailed": "חיבור WhatsApp נכשל",
     "whatsappDisconnected": "WhatsApp נותק",
@@ -760,7 +822,10 @@
     "invoiceCreated": "החשבונית נוצרה",
     "invoiceCreateFailed": "יצירת החשבונית נכשלה",
     "businessInfoUpdated": "פרטי העסק עודכנו",
-    "businessInfoUpdateFailed": "עדכון פרטי העסק נכשל"
+    "businessInfoUpdateFailed": "עדכון פרטי העסק נכשל",
+    "receiptApplied": "פריטי הקבלה נוספו למלאי",
+    "receiptPartialSuccess": "{{succeeded}} פריטים נוספו, {{failed}} נכשלו",
+    "receiptScanFailed": "סריקת הקבלה נכשלה"
   },
   "store": {
     "setupTitle": "הקם את המאפייה שלך",
@@ -775,7 +840,9 @@
     "invitedToCreate": "הוזמנת ליצור חנות משלך",
     "setupStore": "הקמת חנות",
     "invalidInvite": "קישור ההזמנה אינו תקף או שפג תוקפו.",
-    "joinStore": "הצטרף לחנות"
+    "joinStore": "הצטרף לחנות",
+    "inviteEmailMismatch": "ההזמנה הזו מיועדת ל-{{email}}. יש להתחבר עם החשבון הזה.",
+    "switchAccount": "החלף חשבון"
   },
   "tour": {
     "back": "חזרה",
@@ -1080,6 +1147,166 @@
       "responseBody": "גוף התגובה",
       "noBody": "אין תוכן",
       "noEntries": "אין רשומות ביומן"
+    }
+  },
+  "subscription": {
+    "title": "מנוי",
+    "currentPlan": "מנוי נוכחי",
+    "renewsOn": "המנוי מתחדש ב-{{date}}",
+    "trialDaysLeft": "ניסיון Pro - נותרו {{count}} ימים",
+    "trialDaysLeft_one": "ניסיון Pro - נותר יום אחד",
+    "trialEndsToday": "הניסיון מסתיים היום",
+    "trialExpired": "תקופת ניסיון ה-Pro הסתיימה",
+    "choosePlan": "בחרו מנוי כדי להמשיך",
+    "continueWithFree": "המשיכו עם חינמי",
+    "plans": "מנויים",
+    "billingHistory": "היסטוריית חיובים",
+    "upgrade": "שדרגו",
+    "upgradeTo": "שדרגו ל-{{plan}}",
+    "downgrade": "שנמכו",
+    "downgradeTo": "שנמכו ל-{{plan}}",
+    "confirmUpgrade": "אישור שדרוג - {{price}} ש\"ח/חודש",
+    "confirmDowngrade": "אישור שנמוך",
+    "keepPlan": "השארו עם {{plan}}",
+    "currentPlanBadge": "מנוי נוכחי",
+    "popular": "הפופולרי",
+    "viewAllPlans": "צפייה בכל המנויים",
+    "perMonth": "/חודש",
+    "free": "חינם",
+    "welcomeTo": "ברוכים הבאים ל-{{plan}}!",
+    "startExploring": "התחילו לחקור",
+    "cancel": "ביטול מנוי",
+    "cancelConfirm": "בטוחים שרוצים לבטל?",
+    "downgradedOn": "שנמוך ל-{{plan}} ב-{{date}}",
+    "youllLoseAccess": "תאבדו גישה ל:",
+    "tiers": {
+      "free": "Free",
+      "basic": "Basic",
+      "pro": "Pro"
+    },
+    "tierDescriptions": {
+      "free": "התחילו עם מלאי ומתכונים",
+      "basic": "נהלו את פעולות העסק",
+      "pro": "חבילת ניהול עסק מלאה"
+    },
+    "features": {
+      "inventory": "ניהול מלאי",
+      "recipes": "ניהול מתכונים",
+      "dashboard": "לוח בקרה וניתוח נתונים",
+      "customers": "ניהול לקוחות",
+      "orders": "ניהול הזמנות",
+      "payments": "מעקב תשלומים",
+      "invoices": "חשבוניות",
+      "notifications": "הגדרות התראות",
+      "production": "תכנון ייצור",
+      "loyalty": "תוכנית נאמנות",
+      "whatsapp": "אינטגרציית WhatsApp",
+      "ai_chat": "עוזר AI",
+      "receiptScanner": "סורק קבלות",
+      "generalSettings": "הגדרות כלליות",
+      "teamSettings": "ניהול צוות"
+    },
+    "featureDescriptions": {
+      "production": "תכננו ותזמנו ייצור יומי עם ניהול אצוות חכם.",
+      "loyalty": "בנו תוכנית נאמנות לתגמול לקוחות חוזרים.",
+      "whatsapp": "חברו WhatsApp Business לתקשורת עם לקוחות.",
+      "ai_chat": "קבלו תובנות מבוססות AI על נתוני העסק.",
+      "receiptScanner": "סרקו קבלות ספקים לעדכון מלאי אוטומטי.",
+      "dashboard": "עקבו אחר מכירות, הזמנות וביצועי העסק.",
+      "customers": "נהלו את בסיס הלקוחות והיסטוריית ההזמנות.",
+      "orders": "צרו, עקבו ומלאו הזמנות לקוחות ביעילות.",
+      "payments": "רשמו תשלומים ועקבו אחר הכנסות העסק.",
+      "invoices": "הפיקו חשבוניות מקצועיות ללקוחות.",
+      "notifications": "הגדירו התראות הזמנות ומלאי לצוות."
+    },
+    "everythingIn": "כל מה שב-{{plan}}, ובנוסף:",
+    "upgradeHint": "שדרגו ל-{{plan}} כדי לפתוח עוד תכונות",
+    "billing": {
+      "date": "תאריך",
+      "description": "תיאור",
+      "amount": "סכום",
+      "status": "סטטוס",
+      "paid": "שולם"
+    },
+    "priceBreakdown": {
+      "title": "פירוט מחיר",
+      "currentPlan": "תוכנית נוכחית ({{plan}})",
+      "newPlan": "תוכנית חדשה ({{plan}})",
+      "daysRemaining": "ימים שנותרו בתקופה",
+      "daysCount": "{{count}} ימים",
+      "creditFrom": "זיכוי מ-{{plan}}",
+      "costForDays": "{{plan}} ל-{{count}} ימים",
+      "dueToday": "לתשלום היום",
+      "nextRenewal": "חידוש הבא: {{date}} ב-{{price}} ₪/חודש"
+    },
+    "payNow": "שלם {{amount}} ₪ עכשיו",
+    "subscribeFor": "הירשם ב-{{price}} ₪/חודש",
+    "firstCharge": "חיוב ראשון: {{price}} ₪ היום",
+    "renewsMonthly": "חידוש חודשי",
+    "pendingDowngrade": {
+      "title": "שינמוך מתוכננת",
+      "message": "התוכנית שלך תשתנה ל-{{plan}} ב-{{date}}. תוכל ליהנות מתכונות {{currentPlan}} עד אז.",
+      "cancelDowngrade": "בטל שינמוך",
+      "changePlan": "שנה תוכנית",
+      "switchingOn": "מעבר ב-{{date}}"
+    },
+    "cancelDowngrade": {
+      "title": "להישאר עם התוכנית הנוכחית?",
+      "message": "המנוי ל-{{plan}} שלך ימשיך כרגיל.",
+      "confirm": "להישאר עם {{plan}}"
+    },
+    "downgradeEffective": "תכונות ה-{{currentPlan}} שלך יישארו פעילות עד {{date}}. לאחר מכן, התוכנית תשתנה ל-{{targetPlan}}.",
+    "downgradeEffectivePaid": "תכונות ה-{{currentPlan}} שלך יישארו פעילות עד {{date}}. לאחר מכן, התוכנית תשתנה ל-{{targetPlan}} ב-{{price}} ₪/חודש.",
+    "changingDowngradeTarget": "פעולה זו תשנה את הורדת הדרגה המתוכננת מ-{{oldPlan}} ל-{{newPlan}}.",
+    "trial": {
+      "keepFeatures": "תקופת הניסיון של Pro מסתיימת ב-{{date}}. תוכל ליהנות מכל תכונות Pro עד אז.",
+      "afterTrialBasic": "אחרי תקופת הניסיון: {{plan}} ב-{{price}} ₪/חודש",
+      "afterTrialPro": "המשך עם Pro ב-{{price}} ₪/חודש החל מ-{{date}}",
+      "firstChargeOn": "חיוב ראשון: {{date}}",
+      "confirmPlan": "אשר תוכנית {{plan}}",
+      "continueWith": "המשך עם {{plan}}"
+    },
+    "noBillingHistory": "אין היסטוריית חיובים עדיין",
+    "paymentTypes": {
+      "full": "מנוי חודשי",
+      "proration": "שדרוג תוכנית (יחסי)",
+      "refund": "החזר"
+    },
+    "paymentStatuses": {
+      "pending": "ממתין",
+      "succeeded": "שולם",
+      "failed": "נכשל"
+    },
+    "payment": {
+      "chooseMethod": "בחירת אמצעי תשלום",
+      "creditCard": "כרטיס אשראי / חיוב",
+      "paypal": "PayPal",
+      "continueToPayment": "המשך לתשלום",
+      "checkoutPending": "מאשרים את התשלום...",
+      "checkoutPendingHint": "ממתינים לאישור מספק התשלום. זה עשוי לקחת מספר שניות.",
+      "cancelPayment": "ביטול תשלום",
+      "paymentNotCompleted": "התשלום לא הושלם",
+      "paymentNotCompletedHint": "התשלום לא הסתיים. לא בוצע חיוב.",
+      "tryAgain": "ניסיון חוזר",
+      "paymentApproved": "התשלום אושר!",
+      "paymentApprovedHint": "התוכנית שלך שודרגה בהצלחה.",
+      "paymentFailed": "התשלום נכשל",
+      "paymentFailedHint": "לא הצלחנו לעבד את התשלום. נסו שוב או בחרו אמצעי תשלום אחר.",
+      "paymentSuccess": "התשלום בוצע בהצלחה!",
+      "paymentSuccessMessage": "התוכנית שלך שודרגה בהצלחה.",
+      "paymentCancelled": "התשלום בוטל",
+      "failedPayment": "התשלום נכשל",
+      "failedPaymentMessage": "התשלום האחרון לא עבר. השלימו את התשלום כדי לשמור על תכונות ה-{{plan}}.",
+      "completePayment": "השלמת תשלום",
+      "startExploring": "בואו נתחיל",
+      "recoverySuccess": "התשלום הושלם! המנוי שלך שוחזר.",
+      "processing": "מעבד תשלום...",
+      "processingHint": "נא לא לסגור את החלון",
+      "securedByPayPal": "מאובטח על ידי PayPal",
+      "genericError": "משהו השתבש. נסו שוב.",
+      "sdkError": "התשלום אינו זמין כרגע. נסו שוב מאוחר יותר.",
+      "retryLoading": "טעינה מחדש",
+      "popupBlocked": "נא לאפשר חלונות קופצים לאתר זה"
     }
   }
 }
