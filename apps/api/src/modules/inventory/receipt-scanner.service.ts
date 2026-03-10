@@ -50,17 +50,17 @@ function normalizeName(s: string): string {
 function levenshtein(a: string, b: string): number {
   const m = a.length;
   const n = b.length;
-  const dp: number[][] = Array.from({ length: m + 1 }, () => Array(n + 1).fill(0));
-  for (let i = 0; i <= m; i++) dp[i][0] = i;
-  for (let j = 0; j <= n; j++) dp[0][j] = j;
+  const dp: number[][] = Array.from({ length: m + 1 }, () => Array<number>(n + 1).fill(0));
+  for (let i = 0; i <= m; i++) dp[i]![0] = i;
+  for (let j = 0; j <= n; j++) dp[0]![j] = j;
   for (let i = 1; i <= m; i++) {
     for (let j = 1; j <= n; j++) {
-      dp[i][j] = a[i - 1] === b[j - 1]
-        ? dp[i - 1][j - 1]
-        : 1 + Math.min(dp[i - 1][j], dp[i][j - 1], dp[i - 1][j - 1]);
+      dp[i]![j] = a[i - 1] === b[j - 1]
+        ? dp[i - 1]![j - 1]!
+        : 1 + Math.min(dp[i - 1]![j]!, dp[i]![j - 1]!, dp[i - 1]![j - 1]!);
     }
   }
-  return dp[m][n];
+  return dp[m]![n]!;
 }
 
 /** Try to match an item name against ingredients locally. Returns match or null. */
@@ -195,14 +195,14 @@ async function matchItems(
   const unmatchedIndices: number[] = [];
 
   for (let i = 0; i < extractedItems.length; i++) {
-    const item = extractedItems[i];
+    const item = extractedItems[i]!;
     const unitPrice = item.quantity > 0 ? item.totalPrice / item.quantity : item.totalPrice;
     const match = localMatch(item.name, ingredients);
+    const base = { name: item.name, quantity: item.quantity, unit: item.unit, totalPrice: item.totalPrice, unitPrice };
 
     if (match) {
       results.push({
-        ...item,
-        unitPrice,
+        ...base,
         match: {
           type: match.type,
           ingredientId: match.ingredientId,
@@ -213,8 +213,7 @@ async function matchItems(
     } else {
       unmatchedIndices.push(i);
       results.push({
-        ...item,
-        unitPrice,
+        ...base,
         match: { type: 'none' as const, ingredientId: null, ingredientName: null, confidence: 0 },
       });
     }
@@ -222,7 +221,7 @@ async function matchItems(
 
   // 2. For remaining unmatched items, try AI matching
   if (unmatchedIndices.length > 0 && ingredients.length > 0) {
-    const unmatchedItems = unmatchedIndices.map((i) => extractedItems[i]);
+    const unmatchedItems = unmatchedIndices.map((i) => extractedItems[i]!);
     const ingredientList = ingredients.map((ing) => ({ id: ing.id, name: ing.name }));
 
     const prompt = `You are matching receipt items to a store's ingredient inventory.
@@ -275,9 +274,10 @@ Rules:
         for (const aiMatch of parsed.matches) {
           const originalIdx = unmatchedIndices[aiMatch.receiptIndex];
           if (originalIdx == null) continue;
-          if (aiMatch.ingredientId != null && ingredientById.has(aiMatch.ingredientId)) {
+          const existing = results[originalIdx];
+          if (existing && aiMatch.ingredientId != null && ingredientById.has(aiMatch.ingredientId)) {
             results[originalIdx] = {
-              ...results[originalIdx],
+              ...existing,
               match: {
                 type: (aiMatch.confidence >= 1 ? 'exact' : 'fuzzy') as 'exact' | 'fuzzy',
                 ingredientId: aiMatch.ingredientId,
