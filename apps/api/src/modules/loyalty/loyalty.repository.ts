@@ -75,7 +75,7 @@ export class PgLoyaltyRepository {
   static async getCustomerBalance(storeId: number, customerId: number): Promise<CustomerLoyaltySummary> {
     const pool = getPool();
     const balanceResult = await pool.query(
-      'SELECT loyalty_points FROM customers WHERE id = $1 AND store_id = $2',
+      'SELECT loyalty_points FROM customer_stores WHERE id = $1 AND store_id = $2',
       [customerId, storeId],
     );
     const balance = balanceResult.rows[0] ? Number(balanceResult.rows[0]['loyalty_points']) : 0;
@@ -110,7 +110,7 @@ export class PgLoyaltyRepository {
   static async updateCustomerBalance(storeId: number, customerId: number, delta: number): Promise<number> {
     const pool = getPool();
     const result = await pool.query(
-      'UPDATE customers SET loyalty_points = loyalty_points + $3 WHERE id = $1 AND store_id = $2 RETURNING loyalty_points',
+      'UPDATE customer_stores SET loyalty_points = loyalty_points + $3 WHERE id = $1 AND store_id = $2 RETURNING loyalty_points',
       [customerId, storeId, delta],
     );
     return Number(result.rows[0]['loyalty_points']);
@@ -202,7 +202,7 @@ export class PgLoyaltyRepository {
               AND COALESCE(od.recent_dormant_orders, 0) = 0 THEN 'dormant'
             ELSE 'inactive'
           END AS segment
-        FROM customers c
+        FROM customer_stores c
         LEFT JOIN order_counts ov ON ov.customer_id = c.id
         LEFT JOIN order_counts_regular oreg ON oreg.customer_id = c.id
         LEFT JOIN order_counts_dormant od ON od.customer_id = c.id
@@ -275,7 +275,7 @@ export class PgLoyaltyRepository {
                ) + 366) % 366
              )::int
            END AS days_until
-         FROM customers
+         FROM customer_stores
          WHERE store_id = $1 AND birthday IS NOT NULL
        ) sub
        WHERE days_until <= $2
@@ -298,7 +298,7 @@ export class PgLoyaltyRepository {
          MAX(o.created_at) AS last_order_date,
          (CURRENT_DATE - MAX(o.created_at)::date)::int AS days_since_last_order,
          COUNT(o.id)::int AS total_orders
-       FROM customers c
+       FROM customer_stores c
        INNER JOIN orders o ON o.customer_id = c.id AND o.store_id = c.store_id
        WHERE c.store_id = $1
        GROUP BY c.id, c.name, c.phone

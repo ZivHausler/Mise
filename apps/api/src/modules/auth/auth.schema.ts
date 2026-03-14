@@ -11,7 +11,7 @@ export const googleMergeSchema = z.object({
 });
 
 export const forgotPasswordSchema = z.object({
-  email: z.string().email(),
+  email: z.string().email('INVALID_EMAIL_ADDRESS'),
 });
 
 export const resetPasswordSchema = z.object({

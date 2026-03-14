@@ -9,7 +9,7 @@ export const toggleDisabledSchema = z.object({
 });
 
 export const createInvitationSchema = z.object({
-  email: z.string().email(),
+  email: z.string().email('INVALID_EMAIL_ADDRESS'),
   role: z.number().int().min(-1).max(3).optional(),
 });
 

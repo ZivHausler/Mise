@@ -1,23 +1,22 @@
 import { z } from 'zod';
-
-const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+import { dateStringSchema } from '@mise/shared';
 
 export const getBatchesSchema = z.object({
-  date: z.string().regex(dateRegex, 'Expected YYYY-MM-DD format'),
+  date: dateStringSchema,
 });
 
 export const createBatchSchema = z.object({
   recipeId: z.string().max(100),
   recipeName: z.string().max(255).optional(),
   quantity: z.number().int().positive().max(100000),
-  productionDate: z.string().regex(dateRegex, 'Expected YYYY-MM-DD format'),
+  productionDate: dateStringSchema,
   priority: z.number().int().min(0).max(4).optional(),
   assignedTo: z.string().max(255).optional(),
   notes: z.string().max(2000).optional(),
 });
 
 export const generateBatchesSchema = z.object({
-  date: z.string().regex(dateRegex, 'Expected YYYY-MM-DD format'),
+  date: dateStringSchema,
 });
 
 export const updateStageSchema = z.object({
@@ -40,7 +39,7 @@ export const mergeBatchesSchema = z.object({
 });
 
 export const prepListDateSchema = z.object({
-  date: z.string().regex(dateRegex, 'Expected YYYY-MM-DD format'),
+  date: dateStringSchema,
 });
 
 export const togglePrepItemSchema = z.object({

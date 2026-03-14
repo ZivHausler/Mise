@@ -1,4 +1,5 @@
 import type { FastifyError, FastifyReply, FastifyRequest } from 'fastify';
+import { ZodError } from 'zod';
 
 import { AppError } from './app-error.js';
 import { env } from '../../config/env.js';
@@ -11,6 +12,20 @@ export function globalErrorHandler(
 ) {
   const requestId = request.id;
   const isProduction = env.NODE_ENV === 'production';
+
+  // Zod validation errors — return the first issue's message as a translatable key
+  if (error instanceof ZodError) {
+    const firstMessage = error.issues[0]?.message ?? 'VALIDATION_ERROR';
+    request.log.warn({ err: error, requestId }, 'Zod validation error');
+    return reply.status(400).send({
+      success: false,
+      error: {
+        code: ErrorCode.VALIDATION_ERROR,
+        message: firstMessage,
+      },
+      requestId,
+    });
+  }
 
   if (error instanceof AppError) {
     request.log.warn(

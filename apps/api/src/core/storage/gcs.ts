@@ -1,6 +1,6 @@
 import { randomUUID } from 'crypto';
 import { promises as fs } from 'fs';
-import { join, dirname } from 'path';
+import { join, dirname, posix } from 'path';
 import { env } from '../../config/env.js';
 
 export const LOCAL_UPLOAD_DIR = join(process.cwd(), 'uploads');
@@ -15,17 +15,18 @@ export function isLocalStorage(): boolean {
   return !env.GCS_BUCKET_NAME;
 }
 
-export async function generateSignedUploadUrl(
+async function generateUploadUrlInternal(
   storeId: number,
+  subdirs: string[],
   mimeType: string,
 ): Promise<{ uploadUrl: string; publicUrl: string; filePath: string }> {
   const sid = String(storeId);
   const ext = MIME_TO_EXT[mimeType] ?? 'jpg';
   const filename = `${randomUUID()}.${ext}`;
-  const filePath = `${sid}/temp/${filename}`;
+  const filePath = [sid, ...subdirs, filename].join('/');
 
   if (isLocalStorage()) {
-    const dir = join(LOCAL_UPLOAD_DIR, sid, 'temp');
+    const dir = join(LOCAL_UPLOAD_DIR, sid, ...subdirs);
     await fs.mkdir(dir, { recursive: true });
     const uploadUrl = `/uploads/put/${filePath}`;
     const publicUrl = `/uploads/${filePath}`;
@@ -48,6 +49,22 @@ export async function generateSignedUploadUrl(
   return { uploadUrl: url, publicUrl, filePath };
 }
 
+export async function generateSignedUploadUrl(
+  storeId: number,
+  mimeType: string,
+): Promise<{ uploadUrl: string; publicUrl: string; filePath: string }> {
+  return generateUploadUrlInternal(storeId, ['temp'], mimeType);
+}
+
+export async function generateBrandingUploadUrl(
+  storeId: number,
+  type: 'logo' | 'banner',
+  mimeType: string,
+): Promise<{ uploadUrl: string; publicUrl: string }> {
+  const { uploadUrl, publicUrl } = await generateUploadUrlInternal(storeId, ['branding', type], mimeType);
+  return { uploadUrl, publicUrl };
+}
+
 export function isTempUrl(url: string): boolean {
   return url.includes('/temp/');
 }
@@ -62,7 +79,27 @@ export function isGcsUrl(url: string): boolean {
 }
 
 export function validateStoreOwnership(url: string, storeId: number): boolean {
-  return url.includes(`/${storeId}/`);
+  const sid = String(storeId);
+  try {
+    let pathname: string;
+    if (url.startsWith('/')) {
+      // Local URL like /uploads/123/temp/file.jpg
+      pathname = url;
+    } else {
+      pathname = new URL(url).pathname;
+    }
+    // Normalize to resolve any ../ traversal attempts
+    const normalized = posix.normalize(pathname);
+    // Split into segments and check that storeId appears as the correct path segment.
+    // Expected paths:  /uploads/{storeId}/...  or  /{bucket}/{storeId}/...
+    const segments = normalized.split('/').filter(Boolean);
+    // For local URLs: /uploads/{storeId}/...  -> segments[1] is storeId
+    // For GCS URLs pathname: /{bucket}/{storeId}/... -> segments[1] is storeId
+    // Also accept storeId at segments[0] for raw paths like {storeId}/temp/...
+    return segments[0] === sid || segments[1] === sid;
+  } catch {
+    return false;
+  }
 }
 
 export async function movePhotosToRecipe(

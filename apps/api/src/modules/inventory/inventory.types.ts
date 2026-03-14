@@ -13,6 +13,7 @@ export interface IngredientAllergen {
 export interface Ingredient {
   id: number;
   name: string;
+  nameEn: string | null;
   unit: string;
   quantity: number;
   costPerUnit: number;
@@ -37,6 +38,7 @@ export interface InventoryLog {
 
 export interface CreateIngredientDTO {
   name: string;
+  nameEn?: string;
   unit: string;
   quantity: number;
   costPerUnit: number;
