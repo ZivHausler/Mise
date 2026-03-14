@@ -23,6 +23,22 @@ export class MongoRecipeRepository {
     return doc ? this.mapDoc(doc) : null;
   }
 
+  static async findByIds(storeId: number, ids: string[]): Promise<Recipe[]> {
+    const objectIds: ObjectId[] = [];
+    for (const id of ids) {
+      try {
+        objectIds.push(new ObjectId(id));
+      } catch {
+        // Skip invalid IDs
+      }
+    }
+    if (objectIds.length === 0) return [];
+    const docs = await this.collection
+      .find({ _id: { $in: objectIds }, storeId: this.storeFilter(storeId) })
+      .toArray();
+    return docs.map((d) => this.mapDoc(d));
+  }
+
   static async findAll(storeId: number, filters?: { tag?: string; search?: string }): Promise<Recipe[]> {
     const query: Record<string, unknown> = {};
     query['storeId'] = this.storeFilter(storeId);
@@ -78,12 +94,34 @@ export class MongoRecipeRepository {
     });
   }
 
+  static async findPublished(storeId: number, filters?: { tag?: string; search?: string }): Promise<Recipe[]> {
+    const query: Record<string, unknown> = {
+      storeId: this.storeFilter(storeId),
+      isPublished: true,
+      sellingPrice: { $gt: 0 },
+    };
+    if (filters?.tag) {
+      if (typeof filters.tag !== 'string') throw new Error('Invalid tag filter');
+      query['tags'] = { $in: [filters.tag] };
+    }
+    if (filters?.search) {
+      if (typeof filters.search !== 'string') throw new Error('Invalid search filter');
+      const escapedSearch = filters.search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      query['name'] = { $regex: escapedSearch, $options: 'i' };
+    }
+    const docs = await this.collection.find(query).sort({ name: 1 }).limit(100).toArray();
+    return docs.map((d) => this.mapDoc(d));
+  }
+
   private static mapDoc(doc: Record<string, unknown>): Recipe {
     const id = doc['_id'];
     return {
       id: id instanceof ObjectId ? id.toHexString() : String(id),
       name: doc['name'] as string,
+      nameEn: doc['nameEn'] as string | undefined,
       description: doc['description'] as string | undefined,
+      descriptionEn: doc['descriptionEn'] as string | undefined,
+      categoryId: doc['categoryId'] as number | undefined,
       tags: doc['tags'] as string[] | undefined,
       ingredients: (doc['ingredients'] as Recipe['ingredients']) ?? [],
       steps: (doc['steps'] as Recipe['steps']) ?? [],
@@ -95,6 +133,7 @@ export class MongoRecipeRepository {
       photos: doc['photos'] as string[] | undefined,
       notes: doc['notes'] as string | undefined,
       variations: doc['variations'] as string[] | undefined,
+      isPublished: doc['isPublished'] as boolean | undefined,
       createdAt: new Date(doc['createdAt'] as string | Date),
       updatedAt: new Date(doc['updatedAt'] as string | Date),
     };

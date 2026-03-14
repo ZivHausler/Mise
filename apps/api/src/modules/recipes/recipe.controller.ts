@@ -1,6 +1,6 @@
 import type { FastifyRequest, FastifyReply } from 'fastify';
 import type { RecipeService } from './recipe.service.js';
-import { createRecipeSchema, updateRecipeSchema, uploadUrlsSchema, deleteImageSchema } from './recipe.schema.js';
+import { createRecipeSchema, updateRecipeSchema, uploadUrlsSchema, deleteImageSchema, togglePublishSchema } from './recipe.schema.js';
 import {
   generateSignedUploadUrl,
   deleteImage,
@@ -47,6 +47,13 @@ export class RecipeController {
     const storeId = request.currentUser!.storeId!;
     await this.recipeService.delete(storeId, request.params.id);
     return reply.status(204).send();
+  }
+
+  async togglePublish(request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) {
+    const storeId = request.currentUser!.storeId!;
+    const { isPublished } = togglePublishSchema.parse(request.body);
+    const recipe = await this.recipeService.update(storeId, request.params.id, { isPublished });
+    return reply.send({ success: true, data: recipe });
   }
 
   async generateUploadUrls(request: FastifyRequest, reply: FastifyReply) {

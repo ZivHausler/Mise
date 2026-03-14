@@ -2,8 +2,8 @@ import type { FastifyRequest, FastifyReply } from 'fastify';
 import { ForbiddenError, ValidationError } from '../../core/errors/app-error.js';
 import { getPool } from '../../core/database/postgres.js';
 import { StoreRole } from '../stores/store.types.js';
-import { chatRequestSchema } from './ai-chat.schema.js';
-import { streamChat, chat } from './ai-chat.service.js';
+import { chatRequestSchema, translateRequestSchema } from './ai-chat.schema.js';
+import { streamChat, chat, translateHebrewToEnglish } from './ai-chat.service.js';
 import { env } from '../../config/env.js';
 
 function assertOwnerOrAdmin(request: FastifyRequest): void {
@@ -75,5 +75,20 @@ export class AiChatController {
     const result = await chat(storeId, storeName, parsed.data);
 
     return reply.send({ success: true, data: result });
+  }
+
+  async translate(request: FastifyRequest, reply: FastifyReply) {
+    if (!env.GEMINI_API_KEY) {
+      throw new ValidationError('AI Chat is not configured');
+    }
+
+    const parsed = translateRequestSchema.safeParse(request.body);
+    if (!parsed.success) {
+      throw new ValidationError(parsed.error.issues.map((i) => i.message).join(', '));
+    }
+
+    const translation = await translateHebrewToEnglish(parsed.data.text, parsed.data.fieldType);
+
+    return reply.send({ success: true, data: { translation } });
   }
 }
