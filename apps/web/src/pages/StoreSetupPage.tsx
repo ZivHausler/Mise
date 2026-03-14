@@ -15,6 +15,7 @@ export default function StoreSetupPage() {
   const setAuth = useAuthStore((s) => s.setAuth);
   const setHasStore = useAuthStore((s) => s.setHasStore);
   const setStores = useAuthStore((s) => s.setStores);
+  const setActiveStore = useAuthStore((s) => s.setActiveStore);
   const user = useAuthStore((s) => s.user);
   const pendingCreateStoreToken = useAuthStore((s) => s.pendingCreateStoreToken);
   const setPendingCreateStoreToken = useAuthStore((s) => s.setPendingCreateStoreToken);
@@ -22,21 +23,29 @@ export default function StoreSetupPage() {
   const createStore = useCreateStore();
 
   const [name, setName] = useState('');
+  const [nameEn, setNameEn] = useState('');
   const [code, setCode] = useState('');
   const [address, setAddress] = useState('');
+  const [addressEn, setAddressEn] = useState('');
 
   const handleSubmit = useCallback(
     (e: React.FormEvent) => {
       e.preventDefault();
       createStore.mutate(
-        { name, code: code || undefined, address: address || undefined, inviteToken: pendingCreateStoreToken || undefined },
+        { name, nameEn: nameEn || undefined, code: code || undefined, address: address || undefined, addressEn: addressEn || undefined, inviteToken: pendingCreateStoreToken || undefined },
         {
           onSuccess: (data: any) => {
             if (user && data.token) {
               setAuth(user, data.token, true);
               setHasStore(true);
-              if (data.stores) setStores(data.stores);
-              else if (data.store) setStores([{ storeId: data.store.id, store: { id: data.store.id, name: data.store.name, code: null, theme: 'cream' }, role: 1 }]);
+              if (data.stores) {
+                setStores(data.stores);
+                if (data.stores[0]?.storeId) setActiveStore(String(data.stores[0].storeId));
+              } else if (data.store) {
+                const storeId = String(data.store.id);
+                setStores([{ storeId, store: { id: data.store.id, name: data.store.name, code: null, theme: 'cream' }, role: 1 }]);
+                setActiveStore(storeId);
+              }
             }
             setPendingCreateStoreToken(null);
             navigate('/');
@@ -47,7 +56,7 @@ export default function StoreSetupPage() {
         },
       );
     },
-    [name, code, address, pendingCreateStoreToken, createStore, user, setAuth, setHasStore, setStores, setPendingCreateStoreToken, navigate, addToast, t],
+    [name, nameEn, code, address, addressEn, pendingCreateStoreToken, createStore, user, setAuth, setHasStore, setStores, setActiveStore, setPendingCreateStoreToken, navigate, addToast, t],
   );
 
   return (
@@ -71,6 +80,13 @@ export default function StoreSetupPage() {
               dir="auto"
             />
             <TextInput
+              label={`${t('store.nameEn', 'Store Name (English)')} (${t('common.optional')})`}
+              value={nameEn}
+              onChange={(e) => setNameEn(e.target.value)}
+              placeholder={t('store.nameEnPlaceholder', "e.g. Sarah's Bakery")}
+              dir="ltr"
+            />
+            <TextInput
               label={t('store.code', 'Store Code')}
               value={code}
               onChange={(e) => setCode(e.target.value)}
@@ -81,7 +97,15 @@ export default function StoreSetupPage() {
               label={t('store.address', 'Address')}
               value={address}
               onChange={(e) => setAddress(e.target.value)}
+              placeholder={t('store.addressPlaceholder', 'e.g. בן גוריון 102, חיפה')}
               dir="auto"
+            />
+            <TextInput
+              label={`${t('store.addressEn', 'Address (English)')} (${t('common.optional')})`}
+              value={addressEn}
+              onChange={(e) => setAddressEn(e.target.value)}
+              placeholder={t('store.addressEnPlaceholder', 'e.g. 102 Ben Gurion St, Haifa')}
+              dir="ltr"
             />
             <Button type="submit" variant="primary" fullWidth loading={createStore.isPending}>
               {t('store.create', 'Create Store')}

@@ -1,7 +1,16 @@
-export const ORDER_STATUS = { RECEIVED: 0, IN_PROGRESS: 1, READY: 2, DELIVERED: 3 } as const;
-export const STATUS_LABELS = ['received', 'in_progress', 'ready', 'delivered'] as const;
+export { ORDER_STATUS } from '@mise/shared';
 
-/** Maps numeric status (0-3) to its string label for display/translation */
+export const STATUS_LABELS: Record<number, string> = {
+  0: 'pending_approval',
+  1: 'received',
+  2: 'in_progress',
+  3: 'ready',
+  4: 'delivered',
+  5: 'cancelled',
+  6: 'cancellation_requested',
+};
+
+/** Maps numeric status to its string label for display/translation */
 export function getStatusLabel(status: number): string {
   return STATUS_LABELS[status] ?? 'received';
 }

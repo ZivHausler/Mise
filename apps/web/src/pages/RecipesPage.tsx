@@ -1,13 +1,13 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Plus, LayoutGrid, List, BookOpen, ChevronDown, Filter } from 'lucide-react';
+import { Plus, LayoutGrid, List, BookOpen, ChevronDown, Filter, Eye, EyeOff } from 'lucide-react';
 import { Page, PageHeader, Card } from '@/components/Layout';
 import { Button } from '@/components/Button';
 import { DataTable, EmptyState, type Column } from '@/components/DataDisplay';
 import { RotatingImage } from '@/components/RotatingImage';
 import { PageSkeleton } from '@/components/Feedback';
-import { useRecipes } from '@/api/hooks';
+import { useRecipes, useToggleRecipePublish, useCategories } from '@/api/hooks';
 import { AllergenIcon, useAllergenName } from '@/components/settings/AllergensTab';
 import { TagBubbles } from '@/components/TagBubbles';
 import { useAppStore } from '@/store/app';
@@ -54,12 +54,19 @@ export default function RecipesPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { data: recipes, isLoading } = useRecipes();
+  const { mutate: togglePublishMutate } = useToggleRecipePublish();
   const viewMode = useAppStore((s) => s.recipesViewMode);
   const setViewMode = useAppStore((s) => s.setRecipesViewMode);
   const [tagFilters, setTagFilters] = useState<string[]>([]);
   const [allergenFilters, setAllergenFilters] = useState<string[]>([]);
 
   const getAllergenName = useAllergenName();
+  const { data: categories } = useCategories();
+  const categoryMap = useMemo(() => {
+    const map = new Map<number, string>();
+    ((categories as any[]) ?? []).forEach((cat: any) => map.set(cat.id, cat.name));
+    return map;
+  }, [categories]);
   const recipeList = (recipes as any[]) ?? [];
 
   const uniqueTags = useMemo(() => {
@@ -99,6 +106,16 @@ export default function RecipesPage() {
       },
       { key: 'name', header: t('recipes.name', 'Name'), sortable: true },
       {
+        key: 'category',
+        header: t('recipes.category', 'Category'),
+        render: (row: any) =>
+          row.categoryId ? (
+            <span className="inline-flex items-center rounded-full bg-primary-50 px-2 py-0.5 text-[11px] font-medium text-primary-700">
+              {categoryMap.get(row.categoryId) ?? ''}
+            </span>
+          ) : null,
+      },
+      {
         key: 'tags',
         header: t('recipes.tags', 'Tags'),
         render: (row: any) =>
@@ -118,8 +135,23 @@ export default function RecipesPage() {
         align: 'end' as const,
         render: (row: any) => <span className="font-mono">{row.sellingPrice ?? 0} {t('common.currency')}</span>,
       },
+      {
+        key: 'published',
+        header: t('recipes.published', 'Published'),
+        align: 'center' as const,
+        render: (row: any) => (
+          <button
+            onClick={(e) => { e.stopPropagation(); togglePublishMutate({ id: row.id, isPublished: !row.isPublished }); }}
+            className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium transition-colors ${row.isPublished ? 'bg-green-100 text-green-700 hover:bg-green-200' : 'bg-neutral-100 text-neutral-500 hover:bg-neutral-200'}`}
+            title={row.isPublished ? t('recipes.unpublish', 'Unpublish') : t('recipes.publish', 'Publish')}
+          >
+            {row.isPublished ? <Eye className="h-3 w-3" /> : <EyeOff className="h-3 w-3" />}
+            {row.isPublished ? t('recipes.published', 'Published') : t('recipes.draft', 'Draft')}
+          </button>
+        ),
+      },
     ],
-    [t]
+    [t, togglePublishMutate, categoryMap]
   );
 
   if (isLoading) return <PageSkeleton />;
@@ -238,6 +270,11 @@ export default function RecipesPage() {
                   </div>
                 )}
                 <h3 className="font-heading text-h4 text-neutral-800">{recipe.name}</h3>
+                {recipe.categoryId && categoryMap.get(recipe.categoryId) && (
+                  <span className="mt-1 inline-flex items-center rounded-full bg-primary-50 px-2 py-0.5 text-[11px] font-medium text-primary-700">
+                    {categoryMap.get(recipe.categoryId)}
+                  </span>
+                )}
                 {recipe.tags?.length > 0 && (
                   <TagBubbles tags={recipe.tags} maxVisible={2} size="sm" className="mt-1" />
                 )}
@@ -251,6 +288,16 @@ export default function RecipesPage() {
                   ))}
                 </div>
               )}
+              <div className="mt-2 flex items-center justify-between">
+                <button
+                  onClick={(e) => { e.stopPropagation(); togglePublishMutate({ id: recipe.id, isPublished: !recipe.isPublished }); }}
+                  className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium transition-colors ${recipe.isPublished ? 'bg-green-100 text-green-700 hover:bg-green-200' : 'bg-neutral-100 text-neutral-500 hover:bg-neutral-200'}`}
+                  title={recipe.isPublished ? t('recipes.unpublish', 'Unpublish') : t('recipes.publish', 'Publish')}
+                >
+                  {recipe.isPublished ? <Eye className="h-3 w-3" /> : <EyeOff className="h-3 w-3" />}
+                  {recipe.isPublished ? t('recipes.published', 'Published') : t('recipes.draft', 'Draft')}
+                </button>
+              </div>
               <div className="mt-auto pt-3 flex items-center justify-between text-body-sm">
                 <span className="text-neutral-500">{t('recipes.cost', 'Cost')}: <span className="font-mono">{recipe.totalCost ?? 0}</span></span>
                 <span className="font-medium text-primary-700">{recipe.sellingPrice ?? 0} {t('common.currency')}</span>

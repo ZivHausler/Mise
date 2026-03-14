@@ -36,7 +36,7 @@ export default function DashboardPage() {
   const ordersList = (orders as any[]) ?? [];
 
   const ordersByStatus = useMemo(() => {
-    const grouped: Record<number, unknown[]> = { 0: [], 1: [], 2: [], 3: [] };
+    const grouped: Record<number, unknown[]> = { 0: [], 1: [], 2: [], 3: [], 4: [], 5: [], 6: [] };
     ordersList.forEach((o) => {
       if (grouped[o.status]) grouped[o.status].push(o);
     });
@@ -45,7 +45,7 @@ export default function DashboardPage() {
 
   const todayStr = new Date().toDateString();
   const todayOrders = useMemo(() => ordersList.filter((o) => new Date(o.createdAt).toDateString() === todayStr).length, [ordersList, todayStr]);
-  const pendingOrders = useMemo(() => ordersList.filter((o) => o.status !== ORDER_STATUS.DELIVERED).length, [ordersList]);
+  const pendingOrders = useMemo(() => ordersList.filter((o) => o.status !== ORDER_STATUS.DELIVERED && o.status !== ORDER_STATUS.CANCELLED && o.status !== ORDER_STATUS.CANCELLATION_REQUESTED).length, [ordersList]);
 
   const [expandedColumns, setExpandedColumns] = useState<Record<number, boolean>>({});
   const INITIAL_VISIBLE = 3;

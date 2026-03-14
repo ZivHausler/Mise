@@ -1,24 +1,18 @@
 import React, { useMemo, useCallback, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Plus, LayoutGrid, List, Calendar, ChevronRight, ChevronLeft, BadgeDollarSign, X } from 'lucide-react';
+import { Plus, LayoutGrid, List, Calendar, ChevronRight, ChevronLeft, BadgeDollarSign, X, Clock, Check } from 'lucide-react';
 import OrderCalendar from '@/components/OrderCalendar';
 import { Page, PageHeader } from '@/components/Layout';
 import { Button } from '@/components/Button';
 import { DataTable, StatusBadge, EmptyState, type Column } from '@/components/DataDisplay';
 import { PageSkeleton } from '@/components/Feedback';
-import { useOrders, useOrdersPaginated, useUpdateOrderStatus, usePaymentStatuses } from '@/api/hooks';
+import { ActionRequiredSection } from '@/components/orders/ActionRequiredSection';
+import { useOrders, useOrdersPaginated, useUpdateOrderStatus, usePaymentStatuses, usePendingOrdersCount, useApproveOrder, useCancelOrder, useApproveCancellation, useDeclineCancellation } from '@/api/hooks';
 import { ORDER_STATUS, STATUS_LABELS, getStatusLabel } from '@/utils/orderStatus';
 import { useFormatDate } from '@/utils/dateFormat';
 import { useAppStore } from '@/store/app';
 import { DateFilterDropdown } from '@/components/DateFilterDropdown';
-
-const STATUS_DISPLAY: Record<string, string> = {
-  received: 'Received',
-  in_progress: 'In Progress',
-  ready: 'Ready',
-  delivered: 'Delivered',
-};
 
 export default function OrdersPage() {
   const { t } = useTranslation();
@@ -26,8 +20,14 @@ export default function OrdersPage() {
   const updateOrderStatus = useUpdateOrderStatus();
   const { data: paymentStatuses } = usePaymentStatuses();
   const formatDate = useFormatDate();
+  const { data: pendingCount } = usePendingOrdersCount();
+  const approveOrder = useApproveOrder();
+  const cancelOrder = useCancelOrder();
+  const approveCancellation = useApproveCancellation();
+  const declineCancellation = useDeclineCancellation();
   const viewMode = useAppStore((s) => s.ordersViewMode);
   const setViewMode = useAppStore((s) => s.setOrdersViewMode);
+  const totalPending = (pendingCount?.pendingApproval ?? 0) + (pendingCount?.cancellationRequested ?? 0);
 
   // List view state (paginated, backend)
   const [page, setPage] = useState(1);
@@ -63,14 +63,77 @@ export default function OrdersPage() {
     [updateOrderStatus]
   );
 
-  const ordersByStatus = useMemo(() => {
-    if (!orders) return {} as Record<number, any[]>;
-    const grouped: Record<number, any[]> = { 0: [], 1: [], 2: [], 3: [] };
+  const handleApprove = useCallback(
+    (order: any) => {
+      approveOrder.mutate(order.id);
+    },
+    [approveOrder]
+  );
+
+  const handleCancelOrder = useCallback(
+    (order: any) => {
+      cancelOrder.mutate({ id: order.id });
+    },
+    [cancelOrder]
+  );
+
+  const handleApproveCancellation = useCallback(
+    (order: any) => {
+      approveCancellation.mutate(order.id);
+    },
+    [approveCancellation]
+  );
+
+  const handleDeclineCancellation = useCallback(
+    (order: any) => {
+      declineCancellation.mutate(order.id);
+    },
+    [declineCancellation]
+  );
+
+  const handleCardClick = useCallback(
+    (order: any) => navigate(`/orders/${order.id}`),
+    [navigate]
+  );
+
+  const { actionItems, pipelineOrders, ordersByStatus } = useMemo(() => {
+    if (!orders) return {
+      actionItems: { approvals: [] as any[], cancellations: [] as any[] },
+      pipelineOrders: { 1: [], 2: [], 3: [], 4: [] } as Record<number, any[]>,
+      ordersByStatus: {} as Record<number, any[]>,
+    };
+
+    const approvals: any[] = [];
+    const cancellations: any[] = [];
+    const pipeline: Record<number, any[]> = { 1: [], 2: [], 3: [], 4: [] };
+    // Keep full grouping for list view column rendering
+    const grouped: Record<number, any[]> = { 0: [], 1: [], 2: [], 3: [], 4: [], 5: [], 6: [] };
+
     (orders as any[]).forEach((o) => {
       const num = o.status;
-      if (grouped[num]) grouped[num].push(o);
+      // Populate grouped for list view
+      if (num === ORDER_STATUS.CANCELLATION_REQUESTED && o.previousStatus != null && grouped[o.previousStatus]) {
+        grouped[o.previousStatus].push(o);
+      } else if (grouped[num]) {
+        grouped[num].push(o);
+      }
+
+      // Populate action items
+      if (num === ORDER_STATUS.PENDING_APPROVAL) {
+        approvals.push(o);
+      } else if (num === ORDER_STATUS.CANCELLATION_REQUESTED) {
+        cancellations.push(o);
+      } else if (num >= ORDER_STATUS.RECEIVED && num <= ORDER_STATUS.DELIVERED && pipeline[num]) {
+        pipeline[num].push(o);
+      }
+      // CANCELLED (5) excluded from pipeline
     });
-    return grouped;
+
+    return {
+      actionItems: { approvals, cancellations },
+      pipelineOrders: pipeline,
+      ordersByStatus: grouped,
+    };
   }, [orders]);
 
   const columns: Column<any>[] = useMemo(
@@ -103,14 +166,18 @@ export default function OrdersPage() {
         header: '',
         align: 'end',
         render: (row: any) =>
-          row.status < ORDER_STATUS.DELIVERED ? (
+          row.status >= ORDER_STATUS.RECEIVED && row.status < ORDER_STATUS.DELIVERED ? (
             <Button size="sm" variant="ghost" onClick={(e: React.MouseEvent) => { e.stopPropagation(); handleAdvance(row); }}>
               <ChevronRight className="h-4 w-4 rtl:scale-x-[-1]" />
+            </Button>
+          ) : row.status === ORDER_STATUS.PENDING_APPROVAL ? (
+            <Button size="sm" variant="ghost" onClick={(e: React.MouseEvent) => { e.stopPropagation(); handleApprove(row); }}>
+              <Check className="h-4 w-4 text-green-600" />
             </Button>
           ) : null,
       },
     ],
-    [t, handleAdvance, formatDate, paymentStatuses]
+    [t, handleAdvance, handleApprove, formatDate, paymentStatuses]
   );
 
   if (isLoading) return <PageSkeleton />;
@@ -168,52 +235,82 @@ export default function OrdersPage() {
         }
       />
 
+      {/* Pending orders banner (hidden in pipeline view — replaced by ActionRequiredSection) */}
+      {totalPending > 0 && viewMode !== 'pipeline' && (
+        <div className="mb-4 flex items-center gap-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3">
+          <Clock className="h-5 w-5 shrink-0 text-amber-600" />
+          <p className="flex-1 text-body-sm font-medium text-amber-800">
+            {t('orders.pendingBanner', { count: totalPending })}
+          </p>
+          <Button size="sm" variant="primary" onClick={() => setViewMode('pipeline')}>
+            {t('orders.reviewPending')}
+          </Button>
+        </div>
+      )}
+
       {viewMode === 'calendar' ? (
         <OrderCalendar />
       ) : viewMode === 'pipeline' ? (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {([ORDER_STATUS.RECEIVED, ORDER_STATUS.IN_PROGRESS, ORDER_STATUS.READY, ORDER_STATUS.DELIVERED] as const).map((status) => {
-            const label = STATUS_LABELS[status];
-            return (
-              <div key={status} className="rounded-lg border border-neutral-200 bg-white">
-                <div className="flex items-center justify-between border-b border-neutral-100 p-3">
-                  <StatusBadge variant={label} label={t(`orders.status.${label}`, STATUS_DISPLAY[label])} />
-                  <span className="text-caption font-medium text-neutral-500">{ordersByStatus[status]?.length ?? 0}</span>
-                </div>
-                <div className="flex flex-col gap-2 p-3">
-                  {(ordersByStatus[status] ?? []).length === 0 ? (
-                    <p className="py-4 text-center text-caption text-neutral-400">{t('common.noResults')}</p>
-                  ) : (
-                    (ordersByStatus[status] ?? []).map((order: any) => (
-                      <div
-                        key={String(order.id)}
-                        onClick={() => navigate(`/orders/${order.id}`)}
-                        className="cursor-pointer rounded-md border border-neutral-100 p-3 transition-shadow hover:shadow-sm"
-                      >
-                        <div className="flex items-center justify-between">
-                          <span className="inline-flex items-center gap-1 text-body-sm font-medium text-neutral-800">
-                            #{order.orderNumber}
-                            {paymentStatuses?.[order.id] === 'paid' && <BadgeDollarSign className="h-4 w-4 text-green-600" />}
-                          </span>
-                          {status < ORDER_STATUS.DELIVERED && (
-                            <button
-                              onClick={(e) => { e.stopPropagation(); handleAdvance(order); }}
-                              className="rounded p-1 text-neutral-400 hover:bg-primary-50 hover:text-primary-500"
-                            >
-                              <ChevronRight className="h-4 w-4 rtl:scale-x-[-1]" />
-                            </button>
-                          )}
+        <>
+          <ActionRequiredSection
+            pendingApprovals={actionItems.approvals}
+            cancellationRequests={actionItems.cancellations}
+            onApprove={handleApprove}
+            onDecline={handleCancelOrder} /* Declining a pending approval cancels the order */
+            onApproveCancellation={handleApproveCancellation}
+            onDeclineCancellation={handleDeclineCancellation}
+            onCardClick={handleCardClick}
+            approvingId={approveOrder.isPending ? (approveOrder.variables as number) : null}
+            decliningId={cancelOrder.isPending ? ((cancelOrder.variables as any)?.id ?? null) : null}
+            approvingCancelId={approveCancellation.isPending ? (approveCancellation.variables as number) : null}
+            decliningCancelId={declineCancellation.isPending ? (declineCancellation.variables as number) : null}
+            paymentStatuses={paymentStatuses}
+            formatDate={formatDate}
+          />
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {([ORDER_STATUS.RECEIVED, ORDER_STATUS.IN_PROGRESS, ORDER_STATUS.READY, ORDER_STATUS.DELIVERED] as const).map((status) => {
+              const label = STATUS_LABELS[status];
+              return (
+                <div key={status} className="rounded-lg border border-neutral-200 bg-white">
+                  <div className="flex items-center justify-between border-b border-neutral-100 p-3">
+                    <StatusBadge variant={label} label={t(`orders.status.${label}`, label)} />
+                    <span className="text-caption font-medium text-neutral-500">{pipelineOrders[status]?.length ?? 0}</span>
+                  </div>
+                  <div className="flex flex-col gap-2 p-3">
+                    {(pipelineOrders[status] ?? []).length === 0 ? (
+                      <p className="py-4 text-center text-caption text-neutral-400">{t('common.noResults')}</p>
+                    ) : (
+                      (pipelineOrders[status] ?? []).map((order: any) => (
+                        <div
+                          key={String(order.id)}
+                          onClick={() => navigate(`/orders/${order.id}`)}
+                          className="cursor-pointer rounded-md border border-neutral-100 p-3 transition-shadow hover:shadow-sm"
+                        >
+                          <div className="flex items-center justify-between">
+                            <span className="inline-flex items-center gap-1 text-body-sm font-medium text-neutral-800">
+                              #{order.orderNumber}
+                              {paymentStatuses?.[order.id] === 'paid' && <BadgeDollarSign className="h-4 w-4 text-green-600" />}
+                            </span>
+                            {status >= ORDER_STATUS.RECEIVED && status < ORDER_STATUS.DELIVERED && (
+                              <button
+                                onClick={(e) => { e.stopPropagation(); handleAdvance(order); }}
+                                className="rounded p-1 text-neutral-400 hover:bg-primary-50 hover:text-primary-500"
+                              >
+                                <ChevronRight className="h-4 w-4 rtl:scale-x-[-1]" />
+                              </button>
+                            )}
+                          </div>
+                          <p className="text-caption text-neutral-500">{order.customer?.name ?? '-'}</p>
+                          {order.dueDate && <p className="mt-1 text-caption text-neutral-400">{formatDate(order.dueDate)}</p>}
                         </div>
-                        <p className="text-caption text-neutral-500">{order.customer?.name ?? 'Customer'}</p>
-                        {order.dueDate && <p className="mt-1 text-caption text-neutral-400">{formatDate(order.dueDate)}</p>}
-                      </div>
-                    ))
-                  )}
+                      ))
+                    )}
+                  </div>
                 </div>
-              </div>
-            );
-          })}
-        </div>
+              );
+            })}
+          </div>
+        </>
       ) : (
         <div className="rounded-lg border border-neutral-200 bg-white">
           <DataTable
