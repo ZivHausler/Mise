@@ -1,28 +1,31 @@
 import { z } from 'zod';
 
+/** Reusable date string schema: validates YYYY-MM-DD format */
+export const dateStringSchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'DATE_MUST_BE_YYYY_MM_DD');
+
 export const loginSchema = z.object({
-  email: z.string().email('Invalid email address').max(255),
-  password: z.string().min(8, 'Password must be at least 8 characters').max(128),
+  email: z.string().email('INVALID_EMAIL_ADDRESS').max(255),
+  password: z.string().min(8, 'PASSWORD_MIN_8_CHARACTERS').max(128),
 });
 
 export const registerSchema = loginSchema.extend({
-  name: z.string().min(2, 'Name must be at least 2 characters').max(100),
+  name: z.string().min(2, 'NAME_MIN_2_CHARACTERS').max(100),
 });
 
 export const createCustomerSchema = z.object({
-  name: z.string().min(1, 'Name is required').max(200),
+  name: z.string().min(1, 'NAME_REQUIRED').max(200),
   phone: z.string().max(50).optional(),
-  email: z.string().email().max(255).optional(),
+  email: z.string().email('INVALID_EMAIL_ADDRESS').max(255).optional(),
   address: z.string().max(500).optional(),
   notes: z.string().max(2000).optional(),
 });
 
 export const createIngredientSchema = z.object({
-  name: z.string().min(1, 'Name is required').max(200),
-  unit: z.string().min(1, 'Unit is required').max(50),
-  quantity: z.number().min(0, 'Quantity must be non-negative'),
-  costPerUnit: z.number().min(0, 'Cost must be non-negative'),
-  lowStockThreshold: z.number().min(0, 'Threshold must be non-negative'),
+  name: z.string().min(1, 'NAME_REQUIRED').max(200),
+  unit: z.string().min(1, 'UNIT_REQUIRED').max(50),
+  quantity: z.number().min(0, 'QUANTITY_MUST_BE_NON_NEGATIVE'),
+  costPerUnit: z.number().min(0, 'COST_MUST_BE_NON_NEGATIVE'),
+  lowStockThreshold: z.number().min(0, 'THRESHOLD_MUST_BE_NON_NEGATIVE'),
   supplier: z.string().max(200).optional(),
   notes: z.string().max(2000).optional(),
 });
