@@ -7,3 +7,7 @@ export const initiateCheckoutSchema = z.object({
 export const checkoutStatusParamsSchema = z.object({
   id: z.string().uuid(),
 });
+
+export const trialDowngradeSchema = z.object({
+  planSlug: z.enum(['free', 'basic', 'pro']),
+});

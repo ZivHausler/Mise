@@ -71,6 +71,7 @@ export default async function subscriptionRoutes(app: FastifyInstance) {
   app.post('/checkout', { preHandler: [requireOwner], config: { rateLimit: { max: 5, timeWindow: '1 minute' } } }, (req, reply) => checkoutController.initiateCheckout(req, reply));
   app.get('/checkout/:id', { preHandler: [requireOwner] }, (req, reply) => checkoutController.getCheckoutStatus(req as import('fastify').FastifyRequest<{ Params: { id: string } }>, reply));
   app.post('/recovery-checkout', { preHandler: [requireOwner], config: { rateLimit: { max: 5, timeWindow: '1 minute' } } }, (req, reply) => checkoutController.initiateRenewalRecovery(req, reply));
+  app.post('/trial-downgrade', { preHandler: [requireOwner], config: { rateLimit: { max: 5, timeWindow: '1 minute' } } }, (req, reply) => checkoutController.handleTrialDowngrade(req, reply));
 }
 
 // Exported for use in admin routes

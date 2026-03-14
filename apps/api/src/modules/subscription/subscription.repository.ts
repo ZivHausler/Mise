@@ -15,7 +15,7 @@ export class SubscriptionRepository {
     const result = await pool.query(
       `SELECT id, slug, name, price_nis, features, sort_order, is_active
        FROM plans
-       WHERE is_active = true
+       WHERE is_active = true AND slug != 'trial'
        ORDER BY sort_order ASC`,
     );
     return result.rows.map(mapPlanRow);
@@ -370,6 +370,67 @@ export class SubscriptionRepository {
       [subscriptionId],
     );
     return result.rows[0]?.downgrade_to_plan_id ?? null;
+  }
+
+  /**
+   * Find the most recent successful payment of a given type for a subscription.
+   * Used to retrieve the upgrade-difference payment for trial plan switching.
+   */
+  async getMostRecentPayment(
+    subscriptionId: number,
+    type: PaymentType,
+    client?: pg.PoolClient,
+  ): Promise<{ id: number; amountAgorot: number; providerTransactionId: string | null; toPlanId: number | null } | null> {
+    const q = this.getQueryable(client);
+    const result = await q.query(
+      `SELECT id, amount_agorot, provider_transaction_id, to_plan_id
+       FROM subscription_payments
+       WHERE subscription_id = $1 AND type = $2 AND status = $3
+       ORDER BY created_at DESC
+       LIMIT 1`,
+      [subscriptionId, type, PaymentStatus.SUCCEEDED],
+    );
+    if (!result.rows[0]) return null;
+    return {
+      id: result.rows[0].id as number,
+      amountAgorot: result.rows[0].amount_agorot as number,
+      providerTransactionId: result.rows[0].provider_transaction_id as string | null,
+      toPlanId: result.rows[0].to_plan_id as number | null,
+    };
+  }
+
+  /**
+   * Calculate net amount paid for a trial subscription (total paid - total refunded)
+   * and collect all PayPal subscription IDs from payment records.
+   */
+  async getTrialPaymentSummary(subscriptionId: number, client?: pg.PoolClient): Promise<{ netPaidAgorot: number; paypalSubscriptionIds: string[] }> {
+    const q = this.getQueryable(client);
+    const result = await q.query(
+      `SELECT amount_agorot, type, provider_transaction_id
+       FROM subscription_payments
+       WHERE subscription_id = $1 AND status = $2`,
+      [subscriptionId, PaymentStatus.SUCCEEDED],
+    );
+
+    let totalPaid = 0;
+    let totalRefunded = 0;
+    const paypalSubIds: string[] = [];
+
+    for (const row of result.rows) {
+      const amount = Number(row.amount_agorot);
+      const type = Number(row.type);
+      if (type === PaymentType.REFUND) {
+        totalRefunded += amount;
+      } else {
+        totalPaid += amount;
+      }
+      const txId = row.provider_transaction_id as string | null;
+      if (txId && !paypalSubIds.includes(txId)) {
+        paypalSubIds.push(txId);
+      }
+    }
+
+    return { netPaidAgorot: totalPaid - totalRefunded, paypalSubscriptionIds: paypalSubIds };
   }
 
   async getEvents(storeId: number, limit = 50, offset = 0): Promise<SubscriptionEvent[]> {

@@ -592,9 +592,9 @@ export class SubscriptionService {
   // ─── Trial subscription creation ─────────────────────────────────
 
   async createTrialSubscription(storeId: number): Promise<void> {
-    const proPlan = await this.repository.getPlanBySlug('pro');
-    if (!proPlan) {
-      // Fallback: if no pro plan, just create a free subscription
+    const trialPlan = await this.repository.getPlanBySlug('trial');
+    if (!trialPlan) {
+      // Fallback: if no trial plan, just create a free subscription
       const freePlan = await this.repository.getPlanBySlug('free');
       if (freePlan) {
         await this.repository.createSubscription(storeId, freePlan.id, 'active');
@@ -605,9 +605,9 @@ export class SubscriptionService {
     const trialEndsAt = new Date();
     trialEndsAt.setDate(trialEndsAt.getDate() + 14);
 
-    const { id: subId } = await this.repository.createSubscription(storeId, proPlan.id, 'trialing', trialEndsAt);
+    const { id: subId } = await this.repository.createSubscription(storeId, trialPlan.id, 'trialing', trialEndsAt);
 
-    await this.repository.logEvent(storeId, subId, 'trial_started', null, proPlan.id, {
+    await this.repository.logEvent(storeId, subId, 'trial_started', null, trialPlan.id, {
       trialDays: 14,
     });
   }

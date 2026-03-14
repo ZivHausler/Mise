@@ -1,4 +1,4 @@
-export type PlanSlug = 'free' | 'basic' | 'pro';
+export type PlanSlug = 'free' | 'trial' | 'basic' | 'pro';
 export type SubscriptionStatus = 'active' | 'trialing' | 'canceled' | 'past_due' | 'expired';
 export type SubscriptionEventType =
   | 'created'
@@ -8,6 +8,8 @@ export type SubscriptionEventType =
   | 'renewed'
   | 'trial_started'
   | 'trial_expired'
+  | 'trial_plan_selected'
+  | 'trial_plan_switched'
   | 'payment_succeeded'
   | 'payment_failed'
   | 'downgrade_scheduled'
