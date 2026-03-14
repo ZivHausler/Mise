@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { ChevronLeft, ChevronRight, Plus, BadgeDollarSign } from 'lucide-react';
 import { cn } from '@/utils/cn';
 import { useCalendarAggregates, useCalendarRange, usePaymentStatuses } from '@/api/hooks';
-import { getStatusLabel } from '@/utils/orderStatus';
+import { ORDER_STATUS, getStatusLabel } from '@/utils/orderStatus';
 import { useFormatDate } from '@/utils/dateFormat';
 import { StatusBadge } from '@/components/DataDisplay';
 import { Spinner } from '@/components/Feedback';
@@ -113,7 +113,7 @@ interface DayCellProps {
 const MAX_VISIBLE_ORDERS = 2;
 
 const DayCell = React.memo(function DayCell({ date, isCurrentMonth, isToday, orders, paymentStatuses, onOrderClick, onDayClick, t }: DayCellProps) {
-  const overdue = orders.filter((o) => o.status < 2 && new Date(o.dueDate) < new Date() && !isSameDay(new Date(o.dueDate), new Date()));
+  const overdue = orders.filter((o) => o.status <= ORDER_STATUS.IN_PROGRESS && new Date(o.dueDate) < new Date() && !isSameDay(new Date(o.dueDate), new Date()));
   const hasOverdue = overdue.length > 0;
   const extraCount = orders.length - MAX_VISIBLE_ORDERS;
 

@@ -1,7 +1,6 @@
 import React, { useState, useCallback, useRef, useEffect, Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Outlet } from 'react-router-dom';
-import { useQueryClient } from '@tanstack/react-query';
 import { ChevronDown, Shield, LayoutDashboard, ClipboardList, Factory, BookOpen, Package, Users, CreditCard, FileText, Settings } from 'lucide-react';
 import { useOrderSSE } from '@/api/useOrderSSE';
 import { Logo } from './Logo';
@@ -12,7 +11,8 @@ import { NavigationProgress, PageSkeleton } from './Feedback';
 import { TourProvider } from './tour/TourProvider';
 import { useAuthStore } from '@/store/auth';
 import { useAppStore } from '@/store/app';
-import { useSelectStore, useAllStores, useProfile, useFeatureFlags } from '@/api/hooks';
+import { useProfile, useFeatureFlags, useCurrentStore } from '@/api/hooks';
+import { useStoreSwitch } from '@/hooks/useStoreSwitch';
 import { ENUM_TO_LANGUAGE, DEFAULT_THEME, applyThemePalette } from '@/constants/defaults';
 import type { AppTheme } from '@/constants/defaults';
 import { languageDir } from '@/utils/language';
@@ -49,12 +49,12 @@ export const AppShell = React.memo(function AppShell() {
     }
   }, [profile, i18n, initLanguageFromProfile]);
 
-  // Apply store theme palette
+  // Apply store theme palette — use React Query so theme updates propagate to all users
+  const { data: currentStoreData } = useCurrentStore();
   React.useEffect(() => {
-    const activeStore = stores.find((s) => String(s.storeId) === String(activeStoreId));
-    const theme = (activeStore?.store?.theme as AppTheme) || DEFAULT_THEME;
+    const theme = (currentStoreData?.theme as AppTheme) || (stores.find((s) => String(s.storeId) === String(activeStoreId))?.store?.theme as AppTheme) || DEFAULT_THEME;
     applyThemePalette(theme);
-  }, [stores, activeStoreId]);
+  }, [currentStoreData, stores, activeStoreId]);
 
   const handleMenuClick = useCallback(() => setDrawerOpen(true), []);
   const handleCloseDrawer = useCallback(() => setDrawerOpen(false), []);
@@ -105,34 +105,9 @@ const navItems = [
 
 const MobileNav = React.memo(function MobileNav({ onClose }: { onClose: () => void }) {
   const { t } = useTranslation();
-  const stores = useAuthStore((s) => s.stores);
   const isAdmin = useAuthStore((s) => s.isAdmin);
   const activeStoreId = useAuthStore((s) => s.activeStoreId);
-  const updateToken = useAuthStore((s) => s.updateToken);
-  const setActiveStore = useAuthStore((s) => s.setActiveStore);
-  const selectStore = useSelectStore();
-  const allStoresQuery = useAllStores(isAdmin);
-  const qc = useQueryClient();
-
-  const displayStores = isAdmin && allStoresQuery.data
-    ? allStoresQuery.data.map((s: any) => ({ storeId: String(s.id), store: { id: s.id, name: s.name, code: null, theme: 'cream' }, role: -1 }))
-    : stores;
-
-  const handleStoreSwitch = useCallback(
-    (storeId: string) => {
-      selectStore.mutate(
-        { storeId },
-        {
-          onSuccess: (data: any) => {
-            updateToken(data.token);
-            setActiveStore(storeId);
-            qc.invalidateQueries();
-          },
-        },
-      );
-    },
-    [selectStore, updateToken, setActiveStore, qc],
-  );
+  const { displayStores, switchStore } = useStoreSwitch();
 
   return (
     <div className="flex h-full flex-col p-4">
@@ -148,7 +123,7 @@ const MobileNav = React.memo(function MobileNav({ onClose }: { onClose: () => vo
           stores={displayStores}
           activeStoreId={activeStoreId}
           isAdmin={isAdmin}
-          onSwitch={handleStoreSwitch}
+          onSwitch={switchStore}
         />
       )}
 

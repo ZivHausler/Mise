@@ -3,13 +3,21 @@ import { useTranslation } from 'react-i18next';
 import { cn } from '@/utils/cn';
 
 interface TierBadgeProps {
-  tier: 'basic' | 'pro';
+  tier: 'free' | 'trial' | 'basic' | 'pro';
   size?: 'sm' | 'md';
   variant?: 'light' | 'dark';
   className?: string;
 }
 
 const tierStyles = {
+  free: {
+    light: 'bg-neutral-100 text-neutral-600',
+    dark: 'bg-neutral-800/40 text-neutral-400',
+  },
+  trial: {
+    light: 'bg-purple-100 text-purple-700',
+    dark: 'bg-purple-900/40 text-purple-300',
+  },
   basic: {
     light: 'bg-blue-100 text-blue-700',
     dark: 'bg-blue-900/40 text-blue-300',

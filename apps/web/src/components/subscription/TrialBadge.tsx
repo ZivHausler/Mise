@@ -19,6 +19,7 @@ export const TrialBadge = React.memo(function TrialBadge({
   const { t } = useTranslation();
   const navigate = useNavigate();
   const setSettingsTab = useAppStore((s) => s.setSettingsTab);
+  const setSettingsSection = useAppStore((s) => s.setSettingsSection);
 
   const urgency =
     daysRemaining <= 0 ? 'red' : daysRemaining <= 3 ? 'amber' : 'blue';
@@ -36,6 +37,7 @@ export const TrialBadge = React.memo(function TrialBadge({
   };
 
   const handleClick = () => {
+    setSettingsSection('store');
     setSettingsTab('subscription');
     navigate('/settings');
   };

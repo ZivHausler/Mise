@@ -1,3 +1,4 @@
+import { useCallback } from 'react';
 import { useAppStore, type DateFormat, type TimeFormat } from '@/store/app';
 
 export function formatDate(date: string | Date, format: DateFormat): string {
@@ -10,7 +11,7 @@ export function formatDate(date: string | Date, format: DateFormat): string {
 
 export function useFormatDate() {
   const dateFormat = useAppStore((s) => s.dateFormat);
-  return (date: string | Date) => formatDate(date, dateFormat);
+  return useCallback((date: string | Date) => formatDate(date, dateFormat), [dateFormat]);
 }
 
 export function formatTime(date: string | Date, format: TimeFormat): string {

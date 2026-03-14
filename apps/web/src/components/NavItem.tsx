@@ -34,6 +34,8 @@ interface NavItemProps {
   onClick?: () => void;
   /** data-tour attribute for guided tours */
   tourId?: string;
+  /** Optional badge count to display (e.g. pending orders) */
+  badge?: number;
 }
 
 export const NavItem = React.memo(function NavItem({
@@ -45,6 +47,7 @@ export const NavItem = React.memo(function NavItem({
   collapsed,
   onClick,
   tourId,
+  badge,
 }: NavItemProps) {
   const { t } = useTranslation();
   const { data: featureFlags } = useFeatureFlags();
@@ -154,8 +157,18 @@ export const NavItem = React.memo(function NavItem({
         )
       }
     >
-      <Icon className="h-5 w-5 shrink-0" />
-      {!collapsed && <span>{t(labelKey)}</span>}
+      <span className="relative">
+        <Icon className="h-5 w-5 shrink-0" />
+        {collapsed && badge != null && badge > 0 && (
+          <span className="absolute -top-0.5 -end-0.5 h-2.5 w-2.5 rounded-full bg-amber-500 ring-2 ring-primary-900" />
+        )}
+      </span>
+      {!collapsed && <span className="flex-1">{t(labelKey)}</span>}
+      {!collapsed && badge != null && badge > 0 && (
+        <span className="ms-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-amber-500 px-1.5 text-[11px] font-bold text-white">
+          {badge > 99 ? '99+' : badge}
+        </span>
+      )}
     </NavLink>
   );
 });
@@ -183,20 +196,26 @@ const ComingSoonItem = React.memo(function ComingSoonItem({
   }
 
   // sidebar + mobile
+  if (variant === 'sidebar' && collapsed) {
+    return (
+      <div
+        data-tour={tourId}
+        className="flex w-full flex-col items-center gap-1 rounded-md px-1 py-2 text-primary-600"
+      >
+        <Icon className="h-5 w-5 shrink-0" />
+        <ComingSoonBadge variant="inline" className="flex-col text-center" />
+      </div>
+    );
+  }
+
   return (
     <div
       data-tour={tourId}
       className="flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-body-sm text-primary-600"
     >
       <Icon className="h-5 w-5 shrink-0" />
-      {variant === 'sidebar' && collapsed ? (
-        <ComingSoonBadge variant="inline" />
-      ) : (
-        <>
-          <span className="flex-1 text-start">{t(labelKey)}</span>
-          <ComingSoonBadge variant="inline" />
-        </>
-      )}
+      <span className="flex-1 text-start">{t(labelKey)}</span>
+      <ComingSoonBadge variant="inline" />
     </div>
   );
 });

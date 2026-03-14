@@ -21,10 +21,12 @@ export const UpgradeHint = React.memo(function UpgradeHint({
   const { t } = useTranslation();
   const navigate = useNavigate();
   const setSettingsTab = useAppStore((s) => s.setSettingsTab);
+  const setSettingsSection = useAppStore((s) => s.setSettingsSection);
 
   const planName = t(`subscription.tiers.${targetPlan}`);
 
   const handleClick = () => {
+    setSettingsSection('store');
     setSettingsTab('subscription');
     navigate('/settings');
   };

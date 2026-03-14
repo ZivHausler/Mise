@@ -42,14 +42,18 @@ export const UpgradePromptModal = React.memo(function UpgradePromptModal({
   const price = PLAN_PRICES[requiredTier];
   const tierName = t(`subscription.tiers.${requiredTier}`);
 
+  const setSettingsSection = useAppStore((s) => s.setSettingsSection);
+
   const handleViewPlans = () => {
     onClose();
+    setSettingsSection('store');
     setSettingsTab('subscription');
     navigate('/settings');
   };
 
   const handleUpgrade = () => {
     onClose();
+    setSettingsSection('store');
     setSettingsTab('subscription');
     navigate('/settings');
   };

@@ -18,9 +18,12 @@ const FEATURE_TO_COMING_SOON: Record<string, string> = {
 interface PricingCardsProps {
   currentPlan: string;
   onSelectPlan: (slug: string) => void;
+  onTrialSwitch?: (slug: string) => void;
   loading?: boolean;
   pendingPlanSlug?: string;
   pendingDate?: string;
+  isTrialing?: boolean;
+  trialSelectedPlan?: string;
 }
 
 const PLANS = ['free', 'basic', 'pro'] as const;
@@ -28,9 +31,12 @@ const PLANS = ['free', 'basic', 'pro'] as const;
 export const PricingCards = React.memo(function PricingCards({
   currentPlan,
   onSelectPlan,
+  onTrialSwitch,
   loading,
   pendingPlanSlug,
   pendingDate,
+  isTrialing,
+  trialSelectedPlan,
 }: PricingCardsProps) {
   const { t, i18n } = useTranslation();
   const { data: featureFlags } = useFeatureFlags();
@@ -40,12 +46,21 @@ export const PricingCards = React.memo(function PricingCards({
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
       {PLANS.map((slug) => {
         const isCurrent = slug === currentPlan;
+        const isTrialSelected = isTrialing && slug === trialSelectedPlan;
         const isBasic = slug === 'basic';
         const price = PLAN_PRICES[slug];
         const features = PLAN_FEATURES[slug] ?? [];
-        const isUpgrade = isTierHigher(slug, currentPlan);
+        const isUpgrade = !isTrialSelected && isTierHigher(slug, currentPlan);
         const isDowngrade = isTierLower(slug, currentPlan);
         const isPending = slug === pendingPlanSlug;
+
+        // During trial, if user has a selected plan and this plan is lower than the selected plan
+        const isTrialSwitchable =
+          isTrialing &&
+          !!trialSelectedPlan &&
+          !isTrialSelected &&
+          isTierLower(slug, trialSelectedPlan) &&
+          !!onTrialSwitch;
 
         // Determine the "everything in lower tier" label
         const lowerTier = slug === 'basic' ? 'free' : slug === 'pro' ? 'basic' : null;
@@ -58,7 +73,7 @@ export const PricingCards = React.memo(function PricingCards({
             onClick={cardClickable ? () => onSelectPlan(slug) : undefined}
             className={cn(
               'relative flex flex-col rounded-xl border-2 p-6 transition-all',
-              isCurrent
+              isCurrent || isTrialSelected
                 ? 'border-primary-500 bg-primary-50/50 shadow-md ring-2 ring-primary-300'
                 : isBasic
                   ? 'border-primary-400 bg-white shadow-md'
@@ -79,7 +94,7 @@ export const PricingCards = React.memo(function PricingCards({
                 <h3 className="font-heading text-h3 text-neutral-800">
                   {t(`subscription.tiers.${slug}`)}
                 </h3>
-                {slug !== 'free' && <TierBadge tier={slug as 'basic' | 'pro'} />}
+                {slug !== 'free' && <TierBadge tier={slug as 'trial' | 'basic' | 'pro'} />}
               </div>
               <p className="text-body-sm text-neutral-500">
                 {t(`subscription.tierDescriptions.${slug}`)}
@@ -117,8 +132,14 @@ export const PricingCards = React.memo(function PricingCards({
             </div>
 
             {/* CTA */}
-            {isCurrent ? (
-              <div className="h-10" />
+            {isCurrent || isTrialSelected ? (
+              <div className="h-10 flex items-center justify-center">
+                {isTrialSelected && (
+                  <span className="text-body-sm font-medium text-green-600">
+                    {t('subscription.trial.selected', 'Selected')}
+                  </span>
+                )}
+              </div>
             ) : isPending ? (
               <Button variant="secondary" fullWidth disabled>
                 {t('subscription.pendingDowngrade.switchingOn', {
@@ -129,6 +150,15 @@ export const PricingCards = React.memo(function PricingCards({
                       })
                     : '',
                 })}
+              </Button>
+            ) : isTrialSwitchable ? (
+              <Button
+                variant="secondary"
+                fullWidth
+                onClick={(e) => { e.stopPropagation(); onTrialSwitch!(slug); }}
+                loading={loading}
+              >
+                {t('subscription.trial.switchTo', { plan: t(`subscription.tiers.${slug}`) })}
               </Button>
             ) : isUpgrade ? (
               <Button

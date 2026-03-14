@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 import { cn } from '@/utils/cn';
 import { Button } from './Button';
@@ -56,7 +57,7 @@ export const Modal = React.memo(function Modal({
 
   if (!open) return null;
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 z-modal flex items-center justify-center p-4">
       <div className="fixed inset-0 bg-black/50" onClick={dismissible ? onClose : undefined} />
       <div
@@ -86,7 +87,8 @@ export const Modal = React.memo(function Modal({
           </div>
         )}
       </div>
-    </div>
+    </div>,
+    document.body
   );
 });
 
