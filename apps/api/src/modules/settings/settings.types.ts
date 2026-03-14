@@ -33,6 +33,7 @@ export interface Allergen {
   id: number;
   storeId: number | null;
   name: string;
+  nameEn: string | null;
   color: string | null;
   icon: string | null;
   isDefault: boolean;

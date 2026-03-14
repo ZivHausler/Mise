@@ -1,9 +1,10 @@
 import type { FastifyRequest, FastifyReply } from 'fastify';
 import type { StoreService } from './store.service.js';
 import { StoreRole } from './store.types.js';
-import { createStoreSchema, inviteSchema, updateThemeSchema, updateBusinessInfoSchema } from './store.schema.js';
+import { createStoreSchema, inviteSchema, updateThemeSchema, updateBusinessInfoSchema, updateSlugSchema, updateStorefrontEnabledSchema, checkSlugSchema, brandingUploadUrlSchema, updateBrandingSchema } from './store.schema.js';
 import { ForbiddenError, ValidationError } from '../../core/errors/app-error.js';
 import { ErrorCode } from '@mise/shared';
+import { generateBrandingUploadUrl, validateStoreOwnership, isManagedUrl } from '../../core/storage/gcs.js';
 
 export class StoreController {
   constructor(private storeService: StoreService) {}
@@ -115,8 +116,8 @@ export class StoreController {
     if (storeRole !== StoreRole.OWNER && !isAdmin) {
       throw new ForbiddenError('Only store owners can change the theme', ErrorCode.STORE_NO_ACCESS);
     }
-    const { theme } = updateThemeSchema.parse(request.body);
-    await this.storeService.updateTheme(storeId, theme);
+    const data = updateThemeSchema.parse(request.body);
+    await this.storeService.updateTheme(storeId, data);
     return reply.send({ success: true });
   }
 
@@ -129,6 +130,79 @@ export class StoreController {
     }
     const data = updateBusinessInfoSchema.parse(request.body);
     const store = await this.storeService.updateBusinessInfo(storeId, data);
+    return reply.send({ success: true, data: store });
+  }
+
+  async updateSlug(request: FastifyRequest, reply: FastifyReply) {
+    const storeId = request.currentUser!.storeId!;
+    const isAdmin = request.currentUser!.isAdmin;
+    if (!isAdmin) {
+      throw new ForbiddenError('Only admins can update the slug', ErrorCode.STORE_NO_ACCESS);
+    }
+    const { slug } = updateSlugSchema.parse(request.body);
+    await this.storeService.updateSlug(storeId, slug);
+    return reply.send({ success: true });
+  }
+
+  async updateStorefrontEnabled(request: FastifyRequest, reply: FastifyReply) {
+    const storeId = request.currentUser!.storeId!;
+    const storeRole = request.currentUser!.storeRole;
+    const isAdmin = request.currentUser!.isAdmin;
+    if (storeRole !== StoreRole.OWNER && !isAdmin) {
+      throw new ForbiddenError('Only store owners can toggle storefront', ErrorCode.STORE_NO_ACCESS);
+    }
+    const { enabled } = updateStorefrontEnabledSchema.parse(request.body);
+    await this.storeService.updateStorefrontEnabled(storeId, enabled);
+    return reply.send({ success: true });
+  }
+
+  async checkSlugAvailability(request: FastifyRequest, reply: FastifyReply) {
+    const storeId = request.currentUser!.storeId!;
+    const { slug } = checkSlugSchema.parse(request.query);
+    const result = await this.storeService.checkSlugAvailability(slug, storeId);
+    return reply.send({ success: true, data: result });
+  }
+
+  async generateBrandingUploadUrl(request: FastifyRequest, reply: FastifyReply) {
+    const storeId = request.currentUser!.storeId!;
+    const storeRole = request.currentUser!.storeRole;
+    const isAdmin = request.currentUser!.isAdmin;
+    if (storeRole !== StoreRole.OWNER && !isAdmin) {
+      throw new ForbiddenError('Only store owners can upload branding images', ErrorCode.STORE_NO_ACCESS);
+    }
+    const { type, mimeType } = brandingUploadUrlSchema.parse(request.body);
+    const result = await generateBrandingUploadUrl(storeId, type, mimeType);
+    return reply.send({ success: true, data: result });
+  }
+
+  async updateBranding(request: FastifyRequest, reply: FastifyReply) {
+    const storeId = request.currentUser!.storeId!;
+    const storeRole = request.currentUser!.storeRole;
+    const isAdmin = request.currentUser!.isAdmin;
+    if (storeRole !== StoreRole.OWNER && !isAdmin) {
+      throw new ForbiddenError('Only store owners can update branding', ErrorCode.STORE_NO_ACCESS);
+    }
+    const data = updateBrandingSchema.parse(request.body);
+
+    // Validate branding URLs: only allow managed URLs (GCS/local uploads) or clearing the value
+    if (data.logoUrl) {
+      if (!isManagedUrl(data.logoUrl)) {
+        throw new ValidationError('External URLs are not allowed for branding assets. Please upload an image instead.', ErrorCode.VALIDATION_ERROR);
+      }
+      if (!validateStoreOwnership(data.logoUrl, storeId)) {
+        throw new ForbiddenError('Invalid logo URL', ErrorCode.STORE_NO_ACCESS);
+      }
+    }
+    if (data.bannerUrl) {
+      if (!isManagedUrl(data.bannerUrl)) {
+        throw new ValidationError('External URLs are not allowed for branding assets. Please upload an image instead.', ErrorCode.VALIDATION_ERROR);
+      }
+      if (!validateStoreOwnership(data.bannerUrl, storeId)) {
+        throw new ForbiddenError('Invalid banner URL', ErrorCode.STORE_NO_ACCESS);
+      }
+    }
+
+    const store = await this.storeService.updateBranding(storeId, data);
     return reply.send({ success: true, data: store });
   }
 

@@ -1,7 +1,7 @@
 import type { Allergen, CreateAllergenDTO, UpdateAllergenDTO } from '../settings.types.js';
 import { getPool } from '../../../core/database/postgres.js';
 
-const SELECT_COLS = 'id, store_id, name, color, icon, is_default, created_at, updated_at';
+const SELECT_COLS = 'id, store_id, name, name_en, color, icon, is_default, created_at, updated_at';
 
 export class PgAllergensRepository {
   static async findAll(storeId: number): Promise<Allergen[]> {
@@ -25,10 +25,10 @@ export class PgAllergensRepository {
   static async create(storeId: number, data: CreateAllergenDTO): Promise<Allergen> {
     const pool = getPool();
     const result = await pool.query(
-      `INSERT INTO allergens (store_id, name, color, icon)
-       VALUES ($1, $2, $3, $4)
+      `INSERT INTO allergens (store_id, name, name_en, color, icon)
+       VALUES ($1, $2, $3, $4, $5)
        RETURNING ${SELECT_COLS}`,
-      [storeId, data.name, data.color || null, data.icon || null],
+      [storeId, data.name, data.nameEn || null, data.color || null, data.icon || null],
     );
     return this.mapRow(result.rows[0]);
   }
@@ -40,6 +40,7 @@ export class PgAllergensRepository {
     let idx = 1;
 
     if (data.name !== undefined) { fields.push(`name = $${idx++}`); values.push(data.name); }
+    if (data.nameEn !== undefined) { fields.push(`name_en = $${idx++}`); values.push(data.nameEn); }
     if (data.color !== undefined) { fields.push(`color = $${idx++}`); values.push(data.color); }
     if (data.icon !== undefined) { fields.push(`icon = $${idx++}`); values.push(data.icon); }
 
@@ -66,6 +67,7 @@ export class PgAllergensRepository {
       id: Number(row['id']),
       storeId: row['store_id'] != null ? Number(row['store_id']) : null,
       name: row['name'] as string,
+      nameEn: (row['name_en'] as string) ?? null,
       color: (row['color'] as string) || null,
       icon: (row['icon'] as string) || null,
       isDefault: row['is_default'] as boolean,

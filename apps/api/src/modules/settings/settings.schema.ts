@@ -24,6 +24,7 @@ export type UpdateUnitDTO = z.infer<typeof updateUnitSchema>;
 
 export const createAllergenSchema = z.object({
   name: z.string().trim().min(1).max(200),
+  nameEn: z.string().trim().max(200).nullable().optional(),
   color: z.string().regex(/^#[0-9A-Fa-f]{6}$/).nullable().optional(),
   icon: z.string().max(50).nullable().optional(),
 });
@@ -32,6 +33,7 @@ export type CreateAllergenDTO = z.infer<typeof createAllergenSchema>;
 
 export const updateAllergenSchema = z.object({
   name: z.string().trim().min(1).max(200).optional(),
+  nameEn: z.string().trim().max(200).nullable().optional(),
   color: z.string().regex(/^#[0-9A-Fa-f]{6}$/).nullable().optional(),
   icon: z.string().max(50).nullable().optional(),
 });
@@ -46,11 +48,25 @@ export type CreateTagDTO = z.infer<typeof createTagSchema>;
 export const updateTagSchema = z.object({ name: z.string().trim().min(1).max(100) });
 export type UpdateTagDTO = z.infer<typeof updateTagSchema>;
 
+// ─── Categories ──────────────────────────────────────────────────────────────
+
+export const createCategorySchema = z.object({
+  name: z.string().trim().min(1).max(100),
+  nameEn: z.string().trim().max(100).nullable().optional(),
+});
+export type CreateCategoryDTO = z.infer<typeof createCategorySchema>;
+
+export const updateCategorySchema = z.object({
+  name: z.string().trim().min(1).max(100),
+  nameEn: z.string().trim().max(100).nullable().optional(),
+});
+export type UpdateCategoryDTO = z.infer<typeof updateCategorySchema>;
+
 // ─── Profile ────────────────────────────────────────────────────────────────
 
 export const updateProfileSchema = z.object({
   name: z.string().trim().min(1).max(255).optional(),
-  phone: z.string().regex(/^05\d{8}$/, 'Invalid phone number — e.g. 0541234567').optional().nullable(),
+  phone: z.string().regex(/^05\d{8}$/, 'PHONE_INVALID_FORMAT').optional().nullable(),
   language: z.nativeEnum(Language).optional(),
 });
 

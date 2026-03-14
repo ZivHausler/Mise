@@ -10,13 +10,24 @@ export type AppTheme = 'cream' | 'white' | 'stone' | 'rose' | 'mint' | 'sky' | '
 export interface Store {
   id: number;
   name: string;
+  nameEn: string | null;
   code: string | null;
   address: string | null;
+  addressEn: string | null;
   phone: string | null;
   email: string | null;
   taxNumber: string | null;
   vatRate: number;
   theme: AppTheme;
+  logoUrl: string | null;
+  bannerUrl: string | null;
+  description: string | null;
+  descriptionEn: string | null;
+  slug: string;
+  categorySubject: string | null;
+  categorySubSubject: string | null;
+  applyThemeToApp: boolean;
+  storefrontEnabled: boolean;
   autoGenerateInvoice: boolean;
   autoGenerateCreditNote: boolean;
   createdAt: Date;
@@ -51,6 +62,8 @@ export interface StoreInvitation {
 
 export interface CreateStoreDTO {
   name: string;
+  nameEn?: string;
   code?: string;
   address?: string;
+  addressEn?: string;
 }
