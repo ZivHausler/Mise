@@ -80,7 +80,7 @@ export class PgPaymentRepository {
     let query = `SELECT p.*, o.order_number, o.customer_id, c.name as customer_name
        FROM payments p
        LEFT JOIN orders o ON p.order_id = o.id
-       LEFT JOIN customers c ON o.customer_id = c.id
+       LEFT JOIN customer_stores c ON o.customer_id = c.id
        JOIN orders o2 ON p.order_id = o2.id
        ${whereClause}
        ORDER BY p.created_at DESC`;
@@ -124,7 +124,7 @@ export class PgPaymentRepository {
     let query = `SELECT p.*, o.order_number, o.customer_id, c.name as customer_name
        FROM payments p
        LEFT JOIN orders o ON p.order_id = o.id
-       LEFT JOIN customers c ON o.customer_id = c.id
+       LEFT JOIN customer_stores c ON o.customer_id = c.id
        ${whereClause}
        ORDER BY p.created_at DESC`;
     const params = [...baseParams];
@@ -143,7 +143,7 @@ export class PgPaymentRepository {
       `SELECT p.*, o.order_number, o.customer_id, c.name as customer_name
        FROM payments p
        JOIN orders o ON p.order_id = o.id
-       LEFT JOIN customers c ON o.customer_id = c.id
+       LEFT JOIN customer_stores c ON o.customer_id = c.id
        WHERE p.id = $1 AND o.store_id = $2`,
       [id, storeId],
     );
@@ -157,7 +157,7 @@ export class PgPaymentRepository {
       `SELECT p.*, o.order_number, o.customer_id, c.name as customer_name
        FROM payments p
        JOIN orders o ON p.order_id = o.id
-       LEFT JOIN customers c ON o.customer_id = c.id
+       LEFT JOIN customer_stores c ON o.customer_id = c.id
        WHERE p.order_id = $1 AND o.store_id = $2
        ORDER BY p.created_at DESC`,
       [orderId, storeId],

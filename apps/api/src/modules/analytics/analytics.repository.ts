@@ -93,7 +93,7 @@ export class PgAnalyticsRepository {
     const pool = getPool();
     const result = await pool.query(
       `SELECT c.id, c.name, COUNT(o.id) as order_count
-       FROM customers c
+       FROM customer_stores c
        LEFT JOIN orders o ON o.customer_id = c.id
        WHERE c.store_id = $1
        GROUP BY c.id, c.name

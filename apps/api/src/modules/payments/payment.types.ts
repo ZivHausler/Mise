@@ -1,5 +1,7 @@
 export const PAYMENT_METHOD = {
   CASH: 'cash',
+  CREDIT_CARD: 'credit_card',
+  PAYPAL: 'paypal',
 } as const;
 
 export type PaymentMethod = (typeof PAYMENT_METHOD)[keyof typeof PAYMENT_METHOD];

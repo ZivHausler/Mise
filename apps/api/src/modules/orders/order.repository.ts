@@ -1,4 +1,4 @@
-import type { Order, CreateOrderDTO, OrderStatus, OrderItem } from './order.types.js';
+import type { Order, CreateOrderDTO, OrderStatus, OrderItem, OrderSource } from './order.types.js';
 import { ORDER_STATUS } from './order.types.js';
 import { getPool } from '../../core/database/postgres.js';
 
@@ -14,7 +14,7 @@ export class PgOrderRepository {
   static async findById(storeId: number, id: number): Promise<Order | null> {
     const pool = getPool();
     const result = await pool.query(
-      `SELECT o.*, c.name as customer_name FROM orders o LEFT JOIN customers c ON o.customer_id = c.id WHERE o.id = $1 AND o.store_id = $2`,
+      `SELECT o.*, c.name as customer_name FROM orders o LEFT JOIN customer_stores c ON o.customer_id = c.id WHERE o.id = $1 AND o.store_id = $2`,
       [id, storeId],
     );
     return result.rows[0] ? this.mapRow(result.rows[0]) : null;
@@ -48,7 +48,7 @@ export class PgOrderRepository {
     const sortColumnMap: Record<string, string> = { created_at: 'o.created_at', order_number: 'o.order_number' };
     const sortColumn = sortColumnMap[filters?.sortBy ?? 'created_at'] ?? 'o.created_at';
     const sortDirection = filters?.sortDir === 'asc' ? 'ASC' : 'DESC';
-    let query = `SELECT o.*, c.name as customer_name FROM orders o LEFT JOIN customers c ON o.customer_id = c.id ${whereClause} ORDER BY ${sortColumn} ${sortDirection}`;
+    let query = `SELECT o.*, c.name as customer_name FROM orders o LEFT JOIN customer_stores c ON o.customer_id = c.id ${whereClause} ORDER BY ${sortColumn} ${sortDirection}`;
     const params = [...baseParams];
     if (options) {
       query += ` LIMIT $${idx++} OFFSET $${idx++}`;
@@ -60,7 +60,7 @@ export class PgOrderRepository {
 
   static async findAll(storeId: number, filters?: { status?: OrderStatus; excludePaid?: boolean }): Promise<Order[]> {
     const pool = getPool();
-    let query = 'SELECT o.*, c.name as customer_name FROM orders o LEFT JOIN customers c ON o.customer_id = c.id WHERE o.store_id = $1';
+    let query = 'SELECT o.*, c.name as customer_name FROM orders o LEFT JOIN customer_stores c ON o.customer_id = c.id WHERE o.store_id = $1';
     const params: unknown[] = [storeId];
     let idx = 2;
     if (filters?.status !== undefined) {
@@ -105,13 +105,13 @@ export class PgOrderRepository {
     }
 
     const countResult = await pool.query(
-      `SELECT COUNT(*) FROM orders o LEFT JOIN customers c ON o.customer_id = c.id ${whereClause}`,
+      `SELECT COUNT(*) FROM orders o LEFT JOIN customer_stores c ON o.customer_id = c.id ${whereClause}`,
       baseParams,
     );
     const total = Number(countResult.rows[0].count);
 
     const params = [...baseParams];
-    let query = `SELECT o.*, c.name as customer_name FROM orders o LEFT JOIN customers c ON o.customer_id = c.id ${whereClause} ORDER BY o.created_at DESC`;
+    let query = `SELECT o.*, c.name as customer_name FROM orders o LEFT JOIN customer_stores c ON o.customer_id = c.id ${whereClause} ORDER BY o.created_at DESC`;
     query += ` LIMIT $${idx++} OFFSET $${idx++}`;
     params.push(options.limit, options.offset);
     const result = await pool.query(query, params);
@@ -127,7 +127,7 @@ export class PgOrderRepository {
         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW(), NOW())
         RETURNING *
       )
-      SELECT o.*, c.name as customer_name FROM new_order o LEFT JOIN customers c ON o.customer_id = c.id`,
+      SELECT o.*, c.name as customer_name FROM new_order o LEFT JOIN customer_stores c ON o.customer_id = c.id`,
       [storeId, data.customerId, items, ORDER_STATUS.RECEIVED, data.totalAmount, data.notes ?? null, data.dueDate ?? null, data.recurringGroupId ?? null],
     );
     return this.mapRow(result.rows[0]);
@@ -176,7 +176,7 @@ export class PgOrderRepository {
     filters: { from: string; to: string; status?: number },
   ): Promise<Order[]> {
     const pool = getPool();
-    let query = `SELECT o.*, c.name as customer_name FROM orders o LEFT JOIN customers c ON o.customer_id = c.id WHERE o.store_id = $1 AND o.due_date IS NOT NULL AND o.due_date >= $2::date AND o.due_date < ($3::date + interval '1 day')`;
+    let query = `SELECT o.*, c.name as customer_name FROM orders o LEFT JOIN customer_stores c ON o.customer_id = c.id WHERE o.store_id = $1 AND o.due_date IS NOT NULL AND o.due_date >= $2::date AND o.due_date < ($3::date + interval '1 day')`;
     const params: unknown[] = [storeId, filters.from, filters.to];
     let idx = 4;
     if (filters.status !== undefined) {
@@ -191,16 +191,17 @@ export class PgOrderRepository {
   static async getCalendarAggregates(
     storeId: number,
     filters: { from: string; to: string },
-  ): Promise<Array<{ day: string; total: number; received: number; inProgress: number; ready: number; delivered: number }>> {
+  ): Promise<Array<{ day: string; total: number; pendingApproval: number; received: number; inProgress: number; ready: number; delivered: number }>> {
     const pool = getPool();
     const result = await pool.query(
       `SELECT
         DATE(o.due_date) as day,
         COUNT(*)::int as total,
-        COUNT(CASE WHEN o.status = 0 THEN 1 END)::int as received,
-        COUNT(CASE WHEN o.status = 1 THEN 1 END)::int as in_progress,
-        COUNT(CASE WHEN o.status = 2 THEN 1 END)::int as ready,
-        COUNT(CASE WHEN o.status = 3 THEN 1 END)::int as delivered
+        COUNT(CASE WHEN o.status = 0 THEN 1 END)::int as pending_approval,
+        COUNT(CASE WHEN o.status = 1 THEN 1 END)::int as received,
+        COUNT(CASE WHEN o.status = 2 THEN 1 END)::int as in_progress,
+        COUNT(CASE WHEN o.status = 3 THEN 1 END)::int as ready,
+        COUNT(CASE WHEN o.status = 4 THEN 1 END)::int as delivered
       FROM orders o
       WHERE o.store_id = $1
         AND o.due_date IS NOT NULL
@@ -213,6 +214,7 @@ export class PgOrderRepository {
     return result.rows.map((r: Record<string, unknown>) => ({
       day: (r['day'] as Date).toISOString().split('T')[0]!,
       total: Number(r['total']),
+      pendingApproval: Number(r['pending_approval']),
       received: Number(r['received']),
       inProgress: Number(r['in_progress']),
       ready: Number(r['ready']),
@@ -241,7 +243,7 @@ export class PgOrderRepository {
     const total = Number(countResult.rows[0].count);
 
     const params = [...baseParams];
-    const query = `SELECT o.*, c.name as customer_name FROM orders o LEFT JOIN customers c ON o.customer_id = c.id ${whereClause} ORDER BY o.due_date ASC, o.created_at DESC LIMIT $${idx++} OFFSET $${idx++}`;
+    const query = `SELECT o.*, c.name as customer_name FROM orders o LEFT JOIN customer_stores c ON o.customer_id = c.id ${whereClause} ORDER BY o.due_date ASC, o.created_at DESC LIMIT $${idx++} OFFSET $${idx++}`;
     params.push(filters.limit, filters.offset);
     const result = await pool.query(query, params);
     return { orders: result.rows.map((r: Record<string, unknown>) => this.mapRow(r)), total };
@@ -250,12 +252,21 @@ export class PgOrderRepository {
   static async findFutureByRecurringGroup(storeId: number, recurringGroupId: number, afterDate: Date): Promise<Order[]> {
     const pool = getPool();
     const result = await pool.query(
-      `SELECT o.*, c.name as customer_name FROM orders o LEFT JOIN customers c ON o.customer_id = c.id
+      `SELECT o.*, c.name as customer_name FROM orders o LEFT JOIN customer_stores c ON o.customer_id = c.id
        WHERE o.store_id = $1 AND o.recurring_group_id = $2 AND o.due_date > $3 AND o.status = $4
        ORDER BY o.due_date ASC`,
       [storeId, recurringGroupId, afterDate, ORDER_STATUS.RECEIVED],
     );
     return result.rows.map((r: Record<string, unknown>) => this.mapRow(r));
+  }
+
+  static async findByOrderNumber(storeId: number, orderNumber: number): Promise<Order | null> {
+    const pool = getPool();
+    const result = await pool.query(
+      `SELECT o.*, c.name as customer_name FROM orders o LEFT JOIN customer_stores c ON o.customer_id = c.id WHERE o.store_id = $1 AND o.order_number = $2`,
+      [storeId, orderNumber],
+    );
+    return result.rows[0] ? this.mapRow(result.rows[0]) : null;
   }
 
   static async findByIdInternal(id: number): Promise<{ storeId: number; customerId: number } | null> {
@@ -274,7 +285,7 @@ export class PgOrderRepository {
   static async countActiveByCustomer(storeId: number, customerId: number): Promise<number> {
     const pool = getPool();
     const result = await pool.query(
-      `SELECT COUNT(*)::int AS count FROM orders WHERE store_id = $1 AND customer_id = $2 AND status != 3`,
+      `SELECT COUNT(*)::int AS count FROM orders WHERE store_id = $1 AND customer_id = $2 AND status NOT IN (4, 5)`,
       [storeId, customerId],
     );
     return result.rows[0]?.count ?? 0;
@@ -283,10 +294,129 @@ export class PgOrderRepository {
   static async countActiveByRecipe(storeId: number, recipeId: string): Promise<number> {
     const pool = getPool();
     const result = await pool.query(
-      `SELECT COUNT(*)::int AS count FROM orders WHERE store_id = $1 AND status != 3 AND items::jsonb @> $2::jsonb`,
+      `SELECT COUNT(*)::int AS count FROM orders WHERE store_id = $1 AND status NOT IN (4, 5) AND items::jsonb @> $2::jsonb`,
       [storeId, JSON.stringify([{ recipeId }])],
     );
     return result.rows[0]?.count ?? 0;
+  }
+
+  static async createWithSource(
+    storeId: number,
+    data: CreateOrderDTO & { totalAmount: number; recurringGroupId?: number },
+    source: OrderSource,
+    initialStatus: number,
+  ): Promise<Order> {
+    const pool = getPool();
+    const items = JSON.stringify(data.items);
+    const result = await pool.query(
+      `WITH new_order AS (
+        INSERT INTO orders (store_id, customer_id, items, status, total_amount, notes, due_date, recurring_group_id, source, created_at, updated_at)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), NOW())
+        RETURNING *
+      )
+      SELECT o.*, c.name as customer_name FROM new_order o LEFT JOIN customer_stores c ON o.customer_id = c.id`,
+      [storeId, data.customerId, items, initialStatus, data.totalAmount, data.notes ?? null, data.dueDate ?? null, data.recurringGroupId ?? null, source],
+    );
+    return this.mapRow(result.rows[0]);
+  }
+
+  /**
+   * Cancel an order. Uses WHERE status guard to prevent race conditions.
+   * Returns null if the expected currentStatus didn't match (stale).
+   */
+  static async cancelOrder(
+    storeId: number,
+    id: number,
+    expectedStatus: number,
+    reason?: string,
+  ): Promise<Order | null> {
+    const pool = getPool();
+    const result = await pool.query(
+      `UPDATE orders
+       SET status = 5, cancellation_reason = $3, updated_at = NOW()
+       WHERE id = $1 AND store_id = $2 AND status = $4
+       RETURNING *`,
+      [id, storeId, reason ?? null, expectedStatus],
+    );
+    if (result.rowCount === 0) return null;
+    return this.findById(storeId, id);
+  }
+
+  /**
+   * Request cancellation: set status to CANCELLATION_REQUESTED(6), store previous_status.
+   */
+  static async requestCancellation(
+    storeId: number,
+    id: number,
+    expectedStatus: number,
+    reason?: string,
+  ): Promise<Order | null> {
+    const pool = getPool();
+    const result = await pool.query(
+      `UPDATE orders
+       SET status = 6, previous_status = status, cancellation_reason = $3, updated_at = NOW()
+       WHERE id = $1 AND store_id = $2 AND status = $4
+       RETURNING *`,
+      [id, storeId, reason ?? null, expectedStatus],
+    );
+    if (result.rowCount === 0) return null;
+    return this.findById(storeId, id);
+  }
+
+  /**
+   * Decline cancellation request: restore previous_status.
+   */
+  static async declineCancellation(
+    storeId: number,
+    id: number,
+  ): Promise<Order | null> {
+    const pool = getPool();
+    const result = await pool.query(
+      `UPDATE orders
+       SET status = previous_status, previous_status = NULL, cancellation_reason = NULL, updated_at = NOW()
+       WHERE id = $1 AND store_id = $2 AND status = 6 AND previous_status IS NOT NULL
+       RETURNING *`,
+      [id, storeId],
+    );
+    if (result.rowCount === 0) return null;
+    return this.findById(storeId, id);
+  }
+
+  /**
+   * Approve a PENDING_APPROVAL order: transition 0 -> 1.
+   */
+  static async approveOrder(
+    storeId: number,
+    id: number,
+  ): Promise<Order | null> {
+    const pool = getPool();
+    const result = await pool.query(
+      `UPDATE orders
+       SET status = 1, updated_at = NOW()
+       WHERE id = $1 AND store_id = $2 AND status = 0
+       RETURNING *`,
+      [id, storeId],
+    );
+    if (result.rowCount === 0) return null;
+    return this.findById(storeId, id);
+  }
+
+  /**
+   * Count orders with pending-action statuses for a store.
+   */
+  static async countPendingActions(storeId: number): Promise<{ pendingApproval: number; cancellationRequested: number }> {
+    const pool = getPool();
+    const result = await pool.query(
+      `SELECT
+         COUNT(CASE WHEN status = 0 THEN 1 END)::int AS pending_approval,
+         COUNT(CASE WHEN status = 6 THEN 1 END)::int AS cancellation_requested
+       FROM orders WHERE store_id = $1`,
+      [storeId],
+    );
+    return {
+      pendingApproval: result.rows[0]?.pending_approval ?? 0,
+      cancellationRequested: result.rows[0]?.cancellation_requested ?? 0,
+    };
   }
 
   private static mapRow(row: Record<string, unknown>): Order {
@@ -311,6 +441,9 @@ export class PgOrderRepository {
       notes: row['notes'] as string | undefined,
       dueDate: row['due_date'] ? new Date(row['due_date'] as string) : undefined,
       recurringGroupId: row['recurring_group_id'] != null ? Number(row['recurring_group_id']) : undefined,
+      source: (row['source'] as OrderSource) || 'web',
+      cancellationReason: (row['cancellation_reason'] as string) || undefined,
+      previousStatus: row['previous_status'] != null ? Number(row['previous_status']) : undefined,
       createdAt: new Date(row['created_at'] as string),
       updatedAt: new Date(row['updated_at'] as string),
     };
