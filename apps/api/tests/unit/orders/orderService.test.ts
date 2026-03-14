@@ -12,10 +12,13 @@ vi.mock('../../../src/core/events/event-bus.js', async (importOriginal) => {
 
 vi.mock('@mise/shared/src/constants/index.js', () => ({
   ORDER_STATUS_FLOW: {
-    0: [1],    // received → in_progress
-    1: [0, 2], // in_progress → received, ready
-    2: [1, 3], // ready → in_progress, delivered
-    3: [2],    // delivered → ready
+    0: [1],    // pending_approval → received
+    1: [0, 2], // received → pending_approval, in_progress
+    2: [1, 3], // in_progress → received, ready
+    3: [2, 4], // ready → in_progress, delivered
+    4: [3],    // delivered → ready
+    5: [],     // cancelled
+    6: [],     // cancellation_requested
   },
 }));
 
@@ -44,6 +47,16 @@ vi.mock('../../../src/modules/orders/use-cases/updateOrderStatus.js', () => ({
   UpdateOrderStatusUseCase: vi.fn().mockImplementation(() => ({
     execute: vi.fn(),
   })),
+}));
+
+vi.mock('../../../src/modules/orders/order-notification.repository.js', () => ({
+  PgOrderNotificationRepository: {
+    create: vi.fn().mockResolvedValue({}),
+  },
+}));
+
+vi.mock('../../../src/modules/orders/order-notification.messages.js', () => ({
+  getNotificationMessage: vi.fn().mockReturnValue('mock notification'),
 }));
 
 vi.mock('../../../src/modules/shared/unitConversion.js', () => ({

@@ -394,8 +394,8 @@ describe('ProductionService', () => {
 
     it('should group items by recipe and sum quantities', async () => {
       vi.mocked(OrderCrud.findByDateRange).mockResolvedValue([
-        { id: 1, status: 0, items: [{ recipeId: 'recipe-1', quantity: 5 }] } as any,
-        { id: 2, status: 0, items: [{ recipeId: 'recipe-1', quantity: 3 }] } as any,
+        { id: 1, status: 1, items: [{ recipeId: 'recipe-1', quantity: 5 }] } as any, // RECEIVED
+        { id: 2, status: 1, items: [{ recipeId: 'recipe-1', quantity: 3 }] } as any, // RECEIVED
       ]);
       vi.mocked(ProductionCrud.create).mockImplementation(async (_sid, data) => {
         expect(data.quantity).toBe(8);

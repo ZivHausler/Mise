@@ -37,6 +37,16 @@ vi.mock('../../../src/core/events/event-names.js', () => ({
   },
 }));
 
+vi.mock('../../../src/modules/orders/order-notification.repository.js', () => ({
+  PgOrderNotificationRepository: {
+    create: vi.fn().mockResolvedValue({}),
+  },
+}));
+
+vi.mock('../../../src/modules/orders/order-notification.messages.js', () => ({
+  getNotificationMessage: vi.fn().mockReturnValue('mock message'),
+}));
+
 import { OrderCrud } from '../../../src/modules/orders/orderCrud.js';
 import { getEventBus } from '../../../src/core/events/event-bus.js';
 import { unitConversionFactor } from '../../../src/modules/shared/unitConversion.js';
