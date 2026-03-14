@@ -189,6 +189,69 @@ export class PayPalProvider implements PaymentProvider {
     };
   }
 
+  /**
+   * Get the most recent transaction (sale) ID for a PayPal subscription.
+   */
+  async getLastTransactionId(subscriptionId: string): Promise<string | null> {
+    if (!/^I-[A-Z0-9-]+$/i.test(subscriptionId)) {
+      throw new Error('Invalid PayPal subscription ID format');
+    }
+
+    const now = new Date();
+    const startTime = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString(); // 30 days ago
+    const endTime = now.toISOString();
+
+    const response = await this.apiRequest(
+      'GET',
+      `/v1/billing/subscriptions/${subscriptionId}/transactions?start_time=${startTime}&end_time=${endTime}`,
+    );
+
+    if (!response.ok) {
+      const text = await response.text();
+      appLogger.error({ status: response.status, body: text, subscriptionId }, '[PayPal] Failed to get subscription transactions');
+      return null;
+    }
+
+    const data = (await response.json()) as { transactions: Array<{ id: string; status: string }> };
+    // Find the most recent completed transaction
+    const completed = data.transactions?.find((t) => t.status === 'COMPLETED');
+    return completed?.id ?? null;
+  }
+
+  /**
+   * Refund a captured payment.
+   * @param captureId - The PayPal capture/sale ID
+   * @param amountNis - Amount to refund in NIS
+   * @returns The PayPal refund ID
+   */
+  async refundPayment(captureId: string, amountNis: number): Promise<string> {
+    // Validate capture ID format to prevent path injection
+    if (!/^[A-Z0-9]+$/i.test(captureId)) {
+      throw new Error('Invalid PayPal capture ID format');
+    }
+
+    const response = await this.apiRequest(
+      'POST',
+      `/v2/payments/captures/${captureId}/refund`,
+      {
+        amount: {
+          value: amountNis.toFixed(2),
+          currency_code: 'ILS',
+        },
+      },
+    );
+
+    if (!response.ok) {
+      const text = await response.text();
+      appLogger.error({ status: response.status, body: text, captureId }, '[PayPal] Failed to refund capture');
+      throw new Error(`PayPal refund error: ${response.status}`);
+    }
+
+    const data = (await response.json()) as { id: string; status: string };
+    appLogger.info({ captureId, refundId: data.id, amountNis }, '[PayPal] Refund issued');
+    return data.id;
+  }
+
   async cancelSubscription(providerSubscriptionId: string): Promise<void> {
     // Validate subscription ID format to prevent path injection
     if (!/^I-[A-Z0-9-]+$/i.test(providerSubscriptionId)) {

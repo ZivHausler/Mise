@@ -69,7 +69,21 @@ export class CheckoutService {
     let prorationDays: number | null = null;
     let periodDays: number | null = null;
 
-    if (currentPlan.slug === 'free') {
+    if (currentPlan.slug === 'trial') {
+      // Trial user — check if they already paid for a lower plan
+      const previouslySelectedPlanId = currentSub.cancelAtPeriodEnd
+        ? await this.subscriptionRepo.getDowngradeToPlanId(currentSub.id)
+        : null;
+      if (previouslySelectedPlanId) {
+        const previousPlan = await this.subscriptionRepo.getPlanById(previouslySelectedPlanId);
+        const alreadyPaidNis = previousPlan?.priceNis ?? 0;
+        amountAgorot = Math.max(0, (targetPlan.priceNis - alreadyPaidNis) * 100);
+      } else {
+        amountAgorot = targetPlan.priceNis * 100;
+      }
+      // Mark as prorated so PayPal uses setup_fee + delayed start
+      isProration = true;
+    } else if (currentPlan.slug === 'free') {
       amountAgorot = targetPlan.priceNis * 100;
     } else {
       const now = new Date();
@@ -118,7 +132,11 @@ export class CheckoutService {
     };
 
     if (isProration) {
-      metadata['period_end'] = String(currentSub.currentPeriodEnd);
+      // For trial users, delay first regular charge to trial end; for paid upgrades, to period end
+      const delayUntil = currentPlan.slug === 'trial' && currentSub.trialEndsAt
+        ? currentSub.trialEndsAt
+        : currentSub.currentPeriodEnd;
+      metadata['period_end'] = String(delayUntil);
     }
 
     const result = await this.paypalProvider.createSubscriptionForSDK({
@@ -151,6 +169,191 @@ export class CheckoutService {
       expiresAt: session!.expiresAt,
       amountAgorot,
     };
+  }
+
+  // ─── Trial plan switch (downgrade within trial) ──────────────────────
+
+  /**
+   * Allow a trialing user to switch from a higher selected plan to a lower (but still paid) plan.
+   * Refunds the upgrade-difference payment and updates downgrade_to_plan_id.
+   */
+  async handleTrialDowngrade(params: {
+    storeId: number;
+    targetPlanSlug: PlanSlug;
+    actorUserId: number;
+  }): Promise<import('./subscription.types.js').StoreSubscription> {
+    if (!this.paypalProvider) {
+      throw new ValidationError('PayPal provider is not configured');
+    }
+
+    // 1. Verify subscription is trialing
+    const currentSub = await this.subscriptionRepo.getActiveSubscription(params.storeId);
+    if (!currentSub || currentSub.status !== 'trialing') {
+      throw new ValidationError('Only trialing subscriptions can use trial plan switching');
+    }
+
+    // 2. Get the current selected plan (downgrade_to_plan_id) — may be null if selection was cleared
+    const currentSelectedPlanId = await this.subscriptionRepo.getDowngradeToPlanId(currentSub.id);
+    let currentSelectedPlan = currentSelectedPlanId
+      ? await this.subscriptionRepo.getPlanById(currentSelectedPlanId)
+      : null;
+
+    // If no selection, infer from the most recent payment's target plan
+    if (!currentSelectedPlan) {
+      const lastPayment = await this.subscriptionRepo.getMostRecentPayment(currentSub.id, PaymentType.FULL)
+        ?? await this.subscriptionRepo.getMostRecentPayment(currentSub.id, PaymentType.PRORATION);
+      if (lastPayment?.toPlanId) {
+        currentSelectedPlan = await this.subscriptionRepo.getPlanById(lastPayment.toPlanId);
+      }
+    }
+
+    if (!currentSelectedPlan) {
+      throw new ValidationError('No plan currently selected during trial and no payment history found.');
+    }
+
+    // 3. Get target plan and validate it is lower than the current selection
+    const targetPlan = await this.subscriptionRepo.getPlanBySlug(params.targetPlanSlug);
+    if (!targetPlan) {
+      throw new NotFoundError('Target plan not found', ErrorCode.NOT_FOUND);
+    }
+
+    if (targetPlan.sortOrder >= currentSelectedPlan.sortOrder) {
+      throw new ValidationError('Target plan must be lower than the currently selected plan. Use checkout for upgrades.', ErrorCode.SUBSCRIPTION_CHANGE_NOT_ALLOWED);
+    }
+
+    // 4. Calculate refund: (total paid - total refunded) - target plan price
+    const { netPaidAgorot, paypalSubscriptionIds } = await this.getTrialPaymentSummary(currentSub.id);
+    const refundAgorot = Math.max(0, netPaidAgorot - targetPlan.priceNis * 100);
+
+    if (refundAgorot <= 0) {
+      throw new ValidationError('Nothing to refund — net paid amount does not exceed target plan price.');
+    }
+
+    const refundAmountNis = refundAgorot / 100;
+
+    // 5. Execute PayPal refund
+    const refundId = await this.executePayPalRefund(
+      currentSub,
+      paypalSubscriptionIds,
+      refundAmountNis,
+    );
+
+    // 6. Record downgrade: update subscription, create payment record, log event
+    await this.recordDowngrade({
+      storeId: params.storeId,
+      subscriptionId: currentSub.id,
+      targetPlan,
+      currentSelectedPlan,
+      refundAgorot,
+      refundAmountNis,
+      refundId,
+      actorUserId: params.actorUserId,
+    });
+
+    const updated = await this.subscriptionRepo.getActiveSubscription(params.storeId);
+    if (!updated) {
+      throw new NotFoundError('Subscription not found after update', ErrorCode.SUBSCRIPTION_NOT_FOUND);
+    }
+    return updated;
+  }
+
+  /**
+   * Calculate net amount paid for a trial subscription (total paid - total refunded)
+   * and collect all PayPal subscription IDs from payment records.
+   */
+  private async getTrialPaymentSummary(subscriptionId: number): Promise<{ netPaidAgorot: number; paypalSubscriptionIds: string[] }> {
+    return this.subscriptionRepo.getTrialPaymentSummary(subscriptionId);
+  }
+
+  /**
+   * Attempt to refund via PayPal by iterating over known subscription IDs.
+   * Also cancels the active PayPal subscription so it won't charge at trial end.
+   */
+  private async executePayPalRefund(
+    currentSub: { id: number; providerSubscriptionId: string | null },
+    paypalSubscriptionIds: string[],
+    refundAmountNis: number,
+  ): Promise<string | null> {
+    let refundId: string | null = null;
+    const paypalSubIdsToTry = currentSub.providerSubscriptionId
+      ? [currentSub.providerSubscriptionId, ...paypalSubscriptionIds.filter((id) => id !== currentSub.providerSubscriptionId)]
+      : paypalSubscriptionIds;
+
+    for (const subId of paypalSubIdsToTry) {
+      const saleId = await this.paypalProvider!.getLastTransactionId(subId);
+      if (saleId) {
+        try {
+          refundId = await this.paypalProvider!.refundPayment(saleId, refundAmountNis);
+          break;
+        } catch (err) {
+          appLogger.warn({ err, paypalSubId: subId, saleId }, '[TrialDowngrade] Refund failed for this transaction, trying next');
+        }
+      }
+    }
+
+    if (!refundId) {
+      appLogger.error({ subscriptionId: currentSub.id, paypalSubIdsToTry }, '[TrialDowngrade] Could not refund any PayPal transaction');
+    }
+
+    // Cancel the active PayPal subscription so it won't charge at trial end
+    const activePaypalSubId = currentSub.providerSubscriptionId;
+    if (activePaypalSubId) {
+      try {
+        await this.paypalProvider!.cancelSubscription(activePaypalSubId);
+      } catch (err) {
+        appLogger.error({ err, providerSubscriptionId: activePaypalSubId }, '[TrialDowngrade] Failed to cancel PayPal subscription');
+      }
+    }
+
+    return refundId;
+  }
+
+  /**
+   * Record a trial downgrade: update subscription, create refund payment record,
+   * log the event, and invalidate cache.
+   */
+  private async recordDowngrade(params: {
+    storeId: number;
+    subscriptionId: number;
+    targetPlan: { id: number; name: string };
+    currentSelectedPlan: { id: number; name: string };
+    refundAgorot: number;
+    refundAmountNis: number;
+    refundId: string | null;
+    actorUserId: number;
+  }): Promise<void> {
+    // Update downgrade_to_plan_id to target plan and clear PayPal subscription
+    await this.subscriptionRepo.updateSubscription(params.subscriptionId, {
+      downgradeToPlanId: params.targetPlan.id,
+      cancelAtPeriodEnd: true,
+      providerSubscriptionId: null,
+    });
+
+    // Create a refund payment record
+    await this.subscriptionRepo.createPayment({
+      storeId: params.storeId,
+      subscriptionId: params.subscriptionId,
+      amountAgorot: params.refundAgorot,
+      type: PaymentType.REFUND,
+      description: `Refund: switched from ${params.currentSelectedPlan.name} to ${params.targetPlan.name}`,
+      fromPlanId: params.currentSelectedPlan.id,
+      toPlanId: params.targetPlan.id,
+      status: PaymentStatus.SUCCEEDED,
+      externalRef: params.refundId,
+    });
+
+    // Log event
+    await this.subscriptionRepo.logEvent(
+      params.storeId,
+      params.subscriptionId,
+      'trial_plan_switched',
+      params.currentSelectedPlan.id,
+      params.targetPlan.id,
+      { actorUserId: params.actorUserId, refundAmountNis: params.refundAmountNis, refundId: params.refundId },
+    );
+
+    // Invalidate cache
+    await this.invalidateCache(params.storeId);
   }
 
   // ─── Renewal recovery (for past_due subscriptions) ───────────────────
@@ -332,7 +535,15 @@ export class CheckoutService {
     const currentPlan = await this.subscriptionRepo.getPlanById(currentSub.planId, client);
     const now = new Date();
 
-    if (!currentPlan || currentPlan.slug === 'free') {
+    if (currentSub.status === 'trialing') {
+      // Trial user paid for a plan — keep trial active, store selection for when trial ends
+      await this.subscriptionRepo.updateSubscription(currentSub.id, {
+        downgradeToPlanId: targetPlan.id,
+        cancelAtPeriodEnd: true,
+        paymentProvider: session.provider,
+        providerSubscriptionId: event.providerSubscriptionId ?? null,
+      }, client);
+    } else if (!currentPlan || currentPlan.slug === 'free') {
       // Upgrading from free
       const anchorDay = now.getDate();
       const nextBilling = getNextBillingDate(anchorDay, now);

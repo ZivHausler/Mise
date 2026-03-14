@@ -1,6 +1,6 @@
 import type { FastifyRequest, FastifyReply } from 'fastify';
 import type { CheckoutService } from './checkout.service.js';
-import { initiateCheckoutSchema, checkoutStatusParamsSchema } from './checkout.schema.js';
+import { initiateCheckoutSchema, checkoutStatusParamsSchema, trialDowngradeSchema } from './checkout.schema.js';
 
 export class CheckoutController {
   constructor(private checkoutService: CheckoutService) {}
@@ -37,5 +37,19 @@ export class CheckoutController {
     });
 
     return reply.send({ success: true, data: result });
+  }
+
+  async handleTrialDowngrade(request: FastifyRequest, reply: FastifyReply) {
+    const storeId = request.currentUser!.storeId!;
+    const actorUserId = request.currentUser!.userId;
+    const { planSlug } = trialDowngradeSchema.parse(request.body);
+
+    const subscription = await this.checkoutService.handleTrialDowngrade({
+      storeId,
+      targetPlanSlug: planSlug,
+      actorUserId,
+    });
+
+    return reply.send({ success: true, data: subscription });
   }
 }
