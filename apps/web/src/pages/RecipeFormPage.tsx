@@ -7,8 +7,9 @@ import { Page, Card, Stack, Row } from '@/components/Layout';
 import { Breadcrumbs } from '@/components/Breadcrumbs';
 import { TextInput, TextArea, NumberInput, Select } from '@/components/FormFields';
 import { Button } from '@/components/Button';
-import { useCreateRecipe, useUpdateRecipe, useRecipe, useRecipes, useInventory, useTags } from '@/api/hooks';
+import { useCreateRecipe, useUpdateRecipe, useRecipe, useRecipes, useInventory, useTags, useCategories } from '@/api/hooks';
 import { RecipeImageUpload } from '@/components/RecipeImageUpload';
+import { TranslateButton } from '@/components/TranslateButton';
 import { cn } from '@/utils/cn';
 import { useToastStore } from '@/store/toast';
 
@@ -68,6 +69,7 @@ export default function RecipeFormPage() {
   const inventoryItems = ((inventory as any)?.items as any[] ?? []);
 
   const { data: availableTags } = useTags();
+  const { data: availableCategories } = useCategories();
   const { data: allRecipes } = useRecipes();
   const recipeOptions = ((allRecipes as any[]) ?? [])
     .filter((rec: any) => rec.id !== id)
@@ -77,8 +79,11 @@ export default function RecipeFormPage() {
 
   const [photos, setPhotos] = useState<string[]>(r?.photos ?? []);
   const [name, setName] = useState(r?.name ?? '');
+  const [categoryId, setCategoryId] = useState<number | ''>(r?.categoryId ?? '');
+  const [nameEn, setNameEn] = useState(r?.nameEn ?? '');
   const [tags, setTags] = useState<string[]>(r?.tags ?? []);
   const [description, setDescription] = useState(r?.description ?? '');
+  const [descriptionEn, setDescriptionEn] = useState(r?.descriptionEn ?? '');
   const [yieldAmount, setYieldAmount] = useState<number | ''>(r?.yield ?? '');
   const [price, setPrice] = useState<number | ''>(r?.sellingPrice ?? '');
   const [ingredients, setIngredients] = useState<any[]>(r?.ingredients?.length ? r.ingredients : [{ ingredientId: '', name: '', quantity: '', unit: '' }]);
@@ -101,8 +106,11 @@ export default function RecipeFormPage() {
     if (!r) return;
     setPhotos(r.photos ?? []);
     setName(r.name ?? '');
+    setCategoryId(r.categoryId ?? '');
+    setNameEn(r.nameEn ?? '');
     setTags(r.tags ?? []);
     setDescription(r.description ?? '');
+    setDescriptionEn(r.descriptionEn ?? '');
     setYieldAmount(r.yield ?? '');
     setPrice(r.sellingPrice ?? '');
     setIngredients(r.ingredients?.length ? r.ingredients : [{ ingredientId: '', name: '', quantity: '', unit: '' }]);
@@ -161,14 +169,14 @@ export default function RecipeFormPage() {
         addToast('error', t('recipes.stepsRequired', 'At least one step is required'));
         return;
       }
-      const body = { name, tags: tags.length ? tags : undefined, description: description || undefined, yield: yieldAmount === '' ? undefined : yieldAmount, sellingPrice: price === '' ? undefined : Number(price), ingredients, steps: formattedSteps, photos: photos.length ? photos : undefined };
+      const body = { name, nameEn: nameEn || undefined, categoryId: categoryId === '' ? undefined : Number(categoryId), tags: tags.length ? tags : undefined, description: description || undefined, descriptionEn: descriptionEn || undefined, yield: yieldAmount === '' ? undefined : yieldAmount, sellingPrice: price === '' ? undefined : Number(price), ingredients, steps: formattedSteps, photos: photos.length ? photos : undefined };
       if (isEdit) {
         updateRecipe.mutate({ id: id!, ...body }, { onSuccess: () => navigate(`/recipes/${id}`) });
       } else {
         createRecipe.mutate(body, { onSuccess: () => navigate('/recipes') });
       }
     },
-    [name, tags, description, yieldAmount, price, ingredients, steps, photos, isEdit, id, createRecipe, updateRecipe, navigate]
+    [name, nameEn, categoryId, tags, description, descriptionEn, yieldAmount, price, ingredients, steps, photos, isEdit, id, createRecipe, updateRecipe, navigate]
   );
 
   const isPending = createRecipe.isPending || updateRecipe.isPending;
@@ -186,7 +194,26 @@ export default function RecipeFormPage() {
         <Stack gap={6}>
           <Card>
             <Stack gap={4}>
-              <TextInput label={t('recipes.name', 'Name')} value={name} onChange={(e) => setName(e.target.value)} required dir="auto" />
+              <div className="flex flex-col sm:flex-row gap-4">
+                <TextInput label={t('recipes.name', 'Name')} value={name} onChange={(e) => setName(e.target.value)} required dir="auto" className="flex-1" />
+                <div className="flex-1 flex flex-col">
+                  <TextInput label={`${t('recipes.nameEn', 'Name (English)')} (${t('common.optional')})`} value={nameEn} onChange={(e) => setNameEn(e.target.value)} dir="ltr" placeholder="English name" />
+                  <TranslateButton hebrewText={name} onTranslate={setNameEn} fieldType="name" className="self-end mt-1" />
+                </div>
+              </div>
+              {(availableCategories as any[])?.length > 0 && (
+                <Select
+                  label={t('recipes.category', 'Category')}
+                  placeholder={t('recipes.categoryPlaceholder', 'Select category...')}
+                  options={[
+                    { value: '', label: t('recipes.noCategory', 'No category') },
+                    ...((availableCategories as any[]) ?? []).map((cat: any) => ({ value: cat.id, label: cat.name })),
+                  ]}
+                  value={categoryId}
+                  onChange={(e) => setCategoryId(e.target.value === '' ? '' : Number(e.target.value))}
+                  className="sm:max-w-xs"
+                />
+              )}
               {(availableTags as any[])?.length > 0 && (
                 <div>
                   <label className="mb-1 block text-body-sm font-semibold text-neutral-700">{t('recipes.tags', 'Tags')}</label>
@@ -212,7 +239,13 @@ export default function RecipeFormPage() {
                   </div>
                 </div>
               )}
-              <TextArea label={t('recipes.description', 'Description')} value={description} onChange={(e) => setDescription(e.target.value)} dir="auto" />
+              <div className="flex flex-col sm:flex-row gap-4">
+                <TextArea label={t('recipes.description', 'Description')} value={description} onChange={(e) => setDescription(e.target.value)} dir="auto" className="flex-1" />
+                <div className="flex-1 flex flex-col">
+                  <TextArea label={`${t('recipes.descriptionEn', 'Description (English)')} (${t('common.optional')})`} value={descriptionEn} onChange={(e) => setDescriptionEn(e.target.value)} dir="ltr" placeholder="English description" />
+                  <TranslateButton hebrewText={description} onTranslate={setDescriptionEn} fieldType="description" className="self-end mt-1" />
+                </div>
+              </div>
               <Row gap={4}>
                 <NumberInput label={t('recipes.yield', 'Yield')} value={yieldAmount} onChange={setYieldAmount} min={0} className="flex-1" />
                 <NumberInput label={t('recipes.sellingPrice', 'Selling Price (₪)')} value={price} onChange={setPrice} min={0} className="flex-1" />

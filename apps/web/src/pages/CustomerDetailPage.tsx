@@ -196,8 +196,8 @@ export default function CustomerDetailPage() {
                 <FilterOption selected={orderStatusFilter === undefined} onClick={() => { setOrderStatusFilter(undefined); setOrdersPage(1); }}>
                   {t('common.allStatuses', 'All statuses')}
                 </FilterOption>
-                {STATUS_LABELS.map((label, idx) => (
-                  <FilterOption key={idx} selected={orderStatusFilter === idx} onClick={() => { setOrderStatusFilter(idx); setOrdersPage(1); }}>
+                {Object.entries(STATUS_LABELS).map(([idx, label]) => (
+                  <FilterOption key={idx} selected={orderStatusFilter === Number(idx)} onClick={() => { setOrderStatusFilter(Number(idx)); setOrdersPage(1); }}>
                     {t(`orders.status.${label}`, label)}
                   </FilterOption>
                 ))}

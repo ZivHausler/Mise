@@ -1,16 +1,16 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { ChevronLeft, ChevronRight, Trash2, Edit, BadgeDollarSign, Download, Printer, FileText, RotateCcw } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Trash2, Edit, BadgeDollarSign, Download, Printer, FileText, RotateCcw, Check, X, Clock, AlertCircle, XCircle, AlertTriangle } from 'lucide-react';
 import { Page, Card, Section, Stack, Row } from '@/components/Layout';
 import { Breadcrumbs } from '@/components/Breadcrumbs';
 import { StatusBadge } from '@/components/DataDisplay';
 import { Button } from '@/components/Button';
 import { PageSkeleton } from '@/components/Feedback';
-import { ConfirmModal } from '@/components/Modal';
+import { ConfirmModal, Modal } from '@/components/Modal';
 import { LogPaymentModal } from '@/components/LogPaymentModal';
 import { RefundOrderModal } from '@/components/RefundOrderModal';
-import { useOrder, useUpdateOrderStatus, useDeleteOrder, usePaymentStatuses, useOrderInvoices, useOrderPayments, useCurrentStore, downloadPdf } from '@/api/hooks';
+import { useOrder, useUpdateOrderStatus, useDeleteOrder, usePaymentStatuses, useOrderInvoices, useOrderPayments, useCurrentStore, downloadPdf, useApproveOrder, useCancelOrder, useApproveCancellation, useDeclineCancellation } from '@/api/hooks';
 import { GenerateInvoiceModal } from '@/components/invoices/GenerateInvoiceModal';
 import { ORDER_STATUS, getStatusLabel } from '@/utils/orderStatus';
 import { useFormatDate, useFormatTime } from '@/utils/dateFormat';
@@ -27,10 +27,16 @@ export default function OrderDetailPage() {
   const updateOrderStatus = useUpdateOrderStatus();
   const deleteOrder = useDeleteOrder();
   const { data: paymentStatuses } = usePaymentStatuses();
+  const approveMutation = useApproveOrder();
+  const cancelMutation = useCancelOrder();
+  const approveCancellationMutation = useApproveCancellation();
+  const declineCancellationMutation = useDeclineCancellation();
   const [showDelete, setShowDelete] = React.useState(false);
   const [showLogPayment, setShowLogPayment] = React.useState(false);
   const [showInvoice, setShowInvoice] = React.useState<'invoice' | 'credit_note' | null>(null);
   const [showRefund, setShowRefund] = React.useState(false);
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  const [cancelReason, setCancelReason] = useState('');
   const { data: orderInvoices } = useOrderInvoices(numId);
   const { data: orderPayments } = useOrderPayments(numId);
   const { data: currentStore } = useCurrentStore();
@@ -74,6 +80,28 @@ export default function OrderDetailPage() {
     deleteOrder.mutate(o.id, { onSuccess: () => navigate('/orders') });
   }, [o, deleteOrder, navigate]);
 
+  const handleApproveOrder = useCallback(() => {
+    if (!o) return;
+    approveMutation.mutate(o.id);
+  }, [o, approveMutation]);
+
+  const handleCancel = useCallback(() => {
+    if (!o) return;
+    cancelMutation.mutate({ id: o.id, reason: cancelReason || undefined }, {
+      onSuccess: () => { setShowCancelModal(false); setCancelReason(''); },
+    });
+  }, [o, cancelMutation, cancelReason]);
+
+  const handleApproveCancellation = useCallback(() => {
+    if (!o) return;
+    approveCancellationMutation.mutate(o.id);
+  }, [o, approveCancellationMutation]);
+
+  const handleDeclineCancellation = useCallback(() => {
+    if (!o) return;
+    declineCancellationMutation.mutate(o.id);
+  }, [o, declineCancellationMutation]);
+
   const dateFormat = useAppStore((s) => s.dateFormat);
   const handlePdf = useCallback(() => {
     if (!o) return;
@@ -97,6 +125,67 @@ export default function OrderDetailPage() {
         ]}
       />
 
+      {/* Pending Approval Banner */}
+      {o.status === ORDER_STATUS.PENDING_APPROVAL && (
+        <div className="mb-4 flex items-center gap-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3">
+          <Clock className="h-5 w-5 text-amber-600" />
+          <div>
+            <p className="text-body-sm font-semibold text-amber-800">{t('orders.pendingApprovalTitle')}</p>
+            <p className="text-caption text-amber-700">{t('orders.pendingApprovalDesc')}</p>
+          </div>
+        </div>
+      )}
+
+      {/* Cancellation Requested Banner */}
+      {o.status === ORDER_STATUS.CANCELLATION_REQUESTED && (
+        <div className="mb-4 rounded-lg border border-orange-200 bg-orange-50 px-4 py-3">
+          <div className="flex items-start gap-3">
+            <AlertCircle className="mt-0.5 h-5 w-5 shrink-0 text-orange-600" />
+            <div className="flex-1">
+              <p className="text-body-sm font-semibold text-orange-800">{t('orders.cancellationRequestTitle')}</p>
+              {o.cancellationReason && (
+                <p className="mt-1 text-caption text-orange-700">
+                  {t('orders.cancellationReason')}: {o.cancellationReason}
+                </p>
+              )}
+              <div className="mt-3 flex items-center gap-2">
+                <Button
+                  size="sm"
+                  variant="danger"
+                  icon={<Check className="h-3.5 w-3.5" />}
+                  onClick={handleApproveCancellation}
+                  loading={approveCancellationMutation.isPending}
+                >
+                  {t('orders.approveCancellation')}
+                </Button>
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  icon={<X className="h-3.5 w-3.5" />}
+                  onClick={handleDeclineCancellation}
+                  loading={declineCancellationMutation.isPending}
+                >
+                  {t('orders.declineCancellation')}
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Cancelled Banner */}
+      {o.status === ORDER_STATUS.CANCELLED && (
+        <div className="mb-4 flex items-center gap-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3">
+          <XCircle className="h-5 w-5 text-red-600" />
+          <div>
+            <p className="text-body-sm font-semibold text-red-800">{t('orders.cancelledTitle')}</p>
+            {o.cancellationReason && (
+              <p className="text-caption text-red-600">{t('orders.cancellationReason')}: {o.cancellationReason}</p>
+            )}
+          </div>
+        </div>
+      )}
+
       <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-3">
           <h1 className="font-heading text-h1 text-neutral-800">
@@ -115,33 +204,56 @@ export default function OrderDetailPage() {
           )}
         </div>
         <Row gap={2} className="flex-wrap">
-          {o.status > ORDER_STATUS.RECEIVED && (
-            <Button
-              variant="secondary"
-              icon={<ChevronLeft className="h-4 w-4 rtl:scale-x-[-1]" />}
-              onClick={handleRevert}
-              loading={updateOrderStatus.isPending}
-            >
-              {t('orders.revert', 'Back')}
-            </Button>
+          {o.status === ORDER_STATUS.PENDING_APPROVAL && (
+            <>
+              <Button
+                variant="primary"
+                icon={<Check className="h-4 w-4" />}
+                onClick={handleApproveOrder}
+                loading={approveMutation.isPending}
+              >
+                {t('orders.approveOrder')}
+              </Button>
+              <Button
+                variant="danger"
+                icon={<X className="h-4 w-4" />}
+                onClick={() => setShowCancelModal(true)}
+              >
+                {t('orders.cancelOrder')}
+              </Button>
+            </>
           )}
-          {o.status < ORDER_STATUS.DELIVERED && (
-            <Button
-              variant="primary"
-              icon={<ChevronRight className="h-4 w-4 rtl:scale-x-[-1]" />}
-              iconPosition="end"
-              onClick={handleAdvance}
-              loading={updateOrderStatus.isPending}
-            >
-              {t('orders.advance', 'Advance')}
-            </Button>
+          {o.status >= ORDER_STATUS.RECEIVED && o.status <= ORDER_STATUS.DELIVERED && o.status !== ORDER_STATUS.CANCELLED && (
+            <>
+              {o.status > ORDER_STATUS.RECEIVED && (
+                <Button
+                  variant="secondary"
+                  icon={<ChevronLeft className="h-4 w-4 rtl:scale-x-[-1]" />}
+                  onClick={handleRevert}
+                  loading={updateOrderStatus.isPending}
+                >
+                  {t('orders.revert', 'Back')}
+                </Button>
+              )}
+              {o.status < ORDER_STATUS.DELIVERED && (
+                <Button
+                  variant="primary"
+                  icon={<ChevronRight className="h-4 w-4 rtl:scale-x-[-1]" />}
+                  iconPosition="end"
+                  onClick={handleAdvance}
+                  loading={updateOrderStatus.isPending}
+                >
+                  {t('orders.advance', 'Advance')}
+                </Button>
+              )}
+            </>
           )}
-          {paymentStatuses?.[o.id] !== 'paid' && paymentStatuses?.[o.id] !== 'refunded' && (
+          {o.status !== ORDER_STATUS.CANCELLED && o.status !== ORDER_STATUS.PENDING_APPROVAL && o.status !== ORDER_STATUS.CANCELLATION_REQUESTED && paymentStatuses?.[o.id] !== 'paid' && paymentStatuses?.[o.id] !== 'refunded' && (
             <Button variant="secondary" icon={<BadgeDollarSign className="h-4 w-4" />} onClick={() => setShowLogPayment(true)}>
               {t('payments.logPayment', 'Log Payment')}
             </Button>
           )}
-          {paymentStatuses?.[o.id] === 'paid' && canRefund && (
+          {paymentStatuses?.[o.id] === 'paid' && canRefund && o.status !== ORDER_STATUS.CANCELLED && (
             <Button
               variant="danger"
               icon={<RotateCcw className="h-4 w-4" />}
@@ -150,12 +262,17 @@ export default function OrderDetailPage() {
               {t('refund.refund', 'Refund')}
             </Button>
           )}
-          {o.status <= ORDER_STATUS.IN_PROGRESS && paymentStatuses?.[o.id] !== 'paid' && (
+          {o.status >= ORDER_STATUS.RECEIVED && o.status <= ORDER_STATUS.IN_PROGRESS && paymentStatuses?.[o.id] !== 'paid' && (
             <Button variant="secondary" icon={<Edit className="h-4 w-4" />} onClick={() => navigate(`/orders/${o.id}/edit`)}>
               {t('common.edit')}
             </Button>
           )}
-          {o.status < ORDER_STATUS.DELIVERED && (
+          {o.status !== ORDER_STATUS.CANCELLED && o.status !== ORDER_STATUS.DELIVERED && o.status !== ORDER_STATUS.PENDING_APPROVAL && o.status !== ORDER_STATUS.CANCELLATION_REQUESTED && (
+            <Button variant="danger" icon={<X className="h-4 w-4" />} onClick={() => setShowCancelModal(true)}>
+              {t('orders.cancelOrder')}
+            </Button>
+          )}
+          {o.status === ORDER_STATUS.RECEIVED && (
             <Button variant="danger" icon={<Trash2 className="h-4 w-4" />} onClick={() => setShowDelete(true)}>
               {t('common.delete')}
             </Button>
@@ -356,6 +473,34 @@ export default function OrderDetailPage() {
         creditNoteExists={false}
         payments={(orderPayments as any[]) ?? []}
       />
+
+      <Modal open={showCancelModal} onClose={() => setShowCancelModal(false)} title={t('orders.cancelOrderTitle')} size="sm">
+        <div className="space-y-4">
+          <p className="text-body-sm text-neutral-600">{t('orders.cancelOrderMessage')}</p>
+          <div>
+            <label className="mb-1 block text-body-sm font-medium text-neutral-700">
+              {t('orders.cancellationReason')}
+            </label>
+            <textarea
+              value={cancelReason}
+              onChange={(e) => setCancelReason(e.target.value)}
+              className="w-full rounded-md border border-neutral-300 px-3 py-2 text-body-sm placeholder-neutral-400 focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
+              placeholder={t('orders.cancelReasonPlaceholder')}
+              rows={3}
+            />
+          </div>
+          {paymentStatuses?.[o.id] === 'paid' && (
+            <div className="flex items-start gap-2 rounded-md bg-amber-50 p-3 text-caption text-amber-800">
+              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+              <span>{t('orders.cancelRefundWarning')}</span>
+            </div>
+          )}
+        </div>
+        <footer className="flex items-center justify-end gap-2 border-t border-neutral-200 px-6 py-4 mt-4 -mx-6 -mb-6">
+          <Button variant="secondary" onClick={() => setShowCancelModal(false)}>{t('common.cancel')}</Button>
+          <Button variant="danger" onClick={handleCancel} loading={cancelMutation.isPending}>{t('orders.confirmCancel')}</Button>
+        </footer>
+      </Modal>
     </Page>
   );
 }

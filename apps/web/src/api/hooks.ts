@@ -5,6 +5,31 @@ import { useToastStore } from '@/store/toast';
 import { useAuthStore } from '@/store/auth';
 import { getApiErrorMessage, getApiErrorCode } from '@/utils/getApiError';
 
+// --- Mutation factory with automatic toast + query invalidation ---
+function useMutationWithToast<TData = unknown, TVariables = unknown>(
+  mutationFn: (variables: TVariables) => Promise<TData>,
+  options: {
+    invalidateKeys: string[][];
+    successMessage?: string;
+    errorMessage?: string;
+  },
+) {
+  const qc = useQueryClient();
+  const addToast = useToastStore((s) => s.addToast);
+  return useMutation({
+    mutationFn,
+    onSuccess: () => {
+      for (const key of options.invalidateKeys) {
+        qc.invalidateQueries({ queryKey: key });
+      }
+      if (options.successMessage) {
+        addToast('success', options.successMessage);
+      }
+    },
+    onError: (error: Error) => addToast('error', getApiErrorMessage(error, options.errorMessage ?? 'errors.generic')),
+  });
+}
+
 // PDF download helper
 export async function downloadPdf(url: string, filename: string) {
   const { data } = await apiClient.get(url, { responseType: 'blob' });
@@ -184,6 +209,20 @@ export function useRenewalRecovery() {
         checkoutSessionId: string;
         paypalSubscriptionId: string;
       }>('/subscription/recovery-checkout', {}),
+  });
+}
+
+// Switch to a lower paid plan during trial (with PayPal refund of upgrade difference)
+export function useTrialDowngrade() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (planSlug: string) =>
+      postApi<unknown>('/subscription/trial-downgrade', { planSlug }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['subscription'] });
+      qc.invalidateQueries({ queryKey: ['features'] });
+      qc.invalidateQueries({ queryKey: ['subscription', 'payments'] });
+    },
   });
 }
 
@@ -389,6 +428,46 @@ export function useDeleteOrder() {
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['orders'] }); qc.invalidateQueries({ queryKey: ['dashboard'] }); addToast('success', t('toasts.orderDeleted')); },
     onError: (error) => addToast('error', getApiErrorMessage(error, 'toasts.orderDeleteFailed')),
   });
+}
+
+export function usePendingOrdersCount() {
+  return useQuery({
+    queryKey: ['orders', 'pendingCount'],
+    queryFn: () => fetchApi<{ pendingApproval: number; cancellationRequested: number }>('/orders/pending-count'),
+    refetchInterval: 30_000,
+  });
+}
+
+export function useApproveOrder() {
+  const { t } = useTranslation();
+  return useMutationWithToast(
+    (id: number) => patchApi(`/orders/${id}/approve`, {}),
+    { invalidateKeys: [['orders'], ['dashboard']], successMessage: t('toasts.orderUpdated'), errorMessage: 'toasts.orderUpdateFailed' },
+  );
+}
+
+export function useCancelOrder() {
+  const { t } = useTranslation();
+  return useMutationWithToast(
+    ({ id, reason }: { id: number; reason?: string }) => patchApi(`/orders/${id}/cancel`, { reason }),
+    { invalidateKeys: [['orders'], ['dashboard'], ['paymentStatuses']], successMessage: t('toasts.orderUpdated'), errorMessage: 'toasts.orderUpdateFailed' },
+  );
+}
+
+export function useApproveCancellation() {
+  const { t } = useTranslation();
+  return useMutationWithToast(
+    (id: number) => patchApi(`/orders/${id}/cancellation-request/approve`, {}),
+    { invalidateKeys: [['orders'], ['dashboard'], ['paymentStatuses']], successMessage: t('toasts.orderUpdated'), errorMessage: 'toasts.orderUpdateFailed' },
+  );
+}
+
+export function useDeclineCancellation() {
+  const { t } = useTranslation();
+  return useMutationWithToast(
+    (id: number) => patchApi(`/orders/${id}/cancellation-request/decline`, {}),
+    { invalidateKeys: [['orders'], ['dashboard']], successMessage: t('toasts.orderUpdated'), errorMessage: 'toasts.orderUpdateFailed' },
+  );
 }
 
 // Recipes
@@ -865,6 +944,35 @@ export function useDeleteTag() {
   });
 }
 
+// Settings — Categories
+export function useCategories() {
+  return useQuery({ queryKey: ['categories'], queryFn: () => fetchApi<unknown[]>('/settings/categories') });
+}
+
+export function useCreateCategory() {
+  const { t } = useTranslation();
+  return useMutationWithToast(
+    (body: unknown) => postApi('/settings/categories', body),
+    { invalidateKeys: [['categories']], successMessage: t('toasts.categoryCreated', 'Category created'), errorMessage: 'toasts.categoryCreateFailed' },
+  );
+}
+
+export function useUpdateCategory() {
+  const { t } = useTranslation();
+  return useMutationWithToast(
+    ({ id, ...body }: { id: number } & Record<string, unknown>) => putApi(`/settings/categories/${id}`, body),
+    { invalidateKeys: [['categories']], successMessage: t('toasts.categoryUpdated', 'Category updated'), errorMessage: 'toasts.categoryUpdateFailed' },
+  );
+}
+
+export function useDeleteCategory() {
+  const { t } = useTranslation();
+  return useMutationWithToast(
+    (id: number) => deleteApi(`/settings/categories/${id}`),
+    { invalidateKeys: [['categories']], successMessage: t('toasts.categoryDeleted', 'Category deleted'), errorMessage: 'toasts.categoryDeleteFailed' },
+  );
+}
+
 // Settings — Profile
 export function useProfile() {
   return useQuery({ queryKey: ['profile'], queryFn: () => fetchApi<unknown>('/settings/profile') });
@@ -884,7 +992,7 @@ export function useUpdateProfile() {
 // Stores
 export function useCreateStore() {
   return useMutation({
-    mutationFn: (body: { name: string; code?: string; address?: string; inviteToken?: string }) =>
+    mutationFn: (body: { name: string; nameEn?: string; code?: string; address?: string; addressEn?: string; inviteToken?: string }) =>
       postApi<{ store: unknown; token: string }>('/stores', body),
   });
 }
@@ -911,9 +1019,10 @@ export function useUpdateStoreTheme() {
   const qc = useQueryClient();
   const addToast = useToastStore((s) => s.addToast);
   return useMutation({
-    mutationFn: (body: { theme: string }) => patchApi<void>('/stores/theme', body),
+    mutationFn: (body: { theme?: string; applyThemeToApp?: boolean }) => patchApi<void>('/stores/theme', body),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['stores'] });
+      qc.invalidateQueries({ queryKey: ['currentStore'] });
     },
     onError: (error) => addToast('error', getApiErrorMessage(error, 'toasts.themeUpdateFailed')),
   });
@@ -1510,7 +1619,7 @@ export function useCreateInvoice() {
   return useMutation({
     mutationFn: (data: { orderId: number; notes?: string; invoiceDate?: string }) => postApi<any>('/invoices', data),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['invoices'] }); addToast('success', t('toasts.invoiceCreated', 'Invoice created')); },
-    onError: (err) => addToast('error', getApiErrorMessage(err) || t('toasts.invoiceCreateFailed', 'Failed to create invoice')),
+    onError: (err) => addToast('error', getApiErrorMessage(err, 'toasts.invoiceCreateFailed')),
   });
 }
 
@@ -1521,7 +1630,7 @@ export function useCreateCreditNote(invoiceId: number) {
   return useMutation({
     mutationFn: (data: { notes?: string }) => postApi<any>(`/invoices/${invoiceId}/credit-note`, data),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['invoices'] }); addToast('success', t('toasts.creditNoteCreated', 'Credit note created')); },
-    onError: (err) => addToast('error', getApiErrorMessage(err) || t('toasts.creditNoteCreateFailed', 'Failed to create credit note')),
+    onError: (err) => addToast('error', getApiErrorMessage(err, 'toasts.creditNoteCreateFailed')),
   });
 }
 
@@ -1534,7 +1643,7 @@ export function useUpdateBusinessInfo() {
   const addToast = useToastStore((s) => s.addToast);
   const { t } = useTranslation();
   return useMutation({
-    mutationFn: (data: { name?: string; address?: string; phone?: string; email?: string; taxNumber?: string; vatRate?: number }) => patchApi<any>('/stores/business-info', data),
+    mutationFn: (data: { name?: string | null; nameEn?: string | null; address?: string | null; addressEn?: string | null; phone?: string | null; email?: string | null; taxNumber?: string | null; vatRate?: number; autoGenerateInvoice?: boolean; autoGenerateCreditNote?: boolean }) => patchApi<any>('/stores/business-info', data),
     onSuccess: (_data, variables) => {
       qc.invalidateQueries({ queryKey: ['currentStore'] });
       qc.invalidateQueries({ queryKey: ['stores', 'all'] });
@@ -1544,7 +1653,64 @@ export function useUpdateBusinessInfo() {
       }
       addToast('success', t('toasts.businessInfoUpdated', 'Business info updated'));
     },
-    onError: (err) => addToast('error', getApiErrorMessage(err) || t('toasts.businessInfoUpdateFailed', 'Failed to update business info')),
+    onError: (err) => addToast('error', getApiErrorMessage(err, 'toasts.businessInfoUpdateFailed')),
+  });
+}
+
+// Storefront — Slug & Toggle
+export function useUpdateSlug() {
+  const { t } = useTranslation();
+  return useMutationWithToast(
+    (data: { slug: string }) => patchApi<void>('/stores/slug', data),
+    { invalidateKeys: [['currentStore']], successMessage: t('toasts.slugUpdated', 'Store URL updated'), errorMessage: 'toasts.slugUpdateFailed' },
+  );
+}
+
+export function useUpdateStorefrontEnabled() {
+  const { t } = useTranslation();
+  return useMutationWithToast(
+    (data: { enabled: boolean }) => patchApi<void>('/stores/storefront', data),
+    { invalidateKeys: [['currentStore']], successMessage: t('toasts.storefrontUpdated', 'Storefront settings updated'), errorMessage: 'toasts.storefrontUpdateFailed' },
+  );
+}
+
+export async function checkSlugAvailability(slug: string): Promise<{ available: boolean }> {
+  return fetchApi<{ available: boolean }>(`/stores/slug/check?slug=${encodeURIComponent(slug)}`);
+}
+
+export function useGenerateBrandingUploadUrl() {
+  return useMutation({
+    mutationFn: (data: { type: 'logo' | 'banner'; mimeType: string }) =>
+      postApi<{ uploadUrl: string; publicUrl: string }>('/stores/branding/upload-url', data),
+  });
+}
+
+export function useUpdateBranding() {
+  const qc = useQueryClient();
+  const addToast = useToastStore((s) => s.addToast);
+  const { t } = useTranslation();
+  return useMutation({
+    mutationFn: (data: { logoUrl?: string | null; bannerUrl?: string | null; description?: string | null; descriptionEn?: string | null; categorySubject?: string | null; categorySubSubject?: string | null }) =>
+      patchApi<any>('/stores/branding', data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['currentStore'] });
+      addToast('success', t('settings.storefront.branding.saved'));
+    },
+    onError: (err) => addToast('error', getApiErrorMessage(err, 'settings.storefront.branding.saveFailed')),
+  });
+}
+
+export function useToggleRecipePublish() {
+  const qc = useQueryClient();
+  const addToast = useToastStore((s) => s.addToast);
+  const { t } = useTranslation();
+  return useMutation({
+    mutationFn: ({ id, isPublished }: { id: string; isPublished: boolean }) => patchApi<any>(`/recipes/${id}/publish`, { isPublished }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['recipes'] });
+      addToast('success', t('toasts.recipePublishUpdated', 'Recipe publish status updated'));
+    },
+    onError: (err) => addToast('error', getApiErrorMessage(err, 'toasts.recipePublishFailed')),
   });
 }
 
@@ -1568,5 +1734,13 @@ export function useCustomerSegments() {
     queryKey: ['customerSegments'],
     queryFn: () => fetchApi<{ vip: number; regular: number; new: number; dormant: number; inactive: number }>('/customers/segments'),
     staleTime: 5 * 60 * 1000,
+  });
+}
+
+// Translation
+export function useTranslate() {
+  return useMutation({
+    mutationFn: (params: { text: string; fieldType: 'name' | 'description' }) =>
+      postApi<{ translation: string }>('/ai-chat/translate', params),
   });
 }

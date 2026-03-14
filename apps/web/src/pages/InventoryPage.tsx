@@ -10,6 +10,7 @@ import { PageSkeleton } from '@/components/Feedback';
 import { Modal } from '@/components/Modal';
 import { TextInput, NumberInput, Select } from '@/components/FormFields';
 import { useInventory, useCreateInventoryItem, useUpdateInventoryItem, useDeleteInventoryItem, useAdjustStock, useAllergens, useScanReceipt, downloadPdf, useFeatureFlags, type PaginationInfo } from '@/api/hooks';
+import { TranslateButton } from '@/components/TranslateButton';
 import { useAppStore } from '@/store/app';
 import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 import { InventoryLogType } from '@mise/shared';
@@ -101,7 +102,7 @@ export default function InventoryPage() {
   const [addingFromReceipt, setAddingFromReceipt] = useState(false);
   const receiptCreatedIdsRef = useRef<(id: number) => void>();
 
-  const emptyItem = { name: '', unit: '', stock: '' as number | '', packageSize: '' as number | '', threshold: '' as number | '', costPerUnit: '' as number | '', allergenIds: [] as string[] };
+  const emptyItem = { name: '', nameEn: '', unit: '', stock: '' as number | '', packageSize: '' as number | '', threshold: '' as number | '', costPerUnit: '' as number | '', allergenIds: [] as string[] };
   const [newItem, setNewItem] = useState(emptyItem);
   const isEdit = editingItem !== null && editingItem !== 'new';
   const isModalOpen = editingItem !== null;
@@ -194,7 +195,7 @@ export default function InventoryPage() {
         shrink: true,
         render: (row: any) => (
           <div className="flex items-center">
-            <Button size="sm" variant="ghost" onClick={(e: React.MouseEvent) => { e.stopPropagation(); setEditingItem(row); setNewItem({ name: row.name, allergenIds: (row.allergens ?? []).map((g: any) => String(g.id)), threshold: row.lowStockThreshold ?? '', unit: row.unit ?? 'kg', costPerUnit: row.costPerUnit ?? '', stock: row.quantity ?? '', packageSize: row.packageSize ?? '' }); setPriceInput(row.packageSize && row.costPerUnit ? Math.round(row.costPerUnit * row.packageSize * 100) / 100 : row.costPerUnit ?? ''); setPriceMode('unit'); setThresholdMode('units'); }} title={t('common.edit')}>
+            <Button size="sm" variant="ghost" onClick={(e: React.MouseEvent) => { e.stopPropagation(); setEditingItem(row); setNewItem({ name: row.name, nameEn: row.nameEn ?? '', allergenIds: (row.allergens ?? []).map((g: any) => String(g.id)), threshold: row.lowStockThreshold ?? '', unit: row.unit ?? 'kg', costPerUnit: row.costPerUnit ?? '', stock: row.quantity ?? '', packageSize: row.packageSize ?? '' }); setPriceInput(row.packageSize && row.costPerUnit ? Math.round(row.costPerUnit * row.packageSize * 100) / 100 : row.costPerUnit ?? ''); setPriceMode('unit'); setThresholdMode('units'); }} title={t('common.edit')}>
               <Pencil className="h-4 w-4" />
             </Button>
             <Button size="sm" variant="ghost" onClick={(e: React.MouseEvent) => { e.stopPropagation(); setShowAdjust(row); }} title={t('inventory.adjust', 'Adjust')}>
@@ -222,13 +223,13 @@ export default function InventoryPage() {
     if (!newItem.name || newItem.packageSize === '' || priceInput === '') return;
     if (isEdit) {
       updateItem.mutate(
-        { id: editingItem.id, name: newItem.name, allergenIds: newItem.allergenIds, lowStockThreshold: newItem.threshold, unit: newItem.unit, costPerUnit: newItem.costPerUnit, packageSize: newItem.packageSize },
+        { id: editingItem.id, name: newItem.name, nameEn: newItem.nameEn || undefined, allergenIds: newItem.allergenIds, lowStockThreshold: newItem.threshold, unit: newItem.unit, costPerUnit: newItem.costPerUnit, packageSize: newItem.packageSize },
         { onSuccess: closeModal },
       );
     } else {
       if (!newItem.unit) return;
       createItem.mutate(
-        { name: newItem.name, unit: newItem.unit, quantity: 0, lowStockThreshold: newItem.threshold === '' ? 0 : newItem.threshold, costPerUnit: newItem.costPerUnit, packageSize: newItem.packageSize, allergenIds: newItem.allergenIds },
+        { name: newItem.name, nameEn: newItem.nameEn || undefined, unit: newItem.unit, quantity: 0, lowStockThreshold: newItem.threshold === '' ? 0 : newItem.threshold, costPerUnit: newItem.costPerUnit, packageSize: newItem.packageSize, allergenIds: newItem.allergenIds },
         { onSuccess: (data: any) => {
           if (addingFromReceipt && data?.id && receiptCreatedIdsRef.current) {
             receiptCreatedIdsRef.current(data.id);
@@ -382,7 +383,7 @@ export default function InventoryPage() {
             columns={columns}
             data={items}
             keyExtractor={(row: any) => row.id}
-            onRowClick={(row: any) => { setEditingItem(row); setNewItem({ name: row.name, allergenIds: (row.allergens ?? []).map((g: any) => String(g.id)), threshold: row.lowStockThreshold ?? '', unit: row.unit ?? 'kg', costPerUnit: row.costPerUnit ?? '', stock: row.quantity ?? '', packageSize: row.packageSize ?? '' }); setPriceInput(row.packageSize && row.costPerUnit ? Math.round(row.costPerUnit * row.packageSize * 100) / 100 : row.costPerUnit ?? ''); setPriceMode('unit'); setThresholdMode('units'); }}
+            onRowClick={(row: any) => { setEditingItem(row); setNewItem({ name: row.name, nameEn: row.nameEn ?? '', allergenIds: (row.allergens ?? []).map((g: any) => String(g.id)), threshold: row.lowStockThreshold ?? '', unit: row.unit ?? 'kg', costPerUnit: row.costPerUnit ?? '', stock: row.quantity ?? '', packageSize: row.packageSize ?? '' }); setPriceInput(row.packageSize && row.costPerUnit ? Math.round(row.costPerUnit * row.packageSize * 100) / 100 : row.costPerUnit ?? ''); setPriceMode('unit'); setThresholdMode('units'); }}
             bare
           />
           {pagination && pagination.totalPages > 1 && (
@@ -471,7 +472,13 @@ export default function InventoryPage() {
         }
       >
         <Stack gap={4}>
-          <TextInput label={t('inventory.name', 'Name')} value={newItem.name} onChange={(e) => setNewItem({ ...newItem, name: e.target.value })} required dir="auto" />
+          <div className="flex gap-3">
+            <TextInput label={t('inventory.name', 'Name')} value={newItem.name} onChange={(e) => setNewItem({ ...newItem, name: e.target.value })} required dir="auto" className="flex-1" />
+            <div className="flex-1 flex flex-col">
+              <TextInput label={`${t('inventory.nameEn', 'Name (English)')} (${t('common.optional')})`} value={newItem.nameEn} onChange={(e) => setNewItem({ ...newItem, nameEn: e.target.value })} dir="ltr" placeholder={t('inventory.nameEnPlaceholder', 'e.g. All-purpose flour')} />
+              <TranslateButton hebrewText={newItem.name} onTranslate={(text) => setNewItem((prev) => ({ ...prev, nameEn: text }))} fieldType="name" className="self-end mt-1" />
+            </div>
+          </div>
           {((allergens ?? []) as { id: number; name: string; color?: string | null; isDefault?: boolean }[]).length > 0 && (
             <div>
               <label className="mb-1 block text-body-sm font-semibold text-neutral-700">{t('inventory.allergens', 'Allergens')}</label>

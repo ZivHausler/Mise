@@ -52,6 +52,26 @@ export function useOrderSSE() {
       }
     });
 
+    es.addEventListener('order.cancellationRequested', (event) => {
+      try {
+        const order = JSON.parse(event.data);
+
+        queryClient.invalidateQueries({ queryKey: ['orders'] });
+        queryClient.invalidateQueries({ queryKey: ['dashboard'] });
+
+        const customerName = order.customer?.name ?? '';
+        const orderNum = order.orderNumber ? `#${order.orderNumber}` : '';
+        addToast(
+          'warning',
+          tRef.current('toasts.cancellationRequestReceived', { orderNum, customer: customerName }),
+          undefined,
+          () => navigateRef.current(`/orders/${order.id}`),
+        );
+      } catch {
+        // ignore malformed events
+      }
+    });
+
     es.onerror = () => {
       // EventSource will automatically reconnect
     };
