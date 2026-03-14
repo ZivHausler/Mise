@@ -1,347 +1,23 @@
 # Mise — Progress Tracker
 
-> Updated by team members as work progresses.
+> Bakery management platform. Hebrew RTL app built with Fastify + React + PostgreSQL.
+> Last verified against codebase: 2026-03-14
 
 ---
 
-## Team Members
+## Architecture
 
-| Role | Agent | Status |
-|------|-------|--------|
-| Designer (UX/UI) | designer | Complete |
-| Architect | architect | Complete |
-| Backend Developer | backend-dev | Complete |
-| Frontend Developer | frontend-dev | Complete |
-| QA Engineer | qa-engineer | Complete |
-| Security Researcher | security-researcher | Complete |
-
----
-
-## Phase 1: Research & Design
-
-### Designer
-- [x] Research bakery websites for inspiration
-- [x] Design baker-side UX/UI
-- [x] Design customer-side UX/UI
-- [x] Create design system documentation
-
-### Architect
-- [x] Research scalable architecture patterns
-- [x] Define project structure
-- [x] Define module boundaries and communication patterns
-- [x] Scaffold monorepo with all workspaces (apps/api, apps/web, packages/shared, packages/db, packages/ui)
-- [x] Set up Turborepo pipeline configuration
-- [x] Set up TypeScript strict configs with path aliases
-- [x] Set up ESLint + Prettier
-- [x] Create Docker Compose for PostgreSQL, MongoDB, Redis
-- [x] Create Dockerfiles for API and Web apps
-- [x] Scaffold all 6 backend modules with layered architecture (types, repository, service, controller, routes)
-- [x] Set up core infrastructure (errors, events, DI, logger, database, cache)
-- [x] Set up frontend with Vite + React + Tailwind + i18n (Hebrew RTL + English LTR)
-- [x] Create shared packages (types, validation schemas, constants, utils)
-- [x] Document scaling strategy
-
-#### Architecture Decisions
 - **Monorepo**: pnpm workspaces + Turborepo
-- **Backend**: Fastify + layered architecture (Route -> Controller -> Service -> Repository)
-- **DI Container**: Awilix (classic injection, constructor-based)
-- **Event Bus**: In-memory for V1, swappable to RabbitMQ/Redis Streams
-- **Error Handling**: Custom typed error hierarchy with global error handler
-- **Database**: PostgreSQL (pg pool) + MongoDB (native driver for recipes)
-- **Caching**: Redis via ioredis with interface abstraction
+- **Backend**: Fastify + layered architecture (Route → Controller → Service → Repository)
+- **Frontend**: React + Vite + Tailwind CSS + Zustand + TanStack Query
+- **Mobile**: React Native / Expo (storefront customer app)
+- **Database**: PostgreSQL (primary) + MongoDB (recipes)
+- **Caching**: Redis via ioredis
+- **Events**: RabbitMQ (in-memory fallback)
 - **Validation**: Zod schemas shared between frontend and backend
-- **Frontend State**: Zustand (client) + TanStack Query (server)
-- **i18n**: i18next with Hebrew (RTL) + English (LTR)
-- **Styling**: Tailwind CSS with warm bakery theme tokens
-
----
-
-## Phase 2: Implementation
-
-### Backend Developer
-- [x] Set up Fastify server with TypeScript
-- [x] Implement core infrastructure (errors, DI, logging, DB connections)
-- [x] Implement Auth module (register, login, JWT, refresh, profile)
-- [x] Implement Recipes module (CRUD, sub-recipes, cost calculation, MongoDB)
-- [x] Implement Inventory module (CRUD, stock adjust, low-stock alerts, log)
-- [x] Implement Customers module (CRUD, preferences, search)
-- [x] Implement Orders module (CRUD, status pipeline, event publishing)
-- [x] Implement Payments module (create, summary, history)
-- [x] Implement Notifications module (event subscribers)
-- [x] Implement Analytics module (revenue, popular recipes, order stats)
-- [x] Create PostgreSQL migration schema
-- [x] Wire all modules into Fastify with route prefixes
-- [x] Implement auth middleware (JWT verification via @fastify/jwt)
-- [x] Use cases for all modules with validation
-
-#### Backend Implementation Details
-- **Auth**: Register with password rules (8+ chars, uppercase, number), login with bcrypt, JWT via @fastify/jwt, token refresh, profile endpoint
-- **Recipes**: MongoDB-backed, composable sub-recipes, recursive cost calculation, ingredient enrichment from inventory
-- **Inventory**: PostgreSQL, transactional stock adjustments with log, low-stock event publishing
-- **Customers**: PostgreSQL, JSONB preferences (allergies, favorites), multi-field search
-- **Orders**: PostgreSQL, JSONB items, status pipeline with flow validation (received->in_progress->ready->delivered), event publishing
-- **Payments**: PostgreSQL, payment summary with auto-calculated status (unpaid/partial/paid), order verification
-- **Notifications**: Event bus subscribers for order.created, order.statusChanged, inventory.lowStock, payment.received
-- **Analytics**: Revenue (daily/total), popular recipes, order stats by status, customer frequency
-
-### Frontend Developer
-- [x] Set up React app with Vite + TypeScript
-- [x] Implement design system primitives (Typography, Button, Layout, Card, Modal, FormFields, DataDisplay, Feedback)
-- [x] Implement i18n (Hebrew RTL + English LTR) with full translation files
-- [x] Implement Tailwind config with bakery design system tokens (colors, fonts, shadows, spacing, animations)
-- [x] Implement state management (Zustand: auth, app, toast stores)
-- [x] Implement API layer (TanStack Query hooks for all modules, axios client with JWT interceptor)
-- [x] Implement routing with React Router (lazy-loaded pages, protected routes, 404)
-- [x] Implement App Shell (Sidebar, TopBar, BottomTabs, Breadcrumbs, responsive drawer)
-- [x] Implement Auth pages (Login, Register)
-- [x] Implement Dashboard page (stat cards, order pipeline, quick actions)
-- [x] Implement Orders pages (Kanban pipeline + list view, detail, create/edit form)
-- [x] Implement Recipes pages (grid + list view, tabbed detail, create/edit form with ingredients/steps)
-- [x] Implement Inventory page (stock table, add item modal, adjust stock modal)
-- [x] Implement Customers pages (table, detail with order history tabs, create modal)
-- [x] Implement Payments page (transaction log, log payment modal)
-- [x] Implement Settings page (language toggle, profile, logout)
-- [x] Implement More page (mobile navigation)
-- [x] Implement 404 Not Found page
-
-#### Frontend Implementation Details
-- **Design System**: Full bakery palette (primary, accent, semantic, neutral), Frank Ruhl Libre headings, Assistant body font, warm shadows with brown tints
-- **Components**: 15 reusable components (Typography x8, Button, Modal, FormFields x7, DataTable, StatusBadge, StatCard, EmptyState, Spinner, Skeleton, Toast)
-- **RTL**: CSS logical properties throughout (ms/me/ps/pe/start/end), dir attributes on number/phone/email inputs, icon mirroring with rtl:scale-x-[-1]
-- **Performance**: React.memo on all components, useMemo for filtered/sorted data, useCallback for handlers, lazy-loaded routes with Suspense, proper key props
-- **State**: Zustand for auth/app/toast, TanStack Query for all API calls with cache invalidation
-- **Responsive**: Desktop sidebar (260px/64px collapsed), tablet hamburger drawer, mobile bottom tabs (5 items), adaptive grids
-
-### QA Engineer
-- [x] Set up testing framework (Vitest config, mock factories, test helpers)
-- [x] Write unit tests for Core infrastructure (errors, event bus, auth middleware) — 22 tests
-- [x] Write unit tests for Auth module (register, login, getUserProfile) — 12 tests
-- [x] Write unit tests for Inventory module (CRUD, adjustStock, service low-stock events) — 26 tests
-- [x] Write unit tests for Customers module (CRUD, preferences, validation) — 13 tests
-- [x] Write unit tests for Recipes module (CRUD, cost calculation, sub-recipes, circular refs) — 18 tests
-- [x] Write unit tests for Orders module (CRUD, status pipeline, events, delete constraints) — 26 tests
-- [x] Write unit tests for Payments module (create, summary, service events) — 19 tests
-- **Total: 136 tests across 27 test files — all passing**
-
-### Security Researcher
-- [x] Audit authentication implementation (JWT secret enforcement, token expiry, bcrypt 12 rounds)
-- [x] Check for SQL injection vulnerabilities (all queries parameterized, ILIKE wildcards escaped)
-- [x] Check for NoSQL injection vulnerabilities (MongoDB $regex and $operator injection fixed)
-- [x] Check for XSS vulnerabilities (no dangerouslySetInnerHTML, React auto-escaping, CSP headers)
-- [x] Validate input sanitization (max length limits on all fields, global NoSQL sanitize middleware)
-- [x] Review API rate limiting / DDoS protection (auth-specific 10/15min limit, 1MB body limit)
-- [x] Review CORS and security headers (explicit origins, full Helmet config with CSP/HSTS)
-- [x] Harden error handling (no stack traces in production, rate limit error handling)
-- [x] Create security audit documentation (`docs/security/security-audit.md`)
-
-#### Security Findings Summary
-- **2 Critical** fixes: JWT secret enforcement, NoSQL injection in recipe search
-- **3 High** fixes: Auth rate limiting, Helmet/CSP hardening, SQL ILIKE wildcard escaping
-- **4 Medium** fixes: Input length limits, error detail masking, health endpoint hardening, token expiry
-- **2 Low** acknowledged: Docker MongoDB auth (dev-only), .env.example defaults
-- **9 Positive** findings: parameterized SQL, bcrypt, auth middleware coverage, Zod validation, etc.
-- Full report: `docs/security/security-audit.md`
-
----
-
-## Phase 3: Post-V1 Features & Improvements
-
-### Google OAuth & Account Merging
-- [x] Google OAuth login and registration flow
-- [x] Account merging: link existing email account to Google
-- [x] Account merging: link Google account to existing email
-- [x] Frontend Google sign-in button on login/register pages
-
-### Notification System
-- [x] Notification dispatcher with channel routing (email, SMS, in-app)
-- [x] Event-driven: order.created, order.statusChanged, inventory.lowStock, payment.received
-- [x] Notification preferences UI (per-channel toggles)
-- [x] SSE endpoint — real-time server-sent events for pushing notifications to connected clients
-- [x] Actual email delivery via Resend API (localized HTML templates, graceful degradation without API key)
-- [ ] Actual SMS delivery (currently logs to console)
-- [ ] App push notifications (UI shows "Coming Soon")
-
-### Order Improvements
-- [x] 9-digit sequential order numbers (starting at 100000001)
-- [x] Numeric order status enum (0-3: received, in_progress, ready, delivered)
-- [x] Bidirectional status transitions (can move status backward)
-- [x] Price difference indicator on order form (+/- from recipe base price)
-- [x] Order detail page with formatted dates, short IDs, creation date
-- [x] Exclude paid orders from payment log modal (`excludePaid` filter)
-
-### Server-Side Pagination & Search
-- [x] Inventory: paginated API with search and group filtering (10 items/page)
-- [x] Customer orders: server-side pagination
-- [x] Customer payments: server-side pagination
-- [x] Payments page: server-side pagination
-- [x] RTL-aware chevron icons in pagination controls
-
-### Settings Module
-- [x] Groups management (CRUD for ingredient/recipe groups)
-- [x] Units management (CRUD for measurement units with categories and conversion factors)
-- [x] Profile settings (update name, email)
-- [x] Notification preferences (per-channel toggles)
-- [x] Language toggle (Hebrew/English)
-- [x] Team settings tab (UI)
-- [x] Loyalty settings tab (enable/disable program, earning rate, redemption value, min redeem threshold, live preview)
-
-### Store Management (Multi-Tenancy)
-- [x] Store setup page for new users
-- [x] Store creation with name, type, address, phone
-- [x] Store invite system — join-store and create-store invitation types
-- [x] Store name component in sidebar/topbar
-- [x] Database migration for stores table with full multi-tenancy (store_id FK on all data tables)
-- [x] Store switching (`POST /stores/select` re-issues JWT with new storeId)
-- [x] Store member management (list members, invite new members)
-- [x] Store roles: Owner, Manager, Employee
-- [x] Invitation-only registration system-wide (no open signups)
-- [x] Invitation landing page (validates token, routes to register or store setup)
-
-### Loyalty System (Points-Based Rewards)
-- [x] Per-store loyalty configuration (enable/disable, earning rate, redemption value, minimum threshold)
-- [x] Automatic point earning on payment received (configurable points per shekel)
-- [x] Automatic point deduction on payment refund (capped at current balance)
-- [x] Manual point adjustments with description (admin feature)
-- [x] Point redemption for discounts with shekel value calculation
-- [x] Append-only transaction ledger (earned, redeemed, adjusted)
-- [x] Customer balance summary with lifetime earned/redeemed stats
-- [x] Paginated transaction history per customer
-- [x] Event-driven integration with payment system (PAYMENT_RECEIVED, PAYMENT_REFUNDED)
-- [x] Loyalty settings tab in Settings page with live preview
-- [x] Adjust Points modal and Redeem Points modal on customer detail
-- [x] Full i18n support (English + Hebrew)
-- [x] 11 unit tests covering all service methods
-
-### Production Module (Batch Production Planning)
-- [x] Production batches CRUD (create, list, detail, update, delete)
-- [x] 7-stage production pipeline (To Prep → Mixing → Proofing → Baking → Cooling → Ready → Packaged)
-- [x] Auto-generate batches from upcoming orders
-- [x] Manual batch creation with recipe, quantity, date, priority, assignee
-- [x] Batch-to-order linking (track which orders a batch fulfills)
-- [x] Prep list with per-batch ingredient requirements and prep status tracking
-- [x] Aggregated prep view (total ingredients needed across all batches)
-- [x] Stage transitions with event publishing
-- [x] Kanban board view (drag batches across stages)
-- [x] Timeline view (visual production schedule)
-- [x] Prep list view (aggregated ingredient checklist)
-- [x] Kiosk mode (tablet-friendly production floor view)
-- [x] Batch detail modal with order sources and prep items
-- [x] Database migration (`017_production_batches.sql`)
-- [x] Full i18n support (English + Hebrew)
-
-### Architecture Refactoring
-- [x] Generic CRUD base class with Zod schema validation
-- [x] Refactored all modules to use CRUD base (customers, inventory, orders, payments, recipes, settings)
-- [x] Removed individual create/update/delete use-case files in favor of generic CRUD
-- [x] Added Zod schemas per module (customer.schema, inventory.schema, order.schema, etc.)
-- [x] Redis caching layer (`redis-client.ts`)
-
-### Store Theme Customization
-- [x] Per-store background theme stored in DB (`theme` column on stores table)
-- [x] 7 preset themes: Cream (default), White, Stone, Rose, Mint, Sky, Lavender
-- [x] `PATCH /stores/theme` endpoint (owner/admin only)
-- [x] CSS variable `--app-bg` applied on store load
-- [x] Appearance section in Account settings with mini preview cards
-- [x] Full i18n support (English + Hebrew)
-- [x] Database migration (`025_store_theme.sql`)
-
-### UI/UX Improvements
-- [x] New customer modal (inline creation)
-- [x] Drag-and-drop recipe steps (desktop: grip handle, mobile: long-press)
-- [x] Improved dashboard layout (Quick Actions in separate row)
-- [x] RTL fixes: date locale, currency (NIS to shekel symbol), translation keys
-- [x] Mobile nav using translation keys instead of hardcoded English
-- [x] Debounced search inputs (`useDebouncedValue` hook)
-- [x] RotatingImage decorative component
-
-### Inventory Enhancements
-- [x] Recipe cost calculation with ingredient enrichment
-- [x] Stock adjustments with price tracking
-- [x] Package size support
-- [x] Debounced search input
-- [x] Clickable group chips for filtering
-
-### Payment Improvements
-- [x] Payment refund support (`POST /payments/:id/refund`)
-- [x] Refund confirmation modal in UI
-- [x] Exclude already-paid orders from payment log modal dropdown
-- [x] Payment method filtering (cash, credit_card)
-- [x] Payment status filtering (unpaid, partial, paid)
-
-### Admin Panel (New Module)
-- [x] Admin access gate (`GET /admin/access` + frontend `AdminRoute` guard)
-- [x] Admin layout shell with dedicated sidebar navigation
-- [x] **Admin Dashboard** — analytics cards (total users, stores, active invitations, signups/day) + embedded Grafana panels with range selector (week/month/year)
-- [x] **User Management** — paginated user table with search, promote/demote admin (with safety guards: can't self-modify, can't touch other admins), enable/disable users
-- [x] **Store Management** — paginated store table with search, expandable member list, inline edit (name, address)
-- [x] **Invitation Management** — paginated invitation list with rich filters (status, search, store, user, role, date range), create store invitations, revoke pending invitations
-- [x] **Audit Log** — paginated audit log with filters (user, HTTP method, status code, date range, text search), live polling every 10s for new entries on page 1, click-to-expand modal showing request/response body as formatted JSON
-- [x] **Audit log body storage** — request and response bodies stored in separate tables (`admin_audit_log_request_body`, `admin_audit_log_response_body`) with 10KB cap and truncation
-- [x] Admin audit middleware — global `onSend` hook that fire-and-forgets every authenticated API call to the audit log (skips admin GET requests to avoid feedback loops)
-- [x] Admin analytics endpoint (`GET /admin/analytics`) — totalUsers, totalStores, activeInvitations, signupsPerDay with configurable range
-
-### Server-Sent Events (SSE)
-- [x] SSE infrastructure (connection manager, heartbeat, reconnection)
-- [x] Real-time order updates via SSE
-
-### Grafana Observability
-- [x] Grafana service in Docker Compose (port 3002, anonymous viewer access)
-- [x] Provisioned PostgreSQL data source
-- [x] Pre-built admin dashboard JSON with panels: signups chart, orders/revenue per day, financial stat cards (total revenue, avg order value, outstanding balance), order status pie chart, payment method pie chart, stores created over time, top stores table, inactive stores table
-- [x] CSP configured for Grafana iframe embedding in admin dashboard
-
----
-
-## Database Migrations
-
-| # | Migration | Description |
-|---|-----------|-------------|
-| 1 | `001_initial.sql` | Core schema: users, customers, ingredients, inventory_log, orders, payments |
-| 2 | `002_settings.sql` | Units with conversion factors, unit_categories, groups, notification_preferences, ingredient_groups (many-to-many) |
-| 3 | `003_default_groups.sql` | Seeds default ingredient groups |
-| 4 | `004_inventory_log_price.sql` | Adds `price_paid` to inventory_log |
-| 5 | `005_package_size.sql` | Adds `package_size` to ingredients |
-| 6 | `006_google_auth.sql` | Adds `google_id` to users, makes `password_hash` nullable |
-| 7 | `007_order_number.sql` | Auto-incrementing `order_number` sequence (starts at 100000001) |
-| 8 | `008_stores.sql` | Full multi-tenancy: stores, users_stores (with roles), store_invitations; adds store_id FK to customers, ingredients, orders, groups, units |
-| 9 | `009_invitation_only.sql` | Makes `store_id` nullable in invitations (NULL = create-store type), adds OWNER role |
-| 10 | `010_admin_role.sql` | Adds `is_admin` boolean to users, creates `admin_audit_log` table |
-| 11 | `011_admin_module.sql` | Adds `disabled_at` to users, `revoked_at` to store_invitations |
-| 12 | `012_audit_log_bodies.sql` | (Superseded) Added request/response body columns to audit log |
-| 13 | `013_split_audit_log_bodies.sql` | Splits bodies into separate tables, migrates existing data |
-| 14 | `014_audit_log_cascade.sql` | Cascade deletes for audit log body tables |
-| 15 | `015_user_onboarding.sql` | Adds `onboarding_completed_at` to users for product tour tracking |
-| 16 | `016_loyalty.sql` | Loyalty system: `loyalty_config` (per-store settings), `loyalty_transactions` (append-only ledger), `loyalty_points` column on customers |
-| 17 | `017_production_batches.sql` | Production batches, batch-order links, batch prep items for production planning |
-| 25 | `025_store_theme.sql` | Adds `theme` column to stores table for per-store background theme |
-
----
-
-## Major Features Summary
-
-| Feature | Backend | Frontend | Status |
-|---------|---------|----------|--------|
-| Auth (email + password) | Done | Done | Complete |
-| Google OAuth + account merging | Done | Done | Complete |
-| Recipes (CRUD, sub-recipes, costing) | Done | Done | Complete |
-| Inventory (CRUD, stock, groups, search, pagination) | Done | Done | Complete |
-| Customers (CRUD, preferences, search) | Done | Done | Complete |
-| Orders (CRUD, status pipeline, numbering) | Done | Done | Complete |
-| Payments (CRUD, summary, refunds, filtering) | Done | Done | Complete |
-| Analytics (revenue, popular, stats) | Done | Done | Complete |
-| Notifications (dispatcher, preferences) | Partial | Done | Email done, SMS stubbed |
-| Settings (groups, units, profile, notifications) | Done | Done | Complete |
-| Store Management (multi-tenancy) | Done | Done | Complete |
-| Invitation System (join-store + create-store) | Done | Done | Complete |
-| Admin Panel (users, stores, invitations, audit) | Done | Done | Complete |
-| Admin Analytics + Grafana Dashboards | Done | Done | Complete |
-| Admin Audit Log (with body capture) | Done | Done | Complete |
-| Loyalty System (points rewards) | Done | Done | Complete |
-| Production (batch planning, kanban, prep list) | Done | Done | Complete |
-| Store Theme Customization (7 presets) | Done | Done | Complete |
-| Server-Side Pagination | Done | Done | Complete |
-| i18n (Hebrew RTL + English LTR) | — | Done | Complete |
-| Security Hardening | Done | — | Complete |
+- **i18n**: i18next — Hebrew (RTL) + English (LTR)
+- **Auth**: JWT (@fastify/jwt) + Google OAuth + invitation-only registration
+- **Observability**: Grafana dashboards, Pino logger, admin audit log
 
 ---
 
@@ -357,90 +33,415 @@
 
 ---
 
-## Security Model
+## Completed Features
 
-- Invitation-only registration (no open signups)
-- JWT-based authentication with refresh tokens
-- Three-tier authorization: public → authenticated → store-scoped → admin
-- Store roles: Owner (1), Manager (2), Employee (3), Admin (-1)
-- Admin audit log captures every authenticated mutation (fire-and-forget)
-- Rate limiting: 1000 req/min globally, 10 req/15min on auth endpoints
-- Helmet CSP, HSTS, referrer policy, XSS filter
-- All SQL queries parameterized, NoSQL injection guards, input length limits
+### Core Modules
+- [x] **Auth** — Email/password registration, login, JWT with refresh, bcrypt, profile endpoint
+- [x] **Google OAuth** — Login/register, account merging (email↔Google both directions)
+- [x] **Recipes** — MongoDB CRUD, composable sub-recipes, recursive cost calculation, ingredient enrichment, image uploads (GCS + local), publish/unpublish toggle for storefront
+- [x] **Inventory** — PostgreSQL CRUD, transactional stock adjustments with log, low-stock event publishing, package size, supplier text field
+- [x] **Customers** — PostgreSQL CRUD, JSONB preferences, multi-field search
+- [x] **Orders** — PostgreSQL CRUD, JSONB items, 9-digit sequential numbering, bidirectional status pipeline, order calendar view, recurring orders
+- [x] **Payments** — PostgreSQL CRUD, payment summary (unpaid/partial/paid), refunds, method & status filtering, PayPal payment method
+- [x] **Analytics** — Revenue (daily/total), popular recipes, order stats by status, customer frequency
+
+### Storefront Module (Customer-Facing)
+- [x] **Store discovery** — Public API to browse all storefront-enabled stores (`GET /s/discover`, LIMIT 50)
+- [x] **Store pages** — Public store info by slug, published recipe menu with tag/search/lang filters
+- [x] **Customer auth** — Google Sign-In for storefront customers, JWT with `iss: 'storefront'` claim, profile management
+- [x] **Order placement** — Customers place orders via storefront, `source` column tracks origin (`web`/`storefront`)
+- [x] **Order tracking** — Real-time SSE status updates, order notifications (bilingual), phone-verified access
+- [x] **Customer cancellation** — Customers can request cancellation, bakery approves/declines
+- [x] **PayPal payments** — Order creation, capture, checkout HTML page for storefront
+- [x] **Storefront types** — Shared types: `PublicStoreInfo`, `PublicMenuItem`, `PublicOrderConfirmation`, `PublicOrderStatus`, `PublicOrderNotification`
+- [x] **15 public endpoints** under `/s/` prefix (rate-limited, no auth required for browsing)
+
+### Storefront Mobile App (Expo)
+- [x] React Native / Expo app in `apps/storefront/`
+- [x] Google Sign-In auth flow
+- [x] Store discovery & menu browsing
+- [x] Order placement & tracking
+- [x] PayPal payment integration
+- [x] Bilingual support (Hebrew/English)
+- [x] EAS build configuration
+
+### Order Approval & Cancellation Flow
+- [x] **Pending approval status** — New `PENDING_APPROVAL` (0) status for storefront orders requiring bakery approval
+- [x] **7-status pipeline** — PENDING_APPROVAL → RECEIVED → IN_PROGRESS → READY → DELIVERED, plus CANCELLED and CANCELLATION_REQUESTED
+- [x] **Approve/decline endpoints** — Role-gated (owner/manager/admin) routes for order and cancellation management
+- [x] **Order notifications** — `order_notifications` table, bilingual messages (Hebrew + English) for all status transitions
+- [x] **Real-time SSE** — Channel-based SSE broadcasting to storefront customers on status changes
+- [x] **Frontend** — `ActionRequiredSection` component with collapsible pending approval/cancellation cards, inline approve/decline buttons, pending count badge
+
+### Customer Identity System
+- [x] **Global customers table** — Google identity (google_id, email, first_name, last_name, phone)
+- [x] **Per-store CRM** — `customer_stores` table (renamed from `customers`) for store-specific records
+- [x] **Identity linking** — FK between global identity and per-store CRM, unique constraint per store
+- [x] **Profile completion** — `isProfileComplete` check for storefront customers
+
+### Store Branding & Customization
+- [x] **Branding assets** — `logo_url`, `banner_url`, `description` (with English translations) on stores
+- [x] **Image upload** — `ImageUploadZone` component with drag/drop, preview, replace, remove
+- [x] **Store categories** — `category_subject` / `category_sub_subject` for discovery classification
+- [x] **Theme to app** — `apply_theme_to_app` toggle to apply store theme to storefront
+- [x] **URL validation** — Only managed URLs (GCS/local) accepted for branding; external URLs rejected
+- [x] **Store slugs** — Auto-generated from name, unique, validated (min 3 chars, lowercase alphanumeric + hyphens), availability checking
+
+### Recipe Categories
+- [x] **Per-store categories** — `recipe_categories` table with unique name constraint
+- [x] **CRUD** — Backend service + routes in `apps/api/src/modules/settings/categories/`
+- [x] **Frontend** — `CategoriesTab` in settings with create/edit/delete and English translation support
+
+### English Translations (Bilingual Content)
+- [x] **`name_en` columns** — On stores, recipe_categories, allergens, ingredients
+- [x] **`description_en` / `address_en`** — On stores
+- [x] **AI translation** — `translateHebrewToEnglish()` via Gemini API with field-specific prompts (name vs description)
+- [x] **TranslateButton component** — One-click AI translation with loading/success states, feature-gated behind `ai_chat`
+- [x] **Default allergen translations** — Backfilled via migration
+
+### Trial Plan (Dedicated)
+- [x] Separate `trial` plan row in `plans` table (previously trial reused the `pro` plan)
+- [x] Full Pro feature set, zero cost, hidden from UI
+- [x] Existing trialing subscriptions migrated from `pro` to `trial`
+- [x] Trial downgrade flow with PayPal refund handling
+- [x] `trial_plan_selected` event type
+
+### Notification System
+- [x] **Notification dispatcher** — Channel routing (email, SMS, WhatsApp, in-app)
+- [x] **Event-driven** — order.created, order.statusChanged, inventory.lowStock, payment.received
+- [x] **Email delivery** — Resend API with localized HTML templates (Hebrew/English/Arabic)
+- [x] **SSE** — Real-time server-sent events infrastructure (connection manager, heartbeat, reconnection, channel-based for storefront)
+- [x] **Notification preferences UI** — Per-channel toggles in settings
+
+### Store Management (Multi-Tenancy)
+- [x] Store setup page, creation (name, type, address, phone)
+- [x] Full multi-tenancy — `store_id` FK on all data tables
+- [x] Store switching (`POST /stores/select` re-issues JWT)
+- [x] Store roles: Owner (1), Manager (2), Employee (3), Admin (-1)
+- [x] Invitation system — join-store and create-store types, email delivery via Resend
+- [x] Invitation landing page (validates token, routes to register or store setup)
+- [x] Store theme customization — 7 presets (Cream, White, Stone, Rose, Mint, Sky, Lavender)
+
+### Subscription Tier System & Billing
+- [x] Three tiers: Free (inventory+recipes), Basic 49₪/mo, Pro 99₪/mo
+- [x] Feature-level gating — `requireTier()` middleware (backend) + `FeatureGate` component (frontend)
+- [x] 14-day Pro trial for new stores with expiry reminder emails (3d, 1d, 0d)
+- [x] Monthly billing with anchor days, proration for mid-period upgrades
+- [x] Downgrade scheduling (takes effect at period end), cancel downgrade
+- [x] Plan change preview (pricing, effective dates)
+- [x] Payment providers: PayPal + PayPlus (Israeli processor) with webhooks
+- [x] Grace period for failed payments (7 days), renewal recovery
+- [x] Checkout flow with session management, stale session cleanup (cron)
+- [x] Daily cron: period-end processing, trial reminders, grace period expiry
+- [x] Admin force-plan-change endpoint
+- [x] Full subscription UI: PricingCards, ConfirmUpgradeModal, DowngradeWarningModal, TrialBadge, TierBadge, PendingDowngradeBanner, FailedPaymentBanner
+- [x] Payment history (paginated) + subscription event audit trail
+- [x] Redis-cached feature checks (5-min TTL)
+
+### Invoice & Credit Note System
+- [x] Invoice CRUD with sequential gapless numbering per store (INV-00001)
+- [x] Credit note generation linked to original invoices (CN-00001)
+- [x] PDF generation via jsPDF — RTL/Hebrew support, store branding, item snapshots
+- [x] VAT tracking, customer/store snapshots for audit trail
+- [x] Auto-generate settings (auto_generate_invoice, auto_generate_credit_note)
+- [x] Role-based access (owner/manager)
+- [x] Frontend: GenerateInvoiceModal, InvoicesPage with filtering & pagination
+
+### WhatsApp Integration
+- [x] Meta Embedded Signup OAuth flow (token exchange, WABA discovery)
+- [x] Per-store WhatsApp configuration (`whatsapp_config` table)
+- [x] Outbound notifications: order confirmations, low-stock alerts, payment received
+- [x] Multilingual messages (Hebrew, English, Arabic)
+- [x] Frontend: IntegrationsTab with connect/disconnect flow
+- [x] Feature-gated by subscription tier + `FEATURE_WHATSAPP` env flag
+- [x] Test coverage in notification dispatcher tests
+
+### AI Chat Assistant
+- [x] Gemini API integration with streaming responses
+- [x] Chat panel UI (AiChatPanel, AiChatFab)
+- [x] Tool calling and entity references
+- [x] Conversation history management
+- [x] Owner/admin only access
+- [x] Hebrew and English language-aware context
+- [x] **AI translation** — Hebrew-to-English translation with field-specific prompts (names: 1-5 words, descriptions: tone-preserving)
+
+### Receipt Scanner (OCR)
+- [x] Google Gemini 2.5 Flash for receipt parsing
+- [x] Extracts items, vendor, date, total — supports Hebrew and English
+- [x] 2-stage matching: local fuzzy (Levenshtein) → AI fallback
+- [x] Frontend: ReceiptScannerModal with review table, manual selection, quick ingredient creation
+- [x] Bulk apply via `adjustBulk()`
+
+### Allergen System
+- [x] Allergen CRUD service and settings UI tab (AllergensTab)
+- [x] `allergens` table + `ingredient_allergens` junction table
+- [x] Recipe tags system for dietary labels
+
+### Production Module (Batch Planning)
+- [x] Production batches CRUD
+- [x] 7-stage pipeline (To Prep → Mixing → Proofing → Baking → Cooling → Ready → Packaged)
+- [x] Auto-generate batches from upcoming orders
+- [x] Batch-to-order linking, prep list with aggregated ingredient requirements
+- [x] Views: Kanban board, Timeline, Prep list, Kiosk mode
+- [x] Full i18n support
+
+### Loyalty System (Points-Based Rewards)
+- [x] Per-store config (enable/disable, earning rate, redemption value, threshold)
+- [x] Auto earn on payment, auto deduct on refund
+- [x] Manual adjustments, point redemption for discounts
+- [x] Append-only transaction ledger, customer balance summary
+- [x] Settings tab with live preview, Adjust/Redeem modals
+- [x] 11 unit tests
+
+### Admin Panel
+- [x] Admin access gate + AdminRoute guard
+- [x] Dashboard — analytics cards + embedded Grafana panels
+- [x] User Management — paginated table, promote/demote admin, enable/disable
+- [x] Store Management — paginated table, expandable members, inline edit
+- [x] Invitation Management — paginated list, rich filters, create/revoke
+- [x] Audit Log — paginated, filters, live polling, request/response body viewer
+- [x] Audit middleware (global `onSend` hook, fire-and-forget)
+
+### Settings Module
+- [x] **ProfileTab** — User name, phone, email (replaced old AccountTab)
+- [x] **PreferencesTab** — Language, date/time format, week start day, Friday/Saturday visibility
+- [x] **AppearanceTab** — Theme picker with visual swatches, "apply theme to app" toggle
+- [x] **StorefrontTab** — Slug management, enable/disable storefront, branding (logo/banner/description), store categories
+- [x] **CategoriesTab** — Recipe category CRUD with English translations
+- [x] **AllergensTab** — Allergen management
+- [x] **NotificationsTab** — Per-channel notification toggles
+- [x] **BillingTab** — Payment history, subscription management
+- [x] **TeamTab** — Team member management
+- [x] **LoyaltyTab** — Loyalty program configuration
+
+### Bulk Operations
+- [x] Bulk stock adjustments (`adjustBulk()`) — partial success handling, correlation IDs
+- [x] Bulk ingredient delete (`deleteBulk()`) — prevents deletion of recipe-linked items
+
+### Image Uploads
+- [x] Dual storage: Google Cloud Storage + local filesystem
+- [x] Recipe image upload component (RecipeImageUpload)
+- [x] Branding image upload (ImageUploadZone) with drag/drop, preview, replace, remove
+- [x] Signed upload URLs, JPEG/PNG/WebP (5-6MB max)
+- [x] Store-isolated paths, temp → permanent promotion
+- [x] Consolidated upload URL generation (shared helper for temp + branding uploads)
+
+### UI/UX
+- [x] Onboarding product tour (React Joyride, per-user tracking, desktop 8 / mobile 7 steps)
+- [x] Mobile PWA (manifest + install prompt)
+- [x] Server-side pagination across all modules
+- [x] Drag-and-drop recipe steps
+- [x] Debounced search inputs
+- [x] Order printing (PDF download + browser print)
+- [x] RTL fixes (dates, currency ₪, chevrons, CSS logical properties)
+
+### Security
+- [x] Invitation-only registration (no open signups)
+- [x] JWT with refresh tokens, bcrypt 12 rounds
+- [x] Rate limiting: 1000 req/min global, 10 req/15min auth endpoints
+- [x] Helmet CSP, HSTS, referrer policy
+- [x] Parameterized SQL, NoSQL injection guards, input length limits
+- [x] Password reset flow with secure email tokens
+- [x] Storefront JWT isolation — `iss: 'storefront'` claim, rejected on admin routes with `AUTH_INSUFFICIENT_PERMISSIONS`
+- [x] Role-gated order approval/cancellation (owner/manager/admin only)
+- [x] Branding URL validation — only managed URLs accepted, external URLs rejected
+- [x] GCS path traversal protection — URL parsed and normalized before store ownership check
+
+### Code Quality (Review Session — 2026-03-14)
+- [x] `ORDER_STATUS` consolidated to `@mise/shared` (single source of truth)
+- [x] `STATUS_TRANSITIONS` complete for all 7 statuses
+- [x] `dateStringSchema` shared Zod validator (replaced 14 inline regex occurrences)
+- [x] `buildDynamicUpdate` SQL utility (eliminated boilerplate in store repository)
+- [x] `useMutationWithToast` React Query factory (9 hooks refactored)
+- [x] `useStoreSwitch` custom hook (extracted from AppShell + Sidebar)
+- [x] SSE dead client cleanup on broadcast failure
+- [x] SSE skips DB queries when no channel listeners
+- [x] `getPublishedMenu` parallel query execution
+- [x] Unbounded queries capped (LIMIT 50/100 on public endpoints)
+- [x] Auth middleware no longer mutates JWT payload
+- [x] `handleTrialDowngrade` refactored (extracted `executePayPalRefund` + `recordDowngrade` helpers)
+- [x] Raw SQL moved from checkout service to subscription repository
+- [x] PayPal capture ID extraction centralized in helper function
+- [x] `togglePublish` endpoint Zod-validated
+
+### Testing
+- [x] 1,270 unit tests across 100 test files (Vitest) — all passing
+- [x] E2E test suite
+- [x] Covers: Auth, Recipes, Inventory, Customers, Orders, Payments, Loyalty, Subscriptions, Checkout, Webhooks, Storefront, Store branding/slugs/categories, AI translation, Order approval, Production, Core infrastructure
 
 ---
 
-## Known Bugs & Issues
+## Partially Implemented
 
-### Stubbed / Incomplete
-1. ~~**Email notifications**~~ — **Done**: Resend API integration with localized HTML templates (Hebrew/English/Arabic)
-2. **SMS notifications** — `channels/sms.ts` logs to console instead of sending actual SMS (no Twilio configured)
-3. ~~**Store invites**~~ — **Done**: sent via Resend email (team invites + store creation invites)
-4. **App push notifications** — UI shows "Coming Soon" badge, no backend implementation
-
-### Configuration Gaps
-5. ~~**Rate limiting values** are hardcoded~~ — **Fixed**: now configurable via `RATE_LIMIT_MAX`, `RATE_LIMIT_WINDOW`, `AUTH_RATE_LIMIT_MAX`, `AUTH_RATE_LIMIT_WINDOW` env vars
-6. ~~**RabbitMQ retry config**~~ — **Fixed**: now configurable via `RABBITMQ_RETRY_TTL` and `RABBITMQ_MAX_RETRIES` env vars
-7. ~~**No frontend `.env.example`**~~ — **Fixed**: added `VITE_API_URL` and `VITE_GOOGLE_CLIENT_ID`
-8. ~~**`FRONTEND_URL`** has inline fallback to `localhost:5173`~~ — **Fixed**: now fails explicitly in production, dead `??` fallbacks removed
-
-### Code Quality
-9. ~~**Console.log in production code**~~ — **Fixed**: all replaced with standalone Pino logger (`appLogger`)
-10. **MongoDB only used for recipes** — configured in docker-compose but could be documented as optional
-
-### Missing
-11. ~~**No README.md**~~ — **Done**: added comprehensive README
-12. ~~**E2E tests**~~ — **Done**: E2E test suite implemented
-13. **No CONTRIBUTING.md or SETUP.md** for onboarding new developers
+| Feature | What exists | What's missing |
+|---------|------------|----------------|
+| **SMS Notifications** | Channel class exists, dispatcher routes to it, UI toggles exist | Stubbed — logs to console only, no provider (Twilio etc.) |
+| **Push Notifications** | DB schema (`channel_push`), UI toggle with "Coming Soon" | No service worker, no FCM/Web Push, no push channel class |
+| **Inventory Low-Stock Alerts** | Events fire, email delivery works | SMS stubbed, push not implemented |
+| **Profit Margins** | Recipe cost calculation exists, `sellingPrice` field | No margin analytics, no trends, no reporting endpoint |
+| **Global Search** | Per-module search (customers, inventory, recipes) | No unified cross-module search bar |
+| **Smart Pricing** | Recipe cost calc, `costPerUnit` on ingredients | No auto-recalc on price change, no margin erosion alerts, no what-if |
+| **Supplier Management** | `supplier` text field on ingredients table | No supplier entity, no contacts, no price history, no CRUD |
+| **Allergen Cross-Check** | Allergen CRUD, ingredient-allergen links, recipe tags | No auto-warning when ordering for allergic customer |
+| **WhatsApp (inbound)** | Outbound notifications fully working | No inbound message handling, no message templates, no media messages |
+| **Webhooks** | PayPal + PayPlus payment webhooks | Not general-purpose (stores can't connect external services) |
 
 ---
 
-## Test Coverage
+## Not Started
 
-- **147 unit tests** across 28 test files (Vitest) — all passing
-- Covers: Auth, Recipes, Inventory, Customers, Orders, Payments, Loyalty, Core infrastructure
-- E2E test suite implemented
+### Tier 1 — "Why bakers will switch" (Competitive Moats)
+
+#### Supplier Management & Purchase Orders
+Bakers spend hours calling suppliers and comparing prices.
+- Link ingredients to suppliers (multiple suppliers per ingredient)
+- Track supplier price history — "flour went up 15% this month"
+- Auto-generate purchase orders from low-stock items or upcoming order needs
+- Email/WhatsApp PO to supplier with one tap
+- Receive deliveries: scan/confirm what arrived vs. what was ordered
+
+#### Customer Credit / Tab System (חשבון שוטף)
+Very common in Israeli bakeries — cafes and restaurants pay monthly.
+- Running balance per customer
+- Monthly statement generation
+- Payment terms (net-30, net-60)
+- Overdue alerts
+- No tables, no balance tracking, no payment terms exist in code
+
+#### Smart Pricing & Cost Alerts (full version)
+Ingredient prices are volatile.
+- Automatic recipe cost recalculation when ingredient prices change
+- Margin erosion alerts: "Your chocolate croissant margin dropped from 65% to 42%"
+- "What-if" pricing: "If flour goes up 10%, here's the impact on all recipes"
+- Suggested selling price based on target margin
+
+### Tier 2 — "Why bakers will stay" (Retention & Stickiness)
+
+#### Seasonal Menus & Price Lists (מחירון)
+- Create seasonal catalogs (Rosh Hashana, Passover, Shavuot)
+- Shareable price list as branded PDF or web link
+- Activate/deactivate menus by date range
+
+#### Time Slots & Capacity Planning
+Bakeries get overwhelmed on holidays because they can't say no.
+- Define pickup/delivery time slots with max capacity per slot
+- Production capacity limits per recipe/day
+- Auto-close when full, prevents overbooking
+
+#### Order Templates & Quick Reorder
+- Save a customer's recurring configuration as a template
+- One-click reorder from template
+- Template modification tracking
+
+#### Delivery Management
+Many small bakeries do their own deliveries.
+- Delivery zones with fees
+- Route optimization (group nearby deliveries)
+- Driver assignment
+- Delivery status tracking
+- Print delivery manifest sorted by route
+
+### Tier 3 — "Delight features" (Differentiation)
+
+#### Receipt Generation (קבלה)
+Invoices exist. Receipts are the missing piece.
+- Auto-generate receipts on payment confirmation
+- Sequential receipt numbering (legal requirement)
+- PDF export with store branding
+- Link receipts to invoices and payments
+- Integration-ready for Israeli accounting software
+
+#### Waste & Spoilage Tracking
+- Log waste events (burned batch, expired ingredients, unsold items)
+- Track waste cost over time
+- Identify patterns: "You waste 12% of cream every week — order less"
+- Shelf-life tracking on inventory items
+
+#### Custom Cake Builder
+For bakeries that do custom work.
+- Layer/size/flavor/decoration configurator
+- Photo reference uploads from customer
+- Dynamic pricing based on complexity
+- Design approval workflow
+
+### Other Missing Features
+
+- [ ] **Reports & Export** — PDF/Excel bulk export for orders, payments, inventory
+- [ ] **Offline Support** — Service worker + local cache for flaky connections
+- [ ] **General-Purpose Webhooks** — Let stores connect to external services (accounting software, delivery apps)
 
 ---
 
-## Future Plans
+## Recommended Build Order
 
-### High Impact
-- [ ] **Reports & Export** — PDF/Excel export for orders, payments, inventory (bakers need printable summaries for end-of-day/week/month)
-- [x] **Order calendar view** — see orders by due date on a calendar, critical for bakery production planning
-- [x] **Production planning** — batch production with 7-stage pipeline, auto-generate from orders, aggregated prep list, kanban + timeline + kiosk views
-- [x] **Recurring orders** — many bakeries have weekly standing orders from cafes/restaurants
-- [ ] **Customer-facing order portal** — let customers place orders directly via a link (right now it's baker-only)
-
-### Medium Impact
-- [ ] **Image uploads** — recipe photos, store logo (currently no file upload support)
-- [ ] **Batch operations** — bulk status changes on orders, bulk stock adjustments
-- [ ] **Inventory alerts** — actual notifications when stock is low (currently events fire but nothing reaches the user besides an in-app count)
-- [x] **Order printing** — PDF download + browser print for order slips / production sheets
-- [ ] **Profit margins** — recipe cost vs selling price analytics, margin trends over time
-- [ ] **Search across modules** — global search bar (find a customer, order, or recipe from one input)
-
-### Polish & DevEx
-- [x] **Onboarding product tour** — interactive React Joyride tour overlaying the real app UI, highlights sidebar/bottom-tab nav items and key actions, tracked per-user with restart from settings, responsive (desktop 8 steps / mobile 7 steps with navigation)
-- [ ] **Offline support** — service worker + local cache for flaky connections (bakeries aren't always in great WiFi zones)
-- [x] **Mobile PWA** — add manifest + install prompt, bakeries often use tablets/phones
-- [ ] **Webhook integrations** — let stores connect to external services (accounting software, delivery apps)
+| Priority | Feature | Why |
+|----------|---------|-----|
+| 1st | **Supplier Management + Purchase Orders** | Saves hours/week on procurement. Hard to replicate in WhatsApp/Excel. |
+| 2nd | **Customer Credit / Tab System** | Monthly billing pain is real and sticky — once data is in, they won't leave. |
+| 3rd | **Smart Pricing & Cost Alerts** | Extends existing cost calc. High value with moderate effort. |
+| 4th | **Time Slots & Capacity** | Prevents the holiday meltdown. Seasonal but high-impact. |
+| 5th | **Receipt Generation** | Legal requirement in Israel. Builds on existing invoice system. |
 
 ---
 
-## Milestones
+## Database Migrations
 
-| # | Milestone | Status | Branch | PR |
-|---|-----------|--------|--------|----|
-| 1 | Project scaffolding + architecture | Complete | — | — |
-| 2 | Core infrastructure (DB, DI, errors, logging) | Complete | — | — |
-| 3 | Auth module (backend) | Complete | — | — |
-| 4 | Recipes module (backend) | Complete | — | — |
-| 5 | Inventory module (backend) | Complete | — | — |
-| 6 | Customers module (backend) | Complete | — | — |
-| 7 | Orders module (backend) | Complete | — | — |
-| 8 | Payments module (backend) | Complete | — | — |
-| 9 | Integration, polish, security hardening | Complete | — | — |
-| 10 | Google OAuth, notifications, pagination | Complete | — | — |
-| 11 | Stores, CRUD refactoring, caching, UI polish | Complete | feat/major-improvements | — |
-| 12 | Admin panel, audit logging, Grafana dashboards | Complete | main | — |
+| # | Migration | Description |
+|---|-----------|-------------|
+| 1 | `001_initial.sql` | Core schema: users, customers, ingredients, inventory_log, orders, payments |
+| 2 | `002_settings.sql` | Units, unit_categories, groups, notification_preferences, ingredient_groups |
+| 3 | `003_default_allergens.sql` | Seeds default allergens |
+| 4 | `004_inventory_log_price.sql` | Adds `price_paid` to inventory_log |
+| 5 | `005_package_size.sql` | Adds `package_size` to ingredients |
+| 6 | `006_google_auth.sql` | Adds `google_id` to users, makes `password_hash` nullable |
+| 7 | `007_order_number.sql` | Auto-incrementing `order_number` sequence (starts at 100000001) |
+| 8 | `008_stores.sql` | Multi-tenancy: stores, users_stores, store_invitations; store_id FK on all tables |
+| 9 | `009_invitation_only.sql` | Nullable store_id in invitations (create-store type), OWNER role |
+| 10 | `010_admin_role.sql` | `is_admin` on users, `admin_audit_log` table |
+| 11 | `011_admin_module.sql` | `disabled_at` on users, `revoked_at` on invitations |
+| 12 | `012_audit_log_bodies.sql` | (Superseded) Request/response body columns |
+| 13 | `013_split_audit_log_bodies.sql` | Splits bodies into separate tables |
+| 14 | `014_audit_log_cascade.sql` | Cascade deletes for audit log bodies |
+| 15a | `015_user_onboarding.sql` | `onboarding_completed_at` on users |
+| 15b | `015_recurring_group.sql` | Recurring order group support |
+| 16 | `016_loyalty.sql` | Loyalty config, transactions ledger, customer points |
+| 17 | `017_production_batches.sql` | Production batches, batch-order links, prep items |
+| 18 | `018_order_status_integer.sql` | Numeric order status enum |
+| 19 | `019_uuid_to_serial.sql` | UUID to serial ID migration |
+| 20 | `020_fix_serial_defaults.sql` | Fix serial default values |
+| 21a | `021_customer_loyalty_enabled.sql` | Customer loyalty enabled flag |
+| 21b | `021_rename_groups_to_allergens.sql` | Rename groups to allergens |
+| 21c | `021_user_language.sql` | User language preference |
+| 22 | `022_customer_loyalty_tier.sql` | Customer loyalty tier |
+| 23 | `023_recipe_tags.sql` | Recipe tags for dietary labels |
+| 24 | `024_whatsapp.sql` | WhatsApp config table, notification preference column |
+| 25 | `025_store_theme.sql` | Store theme column |
+| 26 | `026_invoices.sql` | Invoices table, invoice_counters |
+| 27 | `027_invoice_order_number.sql` | Backfill order display numbers |
+| 28a | `028_auto_invoice_settings.sql` | Auto-generate invoice/credit note flags |
+| 28b | `028_loyalty_enhancements.sql` | Loyalty tier enhancements |
+| 29 | `029_subscription_tiers.sql` | Plans table, store_subscriptions, subscription_events |
+| 30 | `030_subscription_billing.sql` | Subscription payments, billing enhancements |
+| 31 | `031_drop_plan_name_he.sql` | Remove Hebrew plan names |
+| 32 | `032_payment_integration.sql` | Checkout sessions, payment provider fields |
+| 33 | `033_password_reset_tokens.sql` | Password reset tokens |
+| 34 | `034_storefront.sql` | Store slugs, `storefront_enabled` flag, PayPal payment method, payment `reference` column |
+| 35 | `035_order_approval.sql` | Order approval flow: PENDING_APPROVAL/CANCELLED/CANCELLATION_REQUESTED statuses, `source`/`cancellation_reason`/`previous_status` columns, `order_notifications` table |
+| 36 | `036_customer_identity.sql` | Rename `customers` → `customer_stores`, global `customers` identity table with Google ID |
+| 37 | `037_customer_profile_fields.sql` | Split `name` into `first_name`/`last_name`, add `phone` to customers |
+| 38 | `038_store_branding.sql` | Add `logo_url`, `banner_url`, `description` to stores |
+| 39 | `039_store_apply_theme_to_app.sql` | Add `apply_theme_to_app` boolean toggle to stores |
+| 40 | `040_recipe_categories.sql` | Create `recipe_categories` table (per-store, unique name) |
+| 41 | `041_store_categories.sql` | Add `category_subject`/`category_sub_subject` to stores |
+| 42 | `042_english_translations.sql` | Add `name_en`/`description_en` to stores, `name_en` to categories/allergens, backfill allergen translations |
+| 43 | `043_english_translations_v2.sql` | Add `address_en` to stores, `name_en` to ingredients |
+| 44 | `044_trial_plan.sql` | Dedicated trial plan, migrate trialing subscriptions, `trial_plan_selected` event type |
+
+---
+
+## Known Issues
+
+1. **SMS notifications** — Stubbed (logs to console, no provider configured)
+2. **Push notifications** — UI shows "Coming Soon", no backend
+3. **MongoDB** — Only used for recipes, could be documented as optional
+4. **No CONTRIBUTING.md** for onboarding new developers
