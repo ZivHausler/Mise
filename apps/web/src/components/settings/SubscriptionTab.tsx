@@ -1,6 +1,7 @@
 import React, { useState, useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQueryClient } from '@tanstack/react-query';
+import { ArrowRight, RefreshCw } from 'lucide-react';
 import { Section, Card } from '@/components/Layout';
 import { Modal } from '@/components/Modal';
 import { TierBadge } from '@/components/TierBadge';
@@ -16,8 +17,79 @@ import {
   useCancelDowngrade,
   usePaymentHistory,
   useRenewalRecovery,
+  useTrialDowngrade,
 } from '@/api/hooks';
-import { isTierHigher } from '@/utils/subscription';
+import { isTierHigher, PLAN_PRICES } from '@/utils/subscription';
+
+// ─── Trial Switch Confirm Modal ───────────────────────────────────────────────
+function TrialSwitchConfirmContent({
+  fromPlan,
+  toPlan,
+  onConfirm,
+  onClose,
+  loading,
+}: {
+  fromPlan: string;
+  toPlan: string;
+  onConfirm: () => Promise<void>;
+  onClose: () => void;
+  loading: boolean;
+}) {
+  const { t } = useTranslation();
+  const [submitting, setSubmitting] = useState(false);
+
+  const fromPrice = PLAN_PRICES[fromPlan] ?? 0;
+  const toPrice = PLAN_PRICES[toPlan] ?? 0;
+  const refundAmount = Math.max(0, fromPrice - toPrice);
+
+  const handleConfirm = async () => {
+    setSubmitting(true);
+    try {
+      await onConfirm();
+      onClose();
+    } catch {
+      // Error handled by mutation
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="flex flex-col items-center text-center py-2">
+      <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-blue-50">
+        <RefreshCw className="h-7 w-7 text-blue-500" />
+      </div>
+      <h3 className="font-heading text-h3 text-neutral-800 mb-2" dir="auto">
+        {t('subscription.trial.switchTo', { plan: t(`subscription.tiers.${toPlan}`) })}
+      </h3>
+      <p className="text-body-sm text-neutral-600 mb-4" dir="auto">
+        {t('subscription.trial.switchConfirm', {
+          from: t(`subscription.tiers.${fromPlan}`),
+          to: t(`subscription.tiers.${toPlan}`),
+          amount: refundAmount,
+        })}
+      </p>
+      <div className="flex flex-col gap-2 w-full">
+        <button
+          type="button"
+          onClick={handleConfirm}
+          disabled={submitting || loading}
+          className="w-full rounded-lg bg-primary-500 px-4 py-2.5 text-body-sm font-medium text-white hover:bg-primary-600 disabled:opacity-50 transition-colors"
+        >
+          {submitting || loading ? t('common.loading') : t('subscription.trial.switchTo', { plan: t(`subscription.tiers.${toPlan}`) })}
+        </button>
+        <button
+          type="button"
+          onClick={onClose}
+          disabled={submitting || loading}
+          className="w-full rounded-lg px-4 py-2.5 text-body-sm font-medium text-neutral-600 hover:text-neutral-800 disabled:opacity-50 transition-colors"
+        >
+          {t('common.cancel')}
+        </button>
+      </div>
+    </div>
+  );
+}
 
 const PAYMENT_TYPE_KEYS: Record<number, string> = {
   0: 'full',
@@ -38,10 +110,12 @@ export default function SubscriptionTab() {
   const cancelDowngrade = useCancelDowngrade();
   const { data: payments } = usePaymentHistory();
   const renewalRecovery = useRenewalRecovery();
+  const trialDowngrade = useTrialDowngrade();
 
   const qc = useQueryClient();
   const [upgradeTarget, setUpgradeTarget] = useState<string | null>(null);
   const [downgradeTarget, setDowngradeTarget] = useState<string | null>(null);
+  const [trialSwitchTarget, setTrialSwitchTarget] = useState<string | null>(null);
   const [recoveryData, setRecoveryData] = useState<{
     checkoutSessionId: string;
     paypalSubscriptionId: string;
@@ -60,7 +134,8 @@ export default function SubscriptionTab() {
   const cancelAtPeriodEnd = (subscription as any)?.cancelAtPeriodEnd;
   const downgradeToSlug = (subscription as any)?.downgradeToSlug;
 
-  const hasPendingDowngrade = !!downgradeToSlug && cancelAtPeriodEnd;
+  const hasPendingDowngrade = !isTrialing && !!downgradeToSlug && cancelAtPeriodEnd;
+  const trialSelectedPlan = isTrialing && !!downgradeToSlug ? downgradeToSlug : null;
 
   const handleSelectPlan = useCallback(
     (slug: string) => {
@@ -84,6 +159,16 @@ export default function SubscriptionTab() {
     if (!downgradeTarget) return;
     await changePlan.mutateAsync(downgradeTarget);
     setDowngradeTarget(null);
+  };
+
+  const handleTrialSwitchSelect = useCallback((slug: string) => {
+    setTrialSwitchTarget(slug);
+  }, []);
+
+  const handleConfirmTrialSwitch = async () => {
+    if (!trialSwitchTarget) return;
+    await trialDowngrade.mutateAsync(trialSwitchTarget);
+    setTrialSwitchTarget(null);
   };
 
   const handleCancelDowngrade = useCallback(() => {
@@ -143,16 +228,19 @@ export default function SubscriptionTab() {
       {/* Current Plan Card */}
       <Section title={t('subscription.currentPlan')}>
         <Card variant="flat" className="p-6">
-          <div className="flex items-center justify-between flex-wrap gap-4">
-            <div className="flex items-center gap-3">
-              <h3 className="font-heading text-h3 text-neutral-800">{planName}</h3>
-              {currentPlan !== 'free' && (
-                <TierBadge tier={currentPlan as 'basic' | 'pro'} size="md" />
-              )}
-            </div>
-
-            {isTrialing && (
-              <div className="flex items-center gap-2">
+          {isTrialing ? (
+            <>
+              <div className="flex items-center justify-between flex-wrap gap-4">
+                <div className="flex items-center gap-2">
+                  <TierBadge tier="pro" size="md" />
+                  <span className="text-body-sm text-neutral-400">{t('subscription.trial.label', 'Trial')}</span>
+                  {trialSelectedPlan && (
+                    <>
+                      <ArrowRight className="h-4 w-4 text-neutral-300 mx-1 rtl:-scale-x-100" />
+                      <TierBadge tier={trialSelectedPlan as 'trial' | 'basic' | 'pro'} size="md" />
+                    </>
+                  )}
+                </div>
                 <div className="flex flex-col items-end">
                   <span className="text-body-sm font-medium text-amber-600">
                     {trialDays === 0
@@ -161,7 +249,6 @@ export default function SubscriptionTab() {
                         ? t('subscription.trialDaysLeft_one')
                         : t('subscription.trialDaysLeft', { count: trialDays })}
                   </span>
-                  {/* Progress bar */}
                   <div className="mt-1 h-1.5 w-32 rounded-full bg-neutral-200">
                     <div
                       className="h-full rounded-full bg-amber-400 transition-all"
@@ -170,13 +257,36 @@ export default function SubscriptionTab() {
                   </div>
                 </div>
               </div>
-            )}
-          </div>
-
-          {!isTrialing && currentPlan !== 'free' && currentPeriodEnd && (
-            <p className="mt-2 text-body-sm text-neutral-500">
-              {t('subscription.renewsOn', { date: formatDate(currentPeriodEnd) })}
-            </p>
+              {trialSelectedPlan && (
+                <p className="mt-3 text-body-sm text-neutral-500">
+                  {t('subscription.trial.selectedPlan', {
+                    plan: t(`subscription.tiers.${trialSelectedPlan}`),
+                    date: trialEndsAt ? formatDate(trialEndsAt) : '',
+                  })}
+                </p>
+              )}
+              {!trialSelectedPlan && (
+                <p className="mt-3 text-body-sm text-neutral-500">
+                  {t('subscription.trial.choosePlan', 'Choose a plan below to continue after your trial ends.')}
+                </p>
+              )}
+            </>
+          ) : (
+            <>
+              <div className="flex items-center justify-between flex-wrap gap-4">
+                <div className="flex items-center gap-3">
+                  <h3 className="font-heading text-h3 text-neutral-800">{planName}</h3>
+                  {currentPlan !== 'free' && (
+                    <TierBadge tier={currentPlan as 'trial' | 'basic' | 'pro'} size="md" />
+                  )}
+                </div>
+              </div>
+              {currentPlan !== 'free' && currentPeriodEnd && (
+                <p className="mt-2 text-body-sm text-neutral-500">
+                  {t('subscription.renewsOn', { date: formatDate(currentPeriodEnd) })}
+                </p>
+              )}
+            </>
           )}
         </Card>
       </Section>
@@ -199,9 +309,12 @@ export default function SubscriptionTab() {
           <PricingCards
             currentPlan={currentPlan}
             onSelectPlan={handleSelectPlan}
-            loading={changePlan.isPending}
+            onTrialSwitch={handleTrialSwitchSelect}
+            loading={changePlan.isPending || trialDowngrade.isPending}
             pendingPlanSlug={hasPendingDowngrade ? downgradeToSlug : undefined}
             pendingDate={hasPendingDowngrade ? currentPeriodEnd : undefined}
+            isTrialing={isTrialing}
+            trialSelectedPlan={trialSelectedPlan ?? undefined}
           />
         </Section>
       </div>
@@ -279,6 +392,7 @@ export default function SubscriptionTab() {
           isTrialing={isTrialing}
           trialEndsAt={trialEndsAt}
           currentPlanSlug={currentPlan}
+          trialSelectedPlan={trialSelectedPlan ?? undefined}
         />
       )}
       {downgradeTarget && (
@@ -293,11 +407,24 @@ export default function SubscriptionTab() {
         />
       )}
 
+      {/* Trial switch modal — downgrade within trial with refund */}
+      {trialSwitchTarget && (
+        <Modal open onClose={() => setTrialSwitchTarget(null)} size="sm">
+          <TrialSwitchConfirmContent
+            fromPlan={trialSelectedPlan ?? ''}
+            toPlan={trialSwitchTarget}
+            onConfirm={handleConfirmTrialSwitch}
+            onClose={() => setTrialSwitchTarget(null)}
+            loading={trialDowngrade.isPending}
+          />
+        </Modal>
+      )}
+
       {/* Recovery payment modal (past_due) */}
       {recoveryData && (
         <Modal open onClose={() => setRecoveryData(null)} size="sm" dismissible={false}>
           <div className="flex flex-col items-center text-center py-2">
-            <TierBadge tier={currentPlan as 'basic' | 'pro'} size="md" />
+            <TierBadge tier={currentPlan as 'trial' | 'basic' | 'pro'} size="md" />
             <h3 className="font-heading text-h3 text-neutral-800 my-4">
               {t('subscription.completePayment')}
             </h3>

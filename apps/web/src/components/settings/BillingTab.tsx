@@ -5,6 +5,7 @@ import { Card, Section, Stack } from '@/components/Layout';
 import { TextInput } from '@/components/FormFields';
 import { Button } from '@/components/Button';
 import { Spinner } from '@/components/Feedback';
+import { TranslateButton } from '@/components/TranslateButton';
 import { useCurrentStore, useUpdateBusinessInfo } from '@/api/hooks';
 
 export default function BillingTab() {
@@ -13,8 +14,10 @@ export default function BillingTab() {
   const updateBusinessInfo = useUpdateBusinessInfo();
 
   const [businessName, setBusinessName] = useState('');
+  const [businessNameEn, setBusinessNameEn] = useState('');
   const [businessId, setBusinessId] = useState('');
   const [address, setAddress] = useState('');
+  const [addressEn, setAddressEn] = useState('');
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
   const [vatRate, setVatRate] = useState('18');
@@ -25,8 +28,10 @@ export default function BillingTab() {
   useEffect(() => {
     if (store) {
       setBusinessName(store.name ?? '');
+      setBusinessNameEn(store.nameEn ?? '');
       setBusinessId(store.taxNumber ?? '');
       setAddress(store.address ?? '');
+      setAddressEn(store.addressEn ?? '');
       setPhone(store.phone ?? '');
       setEmail(store.email ?? '');
       setVatRate(String(store.vatRate ?? 18));
@@ -45,11 +50,13 @@ export default function BillingTab() {
     const hasTax = !!businessId;
     updateBusinessInfo.mutate(
       {
-        name: businessName || undefined,
-        address: address || undefined,
-        taxNumber: businessId || undefined,
-        phone: phone || undefined,
-        email: email || undefined,
+        name: businessName || null,
+        nameEn: businessNameEn || null,
+        address: address || null,
+        addressEn: addressEn || null,
+        taxNumber: businessId || null,
+        phone: phone || null,
+        email: email || null,
         vatRate: vatRate ? Number(vatRate) : undefined,
         autoGenerateInvoice: hasTax ? autoGenerateInvoice : false,
         autoGenerateCreditNote: hasTax ? autoGenerateCreditNote : false,
@@ -73,22 +80,58 @@ export default function BillingTab() {
       <Card>
         <Section title={t('settings.billing.businessDetails', 'Business Details')}>
           <Stack gap={3}>
-            <TextInput
-              label={t('settings.billing.businessName', 'Business Name')}
-              value={businessName}
-              onChange={handleFieldChange(setBusinessName)}
-            />
+            <div className="flex flex-col sm:flex-row gap-4">
+              <TextInput
+                label={t('settings.billing.businessName', 'Business Name')}
+                value={businessName}
+                onChange={handleFieldChange(setBusinessName)}
+                className="flex-1"
+              />
+              <div className="flex-1 flex flex-col">
+                <TextInput
+                  label={`${t('settings.billing.businessNameEn', 'Business Name (English)')} (${t('common.optional')})`}
+                  value={businessNameEn}
+                  onChange={handleFieldChange(setBusinessNameEn)}
+                  dir="ltr"
+                  placeholder="English name"
+                />
+                <TranslateButton
+                  hebrewText={businessName}
+                  onTranslate={(text) => { setBusinessNameEn(text); setDirty(true); }}
+                  fieldType="name"
+                  className="self-end mt-1"
+                />
+              </div>
+            </div>
             <TextInput
               label={t('settings.billing.businessId', 'Business ID (ח.פ.)')}
               value={businessId}
               onChange={handleFieldChange(setBusinessId)}
               dir="ltr"
             />
-            <TextInput
-              label={t('settings.billing.address', 'Address')}
-              value={address}
-              onChange={handleFieldChange(setAddress)}
-            />
+            <div className="flex flex-col sm:flex-row gap-4">
+              <TextInput
+                label={t('settings.billing.address', 'Address')}
+                value={address}
+                onChange={handleFieldChange(setAddress)}
+                className="flex-1"
+              />
+              <div className="flex-1 flex flex-col">
+                <TextInput
+                  label={`${t('settings.billing.addressEn', 'Address (English)')} (${t('common.optional')})`}
+                  value={addressEn}
+                  onChange={handleFieldChange(setAddressEn)}
+                  dir="ltr"
+                  placeholder="e.g. 102 Ben Gurion St, Haifa"
+                />
+                <TranslateButton
+                  hebrewText={address}
+                  onTranslate={(text) => { setAddressEn(text); setDirty(true); }}
+                  fieldType="name"
+                  className="self-end mt-1"
+                />
+              </div>
+            </div>
             <TextInput
               label={t('settings.billing.phone', 'Phone')}
               value={phone}
@@ -119,6 +162,15 @@ export default function BillingTab() {
               {t('settings.billing.vatRateNote', 'Changes to VAT rate will only affect future invoices.')}
             </p>
 
+            {!store?.taxNumber && (
+              <div className="flex items-center gap-2 rounded-lg bg-amber-50 border border-amber-200 p-3 mt-1">
+                <span className="text-amber-600 shrink-0 leading-none">&#9432;</span>
+                <p className="text-body-sm text-amber-700 leading-snug">
+                  {t('settings.billing.taxNumberHint', 'Fill in your Business ID (ח.פ.) above to enable automatic invoice and credit note generation.')}
+                </p>
+              </div>
+            )}
+
             {!!store?.taxNumber && (
             <div className="border-t border-neutral-200 pt-4 mt-1">
               <h4 className="text-body-sm font-semibold text-neutral-700 mb-3">
@@ -131,7 +183,7 @@ export default function BillingTab() {
                       {t('settings.billing.autoGenerateInvoice', 'Auto-generate invoice')}
                     </span>
                     <p className="text-body-sm text-neutral-500 mt-0.5">
-                      {t('settings.billing.autoGenerateInvoiceDesc', 'Automatically create an invoice when a payment is logged.')}
+                      {t('settings.billing.autoGenerateInvoiceDesc', 'Automatically create an invoice when an order is delivered.')}
                     </p>
                   </div>
                   <button
