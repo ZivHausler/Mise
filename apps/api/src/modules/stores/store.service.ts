@@ -4,6 +4,7 @@ import { StoreRole } from './store.types.js';
 import { PgStoreRepository } from './store.repository.js';
 import { ForbiddenError, NotFoundError, ValidationError } from '../../core/errors/app-error.js';
 import { env } from '../../config/env.js';
+import { deleteImage } from '../../core/storage/gcs.js';
 import { appLogger } from '../../core/logger/logger.js';
 import { ErrorCode, Language } from '@mise/shared';
 import { sendInviteEmail, buildStoreInviteEmail, buildCreateStoreInviteEmail } from '../notifications/channels/email.js';
@@ -77,12 +78,50 @@ export class StoreService {
     return store;
   }
 
-  async updateBusinessInfo(storeId: number, data: { name?: string; address?: string; phone?: string; email?: string; taxNumber?: string; vatRate?: number; autoGenerateInvoice?: boolean; autoGenerateCreditNote?: boolean }): Promise<Store> {
+  async updateBusinessInfo(storeId: number, data: { name?: string | null; nameEn?: string | null; address?: string | null; addressEn?: string | null; phone?: string | null; email?: string | null; taxNumber?: string | null; vatRate?: number; autoGenerateInvoice?: boolean; autoGenerateCreditNote?: boolean }): Promise<Store> {
     return PgStoreRepository.updateBusinessInfo(storeId, data);
   }
 
-  async updateTheme(storeId: number, theme: AppTheme): Promise<void> {
-    await PgStoreRepository.updateTheme(storeId, theme);
+  async updateSlug(storeId: number, slug: string): Promise<void> {
+    const available = await PgStoreRepository.isSlugAvailable(slug, storeId);
+    if (!available) {
+      throw new ValidationError('Slug is already taken', ErrorCode.VALIDATION_ERROR);
+    }
+    await PgStoreRepository.updateSlug(storeId, slug);
+  }
+
+  async updateStorefrontEnabled(storeId: number, enabled: boolean): Promise<void> {
+    await PgStoreRepository.updateStorefrontEnabled(storeId, enabled);
+  }
+
+  async checkSlugAvailability(slug: string, storeId: number): Promise<{ available: boolean }> {
+    const available = await PgStoreRepository.isSlugAvailable(slug, storeId);
+    return { available };
+  }
+
+  async updateBranding(
+    storeId: number,
+    data: { logoUrl?: string | null; bannerUrl?: string | null; description?: string | null; descriptionEn?: string | null; categorySubject?: string | null; categorySubSubject?: string | null },
+  ): Promise<Store> {
+    // Fetch current store to get old image URLs
+    const current = await PgStoreRepository.findStoreById(storeId);
+
+    // Update DB
+    const updated = await PgStoreRepository.updateBranding(storeId, data);
+
+    // Delete old images if replaced (fire-and-forget)
+    if (data.logoUrl !== undefined && current?.logoUrl && current.logoUrl !== data.logoUrl) {
+      deleteImage(current.logoUrl).catch(() => {});
+    }
+    if (data.bannerUrl !== undefined && current?.bannerUrl && current.bannerUrl !== data.bannerUrl) {
+      deleteImage(current.bannerUrl).catch(() => {});
+    }
+
+    return updated;
+  }
+
+  async updateTheme(storeId: number, data: { theme?: AppTheme; applyThemeToApp?: boolean }): Promise<void> {
+    await PgStoreRepository.updateTheme(storeId, data);
   }
 
   async getAllStores(): Promise<import('./store.types.js').Store[]> {

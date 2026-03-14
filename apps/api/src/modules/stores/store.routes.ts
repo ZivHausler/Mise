@@ -41,6 +41,19 @@ export default async function storeRoutes(app: FastifyInstance) {
 
   // Auth + store required routes
   app.get('/current', { preHandler: [authMiddleware, requireStoreMiddleware] }, (req, reply) => controller.getCurrent(req, reply));
+  app.post('/branding/upload-url', {
+    preHandler: [authMiddleware, requireStoreMiddleware],
+    config: {
+      rateLimit: {
+        max: 20,
+        timeWindow: '15 minutes',
+      },
+    },
+  }, (req, reply) => controller.generateBrandingUploadUrl(req, reply));
+  app.patch('/branding', { preHandler: [authMiddleware, requireStoreMiddleware] }, (req, reply) => controller.updateBranding(req, reply));
+  app.patch('/slug', { preHandler: [authMiddleware, requireStoreMiddleware] }, (req, reply) => controller.updateSlug(req, reply));
+  app.patch('/storefront', { preHandler: [authMiddleware, requireStoreMiddleware] }, (req, reply) => controller.updateStorefrontEnabled(req, reply));
+  app.get('/slug/check', { preHandler: [authMiddleware, requireStoreMiddleware] }, (req, reply) => controller.checkSlugAvailability(req, reply));
   app.patch('/theme', { preHandler: [authMiddleware, requireStoreMiddleware] }, (req, reply) => controller.updateTheme(req, reply));
   app.patch('/business-info', { preHandler: [authMiddleware, requireStoreMiddleware] }, (req, reply) => controller.updateBusinessInfo(req, reply));
   app.get('/members', { preHandler: [authMiddleware, requireStoreMiddleware] }, (req, reply) => controller.getMembers(req, reply));

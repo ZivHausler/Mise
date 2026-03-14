@@ -1,18 +1,39 @@
 import crypto from 'crypto';
 import { getPool } from '../../core/database/postgres.js';
+import { buildDynamicUpdate } from '../../core/db/query-builder.js';
 import type { Store, UserStore, StoreInvitation, CreateStoreDTO, AppTheme } from './store.types.js';
 import { StoreRole } from './store.types.js';
 
 export class PgStoreRepository {
+  private static generateSlug(name: string): string {
+    return name
+      .toLowerCase()
+      .trim()
+      .replace(/[^a-z0-9\s-]/g, '')
+      .replace(/[\s]+/g, '-')
+      .replace(/-+/g, '-')
+      .replace(/^-|-$/g, '') || 'store';
+  }
+
   static async createStore(data: CreateStoreDTO): Promise<Store> {
     const pool = getPool();
+    // Use a temporary slug for the initial INSERT (slug is NOT NULL)
+    const tempSlug = this.generateSlug(data.name);
     const result = await pool.query(
-      `INSERT INTO stores (name, code, address, created_at, updated_at)
-       VALUES ($1, $2, $3, NOW(), NOW())
+      `INSERT INTO stores (name, name_en, code, address, address_en, slug, created_at, updated_at)
+       VALUES ($1, $2, $3, $4, $5, $6, NOW(), NOW())
        RETURNING *`,
-      [data.name, data.code ?? null, data.address ?? null],
+      [data.name, data.nameEn ?? null, data.code ?? null, data.address ?? null, data.addressEn ?? null, tempSlug],
     );
     const store = this.mapStoreRow(result.rows[0]);
+
+    // Update slug with store ID suffix to ensure uniqueness
+    const finalSlug = `${tempSlug}-${store.id}`;
+    await pool.query(
+      'UPDATE stores SET slug = $1 WHERE id = $2',
+      [finalSlug, store.id],
+    );
+    store.slug = finalSlug;
 
     // Initialize invoice counters for new store
     await pool.query(
@@ -197,55 +218,129 @@ export class PgStoreRepository {
     );
   }
 
-  static async updateTheme(storeId: number, theme: AppTheme): Promise<void> {
+  static async updateTheme(storeId: number, data: { theme?: AppTheme; applyThemeToApp?: boolean }): Promise<void> {
     const pool = getPool();
-    await pool.query(
-      `UPDATE stores SET theme = $1, updated_at = NOW() WHERE id = $2`,
-      [theme, storeId],
+    const result = buildDynamicUpdate(
+      'stores',
+      data,
+      { theme: 'theme', applyThemeToApp: 'apply_theme_to_app' },
+      'id = $1',
+      [storeId],
     );
+    if (!result) return;
+    await pool.query(result.query, result.values);
   }
 
-  static async updateBusinessInfo(storeId: number, data: { name?: string; address?: string; phone?: string; email?: string; taxNumber?: string; vatRate?: number; autoGenerateInvoice?: boolean; autoGenerateCreditNote?: boolean }): Promise<Store> {
+  static async updateBusinessInfo(storeId: number, data: { name?: string | null; nameEn?: string | null; address?: string | null; addressEn?: string | null; phone?: string | null; email?: string | null; taxNumber?: string | null; vatRate?: number; autoGenerateInvoice?: boolean; autoGenerateCreditNote?: boolean }): Promise<Store> {
     const pool = getPool();
-    const fields: string[] = [];
-    const values: unknown[] = [];
-    let idx = 1;
+    const built = buildDynamicUpdate(
+      'stores',
+      data,
+      {
+        name: 'name', nameEn: 'name_en', address: 'address', addressEn: 'address_en',
+        phone: 'phone', email: 'email', taxNumber: 'tax_number', vatRate: 'vat_rate',
+        autoGenerateInvoice: 'auto_generate_invoice', autoGenerateCreditNote: 'auto_generate_credit_note',
+      },
+      'id = $1',
+      [storeId],
+    );
 
-    if (data.name !== undefined) { fields.push(`name = $${idx++}`); values.push(data.name); }
-    if (data.address !== undefined) { fields.push(`address = $${idx++}`); values.push(data.address); }
-    if (data.phone !== undefined) { fields.push(`phone = $${idx++}`); values.push(data.phone); }
-    if (data.email !== undefined) { fields.push(`email = $${idx++}`); values.push(data.email); }
-    if (data.taxNumber !== undefined) { fields.push(`tax_number = $${idx++}`); values.push(data.taxNumber); }
-    if (data.vatRate !== undefined) { fields.push(`vat_rate = $${idx++}`); values.push(data.vatRate); }
-    if (data.autoGenerateInvoice !== undefined) { fields.push(`auto_generate_invoice = $${idx++}`); values.push(data.autoGenerateInvoice); }
-    if (data.autoGenerateCreditNote !== undefined) { fields.push(`auto_generate_credit_note = $${idx++}`); values.push(data.autoGenerateCreditNote); }
-
-    if (fields.length === 0) {
+    if (!built) {
       const existing = await this.findStoreById(storeId);
       return existing!;
     }
 
-    fields.push('updated_at = NOW()');
-    values.push(storeId);
-
-    const result = await pool.query(
-      `UPDATE stores SET ${fields.join(', ')} WHERE id = $${idx} RETURNING *`,
-      values,
-    );
+    const result = await pool.query(`${built.query} RETURNING *`, built.values);
     return this.mapStoreRow(result.rows[0]);
+  }
+
+  static async updateBranding(
+    storeId: number,
+    data: { logoUrl?: string | null; bannerUrl?: string | null; description?: string | null; descriptionEn?: string | null; categorySubject?: string | null; categorySubSubject?: string | null },
+  ): Promise<Store> {
+    const pool = getPool();
+    const built = buildDynamicUpdate(
+      'stores',
+      data,
+      {
+        logoUrl: 'logo_url', bannerUrl: 'banner_url', description: 'description',
+        descriptionEn: 'description_en', categorySubject: 'category_subject',
+        categorySubSubject: 'category_sub_subject',
+      },
+      'id = $1',
+      [storeId],
+    );
+
+    if (!built) {
+      const existing = await this.findStoreById(storeId);
+      return existing!;
+    }
+
+    const result = await pool.query(`${built.query} RETURNING *`, built.values);
+    return this.mapStoreRow(result.rows[0]);
+  }
+
+  static async findBySlug(slug: string): Promise<Store | null> {
+    const pool = getPool();
+    const result = await pool.query('SELECT * FROM stores WHERE slug = $1', [slug]);
+    return result.rows[0] ? this.mapStoreRow(result.rows[0]) : null;
+  }
+
+  static async updateSlug(storeId: number, slug: string): Promise<void> {
+    const pool = getPool();
+    await pool.query(
+      'UPDATE stores SET slug = $1, updated_at = NOW() WHERE id = $2',
+      [slug, storeId],
+    );
+  }
+
+  static async updateStorefrontEnabled(storeId: number, enabled: boolean): Promise<void> {
+    const pool = getPool();
+    await pool.query(
+      'UPDATE stores SET storefront_enabled = $1, updated_at = NOW() WHERE id = $2',
+      [enabled, storeId],
+    );
+  }
+
+  static async getOwnerUserId(storeId: number): Promise<number | null> {
+    const pool = getPool();
+    const result = await pool.query(
+      'SELECT user_id FROM users_stores WHERE store_id = $1 AND role = $2 LIMIT 1',
+      [storeId, StoreRole.OWNER],
+    );
+    return result.rows[0] ? Number(result.rows[0]['user_id']) : null;
+  }
+
+  static async isSlugAvailable(slug: string, excludeStoreId?: number): Promise<boolean> {
+    const pool = getPool();
+    const result = excludeStoreId
+      ? await pool.query('SELECT 1 FROM stores WHERE slug = $1 AND id != $2', [slug, excludeStoreId])
+      : await pool.query('SELECT 1 FROM stores WHERE slug = $1', [slug]);
+    return result.rows.length === 0;
   }
 
   private static mapStoreRow(row: Record<string, unknown>): Store {
     return {
       id: Number(row['id']),
       name: row['name'] as string,
+      nameEn: (row['name_en'] as string) ?? null,
       code: (row['code'] as string) || null,
       address: (row['address'] as string) || null,
+      addressEn: (row['address_en'] as string) ?? null,
       phone: (row['phone'] as string) || null,
       email: (row['email'] as string) || null,
       taxNumber: (row['tax_number'] as string) || null,
       vatRate: Number(row['vat_rate'] ?? 18),
       theme: (row['theme'] as AppTheme) || 'cream',
+      logoUrl: (row['logo_url'] as string) ?? null,
+      bannerUrl: (row['banner_url'] as string) ?? null,
+      description: (row['description'] as string) ?? null,
+      descriptionEn: (row['description_en'] as string) ?? null,
+      slug: (row['slug'] as string) || '',
+      categorySubject: (row['category_subject'] as string) ?? null,
+      categorySubSubject: (row['category_sub_subject'] as string) ?? null,
+      applyThemeToApp: row['apply_theme_to_app'] !== false,
+      storefrontEnabled: Boolean(row['storefront_enabled']),
       autoGenerateInvoice: Boolean(row['auto_generate_invoice']),
       autoGenerateCreditNote: Boolean(row['auto_generate_credit_note']),
       createdAt: new Date(row['created_at'] as string),
