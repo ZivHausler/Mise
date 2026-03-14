@@ -27,9 +27,15 @@ declare module 'fastify' {
   }
 }
 
+export interface StorefrontTokenPayload {
+  customerId: number;
+  email: string;
+  type: 'storefront';
+}
+
 declare module '@fastify/jwt' {
   interface FastifyJWT {
-    payload: AuthTokenPayload;
+    payload: AuthTokenPayload | StorefrontTokenPayload;
     user: AuthTokenPayload;
   }
 }
@@ -41,7 +47,14 @@ export async function authMiddleware(request: FastifyRequest, _reply: FastifyRep
   }
 
   try {
-    const payload = await request.jwtVerify<AuthTokenPayload>();
+    const rawPayload = await request.jwtVerify();
+
+    // Reject storefront tokens on admin routes
+    if (typeof rawPayload === 'object' && rawPayload !== null && 'iss' in rawPayload && (rawPayload as Record<string, unknown>)['iss'] === 'storefront') {
+      throw new UnauthorizedError('Storefront tokens cannot access admin routes', ErrorCode.AUTH_INSUFFICIENT_PERMISSIONS);
+    }
+
+    const payload = rawPayload as AuthTokenPayload;
 
     if (payload.jti && await isTokenBlacklisted(payload.jti)) {
       throw new UnauthorizedError('Token has been revoked', ErrorCode.AUTH_TOKEN_REVOKED);
@@ -68,7 +81,12 @@ export async function authMiddleware(request: FastifyRequest, _reply: FastifyRep
       throw new UnauthorizedError('Account has been disabled', ErrorCode.AUTH_ACCOUNT_DISABLED);
     }
 
-    request.currentUser = payload;
+    // JWT may deserialize storeId as string — ensure it's always a number
+    // Create a new object to avoid mutating the decoded JWT payload
+    request.currentUser = {
+      ...payload,
+      ...(payload.storeId != null ? { storeId: Number(payload.storeId) } : {}),
+    };
   } catch (err) {
     if (err instanceof UnauthorizedError) throw err;
     throw new UnauthorizedError('Invalid or expired token', ErrorCode.AUTH_TOKEN_EXPIRED);

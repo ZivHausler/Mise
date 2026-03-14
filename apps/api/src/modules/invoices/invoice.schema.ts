@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { dateStringSchema } from '@mise/shared';
 
 export const createInvoiceSchema = z.object({
   orderId: z.coerce.number().int().positive(),
@@ -14,7 +15,7 @@ export const invoiceListQuerySchema = z.object({
   limit: z.coerce.number().int().positive().max(100).optional(),
   type: z.enum(['invoice', 'credit_note']).optional(),
   customerId: z.coerce.number().int().positive().optional(),
-  dateFrom: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Expected YYYY-MM-DD format').optional(),
-  dateTo: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Expected YYYY-MM-DD format').optional(),
+  dateFrom: dateStringSchema.optional(),
+  dateTo: dateStringSchema.optional(),
   search: z.string().max(200).optional(),
 });

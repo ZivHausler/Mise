@@ -6,14 +6,14 @@ import { getPool } from '../../core/database/postgres.js';
 export class PgCustomerRepository {
   static async findById(id: number, storeId: number): Promise<Customer | null> {
     const pool = getPool();
-    const result = await pool.query('SELECT * FROM customers WHERE id = $1 AND store_id = $2', [id, storeId]);
+    const result = await pool.query('SELECT * FROM customer_stores WHERE id = $1 AND store_id = $2', [id, storeId]);
     return result.rows[0] ? this.mapRow(result.rows[0]) : null;
   }
 
   static async findAll(storeId: number, search?: string): Promise<Customer[]> {
     const pool = getPool();
     let query = `SELECT c.*, COUNT(o.id) AS order_count, COALESCE(SUM(o.total_amount), 0) AS total_spent
-      FROM customers c
+      FROM customer_stores c
       LEFT JOIN orders o ON o.customer_id = c.id AND o.store_id = c.store_id
       WHERE c.store_id = $1`;
     const params: unknown[] = [storeId];
@@ -30,7 +30,7 @@ export class PgCustomerRepository {
 
   static async findByPhone(storeId: number, phone: string, excludeId?: number): Promise<Customer | null> {
     const pool = getPool();
-    let query = 'SELECT * FROM customers WHERE store_id = $1 AND phone = $2';
+    let query = 'SELECT * FROM customer_stores WHERE store_id = $1 AND phone = $2';
     const params: unknown[] = [storeId, phone];
     if (excludeId) {
       query += ' AND id != $3';
@@ -42,7 +42,7 @@ export class PgCustomerRepository {
 
   static async findByEmail(storeId: number, email: string, excludeId?: number): Promise<Customer | null> {
     const pool = getPool();
-    let query = 'SELECT * FROM customers WHERE store_id = $1 AND email = $2';
+    let query = 'SELECT * FROM customer_stores WHERE store_id = $1 AND email = $2';
     const params: unknown[] = [storeId, email];
     if (excludeId) {
       query += ' AND id != $3';
@@ -95,7 +95,7 @@ export class PgCustomerRepository {
     const loyaltyTier = data.loyaltyTier ?? 'bronze';
     const birthday = data.birthday ? `2000-${data.birthday.substring(5)}` : null;
     const result = await pool.query(
-      `INSERT INTO customers (store_id, name, phone, email, address, notes, preferences, birthday, loyalty_enabled, loyalty_tier, created_at, updated_at)
+      `INSERT INTO customer_stores (store_id, name, phone, email, address, notes, preferences, birthday, loyalty_enabled, loyalty_tier, created_at, updated_at)
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW(), NOW())
        RETURNING *`,
       [storeId, data.name, data.phone ?? null, data.email ?? null, data.address ?? null, data.notes ?? null, prefs, birthday, loyaltyEnabled, loyaltyTier],
@@ -128,7 +128,7 @@ export class PgCustomerRepository {
     values.push(storeId);
 
     const result = await pool.query(
-      `UPDATE customers SET ${fields.join(', ')} WHERE id = $${idIdx} AND store_id = $${idx} RETURNING *`,
+      `UPDATE customer_stores SET ${fields.join(', ')} WHERE id = $${idIdx} AND store_id = $${idx} RETURNING *`,
       values,
     );
     return this.mapRow(result.rows[0]);
@@ -136,7 +136,7 @@ export class PgCustomerRepository {
 
   static async delete(id: number, storeId: number): Promise<void> {
     const pool = getPool();
-    await pool.query('DELETE FROM customers WHERE id = $1 AND store_id = $2', [id, storeId]);
+    await pool.query('DELETE FROM customer_stores WHERE id = $1 AND store_id = $2', [id, storeId]);
   }
 
   private static mapRow(row: Record<string, unknown>): Customer {

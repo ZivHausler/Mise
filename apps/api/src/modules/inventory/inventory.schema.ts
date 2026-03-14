@@ -3,6 +3,7 @@ import { InventoryLogType } from '@mise/shared';
 
 export const createIngredientSchema = z.object({
   name: z.string().min(1).max(200),
+  nameEn: z.string().trim().max(200).optional(),
   unit: z.string().min(1).max(50),
   quantity: z.number().min(0).max(1000000),
   costPerUnit: z.number().min(0).max(1000000),

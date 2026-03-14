@@ -138,10 +138,10 @@ export class PgInventoryRepository {
   static async create(storeId: number, data: CreateIngredientDTO): Promise<Ingredient> {
     const pool = getPool();
     const result = await pool.query(
-      `INSERT INTO ingredients (store_id, name, unit, quantity, cost_per_unit, package_size, low_stock_threshold, supplier, notes, created_at, updated_at)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), NOW())
+      `INSERT INTO ingredients (store_id, name, name_en, unit, quantity, cost_per_unit, package_size, low_stock_threshold, supplier, notes, created_at, updated_at)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW(), NOW())
        RETURNING *`,
-      [storeId, data.name, data.unit, data.quantity, data.costPerUnit, data.packageSize ?? null, data.lowStockThreshold, data.supplier ?? null, data.notes ?? null],
+      [storeId, data.name, data.nameEn ?? null, data.unit, data.quantity, data.costPerUnit, data.packageSize ?? null, data.lowStockThreshold, data.supplier ?? null, data.notes ?? null],
     );
     const id = Number(result.rows[0]['id']);
     if (data.allergenIds?.length) await this.syncAllergens(id, data.allergenIds);
@@ -155,6 +155,7 @@ export class PgInventoryRepository {
     let idx = 1;
 
     if (data.name !== undefined) { fields.push(`name = $${idx++}`); values.push(data.name); }
+    if (data.nameEn !== undefined) { fields.push(`name_en = $${idx++}`); values.push(data.nameEn); }
     if (data.unit !== undefined) { fields.push(`unit = $${idx++}`); values.push(data.unit); }
     if (data.quantity !== undefined) { fields.push(`quantity = $${idx++}`); values.push(data.quantity); }
     if (data.costPerUnit !== undefined) { fields.push(`cost_per_unit = $${idx++}`); values.push(data.costPerUnit); }
@@ -272,6 +273,7 @@ export class PgInventoryRepository {
     return {
       id: Number(row['id']),
       name: row['name'] as string,
+      nameEn: (row['name_en'] as string) ?? null,
       unit: row['unit'] as string,
       quantity: Number(row['quantity']),
       costPerUnit: Number(row['cost_per_unit']),

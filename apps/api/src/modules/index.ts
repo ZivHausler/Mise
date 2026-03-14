@@ -25,6 +25,8 @@ export async function registerModules(app: FastifyInstance) {
   await app.register(import('./features/features.routes.js'), { prefix: '/api/features' });
   await app.register(import('./invoices/invoice.routes.js'), { prefix: '/api/invoices' });
   await app.register(import('./ai-chat/ai-chat.routes.js'), { prefix: '/api/ai-chat' });
+  // Public storefront routes (no auth)
+  await app.register(import('./storefront/storefront.routes.js'), { prefix: '/api/public' });
 
   app.log.info('All modules registered');
 }
