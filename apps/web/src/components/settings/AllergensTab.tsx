@@ -12,12 +12,14 @@ import { Button } from '@/components/Button';
 import { TextInput } from '@/components/FormFields';
 import { Modal } from '@/components/Modal';
 import { Spinner } from '@/components/Feedback';
+import { TranslateButton } from '@/components/TranslateButton';
 import { useAllergens, useCreateAllergen, useUpdateAllergen, useDeleteAllergen } from '@/api/hooks';
 import { PRESET_COLORS } from '@/constants/defaults';
 
 interface AllergenItem {
   id: number;
   name: string;
+  nameEn: string | null;
   color: string | null;
   icon: string | null;
   isDefault: boolean;
@@ -65,7 +67,7 @@ export default function AllergensTab() {
 
   const [showModal, setShowModal] = useState(false);
   const [editingAllergen, setEditingAllergen] = useState<AllergenItem | null>(null);
-  const [form, setForm] = useState({ name: '', color: '', icon: '' });
+  const [form, setForm] = useState({ name: '', nameEn: '', color: '', icon: '' });
 
   const allergenList = (allergens ?? []) as AllergenItem[];
   const defaultAllergens = allergenList.filter((g) => g.isDefault);
@@ -73,19 +75,20 @@ export default function AllergensTab() {
 
   const openCreate = () => {
     setEditingAllergen(null);
-    setForm({ name: '', color: '', icon: '' });
+    setForm({ name: '', nameEn: '', color: '', icon: '' });
     setShowModal(true);
   };
 
   const openEdit = (allergen: AllergenItem) => {
     setEditingAllergen(allergen);
-    setForm({ name: allergen.name, color: allergen.color ?? '', icon: allergen.icon ?? '' });
+    setForm({ name: allergen.name, nameEn: allergen.nameEn ?? '', color: allergen.color ?? '', icon: allergen.icon ?? '' });
     setShowModal(true);
   };
 
   const handleSubmit = () => {
     const payload = {
       name: form.name,
+      nameEn: form.nameEn || null,
       icon: form.icon || null,
       color: form.color || null,
     };
@@ -177,6 +180,13 @@ export default function AllergensTab() {
       >
         <Stack gap={3}>
           <TextInput label={t('settings.allergens.name', 'Name')} value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} placeholder={t('settings.allergens.namePlaceholder', 'e.g. Dairy-free')} />
+          <TextInput label={`${t('settings.allergens.nameEn', 'Name (English)')} (${t('common.optional')})`} value={form.nameEn} onChange={(e) => setForm((f) => ({ ...f, nameEn: e.target.value }))} placeholder="e.g. Dairy-free" dir="ltr" />
+          <TranslateButton
+            hebrewText={form.name}
+            onTranslate={(text) => setForm((f) => ({ ...f, nameEn: text }))}
+            fieldType="name"
+            className="self-end -mt-1"
+          />
           <div>
             <label className="mb-1 block text-body-sm font-semibold text-neutral-700">{t('settings.allergens.icon', 'Icon')}</label>
             <div className="grid grid-cols-6 gap-1.5 max-h-40 overflow-y-auto">

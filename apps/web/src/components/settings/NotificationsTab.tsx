@@ -155,7 +155,7 @@ export default function NotificationsTab() {
                 <span>&#8226;</span>
                 <span>
                   {t('settings.notifications.phoneHintPrefix', 'Add a phone number in the')}{' '}
-                  <button type="button" onClick={() => setSettingsTab('account')} className="underline hover:text-neutral-600">
+                  <button type="button" onClick={() => { useAppStore.getState().setSettingsSection('personal'); setSettingsTab('profile'); }} className="underline hover:text-neutral-600">
                     {t('settings.notifications.phoneHintLink', 'Account tab')}
                   </button>{' '}
                   {t('settings.notifications.phoneHintSuffix', 'to enable SMS notifications.')}
@@ -167,7 +167,7 @@ export default function NotificationsTab() {
                 <span>&#8226;</span>
                 <span>
                   {t('settings.notifications.whatsappHintPrefix', 'Connect WhatsApp in the')}{' '}
-                  <button type="button" onClick={() => setSettingsTab('integrations')} className="underline hover:text-neutral-600">
+                  <button type="button" onClick={() => { useAppStore.getState().setSettingsSection('store'); setSettingsTab('integrations'); }} className="underline hover:text-neutral-600">
                     {t('settings.notifications.whatsappHintLink', 'Integrations tab')}
                   </button>{' '}
                   {t('settings.notifications.whatsappHintSuffix', 'to enable WhatsApp notifications.')}
