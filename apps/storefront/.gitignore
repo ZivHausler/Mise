@@ -1,0 +1,27 @@
+# Build artifacts
+MiseStorefront.app/
+*.tar.gz
+*.ipa
+*.apk
+*.aab
+
+# Expo
+.expo/
+
+# Dependencies
+node_modules/
+
+# iOS
+ios/Pods/
+ios/build/
+
+# Android
+android/app/build/
+android/.gradle/
+
+# Environment
+.env.local
+.env.production
+
+# Metro
+.metro-health-check*
