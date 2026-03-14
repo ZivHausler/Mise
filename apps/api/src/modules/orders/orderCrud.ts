@@ -1,6 +1,6 @@
 import { PgOrderRepository } from './order.repository.js';
 import type { CustomerOrderFilters } from './order.repository.js';
-import type { CreateOrderDTO, Order, OrderStatus } from './order.types.js';
+import type { CreateOrderDTO, Order, OrderStatus, OrderSource } from './order.types.js';
 
 export class OrderCrud {
   static async create(storeId: number, data: CreateOrderDTO & { totalAmount: number; recurringGroupId?: number }): Promise<Order> {
@@ -35,11 +35,15 @@ export class OrderCrud {
     return PgOrderRepository.findByCustomerId(storeId, customerId, options, filters);
   }
 
+  static async findByOrderNumber(storeId: number, orderNumber: number): Promise<Order | null> {
+    return PgOrderRepository.findByOrderNumber(storeId, orderNumber);
+  }
+
   static async findByDateRange(storeId: number, filters: { from: string; to: string; status?: number }): Promise<Order[]> {
     return PgOrderRepository.findByDateRange(storeId, filters);
   }
 
-  static async getCalendarAggregates(storeId: number, filters: { from: string; to: string }): Promise<Array<{ day: string; total: number; received: number; inProgress: number; ready: number; delivered: number }>> {
+  static async getCalendarAggregates(storeId: number, filters: { from: string; to: string }): Promise<Array<{ day: string; total: number; pendingApproval: number; received: number; inProgress: number; ready: number; delivered: number }>> {
     return PgOrderRepository.getCalendarAggregates(storeId, filters);
   }
 
@@ -57,5 +61,34 @@ export class OrderCrud {
 
   static async countActiveByRecipe(storeId: number, recipeId: string): Promise<number> {
     return PgOrderRepository.countActiveByRecipe(storeId, recipeId);
+  }
+
+  static async createWithSource(
+    storeId: number,
+    data: CreateOrderDTO & { totalAmount: number; recurringGroupId?: number },
+    source: OrderSource,
+    initialStatus: number,
+  ): Promise<Order> {
+    return PgOrderRepository.createWithSource(storeId, data, source, initialStatus);
+  }
+
+  static async cancelOrder(storeId: number, id: number, expectedStatus: number, reason?: string): Promise<Order | null> {
+    return PgOrderRepository.cancelOrder(storeId, id, expectedStatus, reason);
+  }
+
+  static async requestCancellation(storeId: number, id: number, expectedStatus: number, reason?: string): Promise<Order | null> {
+    return PgOrderRepository.requestCancellation(storeId, id, expectedStatus, reason);
+  }
+
+  static async declineCancellation(storeId: number, id: number): Promise<Order | null> {
+    return PgOrderRepository.declineCancellation(storeId, id);
+  }
+
+  static async approveOrder(storeId: number, id: number): Promise<Order | null> {
+    return PgOrderRepository.approveOrder(storeId, id);
+  }
+
+  static async countPendingActions(storeId: number): Promise<{ pendingApproval: number; cancellationRequested: number }> {
+    return PgOrderRepository.countPendingActions(storeId);
   }
 }

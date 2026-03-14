@@ -28,6 +28,19 @@ export default async function orderSSERoutes(app: FastifyInstance) {
     }
   });
 
+  // Subscribe to cancellation request events and broadcast via SSE
+  getEventBus().subscribe(EventNames.ORDER_CANCELLATION_REQUESTED, async (event) => {
+    const { orderId, storeId } = event.payload as { orderId: number; storeId: number };
+    if (!storeId) return;
+
+    try {
+      const order = await orderService.getById(storeId, orderId);
+      sseManager.broadcast(storeId, 'order.cancellationRequested', order);
+    } catch {
+      // order not found or other error — skip broadcast
+    }
+  });
+
   app.get<{ Querystring: { token?: string } }>('/events', async (request, reply) => {
     // Authenticate via query param token (EventSource can't set headers)
     const token = request.query.token;

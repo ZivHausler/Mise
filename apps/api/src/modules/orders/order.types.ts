@@ -1,12 +1,9 @@
-export const ORDER_STATUS = {
-  RECEIVED: 0,
-  IN_PROGRESS: 1,
-  READY: 2,
-  DELIVERED: 3,
-} as const;
+export { ORDER_STATUS } from '@mise/shared';
+import { ORDER_STATUS } from '@mise/shared';
 
 export type OrderStatus = (typeof ORDER_STATUS)[keyof typeof ORDER_STATUS];
 
+export type OrderSource = 'web' | 'storefront';
 
 export interface OrderCustomer {
   id: number | null;
@@ -23,6 +20,9 @@ export interface Order {
   notes?: string;
   dueDate?: Date;
   recurringGroupId?: number;
+  source: OrderSource;
+  cancellationReason?: string;
+  previousStatus?: number;
   createdAt: Date;
   updatedAt: Date;
 }

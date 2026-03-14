@@ -1,7 +1,7 @@
 import type { FastifyRequest, FastifyReply } from 'fastify';
 import type { OrderService } from './order.service.js';
 import type { OrderStatus } from './order.types.js';
-import { createOrderSchema, createRecurringOrderSchema, updateOrderStatusSchema, updateOrderSchema, calendarRangeSchema, calendarAggregatesSchema, calendarDaySchema } from './order.schema.js';
+import { createOrderSchema, createRecurringOrderSchema, updateOrderStatusSchema, updateOrderSchema, calendarRangeSchema, calendarAggregatesSchema, calendarDaySchema, cancelOrderSchema, approveCancellationSchema } from './order.schema.js';
 import { parsePaginationParams } from '../../core/types/pagination.js';
 import { pdfQuerySchema } from '../shared/pdf/pdfSchema.js';
 import { generateOrderPdf } from '../shared/pdf/orderPdf.js';
@@ -132,5 +132,37 @@ export class OrderController {
     const { page, limit, offset } = parsePaginationParams(query.page, query.limit, 20);
     const { orders, total } = await this.orderService.getByDay(storeId, { date: query.date, status: query.status, limit, offset });
     return reply.send({ success: true, data: orders, pagination: { page, limit, total, totalPages: Math.ceil(total / limit) } });
+  }
+
+  async approve(request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) {
+    const storeId = request.currentUser!.storeId!;
+    const order = await this.orderService.approveOrder(storeId, Number(request.params.id), request.id);
+    return reply.send({ success: true, data: order });
+  }
+
+  async cancel(request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) {
+    const storeId = request.currentUser!.storeId!;
+    const { reason } = cancelOrderSchema.parse(request.body);
+    const order = await this.orderService.cancelOrder(storeId, Number(request.params.id), reason, 'owner', request.id);
+    return reply.send({ success: true, data: order });
+  }
+
+  async approveCancellation(request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) {
+    const storeId = request.currentUser!.storeId!;
+    const { reason } = approveCancellationSchema.parse(request.body);
+    const order = await this.orderService.approveCancellationRequest(storeId, Number(request.params.id), reason, request.id);
+    return reply.send({ success: true, data: order });
+  }
+
+  async declineCancellation(request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) {
+    const storeId = request.currentUser!.storeId!;
+    const order = await this.orderService.declineCancellationRequest(storeId, Number(request.params.id), request.id);
+    return reply.send({ success: true, data: order });
+  }
+
+  async getPendingCount(request: FastifyRequest, reply: FastifyReply) {
+    const storeId = request.currentUser!.storeId!;
+    const counts = await this.orderService.getPendingCount(storeId);
+    return reply.send({ success: true, data: counts });
   }
 }
