@@ -7,10 +7,13 @@ import { ORDER_STATUS } from '../../../src/modules/orders/order.types.js';
 vi.mock('@mise/shared/src/constants/index.js', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@mise/shared/src/constants/index.js')>()),
   ORDER_STATUS_FLOW: {
-    0: [1],    // received → in_progress
-    1: [0, 2], // in_progress → received, ready
-    2: [1, 3], // ready → in_progress, delivered
-    3: [2],    // delivered → ready
+    0: [1],    // pending_approval → received
+    1: [0, 2], // received → pending_approval, in_progress
+    2: [1, 3], // in_progress → received, ready
+    3: [2, 4], // ready → in_progress, delivered
+    4: [3],    // delivered → ready
+    5: [],     // cancelled
+    6: [],     // cancellation_requested
   },
 }));
 
