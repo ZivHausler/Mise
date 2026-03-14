@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 
 // StatusBadge
-type BadgeVariant = 'received' | 'in_progress' | 'ready' | 'delivered' | 'cancelled' | 'unpaid' | 'partial' | 'paid' | 'low' | 'ok' | 'good' | 'out' | 'info' | 'success' | 'warning' | 'error';
+type BadgeVariant = 'received' | 'in_progress' | 'ready' | 'delivered' | 'cancelled' | 'pending_approval' | 'cancellation_requested' | 'unpaid' | 'partial' | 'paid' | 'low' | 'ok' | 'good' | 'out' | 'info' | 'success' | 'warning' | 'error';
 
 const badgeStyles: Record<string, string> = {
   received: 'bg-info-light text-info border-info/20',
@@ -13,6 +13,8 @@ const badgeStyles: Record<string, string> = {
   ready: 'bg-success-light text-success border-success/20',
   delivered: 'bg-neutral-100 text-neutral-600 border-neutral-200',
   cancelled: 'bg-error-light text-error border-error/20',
+  pending_approval: 'bg-amber-50 text-amber-700 border-amber-200',
+  cancellation_requested: 'bg-orange-50 text-orange-700 border-orange-200',
   unpaid: 'bg-error-light text-error border-error/20',
   partial: 'bg-warning-light text-warning border-warning/20',
   paid: 'bg-success-light text-success border-success/20',
@@ -32,6 +34,8 @@ const dotStyles: Record<string, string> = {
   ready: 'bg-success',
   delivered: 'bg-neutral-500',
   cancelled: 'bg-error',
+  pending_approval: 'bg-amber-500',
+  cancellation_requested: 'bg-orange-500',
   unpaid: 'bg-error',
   partial: 'bg-warning',
   paid: 'bg-success',

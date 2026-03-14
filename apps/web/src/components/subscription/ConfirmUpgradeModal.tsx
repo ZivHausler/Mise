@@ -21,6 +21,7 @@ interface ConfirmUpgradeModalProps {
   isTrialing?: boolean;
   trialEndsAt?: string;
   currentPlanSlug?: string;
+  trialSelectedPlan?: string;
 }
 
 export const ConfirmUpgradeModal = React.memo(function ConfirmUpgradeModal({
@@ -32,6 +33,7 @@ export const ConfirmUpgradeModal = React.memo(function ConfirmUpgradeModal({
   isTrialing,
   trialEndsAt,
   currentPlanSlug,
+  trialSelectedPlan,
 }: ConfirmUpgradeModalProps) {
   const { t, i18n } = useTranslation();
   const qc = useQueryClient();
@@ -47,7 +49,7 @@ export const ConfirmUpgradeModal = React.memo(function ConfirmUpgradeModal({
 
   const isFirstSubscription = currentPlanSlug === 'free' && !isTrialing;
   const needsPreview = !isTrialing && !isFirstSubscription;
-  const needsCheckout = !isTrialing;
+  const needsCheckout = true;
 
   const { data: preview, isLoading: previewLoading } = usePreviewPlanChange(
     needsPreview && isOpen ? targetPlanSlug : null,
@@ -146,7 +148,7 @@ export const ConfirmUpgradeModal = React.memo(function ConfirmUpgradeModal({
         <div className="flex flex-col items-center text-center py-2">
           {targetPlanSlug !== 'free' && (
             <div className="mb-3">
-              <TierBadge tier={targetPlanSlug as 'basic' | 'pro'} size="md" />
+              <TierBadge tier={targetPlanSlug as 'trial' | 'basic' | 'pro'} size="md" />
             </div>
           )}
 
@@ -201,7 +203,7 @@ export const ConfirmUpgradeModal = React.memo(function ConfirmUpgradeModal({
       <div className="flex flex-col items-center text-center py-2">
         {targetPlanSlug !== 'free' && (
           <div className="mb-3">
-            <TierBadge tier={targetPlanSlug as 'basic' | 'pro'} size="md" />
+            <TierBadge tier={targetPlanSlug as 'trial' | 'basic' | 'pro'} size="md" />
           </div>
         )}
 
@@ -262,16 +264,24 @@ export const ConfirmUpgradeModal = React.memo(function ConfirmUpgradeModal({
               <p>{t('subscription.trial.keepFeatures', { date: trialEndsAt ? formatDate(trialEndsAt) : '' })}</p>
             </div>
 
-            {targetPlanSlug === 'pro' ? (
-              <p className="text-body-sm text-neutral-600">
-                {t('subscription.trial.afterTrialPro', {
-                  price,
-                  date: trialEndsAt ? formatDate(trialEndsAt) : '',
-                })}
-              </p>
+            {trialSelectedPlan ? (
+              <>
+                <p className="text-body-sm text-neutral-600">
+                  {t('subscription.trial.upgradeFromSelected', {
+                    from: t(`subscription.tiers.${trialSelectedPlan}`),
+                    to: tierName,
+                    fromPrice: PLAN_PRICES[trialSelectedPlan] ?? 0,
+                    toPrice: price,
+                    difference: price - (PLAN_PRICES[trialSelectedPlan] ?? 0),
+                  })}
+                </p>
+                <p className="mt-1 text-body-sm text-neutral-500">
+                  {t('subscription.trial.renewsAtFullPrice', { price, plan: tierName })}
+                </p>
+              </>
             ) : (
               <p className="text-body-sm text-neutral-600">
-                {t('subscription.trial.afterTrialBasic', { plan: tierName, price })}
+                {t('subscription.trial.afterTrial', { plan: tierName, price })}
               </p>
             )}
 

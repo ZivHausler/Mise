@@ -28,8 +28,9 @@ export const PLAN_FEATURES: Record<string, string[]> = {
 /** Tier sort order for comparison */
 export const TIER_ORDER: Record<string, number> = {
   free: 0,
-  basic: 1,
-  pro: 2,
+  trial: 1,
+  basic: 2,
+  pro: 3,
 };
 
 /** Check if a tier is higher than another */

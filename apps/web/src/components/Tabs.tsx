@@ -13,7 +13,7 @@ interface TabsProps<K extends string = string> {
 
 export function Tabs<K extends string>({ tabs, activeTab, onChange }: TabsProps<K>) {
   return (
-    <div className="flex gap-1 border-b border-neutral-200 overflow-x-auto md:overflow-x-visible scrollbar-hide">
+    <div className="flex gap-1 border-b border-neutral-200 overflow-x-auto scrollbar-hide">
       {tabs.map((tab) => (
         <button
           key={tab.key}

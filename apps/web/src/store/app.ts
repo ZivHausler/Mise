@@ -6,7 +6,10 @@ export type { DateFormat, TimeFormat, Language, WeekStartDay };
 
 type OrdersViewMode = 'pipeline' | 'list' | 'calendar';
 type RecipesViewMode = 'grid' | 'list';
-type SettingsTab = 'account' | 'team' | 'units' | 'allergens' | 'tags' | 'notifications' | 'loyalty' | 'subscription' | 'integrations' | 'billing';
+export type SettingsSection = 'personal' | 'store';
+export type PersonalTab = 'profile' | 'preferences' | 'notifications';
+export type StoreTab = 'businessDetails' | 'appearance' | 'team' | 'defaults' | 'loyalty' | 'subscription' | 'integrations' | 'storefront';
+type SettingsTab = PersonalTab | StoreTab;
 type ProductionTab = 'board' | 'timeline' | 'prepList';
 type AdminDashboardRange = 'week' | 'month' | 'year';
 
@@ -22,9 +25,11 @@ interface AppState {
   ordersViewMode: OrdersViewMode;
   recipesViewMode: RecipesViewMode;
   productionTab: ProductionTab;
+  settingsSection: SettingsSection;
   settingsTab: SettingsTab;
   adminDashboardRange: AdminDashboardRange;
   aiChatOpen: boolean;
+  setSettingsSection: (section: SettingsSection) => void;
   setLanguage: (lang: Language) => void;
   setDateFormat: (format: DateFormat) => void;
   setTimeFormat: (format: TimeFormat) => void;
@@ -62,7 +67,8 @@ export const useAppStore = create<AppState>((set) => ({
   ordersViewMode: (localStorage.getItem('ordersViewMode') as OrdersViewMode) || 'calendar',
   recipesViewMode: (localStorage.getItem('recipesViewMode') as RecipesViewMode) || 'grid',
   productionTab: (localStorage.getItem('productionTab') as ProductionTab) || 'board',
-  settingsTab: (localStorage.getItem('settingsTab') as SettingsTab) || 'account',
+  settingsSection: (localStorage.getItem('settingsSection') as SettingsSection) || 'personal',
+  settingsTab: (localStorage.getItem('settingsTab') as SettingsTab) || 'profile',
   adminDashboardRange: (localStorage.getItem('adminDashboardRange') as AdminDashboardRange) || 'month',
   aiChatOpen: false,
   setLanguage: (language) => {
@@ -108,6 +114,12 @@ export const useAppStore = create<AppState>((set) => ({
   setProductionTab: (productionTab) => {
     localStorage.setItem('productionTab', productionTab);
     set({ productionTab });
+  },
+  setSettingsSection: (settingsSection) => {
+    localStorage.setItem('settingsSection', settingsSection);
+    const firstTab = settingsSection === 'personal' ? 'profile' : 'businessDetails';
+    localStorage.setItem('settingsTab', firstTab);
+    set({ settingsSection, settingsTab: firstTab });
   },
   setSettingsTab: (settingsTab) => {
     localStorage.setItem('settingsTab', settingsTab);

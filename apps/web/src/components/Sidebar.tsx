@@ -1,6 +1,6 @@
 import React, { useCallback, useState, useRef, useEffect } from 'react';
 import { Logo } from './Logo';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard,
   ClipboardList,
@@ -12,19 +12,21 @@ import {
   FileText,
   Settings,
   Shield,
+  LogOut,
   ChevronLeft,
   ChevronRight,
   ChevronDown,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { useQueryClient } from '@tanstack/react-query';
 import { cn } from '@/utils/cn';
+import { ConfirmModal } from './Modal';
 import { NavItem } from './NavItem';
 import { UpgradeHint } from './subscription/UpgradeHint';
 import { useAppStore } from '@/store/app';
 import { useAuthStore } from '@/store/auth';
-import { useSelectStore, useAllStores, useSubscription } from '@/api/hooks';
+import { useSubscription, usePendingOrdersCount } from '@/api/hooks';
 import { STORE_ROLES } from '@/constants/defaults';
+import { useStoreSwitch } from '@/hooks/useStoreSwitch';
 import { isTierHigher } from '@/utils/subscription';
 
 const navItems = [
@@ -48,40 +50,25 @@ export function Sidebar() {
   const toggleSidebar = useAppStore((s) => s.toggleSidebar);
   const stores = useAuthStore((s) => s.stores);
   const isAdmin = useAuthStore((s) => s.isAdmin);
-  const updateToken = useAuthStore((s) => s.updateToken);
   const activeStoreId = useAuthStore((s) => s.activeStoreId);
-  const setActiveStore = useAuthStore((s) => s.setActiveStore);
-  const selectStore = useSelectStore();
-  const allStoresQuery = useAllStores(isAdmin);
-  const qc = useQueryClient();
+  const { displayStores, switchStore } = useStoreSwitch();
   const { data: subscription } = useSubscription();
   const currentPlan = (subscription as any)?.planSlug ?? 'free';
   const activeRole = stores.find((s) => String(s.storeId) === String(activeStoreId))?.role;
   const isOwner = activeRole === STORE_ROLES.OWNER || isAdmin;
   const nextTier = currentPlan === 'free' ? 'basic' : currentPlan === 'basic' ? 'pro' : null;
+  const { data: pendingCount } = usePendingOrdersCount();
+  const ordersBadge = (pendingCount?.pendingApproval ?? 0) + (pendingCount?.cancellationRequested ?? 0);
+  const logout = useAuthStore((s) => s.logout);
+  const navigate = useNavigate();
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
-  // For admins, show all stores in the system; for non-admins, show their stores
-  const displayStores = isAdmin && allStoresQuery.data
-    ? allStoresQuery.data.map((s) => ({ storeId: String(s.id), store: { id: s.id, name: s.name, code: null, theme: 'cream' }, role: -1 }))
-    : stores;
+  const handleLogout = useCallback(() => {
+    logout();
+    navigate('/login');
+  }, [logout, navigate]);
 
   const handleToggle = useCallback(() => toggleSidebar(), [toggleSidebar]);
-
-  const handleStoreSwitch = useCallback(
-    (storeId: string) => {
-      selectStore.mutate(
-        { storeId },
-        {
-          onSuccess: (data: any) => {
-            updateToken(data.token);
-            setActiveStore(storeId);
-            qc.invalidateQueries();
-          },
-        },
-      );
-    },
-    [selectStore, updateToken, setActiveStore, qc],
-  );
 
   return (
     <aside
@@ -106,7 +93,7 @@ export function Sidebar() {
             stores={displayStores}
             activeStoreId={activeStoreId}
             isAdmin={isAdmin}
-            onSwitch={handleStoreSwitch}
+            onSwitch={switchStore}
           />
         )}
         <ul className="flex flex-col gap-1 px-2">
@@ -120,6 +107,7 @@ export function Sidebar() {
                 featureFlag={item.featureFlag}
                 variant="sidebar"
                 collapsed={collapsed}
+                badge={item.path === '/orders' ? ordersBadge : undefined}
               />
             </li>
           ))}
@@ -166,7 +154,24 @@ export function Sidebar() {
             {!collapsed && <span>{t(item.labelKey)}</span>}
           </NavLink>
         ))}
+        <button
+          onClick={() => setShowLogoutConfirm(true)}
+          className="mt-1 flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-body-sm transition-colors text-red-400 hover:bg-primary-800 hover:text-red-300"
+        >
+          <LogOut className="h-5 w-5 shrink-0" />
+          {!collapsed && <span>{t('auth.logout')}</span>}
+        </button>
       </div>
+      <ConfirmModal
+        open={showLogoutConfirm}
+        onClose={() => setShowLogoutConfirm(false)}
+        onConfirm={handleLogout}
+        title={t('auth.logoutConfirmTitle')}
+        message={t('auth.logoutConfirmMessage')}
+        confirmText={t('auth.logout')}
+        cancelText={t('common.cancel')}
+        variant="danger"
+      />
     </aside>
   );
 }
