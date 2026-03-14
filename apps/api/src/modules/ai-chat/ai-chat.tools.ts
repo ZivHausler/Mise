@@ -60,7 +60,7 @@ export const toolDeclarations: FunctionDeclaration[] = [
   },
   {
     name: 'getOrderStats',
-    description: 'Get order counts grouped by status (received=0, in_progress=1, ready=2, delivered=3).',
+    description: 'Get order counts grouped by status (pending_approval=0, received=1, in_progress=2, ready=3, delivered=4, cancelled=5, cancellation_requested=6).',
     parametersJsonSchema: {
       type: 'object',
       properties: {},
@@ -172,8 +172,8 @@ export const toolDeclarations: FunctionDeclaration[] = [
       properties: {
         status: {
           type: 'number',
-          description: 'Optional order status filter: 0=received, 1=in_progress, 2=ready, 3=delivered.',
-          enum: [0, 1, 2, 3],
+          description: 'Optional order status filter: 0=pending_approval, 1=received, 2=in_progress, 3=ready, 4=delivered, 5=cancelled, 6=cancellation_requested.',
+          enum: [0, 1, 2, 3, 4, 5, 6],
         },
       },
       required: [],
@@ -201,7 +201,7 @@ export const toolDeclarations: FunctionDeclaration[] = [
   },
   {
     name: 'getPaidButNotDelivered',
-    description: 'Get orders that have been paid but not yet delivered (status is not delivered). These are orders where money was collected but the customer is still waiting.',
+    description: 'Get orders that have been paid but not yet delivered (status is not 4/delivered). These are orders where money was collected but the customer is still waiting.',
     parametersJsonSchema: {
       type: 'object',
       properties: {},
@@ -506,7 +506,7 @@ async function executeToolCallRaw(
       const result = await pool.query(
         `SELECT o.*, c.name as customer_name
          FROM orders o
-         LEFT JOIN customers c ON o.customer_id = c.id
+         LEFT JOIN customer_stores c ON o.customer_id = c.id
          WHERE o.store_id = $1 AND o.order_number = $2`,
         [storeId, orderNumber],
       );
@@ -544,7 +544,7 @@ async function executeToolCallRaw(
       const result = await pool.query(
         `SELECT o.id, o.order_number, c.name as customer_name, o.items, o.status, o.total_amount, o.created_at
          FROM orders o
-         LEFT JOIN customers c ON o.customer_id = c.id
+         LEFT JOIN customer_stores c ON o.customer_id = c.id
          WHERE o.store_id = $1
            AND EXISTS (
              SELECT 1 FROM jsonb_array_elements(o.items::jsonb) elem
@@ -578,7 +578,7 @@ async function executeToolCallRaw(
                 o.total_amount - COALESCE(SUM(CASE WHEN p.status = 'completed' THEN p.amount ELSE 0 END), 0) as remaining,
                 o.status, o.created_at
          FROM orders o
-         LEFT JOIN customers c ON o.customer_id = c.id
+         LEFT JOIN customer_stores c ON o.customer_id = c.id
          LEFT JOIN payments p ON p.order_id = o.id
          WHERE o.store_id = $1
          GROUP BY o.id, o.order_number, c.name, o.total_amount, o.status, o.created_at
@@ -596,9 +596,9 @@ async function executeToolCallRaw(
         `SELECT o.id, o.order_number, c.name as customer_name, o.total_amount, o.status, o.created_at, o.due_date,
                 COALESCE(SUM(CASE WHEN p.status = 'completed' THEN p.amount ELSE 0 END), 0) as paid_amount
          FROM orders o
-         LEFT JOIN customers c ON o.customer_id = c.id
+         LEFT JOIN customer_stores c ON o.customer_id = c.id
          LEFT JOIN payments p ON p.order_id = o.id
-         WHERE o.store_id = $1 AND o.status != 3
+         WHERE o.store_id = $1 AND o.status != 4
          GROUP BY o.id, o.order_number, c.name, o.total_amount, o.status, o.created_at, o.due_date
          HAVING COALESCE(SUM(CASE WHEN p.status = 'completed' THEN p.amount ELSE 0 END), 0) >= o.total_amount
          ORDER BY o.created_at ASC
@@ -615,7 +615,7 @@ async function executeToolCallRaw(
                 COUNT(o.id) as unpaid_orders,
                 SUM(o.total_amount - COALESCE(paid.amount, 0)) as total_owed
          FROM orders o
-         LEFT JOIN customers c ON o.customer_id = c.id
+         LEFT JOIN customer_stores c ON o.customer_id = c.id
          LEFT JOIN (
            SELECT order_id, SUM(amount) as amount
            FROM payments WHERE status = 'completed'

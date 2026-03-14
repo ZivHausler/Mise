@@ -1,7 +1,10 @@
 export interface Recipe {
   id: string;
   name: string;
+  nameEn?: string;
   description?: string;
+  descriptionEn?: string;
+  categoryId?: number;
   tags?: string[];
   ingredients: RecipeIngredient[];
   steps: RecipeStep[];
@@ -13,6 +16,7 @@ export interface Recipe {
   photos?: string[];
   notes?: string;
   variations?: string[];
+  isPublished?: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -38,7 +42,10 @@ export interface RecipeStep {
 
 export interface CreateRecipeDTO {
   name: string;
+  nameEn?: string;
   description?: string;
+  descriptionEn?: string;
+  categoryId?: number;
   tags?: string[];
   ingredients: Omit<RecipeIngredient, 'name' | 'costPerUnit'>[];
   steps: RecipeStep[];
@@ -48,6 +55,7 @@ export interface CreateRecipeDTO {
   notes?: string;
   variations?: string[];
   photos?: string[];
+  isPublished?: boolean;
 }
 
 export interface UpdateRecipeDTO extends Partial<CreateRecipeDTO> {}

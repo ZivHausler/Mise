@@ -21,8 +21,11 @@ const recipeStepSchema = z.discriminatedUnion('type', [
 ]);
 
 export const createRecipeSchema = z.object({
-  name: z.string().min(1, 'Recipe name is required').max(200),
+  name: z.string().min(1, 'RECIPE_NAME_REQUIRED').max(200),
+  nameEn: z.string().max(200).optional(),
   description: z.string().max(5000).optional(),
+  descriptionEn: z.string().max(5000).optional(),
+  categoryId: z.number().int().positive().optional(),
   tags: z.array(z.string().max(50)).max(20).optional(),
   ingredients: z.array(z.object({
     ingredientId: z.string().max(100),
@@ -47,4 +50,8 @@ export const uploadUrlsSchema = z.object({
 
 export const deleteImageSchema = z.object({
   url: z.string().min(1),
+});
+
+export const togglePublishSchema = z.object({
+  isPublished: z.boolean(),
 });

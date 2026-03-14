@@ -26,4 +26,13 @@ export default async function aiChatRoutes(app: FastifyInstance) {
       },
     },
   }, (req, reply) => controller.message(req, reply));
+
+  app.post('/translate', {
+    config: {
+      rateLimit: {
+        max: 30,
+        timeWindow: '1 minute',
+      },
+    },
+  }, (req, reply) => controller.translate(req, reply));
 }

@@ -12,3 +12,10 @@ export const chatRequestSchema = z.object({
 });
 
 export type ChatRequestInput = z.infer<typeof chatRequestSchema>;
+
+export const translateRequestSchema = z.object({
+  text: z.string().trim().min(1, 'Text is required').max(1000, 'Text too long'),
+  fieldType: z.enum(['name', 'description']),
+});
+
+export type TranslateRequestInput = z.infer<typeof translateRequestSchema>;
